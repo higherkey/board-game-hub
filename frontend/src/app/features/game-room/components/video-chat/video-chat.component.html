@@ -1,0 +1,29 @@
+<!-- Join Video Button (shown when video is off) -->
+<div *ngIf="!isVideoActive" class="join-video-prompt">
+    <button class="btn-join-video" (click)="joinVideo()">
+        <span class="icon">📹</span> Join Video Chat
+    </button>
+</div>
+
+<!-- Video Grid (shown when video is active) -->
+<div *ngIf="isVideoActive" class="video-chat-container">
+    <div class="video-grid">
+        <div class="video-container local">
+            <video #localVideo autoplay muted playsinline></video>
+            <div class="label">You</div>
+        </div>
+        <div *ngFor="let remote of remoteStreams" class="video-container remote">
+            <video [srcObject]="remote.stream" autoplay playsinline></video>
+            <div class="label">Player {{ remote.peerId.substring(0, 4) }}</div>
+        </div>
+    </div>
+    <div class="controls">
+        <button (click)="toggleAudio()" [class.muted]="isAudioMuted">
+            {{ isAudioMuted ? 'Unmute' : 'Mute' }}
+        </button>
+        <button (click)="toggleVideo()" [class.muted]="isVideoMuted">
+            {{ isVideoMuted ? 'Show Video' : 'Hide Video' }}
+        </button>
+        <button class="btn-leave" (click)="leaveVideo()">Leave Video</button>
+    </div>
+</div>

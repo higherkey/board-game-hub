@@ -1,0 +1,83 @@
+<div class="settings-panel">
+    <div class="panel-header">
+        <i class="bi bi-gear-fill"></i>
+        <h3>Game Settings</h3>
+    </div>
+
+    <!-- Game Mode -->
+    <div class="setting-group">
+        <label for="gameType">
+            <i class="bi bi-controller"></i>
+            Game Mode
+        </label>
+        <div class="select-wrapper">
+            <select id="gameType" [(ngModel)]="selectedGameType" (change)="changeGameType()">
+                <option value="Scatterbrain">🧠 Scatterbrain</option>
+                <option value="Boggle">🔤 Boggle</option>
+            </select>
+            <i class="bi bi-chevron-down"></i>
+        </div>
+    </div>
+
+    <!-- Timer Duration -->
+    <div class="setting-group">
+        <label for="timerDuration">
+            <i class="bi bi-clock"></i>
+            Timer Duration
+        </label>
+        <div class="range-wrapper">
+            <input id="timerDuration" type="range" min="30" max="300" step="10"
+                [(ngModel)]="settings.timerDurationSeconds"
+                [style.--progress]="((settings.timerDurationSeconds - 30) / 270 * 100) + '%'">
+            <div class="range-labels">
+                <span>30s</span>
+                <span class="current-value">{{ settings.timerDurationSeconds }}s</span>
+                <span>5min</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scatterbrain Settings -->
+    <div *ngIf="selectedGameType === 'Scatterbrain'" class="game-specific-settings">
+        <div class="setting-group">
+            <label for="letterMode">
+                <i class="bi bi-alphabet"></i>
+                Letter Difficulty
+            </label>
+            <div class="select-wrapper">
+                <select id="letterMode" [(ngModel)]="settings.letterMode">
+                    <option [ngValue]="0">🟢 Normal (No Q, V, X, Z)</option>
+                    <option [ngValue]="1">🔴 Hard (Only Q, V, X, Z...)</option>
+                    <option [ngValue]="2">🎲 True Random</option>
+                </select>
+                <i class="bi bi-chevron-down"></i>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="categoryList">
+                <i class="bi bi-list-ul"></i>
+                Categories List
+            </label>
+            <div class="select-wrapper">
+                <select id="categoryList" [(ngModel)]="listSelectionMode" (change)="updateListId()">
+                    <option value="random">🎲 Random List</option>
+                    <option value="manual">📋 Select List #</option>
+                </select>
+                <i class="bi bi-chevron-down"></i>
+            </div>
+
+            <div *ngIf="listSelectionMode === 'manual'" class="list-id-input">
+                <label for="listId" class="sr-only">List ID</label>
+                <input id="listId" type="number" min="1" max="15" [(ngModel)]="selectedListId" (change)="updateListId()"
+                    placeholder="1-15">
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Button -->
+    <button class="btn-start" (click)="startGame()">
+        <i class="bi bi-play-fill"></i>
+        START GAME
+    </button>
+</div>

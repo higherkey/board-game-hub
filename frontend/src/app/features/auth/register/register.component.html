@@ -1,0 +1,77 @@
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="card-header">
+            <h2>Create Account</h2>
+            <p class="subtitle">Join the game hub today</p>
+        </div>
+
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+            <!-- Display Name Field -->
+            <div class="form-group">
+                <label for="displayName">Display Name</label>
+                <div class="input-wrapper"
+                    [class.error]="registerForm.get('displayName')?.invalid && registerForm.get('displayName')?.touched">
+                    <i class="bi bi-person"></i>
+                    <input type="text" id="displayName" formControlName="displayName" placeholder="Your gaming name"
+                        autocomplete="name">
+                </div>
+                <span class="error-message"
+                    *ngIf="registerForm.get('displayName')?.invalid && registerForm.get('displayName')?.touched">
+                    Display name must be at least 3 characters
+                </span>
+            </div>
+
+            <!-- Email Field -->
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-wrapper"
+                    [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+                    <i class="bi bi-envelope"></i>
+                    <input type="email" id="email" formControlName="email" placeholder="you@example.com"
+                        autocomplete="email">
+                </div>
+                <span class="error-message"
+                    *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+                    Please enter a valid email address
+                </span>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper"
+                    [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+                    <i class="bi bi-lock"></i>
+                    <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password"
+                        placeholder="Minimum 6 characters" autocomplete="new-password">
+                    <button type="button" class="toggle-password" (click)="togglePassword()" tabindex="-1">
+                        <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+                    </button>
+                </div>
+                <span class="error-message"
+                    *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+                    Password must be at least 6 characters
+                </span>
+            </div>
+
+            <!-- Error Alert -->
+            <div class="alert-error" *ngIf="errorMessage">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ errorMessage }}
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-submit" [disabled]="registerForm.invalid || isLoading">
+                <span *ngIf="!isLoading">Create Account</span>
+                <span *ngIf="isLoading" class="loading">
+                    <i class="bi bi-arrow-repeat spin"></i> Creating...
+                </span>
+            </button>
+
+            <!-- Login Link -->
+            <div class="auth-footer">
+                <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+﻿
+> frontend@0.0.0 test
+> ng test --include src/app/services/signalr.service.spec.ts --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage
+
+node.exe : - Generating browser 
+application bundles (phase: setup)...
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpec 
+   ified: (- Generating br...hase: s  
+  etup)...:String) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorId : NativeC 
+   ommandError
+ 
+Γ£ö Browser application bundle 
+generation complete.
+[1m[31m
+Error: [96msrc/app/features/about/abo
+ut.component.spec.ts[0m:[93m3[0m:[
+93m37[0m - [91merror[0m[90m 
+TS2307: [0mCannot find module 
+'./how-it-works.component' or its 
+corresponding type declarations.
+
+[7m3[0m import { 
+HowItWorksComponent } from 
+'./how-it-works.component';
+[7m [0m [91m                       
+             
+~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[39m[22m
+[32m10 12 2025 16:41:35.144:INFO [karma-server]: [39mKarma v6.4.4 server started at http://localhost:9876/
+[32m10 12 2025 16:41:35.146:INFO [launcher]: [39mLaunching browsers ChromeHeadlessNoSandbox with concurrency unlimited
+[91m10 12 2025 16:41:35.146:ERROR [karma-server]: [39mError: Found 1 load error
+    at Server.<anonymous> (C:\Programming\board game hub\frontend\node_modules\karma\lib\server.js:243:26)
+    at Object.onceWrapper (node:events:621:28)
+    at Server.emit (node:events:519:35)
+    at emitListeningNT (node:net:1983:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+Γ£ö Browser application bundle 
+generation complete.
+Γ£ö Browser application bundle 
+generation complete.

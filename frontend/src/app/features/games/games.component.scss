@@ -1,0 +1,19 @@
+.bg-surface {
+    background-color: var(--bg-surface, #fff);
+
+    &.border-secondary {
+        border-color: #6c757d !important;
+    }
+}
+
+.card {
+    transition: transform 0.2s;
+
+    &.hover-card:hover {
+        transform: translateY(-5px);
+    }
+}
+
+.opacity-75 {
+    opacity: 0.75;
+}

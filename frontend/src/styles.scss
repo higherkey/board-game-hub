@@ -1,0 +1,181 @@
+/* Global Design System - Physical/Paper Theme */
+:root {
+  /* Color Palette */
+  --bg-base: #f7f3e8;
+  /* Warm Tan / Paper */
+  --bg-surface: #ffffff;
+  /* Clean Card */
+  --bg-surface-2: #eaddcf;
+  /* Darker Tan for inputs/borders */
+
+  --text-primary: #2d3748;
+  /* Soft Black */
+  --text-secondary: #718096;
+  /* Slate Gray */
+
+  --primary: #003366;
+  /* Login Blue (Classic Navy) */
+  --primary-hover: #002244;
+
+  --accent: #38b2ac;
+  /* Teal (Primary Accent) */
+  --accent-hover: #319795;
+
+  --accent-secondary: #ff007f;
+  /* Pink (Secondary Accent) */
+
+  --highlight: #edfdfd;
+  /* Mint tint */
+  --highlight-border: #38b2ac;
+  /* Teal */
+
+  --success: #38b2ac;
+  /* Teal/Green */
+  --danger: #e53e3e;
+  /* Soft Red */
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+  --space-xl: 4rem;
+
+  /* Borders & Shapes */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Shadows - softer, more diffuse for paper feel */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+
+  /* Geometric Dot Pattern */
+  background-image: radial-gradient(var(--bg-surface-2) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 var(--space-md) 0;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+
+/* Utilities */
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-accent {
+  color: var(--accent) !important;
+}
+
+.bg-surface {
+  background-color: var(--bg-surface);
+}
+
+/* Buttons */
+.btn {
+  border: 2px solid transparent;
+  padding: var(--space-sm) var(--space-lg);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-accent {
+  background-color: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Cards */
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(0, 51, 102, 0.05);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Inputs */
+.form-control {
+  background-color: var(--bg-surface) !important;
+  border: 2px solid var(--bg-surface-2) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.75rem 1rem;
+}
+
+.form-control:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(255, 0, 127, 0.1) !important;
+  /* Pink Focus Ring */
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}

@@ -1,0 +1,58 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="card-header">
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Sign in to continue playing</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+      <!-- Email Field -->
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <div class="input-wrapper" [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          <i class="bi bi-envelope"></i>
+          <input type="email" id="email" formControlName="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <span class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          Please enter a valid email address
+        </span>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper"
+          [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          <i class="bi bi-lock"></i>
+          <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password"
+            placeholder="Enter your password" autocomplete="current-password">
+          <button type="button" class="toggle-password" (click)="togglePassword()" tabindex="-1">
+            <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+          </button>
+        </div>
+        <span class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          Password is required
+        </span>
+      </div>
+
+      <!-- Error Alert -->
+      <div class="alert-error" *ngIf="errorMessage">
+        <i class="bi bi-exclamation-circle"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-submit" [disabled]="loginForm.invalid || isLoading">
+        <span *ngIf="!isLoading">Sign In</span>
+        <span *ngIf="isLoading" class="loading">
+          <i class="bi bi-arrow-repeat spin"></i> Signing in...
+        </span>
+      </button>
+
+      <!-- Register Link -->
+      <div class="auth-footer">
+        <p>Don't have an account? <a routerLink="/register">Create one</a></p>
+      </div>
+    </form>
+  </div>
+</div>
