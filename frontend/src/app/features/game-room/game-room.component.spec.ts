@@ -1,9 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GameRoomComponent } from './game-room.component';
 import { SignalRService } from '../../services/signalr.service';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { RouterTestingModule } from '@angular/router/testing';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 // Stub Components
@@ -22,7 +21,7 @@ class MobileControllerStubComponent {
 class HostSettingsStubComponent {
   @Input() roomCode: any;
   @Input() currentGameType: any;
-  @Output() onStart = new EventEmitter<any>();
+  @Output() gameStart = new EventEmitter<any>();
 }
 
 @Component({ selector: 'app-video-chat', template: '', standalone: true, imports: [] })
@@ -81,8 +80,9 @@ describe('GameRoomComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [GameRoomComponent, RouterTestingModule],
+      imports: [GameRoomComponent],
       providers: [
+        provideRouter([]),
         { provide: SignalRService, useValue: mockSignalRService },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]

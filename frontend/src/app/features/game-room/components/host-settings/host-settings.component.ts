@@ -13,7 +13,7 @@ import { GameSettings, SignalRService } from '../../../../services/signalr.servi
 export class HostSettingsComponent implements OnChanges {
   @Input() roomCode!: string;
   @Input() currentGameType: string = 'Scatterbrain';
-  @Output() onStart = new EventEmitter<GameSettings>();
+  @Output() gameStart = new EventEmitter<GameSettings>();
 
   selectedGameType = 'Scatterbrain';
 
@@ -50,10 +50,10 @@ export class HostSettingsComponent implements OnChanges {
   }
 
   updateBoardSize(size: string) {
-    this.settings.boardSize = parseInt(size);
+    this.settings.boardSize = Number.parseInt(size, 10);
   }
 
   startGame() {
-    this.onStart.emit(this.settings);
+    this.gameStart.emit(this.settings);
   }
 }

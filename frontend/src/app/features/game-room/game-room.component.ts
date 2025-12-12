@@ -57,7 +57,7 @@ import { map, Observable } from 'rxjs';
                     <app-host-settings 
                         [roomCode]="roomCode"
                         [currentGameType]="(currentRoom$ | async)?.gameType"
-                        (onStart)="startGame($event)">
+                        (gameStart)="startGame($event)">
                     </app-host-settings>
                 </div>
 

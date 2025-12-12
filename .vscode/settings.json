@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "higherkey",
+        "projectKey": "higherkey_board-game-hub"
+    }
+}

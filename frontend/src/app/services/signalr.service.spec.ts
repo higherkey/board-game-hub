@@ -1,11 +1,17 @@
 import { TestBed } from '@angular/core/testing';
-import { SignalRService, GameSettings, Room } from './signalr.service';
-import { HubConnectionBuilder, HubConnection, HubConnectionState } from '@microsoft/signalr';
-import { BehaviorSubject } from 'rxjs';
+import { SignalRService } from './signalr.service';
+import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 
 describe('SignalRService', () => {
   let service: SignalRService;
   let mockHubConnection: any; // Using any to mock complex HubConnection type easily
+
+  // Helper to find the callback registered for a specific event
+  function getCallback(eventName: string): any {
+    const calls = mockHubConnection.on.calls.all();
+    const call = calls.find((c: any) => c.args[0] === eventName);
+    return call ? call.args[1] : undefined;
+  }
 
   beforeEach(() => {
     // 1. Create the Mock HubConnection
@@ -59,7 +65,7 @@ describe('SignalRService', () => {
     });
 
     it('should update status to Error if start fails', async () => {
-      mockHubConnection.start.and.returnValue(Promise.reject('Network Error'));
+      mockHubConnection.start.and.returnValue(Promise.reject(new Error('Network Error')));
       await service.startConnection();
       expect(service.connectionStatus$.value).toBe('Error');
     });
@@ -103,7 +109,7 @@ describe('SignalRService', () => {
       service.currentRoomSubject.next({
         code: 'TEST',
         players: [],
-        state: 0,
+        state: 'Lobby',
         settings: { timerDurationSeconds: 60, letterMode: 0 },
         gameType: 'Scatterbrain',
         gameState: null,
@@ -165,12 +171,7 @@ describe('SignalRService', () => {
   });
 
   describe('Event Listeners', () => {
-    // Helper to find the callback registered for a specific event
-    function getCallback(eventName: string): Function {
-      const calls = mockHubConnection.on.calls.all();
-      const call = calls.find((c: any) => c.args[0] === eventName);
-      return call ? call.args[1] : null;
-    }
+
 
     it('should update players$ when PlayerJoined event is received', () => {
       const callback = getCallback('PlayerJoined');
