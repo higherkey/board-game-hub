@@ -36,9 +36,8 @@ export class HostSettingsComponent implements OnChanges, OnInit {
 
   ngOnInit() {
     this.gameDataService.loadGames().subscribe(games => {
-      // Filter for Deployed games only, or allow Testing?
-      // Let's allow Deployed (0) and Testing (1)
-      this.availableGames = games.filter(g => g.status <= 1);
+      // Allow Deployed and Testing
+      this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
     });
   }
 

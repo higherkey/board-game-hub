@@ -107,12 +107,12 @@ export class JustOneBoardComponent implements OnChanges {
         const invalid = this.gameData.invalidClues || [];
         const result: { player: string, value: string }[] = [];
 
-        const clueEntries = Object.entries(this.gameData.clues) as [string, string][]; // ID -> Clue
+        const clueEntries = Object.entries(this.gameData.clues); // ID -> Clue
 
         clueEntries.forEach(([id, val]) => {
             if (!invalid.includes(val)) {
                 const p = this.room.players.find((x: any) => x.connectionId === id);
-                result.push({ player: p?.name || '?', value: val });
+                result.push({ player: p?.name || '?', value: val as string });
             }
         });
         return result;

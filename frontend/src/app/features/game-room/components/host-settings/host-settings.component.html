@@ -6,15 +6,13 @@
 
     <!-- Game Mode -->
     <div class="setting-group">
-        <label for="gameType">
-            <i class="bi bi-controller"></i>
-            Game Mode
-        </label>
+        <label for="gameType" class="form-label text-secondary small text-uppercase fw-bold">Game Mode</label>
         <div class="select-wrapper">
-            <select id="gameType" [(ngModel)]="selectedGameType" (change)="changeGameType()">
-                <option value="None" disabled>Choose a Game...</option>
-                <option value="Scatterbrain">🧠 Scatterbrain</option>
-                <option value="Boggle">🔤 Boggle</option>
+            <select id="gameType" class="form-select bg-surface border-2 shadow-sm" [(ngModel)]="selectedGameType"
+                (change)="changeGameType()">
+                <option *ngFor="let game of availableGames" [value]="game.id">
+                    {{ game.icon }} {{ game.name }}
+                </option>
             </select>
             <i class="bi bi-chevron-down"></i>
         </div>

@@ -12,16 +12,22 @@ import { AuthService } from '../../services/auth.service';
     <div class="app-shell">
       <!-- HEADER -->
       <header class="main-header" role="banner">
-        <div class="logo-container" routerLink="/" tabindex="0" (keyup.enter)="navigateToHome()" role="button" aria-label="Go to Home">
-           <app-logo [size]="40" class="text-primary"></app-logo>
-           <div class="logo-text ms-2">BoardGame<span class="text-primary">Hub</span></div>
+        <div class="d-flex align-items-center gap-3">
+             <div class="logo-container" routerLink="/" tabindex="0" (keyup.enter)="navigateToHome()" role="button" aria-label="Go to Home">
+                <app-logo [size]="40" class="text-primary"></app-logo>
+                <div class="logo-text ms-2 d-none d-sm-block">BoardGame<span class="text-primary">Hub</span></div>
+             </div>
         </div>
         
-        <nav class="main-nav" role="navigation" aria-label="Main Navigation">
-           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">Home</a>
-           <a routerLink="/games" routerLinkActive="active" class="nav-item">Games</a>
-           <a routerLink="/about" routerLinkActive="active" class="nav-item">About</a>
-           <a routerLink="/social" routerLinkActive="active" class="nav-item">Social</a>
+        <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation">
+            <i class="bi" [class.bi-list]="!mobileMenuOpen" [class.bi-x-lg]="mobileMenuOpen"></i>
+        </button>
+
+        <nav class="main-nav" [class.open]="mobileMenuOpen" role="navigation" aria-label="Main Navigation">
+           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" (click)="closeMobileMenu()">Home</a>
+           <a routerLink="/games" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Games</a>
+           <a routerLink="/about" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">About</a>
+           <a routerLink="/social" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Social</a>
         </nav>
         
         <div class="auth-actions">
@@ -99,9 +105,47 @@ import { AuthService } from '../../services/auth.service';
        text-transform: uppercase;
     }
 
+   .mobile-toggle {
+       display: none;
+       background: none;
+       border: none;
+       font-size: 1.5rem;
+       color: var(--primary);
+       cursor: pointer;
+       padding: 0.5rem;
+       
+       @media (max-width: 768px) {
+           display: block;
+       }
+    }
+
     .main-nav {
        display: flex;
        gap: var(--space-lg);
+       
+       @media (max-width: 768px) {
+           position: fixed;
+           top: var(--header-height);
+           left: 0;
+           right: 0;
+           background: var(--bg-surface);
+           flex-direction: column;
+           padding: var(--space-lg);
+           gap: var(--space-md);
+           border-bottom: 1px solid rgba(0,0,0,0.1);
+           box-shadow: var(--shadow-md);
+           transform: translateY(-100%);
+           opacity: 0;
+           visibility: hidden;
+           transition: all 0.3s ease-in-out;
+           z-index: 999;
+
+           &.open {
+               transform: translateY(0);
+               opacity: 1;
+               visibility: visible;
+           }
+       }
        
        .nav-item {
           color: var(--text-secondary);
@@ -141,6 +185,12 @@ import { AuthService } from '../../services/auth.service';
        display: flex;
        gap: var(--space-md);
        align-items: center;
+
+       @media (max-width: 768px) {
+           /* Hide auth actions on mobile if they don't fit, 
+              OR put them in the mobile menu. 
+              For now keeping them in header but scaling down if needed. */
+       }
     }
 
     .user-profile {
@@ -214,12 +264,23 @@ export class LayoutComponent {
 
    currentUser$ = this.authService.currentUser$;
 
+   mobileMenuOpen = false;
+
+   toggleMobileMenu() {
+      this.mobileMenuOpen = !this.mobileMenuOpen;
+   }
+
+   closeMobileMenu() {
+      this.mobileMenuOpen = false;
+   }
+
    navigateToHome() {
-      // Router link handles click logic
+      this.closeMobileMenu();
    }
 
    logout() {
       this.authService.logout();
+      this.closeMobileMenu();
       this.router.navigate(['/']);
    }
 }

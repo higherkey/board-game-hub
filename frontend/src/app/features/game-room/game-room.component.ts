@@ -39,6 +39,12 @@ export class GameRoomComponent implements OnInit {
   isHost$: Observable<boolean>;
   currentRoom$: Observable<any>;
 
+  mobileView: 'game' | 'players' = 'game';
+
+  setMobileView(view: 'game' | 'players') {
+    this.mobileView = view;
+  }
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly signalRService: SignalRService,

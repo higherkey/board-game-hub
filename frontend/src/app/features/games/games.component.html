@@ -1,6 +1,6 @@
-<div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
+<div class="container py-3 py-md-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 mb-md-5 gap-3">
+        <div class="text-center text-md-start">
             <h1 class="display-4 text-primary">Available Games</h1>
             <p class="lead text-secondary">Choose a game to host or join an active room.</p>
         </div>
@@ -10,10 +10,10 @@
     </div>
 
     <!-- Create New Room (Generic) -->
-    <div class="row mb-5 justify-content-center">
+    <div class="row mb-4 mb-md-5 justify-content-center">
         <div class="col-md-8 text-center">
             <div class="card bg-surface shadow-sm border-primary">
-                <div class="card-body p-5">
+                <div class="card-body p-4 p-md-5">
                     <h2 class="display-6 mb-3">Host a New Game Night</h2>
                     <p class="lead text-secondary mb-4">Start a lobby and choose your game later. Perfect for getting
                         everyone together first!</p>
@@ -26,7 +26,7 @@
     </div>
 
     <!-- Games Grid -->
-    <div class="row mb-5 g-4"> <!-- Added g-4 for consistent gap -->
+    <div class="row mb-4 mb-md-5 g-3 g-md-4"> <!-- Added g-4 for consistent gap -->
         <div class="col-12 mb-2">
             <h3 class="text-secondary border-bottom border-secondary pb-2"
                 style="border-bottom-width: 2px !important; border-bottom-style: dashed !important;">All Games</h3>
@@ -34,18 +34,19 @@
 
         <div class="col-sm-6 col-md-4 col-lg-3" *ngFor="let game of games">
             <div class="card h-100 bg-surface shadow-sm hover-card d-flex flex-column text-center p-4"
-                [class.border-accent]="game.status === 0" [class.opacity-75]="game.status !== 0">
+                [class.border-accent]="game.status === 'Deployed'" [class.opacity-75]="game.status !== 'Deployed'">
 
                 <div class="mb-3 display-4 text-primary" aria-hidden="true">{{game.icon}}</div>
                 <h4 class="card-title fw-bold text-primary mb-2">{{game.name}}</h4>
                 <p class="card-text text-secondary small mb-4 flex-grow-1">{{game.description}}</p>
 
-                <button *ngIf="game.status === 0" class="btn btn-outline-primary w-100 mt-auto fw-bold"
+                <button *ngIf="game.status === 'Deployed'" class="btn btn-outline-primary w-100 mt-auto fw-bold"
                     (click)="createRoom(game.id)">
                     Play Now
                 </button>
-                <button *ngIf="game.status !== 0" class="btn btn-sm btn-ghost w-100 mt-auto text-muted" disabled>
-                    {{ game.status === 1 ? 'Testing' : 'Coming Soon' }}
+                <button *ngIf="game.status !== 'Deployed'" class="btn btn-sm btn-ghost w-100 mt-auto text-muted"
+                    disabled>
+                    {{ game.status }}
                 </button>
             </div>
         </div>
@@ -82,9 +83,9 @@
         <p>Create a room above to get started!</p>
     </div>
 
-    <div class="lobbies-grid" *ngIf="!loading && rooms.length > 0">
-        <div *ngFor="let room of rooms">
-            <div class="card bg-surface h-100">
+    <div class="row g-4" *ngIf="!loading && rooms.length > 0">
+        <div class="col-md-6 col-lg-4" *ngFor="let room of rooms">
+            <div class="card bg-surface h-100 shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <span class="badge bg-primary">{{ room.code }}</span>

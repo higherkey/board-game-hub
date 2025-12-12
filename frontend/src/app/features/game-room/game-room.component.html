@@ -18,11 +18,15 @@
     </header>
 
     <!-- 2. MAIN BODY (Sidebar + Content) -->
-    <div class="row flex-grow-1 mt-3 g-3 overflow-hidden">
+    <!-- 2. MAIN BODY (Sidebar + Content) -->
+    <div class="row flex-grow-1 mt-3 g-3 overflow-hidden position-relative">
 
         <!-- SIDEBAR (Players & Chat) -->
-        <div class="col-md-3 col-lg-2 d-flex flex-column h-100">
-            <!-- Video Chat (Always Visible) -->
+        <!-- Visible on desktop (d-md-flex). On mobile, visible only if mobileView === 'players' -->
+        <div class="col-md-3 col-lg-2 d-flex flex-column h-100 sidebar-panel" [class.d-none]="mobileView !== 'players'"
+            [class.d-flex]="mobileView === 'players'">
+
+            <!-- Video Chat (Always Visible in this panel) -->
             <div class="video-section mb-3 flex-shrink-0">
                 <app-video-chat></app-video-chat>
             </div>
@@ -45,7 +49,10 @@
         </div>
 
         <!-- MAIN STAGE -->
-        <div class="col-md-9 col-lg-10 h-100 d-flex flex-column overflow-auto">
+        <!-- Visible on desktop (d-md-flex). On mobile, visible only if mobileView === 'game' -->
+        <div class="col-md-9 col-lg-10 h-100 d-flex flex-column overflow-auto main-stage-panel"
+            [class.d-none]="mobileView !== 'game'" [class.d-flex]="mobileView === 'game'">
+
             <div class="main-stage card shadow-sm flex-grow-1 border-0 bg-light">
                 <div class="card-body p-4 h-100 d-flex flex-column">
 
@@ -107,7 +114,7 @@
                         <!-- PLAYER VIEW -->
                         <ng-template #playerView>
                             <div class="h-100 d-flex flex-column justify-content-center">
-                                <div [ngSwitch]="(currentRoom$ | async)?.gameType">
+                                <div [ngSwitch]="(currentRoom$ | async)?.gameType" class="h-100">
                                     <!-- JUST ONE -->
                                     <div *ngSwitchCase="'JustOne'" class="h-100">
                                         <app-just-one-player [room]="currentRoom$ | async"
@@ -128,8 +135,20 @@
 
                 </div>
             </div>
-
-
         </div>
+    </div>
+
+    <!-- 3. MOBILE TAB BAR (Small Screens Only) -->
+    <div class="d-md-none mt-auto mobile-tab-bar bg-dark text-white d-flex justify-content-around py-2 flex-shrink-0">
+        <button class="btn btn-link text-white text-decoration-none d-flex flex-column align-items-center"
+            [class.text-accent]="mobileView === 'game'" (click)="setMobileView('game')">
+            <i class="bi bi-controller fs-4"></i>
+            <span class="small">Game</span>
+        </button>
+        <button class="btn btn-link text-white text-decoration-none d-flex flex-column align-items-center"
+            [class.text-accent]="mobileView === 'players'" (click)="setMobileView('players')">
+            <i class="bi bi-people-fill fs-4"></i>
+            <span class="small">Players</span>
+        </button>
     </div>
 </div>

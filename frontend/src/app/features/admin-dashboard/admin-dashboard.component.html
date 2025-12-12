@@ -54,8 +54,9 @@
                     <tbody>
                     <tbody>
                         <ng-container *ngFor="let room of stats.rooms; trackBy: trackByRoom">
-                            <tr (click)="toggleRoom(room.code)" (keyup.enter)="toggleRoom(room.code)" tabindex="0"
-                                class="room-row" [class.table-active]="isExpanded(room.code)">
+                            <tr (click)="toggleRoom(room.code)" (keyup.enter)="toggleRoom(room.code)"
+                                (keydown.space)="toggleRoom(room.code)" tabindex="0" class="room-row"
+                                [class.table-active]="isExpanded(room.code)">
                                 <td><code>{{ room.code }}</code></td>
                                 <td>
                                     <span class="badge game-type"

@@ -8,7 +8,7 @@ export interface GameDefinition {
     name: string;
     icon: string;
     description: string;
-    status: number; // 0=Deployed, 1=Testing, 2=Backlog
+    status: 'Deployed' | 'Testing' | 'Backlog';
 }
 
 @Injectable({
