@@ -9,6 +9,14 @@ export interface ServerStats {
     rooms: RoomSummary[];
 }
 
+export interface PlayerSummary {
+    name: string;
+    isHost: boolean;
+    score: number;
+    userId?: string;
+    connectionId?: string;
+}
+
 export interface RoomSummary {
     code: string;
     globalState: string;
@@ -16,6 +24,7 @@ export interface RoomSummary {
     playerCount: number;
     isPublic: boolean;
     hostName: string;
+    players: PlayerSummary[];
 }
 
 @Injectable({
@@ -49,5 +58,13 @@ export class AdminService {
 
     public async getStats(): Promise<ServerStats> {
         return await this.hubConnection.invoke<ServerStats>('GetStats');
+    }
+
+    public async kickPlayer(roomCode: string, connectionId: string): Promise<void> {
+        return await this.hubConnection.invoke('KickPlayer', roomCode, connectionId);
+    }
+
+    public async promoteToHost(roomCode: string, connectionId: string): Promise<void> {
+        return await this.hubConnection.invoke('PromoteToHost', roomCode, connectionId);
     }
 }

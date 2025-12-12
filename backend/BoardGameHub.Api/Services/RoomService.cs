@@ -16,6 +16,19 @@ public class RoomService
 
     private JustOneService? GetJustOneService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.JustOne) as JustOneService;
 
+    public Room? PromoteToHost(string code, string connectionId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        var newHost = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (newHost == null) return null;
+
+        foreach (var p in room.Players) p.IsHost = false;
+        newHost.IsHost = true;
+
+        return room;
+    }
+
     public Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null)
     {
         var code = GenerateRoomCode();
@@ -267,7 +280,8 @@ public class RoomService
                     Name = p.Name,
                     IsHost = p.IsHost,
                     Score = p.Score,
-                    UserId = p.UserId
+                    UserId = p.UserId,
+                    ConnectionId = p.ConnectionId
                 }).ToList()
             }).ToList()
         };

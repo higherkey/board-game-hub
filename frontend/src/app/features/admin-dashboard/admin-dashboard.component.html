@@ -52,27 +52,68 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let room of stats.rooms">
-                            <td><code>{{ room.code }}</code></td>
-                            <td>
-                                <span class="badge game-type" [class.scatterbrain]="room.gameType === 'Scatterbrain'"
-                                    [class.boggle]="room.gameType === 'Boggle'">
-                                    {{ room.gameType }}
-                                </span>
-                            </td>
-                            <td>{{ room.hostName }}</td>
-                            <td>{{ room.playerCount }}</td>
-                            <td>
-                                <span class="status-indicator" [class.playing]="room.globalState === 'Playing'">
-                                    {{ room.globalState }}
-                                </span>
-                            </td>
-                            <td>
-                                <i class="bi" [class.bi-globe]="room.isPublic"
-                                    [class.bi-lock-fill]="!room.isPublic"></i>
-                                {{ room.isPublic ? 'Public' : 'Private' }}
-                            </td>
-                        </tr>
+                    <tbody>
+                        <ng-container *ngFor="let room of stats.rooms; trackBy: trackByRoom">
+                            <tr (click)="toggleRoom(room.code)" (keyup.enter)="toggleRoom(room.code)" tabindex="0"
+                                class="room-row" [class.table-active]="isExpanded(room.code)">
+                                <td><code>{{ room.code }}</code></td>
+                                <td>
+                                    <span class="badge game-type"
+                                        [class.scatterbrain]="room.gameType === 'Scatterbrain'"
+                                        [class.boggle]="room.gameType === 'Boggle'">
+                                        {{ room.gameType }}
+                                    </span>
+                                </td>
+                                <td>{{ room.hostName }}</td>
+                                <td>{{ room.playerCount }}</td>
+                                <td>
+                                    <span class="status-indicator" [class.playing]="room.globalState === 'Playing'">
+                                        {{ room.globalState }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <i class="bi" [class.bi-globe]="room.isPublic"
+                                        [class.bi-lock-fill]="!room.isPublic"></i>
+                                    {{ room.isPublic ? 'Public' : 'Private' }}
+                                </td>
+                            </tr>
+                            <!-- Details Row -->
+                            <tr *ngIf="isExpanded(room.code)" class="details-row">
+                                <td colspan="6">
+                                    <div class="p-3">
+                                        <h6>Players ({{ room.players?.length || 0 }})</h6>
+                                        <table class="table table-sm table-borderless">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Role</th>
+                                                    <th>Score</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr *ngFor="let player of room.players">
+                                                    <td>{{ player.name }}</td>
+                                                    <td>{{ player.isHost ? 'Host' : 'Player' }}</td>
+                                                    <td>{{ player.score }}</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-danger me-2"
+                                                            (click)="kickPlayer(room.code, player.connectionId || '')">
+                                                            Kick
+                                                        </button>
+                                                        <button *ngIf="!player.isHost"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            (click)="promoteToHost(room.code, player.connectionId || '')">
+                                                            Make Host
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-container>
                         <tr *ngIf="stats.rooms.length === 0">
                             <td colspan="6" class="text-center text-muted">No active rooms</td>
                         </tr>

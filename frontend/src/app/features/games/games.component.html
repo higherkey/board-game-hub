@@ -26,27 +26,27 @@
     </div>
 
     <!-- Games Grid -->
-    <div class="row mb-5">
-        <div class="col-12 mb-4">
-            <h3 class="text-secondary border-bottom pb-2">All Games</h3>
+    <div class="row mb-5 g-4"> <!-- Added g-4 for consistent gap -->
+        <div class="col-12 mb-2">
+            <h3 class="text-secondary border-bottom border-secondary pb-2"
+                style="border-bottom-width: 2px !important; border-bottom-style: dashed !important;">All Games</h3>
         </div>
 
-        <div class="col-md-3 mb-4" *ngFor="let game of games">
-            <div class="card h-100 bg-surface shadow-sm hover-card" [class.border-primary]="game.active"
-                [class.opacity-75]="!game.active" [class.border-secondary]="!game.active">
-                <div class="card-body text-center d-flex flex-column">
-                    <span class="mb-3 display-4" aria-hidden="true">{{game.icon}}</span>
-                    <h4 class="card-title" [class.text-muted]="!game.active">{{game.name}}</h4>
-                    <p class="card-text text-secondary small flex-grow-1">{{game.description}}</p>
+        <div class="col-sm-6 col-md-4 col-lg-3" *ngFor="let game of games">
+            <div class="card h-100 bg-surface shadow-sm hover-card d-flex flex-column text-center p-4"
+                [class.border-accent]="game.status === 0" [class.opacity-75]="game.status !== 0">
 
-                    <button *ngIf="game.active" class="btn btn-outline-primary w-100 mt-3"
-                        (click)="createRoom(game.id)">
-                        Play Now
-                    </button>
-                    <button *ngIf="!game.active" class="btn btn-secondary w-100 mt-3" disabled>
-                        Coming Soon
-                    </button>
-                </div>
+                <div class="mb-3 display-4 text-primary" aria-hidden="true">{{game.icon}}</div>
+                <h4 class="card-title fw-bold text-primary mb-2">{{game.name}}</h4>
+                <p class="card-text text-secondary small mb-4 flex-grow-1">{{game.description}}</p>
+
+                <button *ngIf="game.status === 0" class="btn btn-outline-primary w-100 mt-auto fw-bold"
+                    (click)="createRoom(game.id)">
+                    Play Now
+                </button>
+                <button *ngIf="game.status !== 0" class="btn btn-sm btn-ghost w-100 mt-auto text-muted" disabled>
+                    {{ game.status === 1 ? 'Testing' : 'Coming Soon' }}
+                </button>
             </div>
         </div>
     </div>
@@ -82,8 +82,8 @@
         <p>Create a room above to get started!</p>
     </div>
 
-    <div class="row" *ngIf="!loading && rooms.length > 0">
-        <div class="col-md-4 mb-4" *ngFor="let room of rooms">
+    <div class="lobbies-grid" *ngIf="!loading && rooms.length > 0">
+        <div *ngFor="let room of rooms">
             <div class="card bg-surface h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">

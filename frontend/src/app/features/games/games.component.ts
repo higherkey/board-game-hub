@@ -4,6 +4,7 @@ import { SignalRService } from '../../services/signalr.service';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { GameDataService, GameDefinition } from '../../services/game-data.service';
 
 @Component({
     selector: 'app-games',
@@ -18,43 +19,20 @@ export class GamesComponent implements OnInit {
     playerName = '';
     roomCode = '';
 
-    games = [
-        {
-            id: 'Scatterbrain',
-            name: 'Scatterbrain',
-            icon: '🧠',
-            description: 'The classic party game. Come up with unique answers for categories for a chosen letter.',
-            active: true
-        },
-        {
-            id: 'Boggle',
-            name: 'Boggle',
-            icon: '🔤',
-            description: 'Find as many words as you can in the grid of letters before time runs out!',
-            active: true
-        },
-        { id: 'Codenames', name: 'Codenames', icon: '🕵️‍♀️', description: 'Give one-word clues to help your team guess their agents.', active: false },
-        { id: 'Spyfall', name: 'Spyfall', icon: '🕵️', description: 'Find the spy among you before they figure out the location.', active: false },
-        { id: 'Pictionary', name: 'Pictionary', icon: '🎨', description: 'Draw and guess words with your friends.', active: false },
-        { id: 'Uno', name: 'Uno', icon: '🃏', description: 'The classic card game of matching colors and numbers.', active: false },
-        { id: 'Scrabble', name: 'Scrabble', icon: '📝', description: ' Create words on the board using letter tiles.', active: false },
-        { id: 'Monopoly', name: 'Monopoly', icon: '🎩', description: 'Buy, sell, and trade properties to win.', active: false },
-        { id: 'Catan', name: 'Settlers of Catan', icon: '🏰', description: 'Trade, build, and settle the island of Catan.', active: false },
-        { id: 'TicketToRide', name: 'Ticket to Ride', icon: '🚂', description: 'Build train routes across the country.', active: false },
-        { id: 'Battleship', name: 'Battleship', icon: '🚢', description: 'Sink your opponent\'s fleet before they sink yours.', active: false },
-        { id: 'Connect4', name: 'Connect 4', icon: '🔴', description: 'Connect four of your checkers in a row.', active: false },
-        { id: 'Checkers', name: 'Checkers', icon: '🏁', description: 'Jump over opponent pieces to capture them.', active: false },
-        { id: 'Chess', name: 'Chess', icon: '♟️', description: 'Strategic board game played on a checkered board.', active: false }
-    ];
+    games: GameDefinition[] = [];
 
     constructor(
         private readonly signalRService: SignalRService,
         private readonly router: Router,
-        private readonly authService: AuthService
+        private readonly authService: AuthService,
+        private readonly gameDataService: GameDataService
     ) { }
 
     ngOnInit() {
         console.log('Games Component Initialized');
+        this.gameDataService.loadGames().subscribe(games => {
+            this.games = games;
+        });
         this.loadRooms();
 
         this.authService.currentUser$.subscribe(user => {

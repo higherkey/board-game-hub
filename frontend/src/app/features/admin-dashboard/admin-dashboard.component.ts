@@ -10,18 +10,24 @@ import { AdminService, ServerStats } from '../../services/admin.service';
     styleUrl: './admin-dashboard.component.scss'
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
-    private adminService = inject(AdminService);
+    private readonly adminService = inject(AdminService);
     stats: ServerStats | null = null;
     loading = true;
     refreshInterval: any;
 
-    async ngOnInit() {
+    expandedRooms = new Set<string>();
+
+    ngOnInit() {
+        this.initDashboard();
+    }
+
+    private async initDashboard() {
         try {
             await this.adminService.startConnection();
             await this.loadStats();
 
-            // Auto-refresh every 5 seconds
-            this.refreshInterval = setInterval(() => this.loadStats(), 5000);
+            // Auto-refresh every second
+            this.refreshInterval = setInterval(() => this.loadStats(), 1000);
         } catch (err) {
             console.error('Failed to connect to Admin Hub', err);
             this.loading = false;
@@ -43,11 +49,46 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         }
     }
 
+    toggleRoom(code: string) {
+        if (this.expandedRooms.has(code)) {
+            this.expandedRooms.delete(code);
+        } else {
+            this.expandedRooms.add(code);
+        }
+    }
+
+    isExpanded(code: string): boolean {
+        return this.expandedRooms.has(code);
+    }
+
     formatUptime(spanString: string): string {
         // Backend returns TimeSpan string "d.hh:mm:ss" usually
-        // Or we can parse it. For now let's just show it or pretty print if needed.
-        // The default serialization might be "12:30:45.1234".
         if (!spanString) return '0s';
-        return spanString.split('.')[0]; // Remove milliseconds
+        return spanString.split('.')[0];
+    }
+
+    trackByRoom(index: number, room: any): string {
+        return room.code;
+    }
+
+    async kickPlayer(roomCode: string, connectionId: string) {
+        if (!confirm('Are you sure you want to kick this player?')) return;
+        try {
+            // Need to expose this in service first, but we can call invoke directly for now or add to service
+            // Creating a quick service method is cleaner.
+            await this.adminService.kickPlayer(roomCode, connectionId);
+            await this.loadStats(); // Refresh immediately
+        } catch (err) {
+            console.error('Failed to kick player', err);
+        }
+    }
+
+    async promoteToHost(roomCode: string, connectionId: string) {
+        try {
+            await this.adminService.promoteToHost(roomCode, connectionId);
+            await this.loadStats();
+        } catch (err) {
+            console.error('Failed to promote player', err);
+        }
     }
 }

@@ -20,6 +20,10 @@
             100% calc(100% - 10px), calc(100% - 10px) 100%,
             0 100%, 0 10px);
 
+    &.border-accent {
+        border-bottom-color: var(--accent);
+    }
+
     &.hover-card:hover {
         transform: translateY(-5px);
         border-bottom-color: var(--accent);
@@ -43,4 +47,12 @@
 .opacity-75 {
     opacity: 0.6;
     filter: grayscale(100%);
+}
+
+.games-grid,
+.lobbies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
 }

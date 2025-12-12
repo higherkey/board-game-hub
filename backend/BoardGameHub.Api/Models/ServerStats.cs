@@ -28,4 +28,5 @@ public class PlayerSummary
     public bool IsHost { get; set; }
     public int Score { get; set; }
     public string? UserId { get; set; }
+    public string ConnectionId { get; set; } = string.Empty;
 }
