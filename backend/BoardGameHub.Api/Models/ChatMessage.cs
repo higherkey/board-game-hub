@@ -15,6 +15,7 @@ public class ChatMessage
     public User? Receiver { get; set; }
 
     public string Content { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     public DateTime SentAt { get; set; } = DateTime.UtcNow;
     
     public bool IsGlobal { get; set; } = false;

@@ -22,14 +22,14 @@ public class BoggleGameService : IGameService
     {
         var state = new BoggleState
         {
-            Grid = _boggleLogic.GenerateGrid()
+            Grid = _boggleLogic.GenerateGrid(settings.BoardSize)
         };
-        room.GameState = state;
+        room.GameData = state;
     }
 
     public void CalculateScores(Room room)
     {
-        if (room.GameState is not BoggleState state) return;
+        if (room.GameData is not BoggleState state) return;
 
         foreach(var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
 

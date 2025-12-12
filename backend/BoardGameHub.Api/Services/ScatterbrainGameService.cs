@@ -34,12 +34,12 @@ public class ScatterbrainGameService : IGameService
             state.Categories = ScatterbrainData.GetRandomList();
         }
 
-        room.GameState = state;
+        room.GameData = state;
     }
 
     public void CalculateScores(Room room)
     {
-        if (room.GameState is not ScatterbrainState state) return;
+        if (room.GameData is not ScatterbrainState state) return;
 
         var categoryCount = state.Categories.Count;
         

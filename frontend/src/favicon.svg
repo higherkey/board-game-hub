@@ -1,0 +1,31 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Right Side (Shadow/Navy) -->
+  <path d="M256 60 L380 130 L350 420 L256 450 Z" fill="#003366" stroke="#003366" stroke-width="20" stroke-linejoin="round"/>
+  <!-- Left Side (Lit/White) -->
+  <path d="M256 60 L132 130 L162 420 L256 450 Z" fill="#FFFFFF" stroke="#003366" stroke-width="20" stroke-linejoin="round"/>
+  <!-- Head Detail -->
+  <path d="M256 60 L320 100 L256 140 L192 100 Z" fill="#FFFFFF" opacity="0.9"/>
+  <path d="M320 100 L380 130 L360 200 L256 140 Z" fill="#002244"/> 
+  <!-- Center Line -->
+  <path d="M256 60 L256 450" stroke="#003366" stroke-width="5"/>
+  <!-- Full Outline Group -->
+  <g stroke="#003366" stroke-width="24" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M256 50 L350 110 L320 200 L350 400 L400 440 L112 440 L162 400 L192 200 L162 110 Z" fill="none"/>
+  </g>
+  <!-- Right Half fill (Navy) -->
+  <path d="M256 50 L350 110 L320 200 L350 400 L400 440 L256 440 Z" fill="#003366"/>
+  <!-- Left Half fill (White) -->
+  <path d="M256 50 L162 110 L192 200 L162 400 L112 440 L256 440 Z" fill="#FFFFFF"/>
+  <!-- Head Top Facet -->
+  <path d="M256 50 L350 110 L256 170 L162 110 Z" fill="#F0F4F8"/>
+  <!-- Base Slab (Teal/Navy) -->
+  <path d="M112 440 L400 440 L400 470 L112 470 Z" fill="#003366"/> 
+  <!-- Teal Front Left -->
+  <path d="M120 440 L256 440 L256 460 L120 460 Z" fill="#38b2ac"/> 
+  <!-- Base Inner Slab -->
+  <path d="M136 416 L256 416 L256 464 L136 464 Z" fill="#38b2ac"/>
+  <!-- Border Integration -->
+  <path d="M256 50 L350 110 L320 200 L350 410 M256 50 L162 110 L192 200 L162 410" stroke="#003366" stroke-width="24" fill="none" stroke-linejoin="round"/>
+  <!-- Center Line -->
+  <path d="M256 170 L256 470" stroke="#003366" stroke-width="12"/>
+</svg>

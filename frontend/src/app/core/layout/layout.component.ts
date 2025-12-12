@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { LogoComponent } from '../../shared/logo/logo.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
    selector: 'app-layout',
@@ -24,9 +25,21 @@ import { LogoComponent } from '../../shared/logo/logo.component';
         </nav>
         
         <div class="auth-actions">
-           <!-- Placeholder for login links -->
-           <a routerLink="/login" class="btn btn-sm btn-outline-primary">Login</a>
-           <a routerLink="/register" class="btn btn-sm btn-accent">Sign Up</a>
+           <ng-container *ngIf="currentUser$ | async as user; else guestTemplate">
+              <div class="user-profile">
+                 <span class="username">{{ user.displayName }}</span>
+                 <button routerLink="/settings" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-gear-fill"></i> Settings
+                 </button>
+                 <button (click)="logout()" class="btn btn-sm btn-ghost" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                 </button>
+              </div>
+           </ng-container>
+           <ng-template #guestTemplate>
+              <a routerLink="/login" class="btn btn-sm btn-outline-primary">Login</a>
+              <a routerLink="/register" class="btn btn-sm btn-accent">Sign Up</a>
+           </ng-template>
         </div>
       </header>
 
@@ -37,11 +50,9 @@ import { LogoComponent } from '../../shared/logo/logo.component';
 
       <!-- FOOTER -->
       <footer class="main-footer" role="contentinfo">
-         <div class="footer-content">
-            <div class="mb-2 opacity-50">
-                <app-logo [size]="24" class="text-secondary"></app-logo>
-            </div>
-            <p>&copy; 2025 BoardGameHub. <span class="text-accent">Play Connected.</span></p>
+         <div class="footer-content d-flex justify-content-center align-items-center gap-3 opacity-75">
+            <app-logo [size]="24" class="text-secondary"></app-logo>
+            <p class="m-0">&copy; 2025 BoardGameHub. <span class="text-accent">Play Connected.</span></p>
          </div>
       </footer>
     </div>
@@ -115,6 +126,28 @@ import { LogoComponent } from '../../shared/logo/logo.component';
     .auth-actions {
        display: flex;
        gap: var(--space-md);
+       align-items: center;
+    }
+
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+
+        .username {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .btn-ghost {
+            color: var(--text-secondary);
+            padding: 0.25rem 0.5rem;
+            
+            &:hover {
+                color: var(--danger);
+                background: rgba(220, 53, 69, 0.1);
+            }
+        }
     }
 
     .main-content {
@@ -137,7 +170,17 @@ import { LogoComponent } from '../../shared/logo/logo.component';
   `]
 })
 export class LayoutComponent {
+   private readonly authService = inject(AuthService);
+   private readonly router = inject(Router);
+
+   currentUser$ = this.authService.currentUser$;
+
    navigateToHome() {
       // Router link handles click logic
+   }
+
+   logout() {
+      this.authService.logout();
+      this.router.navigate(['/']);
    }
 }

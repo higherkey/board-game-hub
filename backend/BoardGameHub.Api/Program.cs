@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,7 +52,10 @@ builder.Services.AddAuthentication(options =>
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/gamehub"))
+            if (!string.IsNullOrEmpty(accessToken) && 
+               (path.StartsWithSegments("/gamehub") || 
+                path.StartsWithSegments("/socialhub") || 
+                path.StartsWithSegments("/adminhub")))
             {
                 context.Token = accessToken;
             }
@@ -60,13 +64,25 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddControllers();
-builder.Services.AddSignalR();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options => {
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddSingleton<RoomService>();
 builder.Services.AddSingleton<BoggleService>();
 // Register Game Services
 builder.Services.AddSingleton<IGameService, ScatterbrainGameService>();
 builder.Services.AddSingleton<IGameService, BoggleGameService>();
+
+// Persistence Services (Scoped because they use DbContext)
+builder.Services.AddScoped<SocialService>();
+builder.Services.AddScoped<GameHistoryService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -100,5 +116,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<GameHub>("/gamehub");
 app.MapHub<SocialHub>("/socialhub");
+app.MapHub<AdminHub>("/adminhub");
 
 app.Run();

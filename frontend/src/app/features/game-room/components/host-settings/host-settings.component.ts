@@ -20,6 +20,7 @@ export class HostSettingsComponent implements OnChanges {
   settings: GameSettings = {
     timerDurationSeconds: 60,
     letterMode: 0,
+    boardSize: 4,
     listId: undefined
   };
 
@@ -46,6 +47,10 @@ export class HostSettingsComponent implements OnChanges {
     } else {
       this.settings.listId = this.selectedListId;
     }
+  }
+
+  updateBoardSize(size: string) {
+    this.settings.boardSize = parseInt(size);
   }
 
   startGame() {

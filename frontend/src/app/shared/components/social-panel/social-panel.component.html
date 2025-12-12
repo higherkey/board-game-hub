@@ -12,11 +12,11 @@
                 <div class="card-body">
                     <div *ngFor="let request of friendRequests" class="request-item">
                         <div class="request-info">
-                            <div class="avatar">{{ request.senderId.charAt(0).toUpperCase() }}</div>
-                            <span class="name">{{ request.senderId }}</span>
+                            <div class="avatar">{{ request.requesterId.charAt(0).toUpperCase() }}</div>
+                            <span class="name">{{ request.requesterId }}</span>
                         </div>
                         <div class="request-actions">
-                            <button class="btn-accept" (click)="acceptRequest(request.senderId)">
+                            <button class="btn-accept" (click)="acceptRequest(request.requesterId)">
                                 <i class="bi bi-check-lg"></i>
                             </button>
                             <button class="btn-decline">
@@ -41,7 +41,7 @@
                             <div class="message-avatar">{{ msg.senderId.charAt(0).toUpperCase() }}</div>
                             <div class="message-content">
                                 <span class="sender-name">{{ msg.senderId }}</span>
-                                <p class="message-text">{{ msg.message }}</p>
+                                <p class="message-text">{{ msg.content }}</p>
                             </div>
                         </div>
                         <div *ngIf="messages.length === 0" class="empty-state">

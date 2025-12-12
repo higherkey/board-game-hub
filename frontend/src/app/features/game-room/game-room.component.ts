@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SignalRService, GameSettings } from '../../services/signalr.service';
 import { GameBoardComponent } from '../game-board/game-board.component';
 import { MobileControllerComponent } from '../mobile-controller/mobile-controller.component';
@@ -18,12 +18,17 @@ import { map, Observable } from 'rxjs';
   template: `
     <div class="container-fluid mt-3">
       <!-- Header / Status Bar -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-         <span class="badge bg-dark">Room: {{ roomCode }}</span>
-         <span class="badge" [class.bg-success]="(connectionStatus$ | async) === 'Connected'" [class.bg-danger]="(connectionStatus$ | async) === 'Disconnected'">
-            {{ connectionStatus$ | async }}
-         </span>
-      </div>
+       <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center gap-3">
+             <button class="btn btn-outline-danger btn-sm" (click)="leaveRoom()">
+                <i class="bi bi-box-arrow-left"></i> Leave
+             </button>
+             <span class="badge bg-dark">Room: {{ roomCode }}</span>
+          </div>
+          <span class="badge" [class.bg-success]="(connectionStatus$ | async) === 'Connected'" [class.bg-danger]="(connectionStatus$ | async) === 'Disconnected'">
+             {{ connectionStatus$ | async }}
+          </span>
+       </div>
 
       <!-- WAITING ROOM (LOBBY) -->
       <div *ngIf="!(gameStarted$ | async); else activeGame">
@@ -85,14 +90,14 @@ import { map, Observable } from 'rxjs';
                     <!-- BOGGLE GAME -->
                     <app-boggle *ngSwitchCase="'Boggle'" 
                         [grid]="(currentRoom$ | async)?.gameState?.grid"
-                        [isPlaying]="(currentRoom$ | async)?.state === 1"
-                        (wordSubmitted)="onBoggleWordSubmitted($event)">
+                        [isPlaying]="(currentRoom$ | async)?.state === 'Playing'"
+                        (wordsUpdated)="onBoggleWordsUpdated($event)">
                     </app-boggle>
                     
                     <!-- SCATTERBRAIN GAME (Default) -->
                     <div *ngSwitchDefault>
                         <div [ngSwitch]="(currentRoom$ | async)?.state">
-                             <app-game-review *ngSwitchCase="2" 
+                             <app-game-review *ngSwitchCase="'Finished'" 
                                 [room]="(currentRoom$ | async)!" 
                                 [isHost]="(isHost$ | async)!">
                              </app-game-review>
@@ -130,13 +135,17 @@ export class GameRoomComponent implements OnInit {
   isHost$: Observable<boolean>;
   currentRoom$: Observable<any>;
 
-  constructor(private route: ActivatedRoute, private signalRService: SignalRService) {
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly signalRService: SignalRService,
+    private readonly router: Router
+  ) {
     this.players$ = this.signalRService.players$;
     this.connectionStatus$ = this.signalRService.connectionStatus$;
     this.currentRoom$ = this.signalRService.currentRoom$;
 
-    // Game started if state is Playing (1) or Finished (2)
-    this.gameStarted$ = this.signalRService.currentRoom$.pipe(map(r => r?.state === 1 || r?.state === 2));
+    // Game started if state is Playing or Finished
+    this.gameStarted$ = this.signalRService.currentRoom$.pipe(map(r => r?.state === 'Playing' || r?.state === 'Finished'));
 
     this.isHost$ = this.players$.pipe(map((all: any[]) => {
       const myName = this.route.snapshot.queryParamMap.get('name');
@@ -160,7 +169,14 @@ export class GameRoomComponent implements OnInit {
     this.signalRService.startGame(settings);
   }
 
-  onBoggleWordSubmitted(word: string) {
-    console.log('Word submitted:', word);
+  onBoggleWordsUpdated(words: string[]) {
+    this.signalRService.submitAnswers(words);
+  }
+
+  async leaveRoom() {
+    if (this.roomCode) {
+      await this.signalRService.leaveRoom(this.roomCode);
+    }
+    this.router.navigate(['/games']);
   }
 }

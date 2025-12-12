@@ -1,0 +1,84 @@
+<div class="admin-dashboard">
+    <div class="header">
+        <h1>Server Administration</h1>
+        <span class="badge status-live" *ngIf="!loading">Live Updates</span>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+        <p>Connecting to server...</p>
+    </div>
+
+    <div *ngIf="stats" class="dashboard-content">
+        <!-- Key Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="icon"><i class="bi bi-controller"></i></div>
+                <div class="data">
+                    <span class="value">{{ stats.activeRooms }}</span>
+                    <span class="label">Active Rooms</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="icon"><i class="bi bi-people-fill"></i></div>
+                <div class="data">
+                    <span class="value">{{ stats.totalOnlinePlayers }}</span>
+                    <span class="label">Online Players</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="icon"><i class="bi bi-activity"></i></div>
+                <div class="data">
+                    <span class="value">{{ formatUptime(stats.uptime) }}</span>
+                    <span class="label">Server Uptime</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room List -->
+        <div class="rooms-section">
+            <h2>Active Sessions</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Room Code</th>
+                            <th>Game Type</th>
+                            <th>Host</th>
+                            <th>Players</th>
+                            <th>State</th>
+                            <th>Access</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let room of stats.rooms">
+                            <td><code>{{ room.code }}</code></td>
+                            <td>
+                                <span class="badge game-type" [class.scatterbrain]="room.gameType === 'Scatterbrain'"
+                                    [class.boggle]="room.gameType === 'Boggle'">
+                                    {{ room.gameType }}
+                                </span>
+                            </td>
+                            <td>{{ room.hostName }}</td>
+                            <td>{{ room.playerCount }}</td>
+                            <td>
+                                <span class="status-indicator" [class.playing]="room.globalState === 'Playing'">
+                                    {{ room.globalState }}
+                                </span>
+                            </td>
+                            <td>
+                                <i class="bi" [class.bi-globe]="room.isPublic"
+                                    [class.bi-lock-fill]="!room.isPublic"></i>
+                                {{ room.isPublic ? 'Public' : 'Private' }}
+                            </td>
+                        </tr>
+                        <tr *ngIf="stats.rooms.length === 0">
+                            <td colspan="6" class="text-center text-muted">No active rooms</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

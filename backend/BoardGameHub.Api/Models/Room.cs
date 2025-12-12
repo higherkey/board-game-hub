@@ -22,11 +22,11 @@ public class Room
     public GameState State { get; set; } = GameState.Lobby;
     public GameSettings Settings { get; set; } = new();
 
-    public GameType GameType { get; set; } = GameType.Scatterbrain; 
+    public GameType GameType { get; set; } = GameType.None; 
     public bool IsPublic { get; set; } = false;
 
     // Generic Game State (Holds ScatterbrainState or BoggleState)
-    public object? GameState { get; set; }
+    public object? GameData { get; set; }
     public int RoundNumber { get; set; } = 0;
     
     // Voting
@@ -49,6 +49,7 @@ public class Room
 public class GameSettings
 {
     public int TimerDurationSeconds { get; set; } = 60;
+    public int BoardSize { get; set; } = 4;
     public ScatterbrainData.LetterMode LetterMode { get; set; } = ScatterbrainData.LetterMode.Normal;
     public int? ListId { get; set; } // Null = Random
     public List<string> CustomCategories { get; set; } = new(); // If populated, use this
@@ -63,6 +64,7 @@ public enum GameState
 
 public enum GameType
 {
-    Scatterbrain,
-    Boggle
+    None = 0,
+    Scatterbrain = 1,
+    Boggle = 2
 }

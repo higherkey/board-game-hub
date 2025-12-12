@@ -98,6 +98,11 @@ public class RoomService
         }
     }
 
+    public void TerminateRoom(string code)
+    {
+        _rooms.TryRemove(code.ToUpper(), out _);
+    }
+
     public Room? StartGame(string code, GameSettings? settings = null)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
@@ -215,6 +220,37 @@ public class RoomService
         
         // Auto-switch if unanimous? Maybe later.
         return room;
+    }
+
+    public ServerStats GetServerStats()
+    {
+        var activeRooms = _rooms.Values.ToList();
+        var stats = new ServerStats
+        {
+            ActiveRooms = activeRooms.Count,
+            TotalOnlinePlayers = activeRooms.Sum(r => r.Players.Count),
+            Uptime = DateTime.UtcNow - System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime(),
+            Rooms = activeRooms.Select(r => new RoomSummary
+            {
+                Code = r.Code,
+                GlobalState = r.State.ToString(),
+                GameType = r.GameType.ToString(),
+                PlayerCount = r.Players.Count,
+                IsPublic = r.IsPublic,
+                HostName = r.Players.FirstOrDefault(p => p.IsHost)?.Name ?? "Unknown",
+                RoundNumber = r.RoundNumber,
+                SettingsTimer = r.Settings?.TimerDurationSeconds ?? 0,
+                Players = r.Players.Select(p => new PlayerSummary 
+                {
+                    Name = p.Name,
+                    IsHost = p.IsHost,
+                    Score = p.Score,
+                    UserId = p.UserId
+                }).ToList()
+            }).ToList()
+        };
+
+        return stats;
     }
 
     private string GenerateRoomCode()

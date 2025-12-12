@@ -60,6 +60,6 @@ export class SocialPanelComponent implements OnInit, OnDestroy {
 
   async acceptRequest(requesterId: string) {
     await this.socialService.acceptFriendRequest(requesterId);
-    this.friendRequests = this.friendRequests.filter(r => r.senderId !== requesterId);
+    this.friendRequests = this.friendRequests.filter(r => r.requesterId !== requesterId);
   }
 }

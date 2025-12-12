@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 export interface GameSettings {
   timerDurationSeconds: number;
   letterMode: number; // 0=Normal, 1=Hard, 2=TrueRandom
+  boardSize?: number; // 4, 5, 6
   listId?: number;
   customCategories?: string[];
 }
@@ -16,10 +17,12 @@ export interface Player {
   isHost: boolean;
 }
 
+export type RoomState = 'Lobby' | 'Playing' | 'Finished';
+
 export interface Room {
   code: string;
   players: Player[];
-  state: number; // 0=Lobby, 1=Playing, 2=Finished
+  state: RoomState;
   settings: GameSettings;
   gameType: string;
 
@@ -179,7 +182,7 @@ export class SignalRService {
     this.currentRoomSubject.next({
       code: roomCode,
       players: [],
-      state: 0,
+      state: 'Lobby',
       settings: { timerDurationSeconds: 60, letterMode: 0 },
       gameType: gameType,
       gameState: null,
@@ -196,25 +199,19 @@ export class SignalRService {
   }
 
   public async joinRoom(roomCode: string, playerName: string): Promise<boolean> {
-    const success = await this.hubConnection.invoke('JoinRoom', roomCode, playerName);
-    if (success) {
-      // Initialize currentRoomSubject with the room code so startGame can use it
-      this.currentRoomSubject.next({
-        code: roomCode,
-        players: [],
-        state: 0,
-        settings: { timerDurationSeconds: 60, letterMode: 0 },
-        gameType: 'Scatterbrain',
-        gameState: null,
-        roundNumber: 0,
-        isPaused: false,
-        roundScores: {},
-        nextGameVotes: {}
-      });
+    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName);
+    if (room) {
+      this.currentRoomSubject.next(room);
+      return true;
     } else {
       console.error('Failed to join room');
+      return false;
     }
-    return success;
+  }
+
+  public async leaveRoom(roomCode: string): Promise<void> {
+    await this.hubConnection.invoke('LeaveRoom', roomCode);
+    this.currentRoomSubject.next(null); // Clear local state
   }
 
   public async setGameType(roomCode: string, gameType: string): Promise<void> {

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GameRoomComponent } from './game-room.component';
 import { SignalRService } from '../../services/signalr.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
@@ -44,6 +44,7 @@ class GameReviewStubComponent {
 @Component({ selector: 'app-social-panel', template: '', standalone: true, imports: [] })
 class SocialPanelStubComponent { }
 
+// Import real components to override
 import { GameBoardComponent } from '../game-board/game-board.component';
 import { MobileControllerComponent } from '../mobile-controller/mobile-controller.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
@@ -74,12 +75,8 @@ describe('GameRoomComponent', () => {
 
     mockActivatedRoute = {
       snapshot: {
-        paramMap: {
-          get: (key: string) => (key === 'code' ? 'ABCD' : null)
-        },
-        queryParamMap: {
-          get: (key: string) => (key === 'name' ? 'TestUser' : null)
-        }
+        paramMap: convertToParamMap({ code: 'ABCD' }),
+        queryParamMap: convertToParamMap({ name: 'TestUser' })
       }
     };
 

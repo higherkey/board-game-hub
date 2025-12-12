@@ -9,56 +9,43 @@
         </button>
     </div>
 
+    <!-- Create New Room (Generic) -->
+    <div class="row mb-5 justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="card bg-surface shadow-sm border-primary">
+                <div class="card-body p-5">
+                    <h2 class="display-6 mb-3">Host a New Game Night</h2>
+                    <p class="lead text-secondary mb-4">Start a lobby and choose your game later. Perfect for getting
+                        everyone together first!</p>
+                    <button class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-sm" (click)="createRoom()">
+                        <i class="bi bi-plus-circle-fill me-2"></i> Create New Room
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Games Grid -->
     <div class="row mb-5">
-        <!-- Scatterbrain -->
-        <div class="col-md-3 mb-4">
-            <div class="card h-100 bg-surface border-primary shadow-sm hover-card">
-                <div class="card-body text-center d-flex flex-column">
-                    <span class="mb-3 display-4" aria-hidden="true">🧠</span>
-                    <h4 class="card-title">Scatterbrain</h4>
-                    <p class="card-text text-secondary small flex-grow-1">The classic party game. Come up with unique
-                        answers for categories for a chosen letter.</p>
-                    <button class="btn btn-primary w-100 mt-3" (click)="createRoom('Scatterbrain')">Create Room</button>
-                </div>
-            </div>
+        <div class="col-12 mb-4">
+            <h3 class="text-secondary border-bottom pb-2">All Games</h3>
         </div>
 
-        <!-- Boggle -->
-        <div class="col-md-3 mb-4">
-            <div class="card h-100 bg-surface border-primary shadow-sm hover-card">
+        <div class="col-md-3 mb-4" *ngFor="let game of games">
+            <div class="card h-100 bg-surface shadow-sm hover-card" [class.border-primary]="game.active"
+                [class.opacity-75]="!game.active" [class.border-secondary]="!game.active">
                 <div class="card-body text-center d-flex flex-column">
-                    <span class="mb-3 display-4" aria-hidden="true">🎲</span>
-                    <h4 class="card-title">Boggle</h4>
-                    <p class="card-text text-secondary small flex-grow-1">Find as many words as you can in the grid of
-                        letters before time runs out!</p>
-                    <button class="btn btn-primary w-100 mt-3" (click)="createRoom('Boggle')">Create Room</button>
-                </div>
-            </div>
-        </div>
+                    <span class="mb-3 display-4" aria-hidden="true">{{game.icon}}</span>
+                    <h4 class="card-title" [class.text-muted]="!game.active">{{game.name}}</h4>
+                    <p class="card-text text-secondary small flex-grow-1">{{game.description}}</p>
 
-        <!-- Spyfall (Placeholder) -->
-        <div class="col-md-3 mb-4">
-            <div class="card h-100 bg-surface border-secondary opacity-75">
-                <div class="card-body text-center d-flex flex-column">
-                    <span class="mb-3 display-4" aria-hidden="true">🕵️</span>
-                    <h4 class="card-title text-muted">Spyfall</h4>
-                    <p class="card-text text-secondary small flex-grow-1">Find the spy among you before they figure out
-                        the location.</p>
-                    <button class="btn btn-secondary w-100 mt-3" disabled>Coming Soon</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Codenames (Placeholder) -->
-        <div class="col-md-3 mb-4">
-            <div class="card h-100 bg-surface border-secondary opacity-75">
-                <div class="card-body text-center d-flex flex-column">
-                    <span class="mb-3 display-4" aria-hidden="true">🕵️‍♀️</span>
-                    <h4 class="card-title text-muted">Codenames</h4>
-                    <p class="card-text text-secondary small flex-grow-1">Give one-word clues to help your team guess
-                        their agents.</p>
-                    <button class="btn btn-secondary w-100 mt-3" disabled>Coming Soon</button>
+                    <button *ngIf="game.active" class="btn btn-outline-primary w-100 mt-3"
+                        (click)="createRoom(game.id)">
+                        Play Now
+                    </button>
+                    <button *ngIf="!game.active" class="btn btn-secondary w-100 mt-3" disabled>
+                        Coming Soon
+                    </button>
                 </div>
             </div>
         </div>

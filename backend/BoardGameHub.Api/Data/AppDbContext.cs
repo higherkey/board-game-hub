@@ -12,6 +12,8 @@ public class AppDbContext : IdentityDbContext<User>
 
     public DbSet<Friendship> Friendships { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
+    public DbSet<GameSession> GameSessions { get; set; }
+    public DbSet<GameSessionPlayer> GameSessionPlayers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -42,5 +44,18 @@ public class AppDbContext : IdentityDbContext<User>
             .WithMany()
             .HasForeignKey(m => m.ReceiverId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Game Session Configuration
+        builder.Entity<GameSessionPlayer>()
+            .HasOne(p => p.GameSession)
+            .WithMany(s => s.Players)
+            .HasForeignKey(p => p.GameSessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<GameSessionPlayer>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
