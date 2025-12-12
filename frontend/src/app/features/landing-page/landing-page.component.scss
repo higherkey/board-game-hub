@@ -2,20 +2,43 @@
     min-height: 75vh;
 }
 
-.slide-in-bottom {
-    animation: slideUp 0.5s ease-out;
+.hero-title {
+    font-size: 5rem;
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    color: var(--primary);
+    text-transform: uppercase;
+
+    /* Low Poly / 3D Text Effect */
+    text-shadow:
+        1px 1px 0px white,
+        2px 2px 0px rgba(0, 51, 102, 0.1),
+        3px 3px 0px rgba(0, 51, 102, 0.1),
+        4px 4px 0px rgba(0, 51, 102, 0.1);
+
+    span {
+        color: var(--primary);
+        position: relative;
+        display: inline-block;
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: 10px;
+            left: -10px;
+            width: 110%;
+            height: 20px;
+            background: var(--accent);
+            opacity: 0.3;
+            z-index: -1;
+            transform: skewX(-15deg);
+        }
+    }
 }
 
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.slide-in-bottom {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .play-card {

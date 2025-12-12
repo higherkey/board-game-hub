@@ -137,9 +137,19 @@ export class SignalRService {
     if (roomCode) await this.hubConnection.invoke('ResumeGame', roomCode);
   }
 
-  public async submitAnswers(answers: string[]): Promise<void> {
-    const roomCode = this.currentRoomSubject.value?.code;
-    if (roomCode) await this.hubConnection.invoke('SubmitAnswers', roomCode, answers);
+  public submitAnswers(answers: string[]) {
+    this.hubConnection.invoke('SubmitAnswers', this.currentRoomSubject.value!.code, answers)
+      .catch(err => console.error(err));
+  }
+
+  public submitClue(clue: string) {
+    this.hubConnection.invoke('SubmitClue', this.currentRoomSubject.value!.code, clue)
+      .catch(err => console.error(err));
+  }
+
+  public submitGuess(guess: string) {
+    this.hubConnection.invoke('SubmitGuess', this.currentRoomSubject.value!.code, guess)
+      .catch(err => console.error(err));
   }
 
   public async endRound(): Promise<void> {

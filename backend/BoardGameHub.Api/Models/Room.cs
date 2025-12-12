@@ -66,5 +66,6 @@ public enum GameType
 {
     None = 0,
     Scatterbrain = 1,
-    Boggle = 2
+    Boggle = 2,
+    JustOne = 3
 }

@@ -178,3 +178,8 @@ lerna-debug.log*
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# ==========================
+# Legacy
+# ==========================
+bg hub OLD/

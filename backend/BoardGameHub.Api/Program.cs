@@ -79,6 +79,7 @@ builder.Services.AddSingleton<BoggleService>();
 // Register Game Services
 builder.Services.AddSingleton<IGameService, ScatterbrainGameService>();
 builder.Services.AddSingleton<IGameService, BoggleGameService>();
+builder.Services.AddSingleton<IGameService, JustOneService>();
 
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<SocialService>();
@@ -108,6 +109,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
@@ -117,5 +122,6 @@ app.MapControllers();
 app.MapHub<GameHub>("/gamehub");
 app.MapHub<SocialHub>("/socialhub");
 app.MapHub<AdminHub>("/adminhub");
+app.MapFallbackToFile("index.html");
 
 app.Run();

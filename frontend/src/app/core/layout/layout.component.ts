@@ -69,10 +69,10 @@ import { AuthService } from '../../services/auth.service';
        align-items: center;
        justify-content: space-between;
        padding: 0 var(--space-lg);
-       height: 80px;
-       background: rgba(255,255,255,0.95); /* Glass-like */
-       backdrop-filter: blur(10px);
-       border-bottom: 3px solid var(--bg-surface-2);
+       height: var(--header-height);
+       background: var(--bg-overlay);
+       backdrop-filter: blur(12px);
+       border-bottom: 1px solid rgba(0, 51, 102, 0.1);
        position: sticky;
        top: 0;
        z-index: 1000;
@@ -91,10 +91,12 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .logo-text {
+       font-family: 'Outfit', sans-serif; /* If available, or bold serif */
        font-size: 1.5rem;
        font-weight: 800;
-       letter-spacing: -0.05em;
+       letter-spacing: -0.02em;
        color: var(--primary);
+       text-transform: uppercase;
     }
 
     .main-nav {
@@ -104,21 +106,33 @@ import { AuthService } from '../../services/auth.service';
        .nav-item {
           color: var(--text-secondary);
           text-decoration: none;
-          font-weight: 700;
+          font-weight: 600;
           text-transform: uppercase;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           letter-spacing: 0.05em;
           transition: all 0.2s;
+          position: relative;
           padding: 0.5rem 0;
-          border-bottom: 3px solid transparent;
+          
+          &:after {
+             content: '';
+             position: absolute;
+             bottom: 0;
+             left: 0;
+             width: 0;
+             height: 2px;
+             background: var(--accent);
+             transition: width 0.3s ease;
+          }
           
           &:hover {
              color: var(--primary);
+             &:after { width: 100%; }
           }
           
           &.active {
              color: var(--primary);
-             border-bottom-color: var(--accent);
+             &:after { width: 100%; }
           }
        }
     }
@@ -160,12 +174,37 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .main-footer {
-       background: var(--text-primary); /* Dark Navy Footer */
-       padding: var(--space-md) var(--space-lg); /* Reduced padding */
+       background: var(--primary); /* Navy Footer */
+       color: rgba(255, 255, 255, 0.8);
+       padding: var(--space-lg) var(--space-lg);
        text-align: center;
-       color: rgba(255,255,255,0.6);
-       font-size: 0.85rem;
+       font-size: 0.9rem;
        margin-top: auto;
+       position: relative;
+       
+       /* Geometric Top Edge */
+       &:before {
+          content: '';
+          position: absolute;
+          top: -10px;
+          left: 0;
+          right: 0;
+          height: 10px;
+          background-color: var(--primary);
+          clip-path: polygon(
+             0% 100%, 
+             5% 0%, 10% 100%, 
+             15% 0%, 20% 100%, 
+             25% 0%, 30% 100%, 
+             35% 0%, 40% 100%, 
+             45% 0%, 50% 100%, 
+             55% 0%, 60% 100%, 
+             65% 0%, 70% 100%, 
+             75% 0%, 80% 100%, 
+             85% 0%, 90% 100%, 
+             95% 0%, 100% 100%
+          );
+       }
     }
   `]
 })

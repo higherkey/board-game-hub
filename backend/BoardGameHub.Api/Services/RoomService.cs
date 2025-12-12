@@ -14,6 +14,8 @@ public class RoomService
         _gameServices = gameServices;
     }
 
+    private JustOneService? GetJustOneService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.JustOne) as JustOneService;
+
     public Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null)
     {
         var code = GenerateRoomCode();
@@ -165,6 +167,26 @@ public class RoomService
         // Store answers
         room.PlayerAnswers[connectionId] = answers;
         
+        return room;
+    }
+
+    public Room? SubmitClue(string code, string connectionId, string clue)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        var service = GetJustOneService();
+        service?.SubmitClue(room, connectionId, clue);
+        
+        return room;
+    }
+
+    public Room? SubmitGuess(string code, string connectionId, string guess)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        var service = GetJustOneService();
+        service?.SubmitGuess(room, guess);
+
         return room;
     }
 

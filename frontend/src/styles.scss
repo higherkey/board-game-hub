@@ -11,57 +11,83 @@
   --text-primary: #2d3748;
   /* Soft Black */
   --text-secondary: #718096;
-  /* Slate Gray */
+  /*
+   * THEME: Digital Parchment + Low Poly
+   * - Warm, tactile base
+   * - Geometric, sharp accents
+   */
 
+  /* Brand Colors */
   --primary: #003366;
-  /* Login Blue (Classic Navy) */
-  --primary-hover: #002244;
+  /* Navy Blue (Logo) */
+  --primary-light: #004d99;
+  --primary-dark: #002244;
 
   --accent: #38b2ac;
-  /* Teal (Primary Accent) */
-  --accent-hover: #319795;
+  /* Teal (Logo Base) */
+  --accent-light: #81e6d9;
+  --accent-dark: #2c7a7b;
 
-  --accent-secondary: #ff007f;
-  /* Pink (Secondary Accent) */
-
-  --highlight: #edfdfd;
-  /* Mint tint */
-  --highlight-border: #38b2ac;
-  /* Teal */
-
-  --success: #38b2ac;
-  /* Teal/Green */
+  --secondary: #718096;
+  /* Slate Grey */
+  --success: #38a169;
+  --warning: #d69e2e;
   --danger: #e53e3e;
-  /* Soft Red */
+
+  /* Backgrounds (Parchment) */
+  --bg-base: #fdf5e6;
+  /* Warm Parchment */
+  --bg-surface: #ffffff;
+  /* Clean White Card */
+  --bg-surface-2: #fffaf0;
+  /* Lighter Tan */
+  --bg-overlay: rgba(255, 255, 255, 0.85);
+  /* Glass effect */
+
+  /* Typography */
+  --text-primary: #002244;
+  /* Dark Navy (Softer than black) */
+  --text-secondary: #4a5568;
+  --text-light: #718096;
+  --text-on-primary: #ffffff;
+
+  /* UI Elements */
+  --border-color: #e2e8f0;
+  --radius-sm: 4px;
+  /* Sharper corners for "cut" look */
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+
+  /* Shadows (Sharp/Cut) */
+  --shadow-sm: 2px 2px 0px rgba(0, 34, 68, 0.05);
+  --shadow-md: 4px 4px 0px rgba(0, 34, 68, 0.05);
+  --shadow-lg: 8px 8px 0px rgba(0, 34, 68, 0.05);
+  --shadow-inner: inset 2px 2px 4px rgba(0, 0, 0, 0.05);
 
   /* Spacing */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
-  --space-lg: 2rem;
-  --space-xl: 4rem;
-
-  /* Borders & Shapes */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-
-  /* Shadows - softer, more diffuse for paper feel */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --header-height: 80px;
 }
 
+/* Base Reset & Typography */
+html,
 body {
+  height: 100%;
   margin: 0;
-  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: var(--bg-base);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-primary);
-  line-height: 1.6;
-
-  /* Geometric Dot Pattern */
-  background-image: radial-gradient(var(--bg-surface-2) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-color: var(--bg-base);
+  /* The SVG Low-Poly Background */
+  background-image: url('assets/background-poly.svg');
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  transition: color 0.3s, background-color 0.3s;
 }
 
 h1,

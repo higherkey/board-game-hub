@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Models;
-using Microsoft.AspNetCore.SignalR;
+
 using System.Security.Claims;
 
 namespace BoardGameHub.Api.Hubs;

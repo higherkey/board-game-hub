@@ -5,7 +5,8 @@
 }
 
 .btn-join-video {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4c63d2 0%, #764ba2 100%);
+    /* Darker blue */
     color: white;
     border: none;
     padding: 12px 24px;
@@ -42,8 +43,9 @@
 
 .video-container {
     position: relative;
-    width: 200px;
-    height: 150px;
+    width: 100%;
+    /* height: auto; -- let aspect ratio or container define height */
+    aspect-ratio: 4/3;
     background: #000;
     border-radius: 8px;
     overflow: hidden;
@@ -82,7 +84,8 @@ button {
 }
 
 button.muted {
-    background: #ff4444;
+    background: #cc0000;
+    /* Darker red for better contrast */
     color: white;
 }
 

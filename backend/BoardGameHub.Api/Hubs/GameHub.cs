@@ -115,6 +115,28 @@ public class GameHub : Hub
         var room = _roomService.SubmitAnswers(roomCode, Context.ConnectionId, answers);
         // Ensure we don't leak answers to others yet, potentially just ack?
         // taking no action for broadcast here, just ack state if needed.
+        await Task.CompletedTask;
+    }
+
+    public async Task SubmitClue(string roomCode, string clue)
+    {
+        var room = _roomService.SubmitClue(roomCode, Context.ConnectionId, clue);
+        if (room != null)
+        {
+            // Just notify that a clue was submitted (not the content)
+            // Or send updated room state (which separates hidden info)
+            // For now, send generic room update
+             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public async Task SubmitGuess(string roomCode, string guess)
+    {
+        var room = _roomService.SubmitGuess(roomCode, Context.ConnectionId, guess);
+        if (room != null)
+        {
+             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
     }
 
     public async Task EndRound(string roomCode)

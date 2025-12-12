@@ -1,1 +1,135 @@
-<p>game-room works!</p>
+<div class="container-fluid vh-100 d-flex flex-column overflow-hidden">
+    <!-- 1. HEADER (Top Bar) -->
+    <header class="navbar navbar-dark bg-dark px-3 mt-2 rounded shadow-sm flex-shrink-0">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-outline-light btn-sm" (click)="leaveRoom()">
+                <i class="bi bi-box-arrow-left"></i> Leave
+            </button>
+            <span class="badge bg-primary fs-6">Room: {{ roomCode }}</span>
+            <span class="text-white-50 small ms-2" *ngIf="connectionStatus$ | async as status">
+                <i class="bi bi-circle-fill" [class.text-success]="status === 'Connected'"
+                    [class.text-danger]="status === 'Disconnected'"></i>
+                {{ status }}
+            </span>
+        </div>
+        <div class="text-white" *ngIf="currentRoom$ | async as room">
+            <span *ngIf="room.gameType" class="badge bg-info text-dark me-2">{{ room.gameType }}</span>
+        </div>
+    </header>
+
+    <!-- 2. MAIN BODY (Sidebar + Content) -->
+    <div class="row flex-grow-1 mt-3 g-3 overflow-hidden">
+
+        <!-- SIDEBAR (Players & Chat) -->
+        <div class="col-md-3 col-lg-2 d-flex flex-column h-100">
+            <!-- Video Chat (Always Visible) -->
+            <div class="video-section mb-3 flex-shrink-0">
+                <app-video-chat></app-video-chat>
+            </div>
+
+            <!-- Player List -->
+            <div class="card bg-surface shadow-sm flex-grow-1 overflow-auto">
+                <div class="card-header bg-secondary text-white py-2">
+                    <small class="fw-bold">PLAYERS ({{ (players$ | async)?.length || 0 }})</small>
+                </div>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        *ngFor="let p of players$ | async">
+                        <div class="text-truncate" style="max-width: 100px;" title="{{p.name}}">
+                            {{ p.name }} <i *ngIf="p.isHost" class="bi bi-star-fill text-warning ms-1"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border">{{ p.score || 0 }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- MAIN STAGE -->
+        <div class="col-md-9 col-lg-10 h-100 d-flex flex-column overflow-auto">
+            <div class="main-stage card shadow-sm flex-grow-1 border-0 bg-light">
+                <div class="card-body p-4 h-100 d-flex flex-column">
+
+                    <!-- LOBBY STATE -->
+                    <div *ngIf="!(gameStarted$ | async)"
+                        class="h-100 d-flex flex-column align-items-center justify-content-center">
+                        <div class="text-center w-100" style="max-width: 600px;">
+                            <h2 class="display-5 mb-4">Waiting for Game</h2>
+
+                            <!-- Host Controls -->
+                            <div *ngIf="isHost$ | async; else playerWaiting">
+                                <app-host-settings [roomCode]="roomCode"
+                                    [currentGameType]="(currentRoom$ | async)?.gameType"
+                                    (gameStart)="startGame($event)">
+                                </app-host-settings>
+                            </div>
+
+                            <ng-template #playerWaiting>
+                                <div class="alert alert-info py-4">
+                                    <h4 class="alert-heading"><i class="bi bi-hourglass-split"></i> Host is setting up
+                                    </h4>
+                                    <p class="mb-0">Sit tight! The game will start soon.</p>
+                                </div>
+                            </ng-template>
+                        </div>
+                    </div>
+
+                    <!-- ACTIVE GAME STATE -->
+                    <div *ngIf="gameStarted$ | async" class="h-100 w-100">
+
+                        <!-- HOST VIEW -->
+                        <div *ngIf="isHost$ | async; else playerView" class="h-100">
+                            <div [ngSwitch]="(currentRoom$ | async)?.gameType" class="h-100">
+                                <!-- JUST ONE -->
+                                <app-just-one-board *ngSwitchCase="'JustOne'" [room]="currentRoom$ | async">
+                                </app-just-one-board>
+
+                                <!-- BOGGLE -->
+                                <app-boggle *ngSwitchCase="'Boggle'" [grid]="(currentRoom$ | async)?.gameState?.grid"
+                                    [isPlaying]="(currentRoom$ | async)?.state === 'Playing'"
+                                    (wordsUpdated)="onBoggleWordsUpdated($event)">
+                                </app-boggle>
+
+                                <!-- SCATTERBRAIN (Default) -->
+                                <div *ngSwitchDefault class="h-100">
+                                    <div [ngSwitch]="(currentRoom$ | async)?.state" class="h-100">
+                                        <app-game-review *ngSwitchCase="'Finished'" [room]="(currentRoom$ | async)!"
+                                            [isHost]="(isHost$ | async)!">
+                                        </app-game-review>
+
+                                        <app-game-board *ngSwitchDefault [roomCode]="roomCode"
+                                            [isHost]="(isHost$ | async)!">
+                                        </app-game-board>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PLAYER VIEW -->
+                        <ng-template #playerView>
+                            <div class="h-100 d-flex flex-column justify-content-center">
+                                <div [ngSwitch]="(currentRoom$ | async)?.gameType">
+                                    <!-- JUST ONE -->
+                                    <div *ngSwitchCase="'JustOne'" class="h-100">
+                                        <app-just-one-player [room]="currentRoom$ | async"
+                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)"
+                                            (clueSubmitted)="onClueSubmitted($event)"
+                                            (guessSubmitted)="onGuessSubmitted($event)">
+                                        </app-just-one-player>
+                                    </div>
+
+                                    <!-- DEFAULT MOBILE CONTROLLER -->
+                                    <app-mobile-controller *ngSwitchDefault
+                                        [roomCode]="roomCode"></app-mobile-controller>
+                                </div>
+                            </div>
+                        </ng-template>
+
+                    </div>
+
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>

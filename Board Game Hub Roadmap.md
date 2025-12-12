@@ -94,4 +94,23 @@ Security & production notes for WebRTC:
 - Add TURN servers (coturn) for users behind symmetric NAT or very restrictive networks.
 - Consider mesh topology limits (peer-to-peer with many participants is costly). For larger groups, consider SFU solutions (Jitsi, Janus) later.
 
+## Deployment / Hosting Options (Future Reference)
+As we move toward MVP, we have identified two primary paths for hosting:
+
+### 1. Cloud Hosting (Render / Azure)
+- **Render**: Good for simplicity.
+  - Frontend: Static Site.
+  - Backend: Docker container.
+  - DB: Managed Postgres.
+- **Azure**: Best for .NET integration.
+  - App Service (Windows/Linux) for Backend.
+  - Azure Static Web Apps for Frontend.
+  - Azure SQL or Postgres.
+
+### 2. Local Tunnel (Current Approach)
+- Using **Cloudflare Tunnel** to expose the local machine securely.
+- Ideal for demos and dev testing without deployment costs.
+- Requires local machine to be running.
+
+
 
