@@ -27,11 +27,11 @@ class HostSettingsStubComponent {
 @Component({ selector: 'app-video-chat', template: '', standalone: true, imports: [] })
 class VideoChatStubComponent { }
 
-@Component({ selector: 'app-boggle', template: '', standalone: true, imports: [] })
-class BoggleStubComponent {
+@Component({ selector: 'app-word-hunt', template: '', standalone: true, imports: [] })
+class BabbleStubComponent {
   @Input() grid: any;
   @Input() isPlaying: any;
-  @Output() wordSubmitted = new EventEmitter<any>();
+  @Output() wordsUpdated = new EventEmitter<any>();
 }
 
 @Component({ selector: 'app-game-review', template: '', standalone: true, imports: [] })
@@ -43,14 +43,29 @@ class GameReviewStubComponent {
 @Component({ selector: 'app-social-panel', template: '', standalone: true, imports: [] })
 class SocialPanelStubComponent { }
 
+@Component({ selector: 'app-one-and-only-board', template: '', standalone: true, imports: [] })
+class OneAndOnlyBoardStubComponent {
+  @Input() room: any;
+}
+
+@Component({ selector: 'app-one-and-only-player', template: '', standalone: true, imports: [] })
+class OneAndOnlyPlayerStubComponent {
+  @Input() room: any;
+  @Input() myConnectionId: any;
+  @Output() clueSubmitted = new EventEmitter<any>();
+  @Output() guessSubmitted = new EventEmitter<any>();
+}
+
 // Import real components to override
 import { GameBoardComponent } from '../game-board/game-board.component';
 import { MobileControllerComponent } from '../mobile-controller/mobile-controller.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
-import { BoggleComponent } from '../games/boggle.component';
+import { BabbleComponent } from '../games/babble/babble.component';
 import { GameReviewComponent } from './components/game-review/game-review.component';
 import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
+import { OneAndOnlyBoardComponent } from '../games/one-and-only/one-and-only-board.component';
+import { OneAndOnlyPlayerComponent } from '../games/one-and-only/one-and-only-player.component';
 
 describe('GameRoomComponent', () => {
   let component: GameRoomComponent;
@@ -94,9 +109,11 @@ describe('GameRoomComponent', () => {
             MobileControllerComponent,
             HostSettingsComponent,
             VideoChatComponent,
-            BoggleComponent,
+            BabbleComponent,
             GameReviewComponent,
-            SocialPanelComponent
+            SocialPanelComponent,
+            OneAndOnlyBoardComponent,
+            OneAndOnlyPlayerComponent
           ]
         },
         add: {
@@ -105,9 +122,11 @@ describe('GameRoomComponent', () => {
             MobileControllerStubComponent,
             HostSettingsStubComponent,
             VideoChatStubComponent,
-            BoggleStubComponent,
+            BabbleStubComponent,
             GameReviewStubComponent,
-            SocialPanelStubComponent
+            SocialPanelStubComponent,
+            OneAndOnlyBoardStubComponent,
+            OneAndOnlyPlayerStubComponent
           ]
         }
       })

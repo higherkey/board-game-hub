@@ -47,7 +47,7 @@ public class AdminController : Controller
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
         .metric-value { font-size: 2rem; font-weight: bold; }
         .badge-scatterbrain { background-color: #0d6efd; }
-        .badge-boggle { background-color: #ffc107; color: black; }
+        .badge-babble { background-color: #ffc107; color: black; }
         .actions-col { width: 250px; }
     </style>
 </head>
@@ -262,7 +262,7 @@ public class AdminController : Controller
                 return `
                 <tr>
                     <td><code>${room.code}</code></td>
-                    <td><span class='badge ${room.gameType === 'Scatterbrain' ? 'badge-scatterbrain' : 'badge-boggle'}'>${room.gameType}</span></td>
+                    <td><span class='badge ${room.gameType === 'Scatterbrain' ? 'badge-scatterbrain' : 'badge-babble'}'>${room.gameType}</span></td>
                     <td>${room.hostName}</td>
                     <td>${room.playerCount}</td>
                     <td>${room.globalState}</td>

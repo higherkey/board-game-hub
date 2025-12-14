@@ -6,12 +6,24 @@ import { GameBoardComponent } from '../game-board/game-board.component';
 import { MobileControllerComponent } from '../mobile-controller/mobile-controller.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
-import { BoggleComponent } from '../games/boggle.component';
+import { BabbleComponent } from '../games/babble/babble.component';
 import { GameReviewComponent } from './components/game-review/game-review.component';
 import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
 import { map, Observable } from 'rxjs';
-import { JustOneBoardComponent } from '../games/just-one/just-one-board.component';
-import { JustOnePlayerComponent } from '../games/just-one/just-one-player.component';
+import { OneAndOnlyBoardComponent } from '../games/one-and-only/one-and-only-board.component';
+import { OneAndOnlyPlayerComponent } from '../games/one-and-only/one-and-only-player.component';
+import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
+import { BreakingNewsComponent } from '../games/breaking-news/breaking-news.component';
+import { UniversalTranslatorComponent } from '../games/universal-translator/universal-translator.component';
+import { PoppycockBoardComponent } from '../games/poppycock/poppycock-board.component';
+import { PoppycockPlayerComponent } from '../games/poppycock/poppycock-player.component';
+import { SymbologyComponent } from '../games/symbology/symbology.component';
+import { WisecrackGameComponent } from '../games/wisecrack/wisecrack-game.component';
+import { PictophoneGameComponent } from '../games/pictophone/pictophone-game.component';
+import { DeepfakeGameComponent } from '../games/deepfake-game/deepfake-game.component';
+import { SushiTrainComponent } from '../games/sushi-train/sushi-train.component';
+import { SushiTrainPlayerComponent } from '../games/sushi-train/sushi-train-player.component';
+import { GreatMindsGameComponent } from '../games/great-minds/great-minds.component';
 
 @Component({
   selector: 'app-game-room',
@@ -22,11 +34,23 @@ import { JustOnePlayerComponent } from '../games/just-one/just-one-player.compon
     MobileControllerComponent,
     HostSettingsComponent,
     VideoChatComponent,
-    BoggleComponent,
+    BabbleComponent,
     GameReviewComponent,
     SocialPanelComponent,
-    JustOneBoardComponent,
-    JustOnePlayerComponent
+    OneAndOnlyBoardComponent,
+    OneAndOnlyPlayerComponent,
+    BreakingNewsComponent,
+    UndoToastComponent,
+    UniversalTranslatorComponent,
+    PoppycockBoardComponent,
+    PoppycockPlayerComponent,
+    SymbologyComponent,
+    WisecrackGameComponent,
+    PictophoneGameComponent,
+    PictophoneGameComponent,
+    DeepfakeGameComponent,
+    SushiTrainComponent,
+    SushiTrainPlayerComponent
   ],
   templateUrl: './game-room.component.html',
   styleUrls: ['./game-room.component.scss']
@@ -70,7 +94,10 @@ export class GameRoomComponent implements OnInit {
 
     // Auto-join if name param exists (e.g. from redirect)
     const name = this.route.snapshot.queryParamMap.get('name');
-    if (name) {
+    const currentRoom = this.signalRService.currentRoomSubject.value;
+
+    // Only join if we aren't already in this room
+    if (name && (!currentRoom || currentRoom.code !== this.roomCode)) {
       this.signalRService.joinRoom(this.roomCode, name);
     }
   }
@@ -79,7 +106,7 @@ export class GameRoomComponent implements OnInit {
     this.signalRService.startGame(settings);
   }
 
-  onBoggleWordsUpdated(words: string[]) {
+  onBabbleWordsUpdated(words: string[]) {
     this.signalRService.submitAnswers(words);
   }
 
@@ -91,11 +118,29 @@ export class GameRoomComponent implements OnInit {
     this.signalRService.submitGuess(guess);
   }
 
+  onPoppycockDefSubmitted(def: string) {
+    this.signalRService.submitPoppycockDefinition(def);
+  }
+
+  onPoppycockVoteSubmitted(vote: string) {
+    this.signalRService.submitPoppycockVote(vote);
+  }
+
   getMyConnectionId(players: any[] | null): string {
+    // If we have direct access to connectionId via service, use it, otherwise fallback
+    const directId = this.signalRService.getConnectionId();
+    if (directId) return directId;
+
     const list = players || [];
     const myName = this.route.snapshot.queryParamMap.get('name');
     const me = list.find(p => p.name === myName);
     return me?.connectionId || '';
+  }
+
+  requestUndo() {
+    if (confirm('Are you sure you want to request an undo?')) {
+      this.signalRService.requestUndo();
+    }
   }
 
   async leaveRoom() {

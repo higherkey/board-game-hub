@@ -1,7 +1,19 @@
 <div class="admin-dashboard">
     <div class="header">
         <h1>Server Administration</h1>
-        <span class="badge status-live" *ngIf="!loading">Live Updates</span>
+        <div class="d-flex align-items-center gap-3">
+            <div class="view-toggle btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm" [class.active]="viewMode === 'list'"
+                    (click)="setViewMode('list')">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" [class.active]="viewMode === 'grid'"
+                    (click)="setViewMode('grid')">
+                    <i class="bi bi-grid-fill"></i>
+                </button>
+            </div>
+            <span class="badge status-live" *ngIf="!loading">Live Updates</span>
+        </div>
     </div>
 
     <div *ngIf="loading" class="loading-state">
@@ -39,7 +51,9 @@
         <!-- Room List -->
         <div class="rooms-section">
             <h2>Active Sessions</h2>
-            <div class="table-responsive">
+
+            <!-- LIST VIEW -->
+            <div class="table-responsive" *ngIf="viewMode === 'list'">
                 <table class="table">
                     <thead>
                         <tr>
@@ -61,7 +75,7 @@
                                 <td>
                                     <span class="badge game-type"
                                         [class.scatterbrain]="room.gameType === 'Scatterbrain'"
-                                        [class.boggle]="room.gameType === 'Boggle'">
+                                        [class.babble]="room.gameType === 'Babble'">
                                         {{ room.gameType }}
                                     </span>
                                 </td>
@@ -82,7 +96,7 @@
                             <tr *ngIf="isExpanded(room.code)" class="details-row">
                                 <td colspan="6">
                                     <div class="p-3">
-                                        <h6>Players ({{ room.players?.length || 0 }})</h6>
+                                        <h6>Players ({{ room.players.length || 0 }})</h6>
                                         <table class="table table-sm table-borderless">
                                             <thead>
                                                 <tr>
@@ -120,6 +134,63 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- GRID VIEW -->
+            <div class="rooms-grid" *ngIf="viewMode === 'grid'">
+                <div class="room-card" *ngFor="let room of stats.rooms; trackBy: trackByRoom"
+                    [class.expanded]="isExpanded(room.code)">
+                    <div class="room-header d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge bg-light text-dark border border-secondary mb-1">
+                                <code>{{ room.code }}</code>
+                            </span>
+                            <h5 class="mb-0">{{ room.gameType }}</h5>
+                        </div>
+                        <span class="badge rounded-pill" [class.bg-success]="room.globalState === 'Playing'"
+                            [class.bg-secondary]="room.globalState !== 'Playing'">
+                            {{ room.globalState }}
+                        </span>
+                    </div>
+
+                    <div class="room-info small text-secondary mb-3">
+                        <div><i class="bi bi-person-fill"></i> Host: {{ room.hostName }}</div>
+                        <div><i class="bi bi-people"></i> Players: {{ room.playerCount }}</div>
+                        <div><i class="bi" [class.bi-globe]="room.isPublic" [class.bi-lock-fill]="!room.isPublic"></i>
+                            {{ room.isPublic ? 'Public' : 'Private' }}</div>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-secondary w-100" (click)="toggleRoom(room.code)">
+                        {{ isExpanded(room.code) ? 'Hide Details' : 'Show Details' }}
+                    </button>
+
+                    <div class="room-details mt-3 pt-3 border-top" *ngIf="isExpanded(room.code)">
+                        <h6 class="small fw-bold mb-2">Players</h6>
+                        <div class="player-list">
+                            <div class="player-item d-flex justify-content-between align-items-center mb-2"
+                                *ngFor="let player of room.players">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i *ngIf="player.isHost" class="bi bi-star-fill text-warning" title="Host"></i>
+                                    <span class="small fw-bold">{{ player.name }}</span>
+                                    <span class="badge bg-light text-dark border">{{ player.score }}</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-danger btn-xs" title="Kick"
+                                        (click)="kickPlayer(room.code, player.connectionId || '')">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                    <button *ngIf="!player.isHost" class="btn btn-outline-primary btn-xs"
+                                        title="Make Host" (click)="promoteToHost(room.code, player.connectionId || '')">
+                                        <i class="bi bi-arrow-up-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="stats.rooms.length === 0" class="col-12 text-center text-muted p-5 bg-white border rounded">
+                    No active rooms found
+                </div>
             </div>
         </div>
     </div>

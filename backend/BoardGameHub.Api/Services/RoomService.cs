@@ -1,6 +1,8 @@
 using BoardGameHub.Api.Models;
 using System.Collections.Concurrent;
 
+using System.Text.Json;
+
 namespace BoardGameHub.Api.Services;
 
 public class RoomService
@@ -14,7 +16,12 @@ public class RoomService
         _gameServices = gameServices;
     }
 
-    private JustOneService? GetJustOneService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.JustOne) as JustOneService;
+    public T? GetGameService<T>(GameType type) where T : class
+    {
+        return _gameServices.FirstOrDefault(s => s.GameType == type) as T;
+    }
+
+    private OneAndOnlyService? GetOneAndOnlyService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.OneAndOnly) as OneAndOnlyService;
 
     public Room? PromoteToHost(string code, string connectionId)
     {
@@ -177,6 +184,8 @@ public class RoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         
+        SaveState(room); // Snapshot before change
+
         // Store answers
         room.PlayerAnswers[connectionId] = answers;
         
@@ -186,8 +195,10 @@ public class RoomService
     public Room? SubmitClue(string code, string connectionId, string clue)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        SaveState(room);
         
-        var service = GetJustOneService();
+        var service = GetOneAndOnlyService();
         service?.SubmitClue(room, connectionId, clue);
         
         return room;
@@ -197,13 +208,134 @@ public class RoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
 
-        var service = GetJustOneService();
-        service?.SubmitGuess(room, guess);
+        SaveState(room);
+
+        if (room.GameType == GameType.OneAndOnly)
+        {
+            var service = GetOneAndOnlyService();
+            service?.SubmitGuess(room, guess);
+        }
+        else if (room.GameType == GameType.Symbology)
+        {
+            var service = GetGameService<SymbologyGameService>(GameType.Symbology);
+            service?.SubmitGuess(room, connectionId, guess);
+        }
+
+        return room;
+    }
+
+    private PoppycockGameService? GetPoppycockService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.Poppycock) as PoppycockGameService;
+
+    public Room? SubmitPoppycockDefinition(string code, string connectionId, string definition)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        SaveState(room);
+        GetPoppycockService()?.SubmitDefinition(room, connectionId, definition);
+        return room;
+    }
+
+    public Room? SubmitPoppycockVote(string code, string connectionId, string votedId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        SaveState(room);
+        GetPoppycockService()?.SubmitVote(room, connectionId, votedId);
+        return room;
+    }
+
+    private BreakingNewsGameService? GetBreakingNewsService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.BreakingNews) as BreakingNewsGameService;
+
+    public Room? SubmitBreakingNewsSlotValue(string code, string connectionId, int slotId, string value)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        var service = GetBreakingNewsService();
+        if (service != null)
+        {
+            bool success = service.UpdateSlot(room, slotId, value, connectionId);
+            if (!success) return null; // Or return room anyway but indicate failure? For now just return null on failure or room on success
+        }
 
         return room;
     }
 
     // Call this entering the "Review" phase
+
+    private UniversalTranslatorService? GetUniversalTranslatorService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.UniversalTranslator) as UniversalTranslatorService;
+
+    public Room? SubmitUniversalTranslatorToken(string code, string connectionId, string token)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        SaveState(room);
+        
+        var service = GetUniversalTranslatorService();
+        if (service != null && service.SubmitToken(room, connectionId, token))
+        {
+             return room;
+        }
+        return null;
+    }
+
+    public Room? SubmitUniversalTranslatorVote(string code, string connectionId, string targetId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        SaveState(room);
+
+        var service = GetUniversalTranslatorService();
+        if (service != null && service.SubmitVote(room, connectionId, targetId))
+        {
+             return room;
+        }
+        return null;
+    }
+
+    public Room? ForceUniversalTranslatorPhase(string code, UniversalTranslatorPhase phase)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        var service = GetUniversalTranslatorService();
+        service?.ForcePhase(room, phase);
+        
+        return room;
+    }
+
+    private WisecrackGameService? GetWisecrackService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.Wisecrack) as WisecrackGameService;
+
+    public Room? SubmitWisecrackAnswer(string code, string connectionId, string promptId, string answerText)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        SaveState(room);
+        
+        var service = GetWisecrackService();
+        service?.SubmitAnswer(room, connectionId, promptId, answerText);
+        
+        return room;
+    }
+
+    public Room? SubmitWisecrackVote(string code, string connectionId, int choice)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        SaveState(room);
+
+        var service = GetWisecrackService();
+        service?.SubmitVote(room, connectionId, choice);
+        
+        return room;
+    }
+
+    public Room? NextWisecrackBattle(string code)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        var service = GetWisecrackService();
+        service?.NextBattle(room);
+        
+        return room;
+    }
+
     public Room? CalculateRoundScores(string code)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
@@ -236,8 +368,14 @@ public class RoomService
     public Room? UpdateSettings(string code, GameSettings settings)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        // Only allow updating settings in Lobby? Or anytime?
         room.Settings = settings;
+        return room;
+    }
+
+    public Room? UpdateUndoSettings(string code, UndoSettings settings)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        room.UndoSettings = settings;
         return room;
     }
 
@@ -295,5 +433,239 @@ public class RoomService
         var random = new Random();
         return new string(Enumerable.Repeat(chars, 4)
             .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    // --- UNDO SYSTEM ---
+
+    private void SaveState(Room room)
+    {
+        // Snapshot the State, RoundNumber, and GameData
+        // We serialize the specific properties relevant to gameplay restore
+        // For simplicity, we can serialize the whole Room but exclude transient things like Connections if possible.
+        // But Connections (Players) might change too? 
+        // Let's stick to GameData + State + RoundNumber + Scores? 
+        // Actually, easiest to serialize the whole object, but keep `Players` connectivity out of it?
+        // Players list needs to stay current (connectivity), but their Scores/Attributes are part of state.
+        // Let's rely on JSON serialization of the Room, but when restoring, we MUST preserve the *current* ConnectionIds 
+        // if we want to avoid breaking active sockets. 
+        // However, mapping old state to current connections is hard if players left/joined.
+        // BETTER APPROACH for MVP: Serialize the whole Room. When restoring, logic handles connection mapping if needed.
+        // But wait, if I restore an old Room object, the `Players` list inside it has old Connection IDs.
+        // This is fine. The client will just see the old state. 
+        // The Service `_rooms` Dictionary holds the reference. We will update the reference's properties.
+        try 
+        {
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            var snapshot = JsonSerializer.Serialize(room, options);
+            room.StateHistory.Push(snapshot);
+            
+            // Limit history
+            if (room.StateHistory.Count > 10)
+            {
+                var list = room.StateHistory.ToList();
+                list.RemoveAt(list.Count - 1); // Remove oldest
+                list.Reverse(); // Stack to List is reversed
+                room.StateHistory = new Stack<string>(list);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving state: {ex.Message}");
+        }
+    }
+
+    public Room? RequestUndo(string code, string connectionId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        // If no history, can't undo
+        if (room.StateHistory.Count == 0) return null;
+
+        var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (player == null) return null;
+
+        // 1. Host Only Mode (or Host is requesting)
+        if (room.UndoSettings.HostOnly || player.IsHost)
+        {
+             // Host can bypass vote? Or if HostOnly is TRUE.
+             // If HostOnly=True and Player isn't Host -> Deny.
+             if (room.UndoSettings.HostOnly && !player.IsHost) return null;
+
+             return PerformUndo(code); 
+        }
+
+        // 2. Default Voting Mode (and player is not host, or Voting is ON)
+        if (room.UndoSettings.AllowVoting)
+        {
+            // Start a Vote
+            room.CurrentVote = new UndoVote
+            {
+                InitiatorId = connectionId,
+                InitiatorName = player.Name,
+                CreatedAt = DateTime.UtcNow
+            };
+            // Implicit "Yes" from initiator
+            room.CurrentVote.Votes[connectionId] = true;
+            
+            return room; // Caller will broadcast "UndoVoteStarted"
+        }
+
+        return null;
+    }
+
+    public Room? SubmitUndoVote(string code, string connectionId, bool vote)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (room.CurrentVote == null) return null;
+
+        room.CurrentVote.Votes[connectionId] = vote;
+        
+        // Check for Majority
+        var totalPlayers = room.Players.Count;
+        var castVotes = room.CurrentVote.Votes.Count;
+        var yesVotes = room.CurrentVote.Votes.Values.Count(v => v);
+
+        // If simple majority reached ( > 50% of TOTAL players)
+        if (yesVotes > totalPlayers / 2.0)
+        {
+            room.CurrentVote = null; // Vote passed
+            return PerformUndo(code);
+        }
+        
+        // If impossible to win (No votes >= 50%)
+        // or everyone voted
+        if (castVotes == totalPlayers)
+        {
+            // Vote Finished, failed
+            room.CurrentVote = null;
+            // Return room to update UI (remove vote modal)
+        }
+
+        return room;
+    }
+
+    private Room? PerformUndo(string code)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var currentRoom)) return null;
+        if (currentRoom.StateHistory.Count == 0) return null;
+
+        var snapshot = currentRoom.StateHistory.Pop();
+        try 
+        {
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            var oldState = JsonSerializer.Deserialize<Room>(snapshot, options);
+            
+            if (oldState == null) return null;
+
+            // RESTORE CRITICAL STATE
+            // We want to keep the *current* network connections if possible, 
+            // OR we assume the snapshot Players are the same people. 
+            // The safest bet for "Game State" undo is to restore GameData, State, RoundNumber, Scores.
+            // But KEEP the current Players list (so nobody gets kicked out connectivity-wise).
+            // BUT, if the undo involves "Undo Player Joining", then we SHOULD restore Players list.
+            // Given the complexity, let's restore EVERYTHING but try to merge ConnectionIds?
+            // Actually, for a MVP local/friends game, restoring the whole object is fine. 
+            // If a player joined AFTER the snapshot, and we undo, they effectively "un-join" in logic,
+            // but their socket is still connected. They might get an error next time they try to act.
+            // That's acceptable for "Undo". 
+            
+            var existingPlayers = currentRoom.Players; // Keep ref to current sockets
+
+            // Overwrite properties
+            currentRoom.GameType = oldState.GameType;
+            currentRoom.State = oldState.State;
+            currentRoom.RoundNumber = oldState.RoundNumber;
+            currentRoom.GameData = oldState.GameData; // This is the big one (JsonElement or Object)
+            currentRoom.RoundScores = oldState.RoundScores;
+            currentRoom.PlayerAnswers = oldState.PlayerAnswers;
+            
+            // Re-assign generic GameData requires careful deserialization if it became JsonElement
+            // The JsonSerializer might have turned `object` GameData into `JsonElement`.
+            // We need to re-deserialize it to the specific type (JustOneState, BoggleState).
+            if (currentRoom.GameData is JsonElement jsonElement)
+            {
+                 // We need to know which type to convert back to
+                 if (currentRoom.GameType == GameType.OneAndOnly)
+                 {
+                     currentRoom.GameData = jsonElement.Deserialize<OneAndOnlyState>(options);
+                 }
+                 else if (currentRoom.GameType == GameType.BreakingNews)
+                 {
+                     currentRoom.GameData = jsonElement.Deserialize<BreakingNewsState>(options);
+                 }
+                 else if (currentRoom.GameType == GameType.Deepfake)
+                 {
+                     currentRoom.GameData = jsonElement.Deserialize<DeepfakeState>(options);
+                 }
+                 else if (currentRoom.GameType == GameType.Poppycock)
+                 {
+                     currentRoom.GameData = jsonElement.Deserialize<PoppycockState>(options);
+                 }
+                 else if (currentRoom.GameType == GameType.UniversalTranslator)
+                 {
+                      currentRoom.GameData = jsonElement.Deserialize<UniversalTranslatorState>(options);
+                 }
+                 else if (currentRoom.GameType == GameType.Symbology)
+                 {
+                      currentRoom.GameData = jsonElement.Deserialize<SymbologyState>(options);
+                 }
+                 else if (currentRoom.GameType == GameType.GreatMinds)
+                 {
+                      currentRoom.GameData = jsonElement.Deserialize<BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameState>(options);
+                 }
+            }
+
+            return currentRoom;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Undo Failed: {ex.Message}");
+            return null;
+        }
+    }
+    public Room? SubmitSushiTrainSelection(string code, string connectionId, string cardId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        SaveState(room);
+        
+        var service = GetGameService<SushiTrainGameService>(GameType.SushiTrain);
+        if (service != null && service.SubmitSelection(room, connectionId, cardId))
+        {
+             return room;
+        }
+        return null;
+    }
+
+
+    public Room? SubmitGreatMindsCard(string code, string connectionId, int cardValue)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        // No SaveState here? Ideally yes, but "Great Minds" is fast-paced.
+        // Saving state on every card play might differ. 
+        // But for consistency and undo support, we should save.
+        SaveState(room);
+
+        var service = GetGameService<BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameService>(GameType.GreatMinds);
+        if (service != null)
+        {
+            service.SubmitCard(room, connectionId, cardValue);
+        }
+        return room;
+    }
+
+    public Room? SubmitGreatMindsSync(string code, string connectionId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        SaveState(room);
+        
+        var service = GetGameService<BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameService>(GameType.GreatMinds);
+        if (service != null)
+        {
+            service.SubmitSync(room, connectionId);
+        }
+        return room;
     }
 }

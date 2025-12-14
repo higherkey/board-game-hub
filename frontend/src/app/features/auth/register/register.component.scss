@@ -4,6 +4,12 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
+
+    @media (max-width: 480px) {
+        padding: 1rem;
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
 }
 
 .auth-card {
@@ -21,6 +27,11 @@
     color: var(--success);
     /* Green/Teal for Register */
     padding: 2.5rem 2rem 1rem;
+
+    @media (max-width: 480px) {
+        padding: 1.5rem 1.5rem 0.5rem;
+    }
+
     text-align: center;
     border-bottom: 2px solid var(--bg-surface-2);
 }
@@ -43,6 +54,10 @@
 
 .auth-form {
     padding: 2rem;
+
+    @media (max-width: 480px) {
+        padding: 1.5rem;
+    }
 }
 
 .form-group {

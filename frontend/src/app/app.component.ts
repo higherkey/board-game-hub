@@ -7,9 +7,11 @@ import { LayoutComponent } from './core/layout/layout.component';
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, LayoutComponent],
-  template: `<app-layout>
-              <router-outlet></router-outlet>
-             </app-layout>`
+  template: `
+    <app-layout>
+      <router-outlet></router-outlet>
+    </app-layout>
+  `
 })
 export class AppComponent {
   title = 'frontend';

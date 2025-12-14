@@ -19,6 +19,8 @@ public class GamesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<GameDefinition>>> GetGames()
     {
-        return await _context.Games.ToListAsync();
+        var games = await _context.Games.ToListAsync();
+
+        return games;
     }
 }

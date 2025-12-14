@@ -4,7 +4,7 @@ public class GameSession
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string RoomCode { get; set; } = string.Empty;
-    public string GameType { get; set; } = string.Empty; // e.g., "Scatterbrain", "Boggle"
+    public string GameType { get; set; } = string.Empty; // e.g., "Scatterbrain"
     public DateTime StartTime { get; set; } = DateTime.UtcNow;
     public DateTime? EndTime { get; set; }
     

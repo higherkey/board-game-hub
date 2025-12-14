@@ -21,7 +21,7 @@ import { RouterModule } from '@angular/router';
             </div>
             <div class="col-md-6 order-md-1">
                 <h3 class="text-primary">1. Host on the Big Screen</h3>
-                <p class="text-secondary text-lg">
+                <p class="text-secondary fs-5">
                     Open BoardGameHub on your laptop, TV, or tablet. create a room to get a unique 4-letter code.
                     This screen will show the main game board, timer, and results.
                 </p>
@@ -36,7 +36,7 @@ import { RouterModule } from '@angular/router';
             </div>
             <div class="col-md-6">
                 <h3 class="text-primary">2. Join on your Phone</h3>
-                <p class="text-secondary text-lg">
+                <p class="text-secondary fs-5">
                     Players scan a QR code or go to the site and enter the room code. 
                     Their phone becomes their private controller for answering questions, drawing, or voting.
                 </p>

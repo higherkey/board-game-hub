@@ -27,7 +27,9 @@ export interface Room {
   gameType: string;
 
   // Generic Game State
-  gameState: any; // ScatterbrainState or BoggleState
+  // Generic Game State
+  gameState: any; // Deprecated: Use gameData
+  gameData: any; // Matches backend property
 
   roundNumber: number;
 
@@ -39,7 +41,12 @@ export interface Room {
   timeRemainingWhenPaused?: string;
 
   // Scores
+  // Scores
   roundScores: { [key: string]: number };
+
+  // Undo System
+  currentVote: any; // { initiatorId, initiatorName, votes: {} }
+  undoSettings: { allowVoting: boolean, hostOnly: boolean };
 }
 
 @Injectable({
@@ -51,6 +58,11 @@ export class SignalRService {
   public connectionStatus$ = new BehaviorSubject<string>('Disconnected');
   public currentRoomSubject = new BehaviorSubject<Room | null>(null);
   public currentRoom$ = this.currentRoomSubject.asObservable();
+
+  // Generic Game Events (for custom game logic events)
+  public gameEvents$ = new BehaviorSubject<{ type: string, payload: any } | null>(null);
+  // Generic Game State Push (for optimized updates)
+  public gameState$ = new BehaviorSubject<any>(null);
 
   // WebRTC Signaling Subjects
   public offerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
@@ -102,6 +114,46 @@ export class SignalRService {
         current.settings = settings;
         this.currentRoomSubject.next({ ...current });
       }
+    });
+
+    this.hubConnection.on('UndoVoteStarted', (vote: any) => {
+      const current = this.currentRoomSubject.value;
+      if (current) {
+        current.currentVote = vote;
+        this.currentRoomSubject.next({ ...current });
+      }
+    });
+
+    this.hubConnection.on('UndoVoteUpdate', (vote: any) => {
+      const current = this.currentRoomSubject.value;
+      if (current) {
+        current.currentVote = vote;
+        this.currentRoomSubject.next({ ...current });
+      }
+    });
+
+    this.hubConnection.on('UndoVoteFinished', () => {
+      // Just a signal, room update comes separately usually, 
+      // but we can clear vote here locally to be safe.
+      const current = this.currentRoomSubject.value;
+      if (current) {
+        current.currentVote = null;
+        this.currentRoomSubject.next({ ...current });
+      }
+    });
+
+    this.hubConnection.on('GameRestored', (room: Room) => {
+      // Full state restore
+      this.currentRoomSubject.next(room);
+      alert('Game state has been reverted!');
+    });
+
+    this.hubConnection.on('GameEvent', (type: string, payload: any) => {
+      this.gameEvents$.next({ type, payload });
+    });
+
+    this.hubConnection.on('GameState', (state: any) => {
+      this.gameState$.next(state);
     });
 
     // WebRTC Listeners
@@ -172,6 +224,21 @@ export class SignalRService {
     if (roomCode) await this.hubConnection.invoke('UpdateSettings', roomCode, settings);
   }
 
+  public async updateUndoSettings(settings: { allowVoting: boolean, hostOnly: boolean }): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) await this.hubConnection.invoke('UpdateUndoSettings', roomCode, settings);
+  }
+
+  public async requestUndo(): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) await this.hubConnection.invoke('RequestUndo', roomCode);
+  }
+
+  public async submitUndoVote(vote: boolean): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) await this.hubConnection.invoke('SubmitUndoVote', roomCode, vote);
+  }
+
   public async startConnection(): Promise<void> {
     if (this.hubConnection.state === HubConnectionState.Disconnected) {
       this.connectionStatus$.next('Connecting');
@@ -196,10 +263,13 @@ export class SignalRService {
       settings: { timerDurationSeconds: 60, letterMode: 0 },
       gameType: gameType,
       gameState: null,
+      gameData: null,
       roundNumber: 0,
       isPaused: false,
       roundScores: {},
-      nextGameVotes: {}
+      nextGameVotes: {},
+      currentVote: null,
+      undoSettings: { allowVoting: true, hostOnly: false }
     });
     return roomCode;
   }
@@ -240,4 +310,98 @@ export class SignalRService {
   public async sendIceCandidate(targetConnectionId: string, candidate: string) {
     await this.hubConnection.invoke('SendIceCandidate', targetConnectionId, candidate);
   }
+  public submitBreakingNewsSlot(slotId: number, value: string) {
+    this.hubConnection.invoke('SubmitBreakingNewsSlot', this.currentRoomSubject.value!.code, slotId, value)
+      .catch(err => console.error(err));
+  }
+
+  // --- Deepfake Methods ---
+  public submitDeepfakeStroke(pathData: string, color: string) {
+    this.hubConnection.invoke('DeepfakeStroke', this.currentRoomSubject.value!.code, pathData, color)
+      .catch(err => console.error(err));
+  }
+
+  public submitDeepfakeVote(accusedId: string) {
+    this.hubConnection.invoke('DeepfakeVote', this.currentRoomSubject.value!.code, accusedId)
+      .catch(err => console.error(err));
+  }
+
+  public submitDeepfakeAiGuess(guess: string) {
+    this.hubConnection.invoke('DeepfakeAiGuess', this.currentRoomSubject.value!.code, guess)
+      .catch(err => console.error(err));
+  }
+
+  public getConnectionId(): string | null {
+    return this.hubConnection.connectionId;
+  }
+
+  // --- Universal Translator Methods ---
+  public submitUniversalTranslatorToken(token: string) {
+    this.hubConnection.invoke('UniversalTranslatorToken', this.currentRoomSubject.value!.code, token)
+      .catch(err => console.error(err));
+  }
+
+  public submitUniversalTranslatorVote(targetId: string) {
+    this.hubConnection.invoke('UniversalTranslatorVote', this.currentRoomSubject.value!.code, targetId)
+      .catch(err => console.error(err));
+  }
+
+  // --- Poppycock Methods ---
+  public submitPoppycockDefinition(definition: string) {
+    this.hubConnection.invoke('SubmitPoppycockDefinition', this.currentRoomSubject.value!.code, definition)
+      .catch(err => console.error(err));
+  }
+
+  public submitPoppycockVote(votedId: string) {
+    this.hubConnection.invoke('SubmitPoppycockVote', this.currentRoomSubject.value!.code, votedId)
+      .catch(err => console.error(err));
+  }
+
+  // --- Pictophone Methods ---
+  public submitPictophonePage(content: string) {
+    this.hubConnection.invoke('SubmitPictophonePage', this.currentRoomSubject.value!.code, content)
+      .catch(err => console.error(err));
+  }
+  // --- Symbology Methods ---
+  public symbologyPlaceMarker(icon: string, type: string, color: string) {
+    this.hubConnection.invoke('SymbologyPlaceMarker', this.currentRoomSubject.value!.code, icon, type, color)
+      .catch(err => console.error(err));
+  }
+
+  public symbologyRemoveMarker(markerId: string) {
+    this.hubConnection.invoke('SymbologyRemoveMarker', this.currentRoomSubject.value!.code, markerId)
+      .catch(err => console.error(err));
+  }
+  // --- Wisecrack Methods ---
+  public submitWisecrackAnswer(promptId: string, answer: string) {
+    this.hubConnection.invoke('SubmitWisecrackAnswer', this.currentRoomSubject.value!.code, promptId, answer)
+      .catch(err => console.error(err));
+  }
+
+  public submitWisecrackVote(choice: number) {
+    this.hubConnection.invoke('SubmitWisecrackVote', this.currentRoomSubject.value!.code, choice)
+      .catch(err => console.error(err));
+  }
+
+  public nextWisecrackBattle() {
+    this.hubConnection.invoke('NextWisecrackBattle', this.currentRoomSubject.value!.code)
+      .catch(err => console.error(err));
+  }
+  // --- Sushi Train ---
+  public submitSushiTrainSelection(cardId: string) {
+    this.hubConnection.invoke('SubmitSushiTrainSelection', this.currentRoomSubject.value!.code, cardId)
+      .catch(err => console.error(err));
+  }
+
+  // --- Great Minds Methods ---
+  public submitGreatMindsCard(cardValue: number) {
+    this.hubConnection.invoke('SubmitGreatMindsCard', this.currentRoomSubject.value!.code, cardValue)
+      .catch(err => console.error(err));
+  }
+
+  public submitGreatMindsSync() {
+    this.hubConnection.invoke('SubmitGreatMindsSync', this.currentRoomSubject.value!.code)
+      .catch(err => console.error(err));
+  }
 }
+

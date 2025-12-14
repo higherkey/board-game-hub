@@ -1,0 +1,43 @@
+<div class="symbology-game h-full flex flex-col">
+    <!-- Header / Status Bar -->
+    <div class="game-header p-4 bg-gray-800 text-white flex justify-between items-center shadow-md z-10">
+        <div class="flex flex-col">
+            <h2 class="text-xl font-bold text-indigo-400 font-display tracking-wider">SYMBOLOGY</h2>
+            <span class="text-xs text-gray-400 uppercase tracking-widest">
+                {{ isActivePlayer ? 'GIVING CLUES' : 'GUESSING' }}
+            </span>
+        </div>
+
+        <!-- Active Player View -->
+        <div *ngIf="isActivePlayer" class="active-player-info flex items-center gap-4">
+            <div class="secret-word-container flex flex-col items-end">
+                <span class="text-xs text-gray-400 uppercase">Secret Word</span>
+                <span
+                    class="text-2xl font-black text-white px-4 py-1 bg-indigo-600 rounded-lg shadow-lg border border-indigo-400/30 glow-text">
+                    {{ currentWord }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Guesser View -->
+        <div *ngIf="!isActivePlayer" class="guesser-info flex items-center gap-2 flex-1 max-w-md ml-8">
+            <div class="relative w-full">
+                <input type="text" [(ngModel)]="guess" (keyup.enter)="submitGuess()"
+                    placeholder="Type your guess here..."
+                    class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium">
+                <button (click)="submitGuess()"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-indigo-400 hover:text-white transition-colors"
+                    [disabled]="!guess">
+                    <span class="material-icons">send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Board Area -->
+    <div class="game-body flex-1 overflow-hidden relative bg-gray-900">
+        <app-icon-board class="h-full w-full block" [isInteractive]="isActivePlayer" [markers]="room.gameData.markers"
+            (markerPlaced)="onMarkerPlaced($event)" (markerRemoved)="onMarkerRemoved($event)">
+        </app-icon-board>
+    </div>
+</div>

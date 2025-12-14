@@ -1,0 +1,67 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-secondary shadow-sm">
+    <div class="container">
+        <!-- Brand -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" routerLink="/">
+            <i class="bi bi-dice-5-fill text-warning fs-4"></i>
+            <span>Board Game Hub</span>
+        </a>
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler border-0" type="button" (click)="isCollapsed = !isCollapsed">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Links & User -->
+        <div class="collapse navbar-collapse" [class.show]="!isCollapsed">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/games" routerLinkActive="active">Play</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/social" routerLinkActive="active">Social</a>
+                </li>
+                <li class="nav-item" *ngIf="(currentUser$ | async)">
+                    <a class="nav-link" routerLink="/admin" routerLinkActive="active">Admin</a>
+                </li>
+            </ul>
+
+            <!-- User Section -->
+            <div class="d-flex align-items-center gap-3">
+                <ng-container *ngIf="currentUser$ | async as user; else loginTemplate">
+                    <!-- User Profile -->
+                    <div class="dropdown">
+                        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle pointer"
+                            role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img [src]="user.avatarUrl" alt="Avatar"
+                                class="rounded-circle border border-2 border-warning me-2" width="32" height="32">
+                            <span class="fw-semibold">{{ user.displayName }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end bg-dark border-secondary shadow"
+                            aria-labelledby="userMenu">
+                            <li><button class="dropdown-item text-white" (click)="logout()">Sign Out</button></li>
+                        </ul>
+                    </div>
+                </ng-container>
+
+                <!-- Login / Register Buttons -->
+                <ng-template #loginTemplate>
+                    <div class="d-flex gap-2">
+                        <a routerLink="/login" class="btn btn-outline-light btn-sm px-3 fw-semibold">Log In</a>
+                        <a routerLink="/register" class="btn btn-warning btn-sm px-3 fw-bold text-dark">Sign Up</a>
+                    </div>
+                </ng-template>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    /* Simple CSS override for dropdown pointer since we aren't using full Bootstrap JS for toggle sometimes */
+    .pointer {
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background-color: #3f3f46;
+    }
+</style>

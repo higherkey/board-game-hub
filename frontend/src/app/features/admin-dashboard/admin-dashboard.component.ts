@@ -16,9 +16,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     refreshInterval: any;
 
     expandedRooms = new Set<string>();
+    viewMode: 'list' | 'grid' = 'list';
 
     ngOnInit() {
         this.initDashboard();
+    }
+
+    setViewMode(mode: 'list' | 'grid') {
+        this.viewMode = mode;
     }
 
     private async initDashboard() {

@@ -116,7 +116,10 @@ describe('SignalRService', () => {
         roundNumber: 0,
         isPaused: false,
         roundScores: {},
-        nextGameVotes: {}
+        nextGameVotes: {},
+        undoSettings: { allowVoting: true, hostOnly: false },
+        currentVote: undefined,
+        gameData: null
       });
     });
 
@@ -159,8 +162,8 @@ describe('SignalRService', () => {
     });
 
     it('voteNextGame should invoke VoteNextGame', async () => {
-      await service.voteNextGame('Boggle');
-      expect(mockHubConnection.invoke).toHaveBeenCalledWith('VoteNextGame', 'TEST', 'Boggle');
+      await service.voteNextGame('Babble');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('VoteNextGame', 'TEST', 'Babble');
     });
 
     it('updateSettings should invoke UpdateSettings', async () => {

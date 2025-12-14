@@ -1,0 +1,139 @@
+<div class="deepfake-container" *ngIf="state">
+    <!-- Header: Role & Category -->
+    <div class="header p-4 bg-white rounded-lg shadow mb-4 flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-bold">Category: {{ state.category }}</h2>
+            <div class="text-sm text-gray-600">
+                Turn: <span class="font-bold text-blue-600">{{ turnPlayerName }}</span>
+            </div>
+        </div>
+
+        <div class="role-reveal group relative cursor-help">
+            <div class="bg-gray-200 px-4 py-2 rounded text-center">
+                <span class="font-bold">Hover to see Role</span>
+            </div>
+            <div
+                class="absolute right-0 top-full mt-2 w-48 bg-gray-800 text-white p-4 rounded shadow-lg hidden group-hover:block z-10">
+                <div *ngIf="amIAi">
+                    <p class="text-red-400 font-bold text-lg">You are the AI</p>
+                    <p class="text-sm">Blend in. You don't know the prompt.</p>
+                </div>
+                <div *ngIf="!amIAi">
+                    <p class="text-green-400 font-bold text-lg">You are an Artist</p>
+                    <p class="text-sm">Prompt: <span class="font-bold text-white">{{ state.prompt }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div class="game-area flex flex-col md:flex-row gap-4">
+
+        <!-- Canvas -->
+        <div class="canvas-wrapper flex-1 bg-white rounded-lg shadow overflow-hidden relative border-2"
+            [ngClass]="{'border-green-500': isMyTurn, 'border-gray-200': !isMyTurn}">
+
+            <div *ngIf="isMyTurn"
+                class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-sm z-10 pointer-events-none">
+                Your Turn! Draw one stroke.
+            </div>
+
+            <canvas #canvas (mousedown)="startDrawing($event)" (mousemove)="draw($event)" (mouseup)="endDrawing()"
+                (mouseleave)="endDrawing()" (touchstart)="startDrawing($event)" (touchmove)="draw($event)"
+                (touchend)="endDrawing()" class="w-full h-full touch-none cursor-crosshair">
+            </canvas>
+        </div>
+
+        <!-- Sidebar / Controls -->
+        <div class="sidebar w-full md:w-64 flex flex-col gap-4">
+
+            <!-- Turn Order / Players -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="font-bold mb-2">Artists</h3>
+                <ul class="space-y-2">
+                    <li *ngFor="let pid of state.playerOrder" class="flex items-center gap-2"
+                        [ngClass]="{'opacity-50': hasVoted(pid) && state.phase === 1}">
+                        <div class="w-3 h-3 rounded-full" [style.background-color]="getPlayerColor(pid)"></div>
+                        <span [class.font-bold]="pid === myId">{{ getPlayerName(pid) }}</span>
+                        <!-- Status Icons -->
+                        <span
+                            *ngIf="state.phase === 0 && state.playerOrder[state.currentTurnIndex % state.playerOrder.length] === pid"
+                            class="ml-auto text-blue-500">✏️</span>
+                        <span *ngIf="hasVoted(pid) && state.phase === 1" class="ml-auto">🗳️</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Voting Phase -->
+            <div *ngIf="state.phase === 1" class="bg-white rounded-lg shadow p-4 animate-pulse-border">
+                <h3 class="font-bold mb-2 text-purple-600">Voting Time!</h3>
+                <p class="text-sm mb-4">Who is the AI?</p>
+
+                <div *ngIf="!hasVoted(myId)">
+                    <select [(ngModel)]="selectedVoteId" class="w-full border p-2 rounded mb-2">
+                        <option value="" disabled>Select Suspect</option>
+                        <option *ngFor="let p of room.players" [value]="p.connectionId"
+                            [disabled]="p.connectionId === myId">
+                            {{ p.name }}
+                        </option>
+                    </select>
+                    <button (click)="submitVote()" [disabled]="!selectedVoteId"
+                        class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:opacity-50">
+                        Vote
+                    </button>
+                </div>
+                <div *ngIf="hasVoted(myId)" class="text-center text-gray-500 italic">
+                    Vote Submitted
+                </div>
+            </div>
+
+            <!-- Results Phase -->
+            <div *ngIf="state.phase === 2" class="bg-white rounded-lg shadow p-4">
+                <h3 class="font-bold mb-2 text-xl">Game Over</h3>
+
+                <div *ngIf="state.aiCaught && !state.aiWon" class="text-green-600 font-bold mb-2">
+                    Artists Win! AI was caught.
+                </div>
+                <div *ngIf="state.aiWon" class="text-red-600 font-bold mb-2">
+                    AI Wins!
+                    <span *ngIf="state.aiCaught" class="text-sm block font-normal text-black">AI correctly guessed: {{
+                        state.prompt }}</span>
+                    <span *ngIf="!state.aiCaught" class="text-sm block font-normal text-black">AI was not caught!</span>
+                </div>
+
+                <div class="mt-4 border-t pt-2">
+                    <p><strong>The Prompt:</strong> {{ state.prompt }}</p>
+                    <p><strong>The AI:</strong> <span [style.color]="getPlayerColor(state.aiConnectionId)">{{
+                            getPlayerName(state.aiConnectionId) }}</span></p>
+                </div>
+            </div>
+
+            <!-- AI Caught - Guess Phase (Technically still Voting Phase logic-wise in backend or transition state) -->
+            <!-- Wait, backend handles AI Guess while AI Caught is true. 
+                 But Phase might still be Voting or Results? 
+                 In my service: SubmitVote -> DetermineVote -> Sets AiCaught=true.
+                 If AiCaught is true, we are effectively in "Sudden Death" for AI.
+                 State Phase might still be Voting in my backend implementation? 
+                 Let's check logic:
+                 `if (mostVotedIds.Contains(state.AiConnectionId)) { state.AiCaught = true; }`
+                 It doesn't change Phase from Voting.
+                 So if Phase == Voting AND AiCaught == True -> Show Guess Input for AI.
+            -->
+            <div *ngIf="state.phase === 1 && state.aiCaught"
+                class="bg-red-50 border-2 border-red-500 rounded-lg shadow p-4">
+                <h3 class="font-bold text-red-600 mb-2">AI Caught!</h3>
+                <p *ngIf="!amIAi" class="text-sm">The AI is trying to guess the prompt to steal the win...</p>
+
+                <div *ngIf="amIAi">
+                    <p class="font-bold mb-2">You were caught! One chance to win.</p>
+                    <input type="text" [(ngModel)]="aiGuess" placeholder="Guess the prompt..."
+                        class="w-full border p-2 rounded mb-2">
+                    <button (click)="submitAiGuess()" class="w-full bg-red-600 text-white py-2 rounded font-bold">
+                        Steal the Win!
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

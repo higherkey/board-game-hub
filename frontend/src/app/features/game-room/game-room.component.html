@@ -5,6 +5,12 @@
             <button class="btn btn-outline-light btn-sm" (click)="leaveRoom()">
                 <i class="bi bi-box-arrow-left"></i> Leave
             </button>
+
+            <button class="btn btn-warning btn-sm" *ngIf="gameStarted$ | async" (click)="requestUndo()"
+                title="Request Undo">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+
             <span class="badge bg-primary fs-6">Room: {{ roomCode }}</span>
             <span class="text-white-50 small ms-2" *ngIf="connectionStatus$ | async as status">
                 <i class="bi bi-circle-fill" [class.text-success]="status === 'Connected'"
@@ -16,6 +22,12 @@
             <span *ngIf="room.gameType" class="badge bg-info text-dark me-2">{{ room.gameType }}</span>
         </div>
     </header>
+
+    <!-- UNDO TOAST OVERLAY -->
+    <app-undo-toast *ngIf="(currentRoom$ | async)?.currentVote" [vote]="(currentRoom$ | async)?.currentVote"
+        [currentUserId]="getMyConnectionId((currentRoom$ | async)?.players)"
+        [totalPlayers]="(currentRoom$ | async)?.players?.length || 0">
+    </app-undo-toast>
 
     <!-- 2. MAIN BODY (Sidebar + Content) -->
     <!-- 2. MAIN BODY (Sidebar + Content) -->
@@ -87,14 +99,52 @@
                         <div *ngIf="isHost$ | async; else playerView" class="h-100">
                             <div [ngSwitch]="(currentRoom$ | async)?.gameType" class="h-100">
                                 <!-- JUST ONE -->
-                                <app-just-one-board *ngSwitchCase="'JustOne'" [room]="currentRoom$ | async">
-                                </app-just-one-board>
+                                <!-- ONE & ONLY -->
+                                <app-one-and-only-board *ngSwitchCase="'OneAndOnly'" [room]="currentRoom$ | async">
+                                </app-one-and-only-board>
 
-                                <!-- BOGGLE -->
-                                <app-boggle *ngSwitchCase="'Boggle'" [grid]="(currentRoom$ | async)?.gameState?.grid"
+                                <!-- BABBLE -->
+                                <app-babble *ngSwitchCase="'Babble'" [grid]="(currentRoom$ | async)?.gameState?.grid"
                                     [isPlaying]="(currentRoom$ | async)?.state === 'Playing'"
-                                    (wordsUpdated)="onBoggleWordsUpdated($event)">
-                                </app-boggle>
+                                    (wordsUpdated)="onBabbleWordsUpdated($event)">
+                                </app-babble>
+
+                                <!-- BREAKING NEWS -->
+                                <app-breaking-news *ngSwitchCase="'BreakingNews'" [room]="currentRoom$ | async"
+                                    [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
+                                </app-breaking-news>
+
+                                <!-- DEEPFAKE (Disabled) -->
+                                <!-- <app-deepfake-game *ngSwitchCase="'Deepfake'" [room]="currentRoom$ | async">
+                                </app-deepfake-game> -->
+
+                                <!-- UNIVERSAL TRANSLATOR -->
+                                <app-universal-translator *ngSwitchCase="'UniversalTranslator'"
+                                    [room]="currentRoom$ | async">
+                                </app-universal-translator>
+
+                                <!-- PICTOPHONE -->
+                                <app-pictophone-game *ngSwitchCase="'Pictophone'" [room]="(currentRoom$ | async)!"
+                                    [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
+                                </app-pictophone-game>
+
+                                <!-- POPPYCOCK -->
+                                <app-poppycock-board *ngSwitchCase="'Poppycock'" [room]="currentRoom$ | async">
+                                </app-poppycock-board>
+
+                                <!-- SYMBOLOGY -->
+                                <app-symbology *ngSwitchCase="'Symbology'" [room]="(currentRoom$ | async)!">
+                                </app-symbology>
+
+                                <!-- WISECRACK -->
+                                <app-wisecrack-game *ngSwitchCase="'Wisecrack'" [room]="(currentRoom$ | async)!">
+                                </app-wisecrack-game>
+
+                                <!-- SUSHI TRAIN -->
+                                <app-sushi-train *ngSwitchCase="'SushiTrain'"
+                                    [gameState]="(currentRoom$ | async)?.gameData"
+                                    [players]="(currentRoom$ | async)?.players || []">
+                                </app-sushi-train>
 
                                 <!-- SCATTERBRAIN (Default) -->
                                 <div *ngSwitchDefault class="h-100">
@@ -116,12 +166,66 @@
                             <div class="h-100 d-flex flex-column justify-content-center">
                                 <div [ngSwitch]="(currentRoom$ | async)?.gameType" class="h-100">
                                     <!-- JUST ONE -->
-                                    <div *ngSwitchCase="'JustOne'" class="h-100">
-                                        <app-just-one-player [room]="currentRoom$ | async"
+                                    <!-- ONE & ONLY -->
+                                    <div *ngSwitchCase="'OneAndOnly'" class="h-100">
+                                        <app-one-and-only-player [room]="currentRoom$ | async"
                                             [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)"
                                             (clueSubmitted)="onClueSubmitted($event)"
                                             (guessSubmitted)="onGuessSubmitted($event)">
-                                        </app-just-one-player>
+                                        </app-one-and-only-player>
+                                    </div>
+
+                                    <!-- BREAKING NEWS -->
+                                    <div *ngSwitchCase="'BreakingNews'" class="h-100">
+                                        <app-breaking-news [room]="currentRoom$ | async"
+                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
+                                        </app-breaking-news>
+                                    </div>
+
+                                    <!-- DEEPFAKE -->
+                                    <div *ngSwitchCase="'Deepfake'" class="h-100">
+                                        <app-deepfake-game [room]="(currentRoom$ | async)!">
+                                        </app-deepfake-game>
+                                    </div>
+
+                                    <div *ngSwitchCase="'UniversalTranslator'" class="h-100">
+                                        <app-universal-translator [room]="currentRoom$ | async">
+                                        </app-universal-translator>
+                                    </div>
+
+                                    <!-- PICTOPHONE -->
+                                    <div *ngSwitchCase="'Pictophone'" class="h-100">
+                                        <app-pictophone-game [room]="(currentRoom$ | async)!"
+                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
+                                        </app-pictophone-game>
+                                    </div>
+
+                                    <!-- POPPYCOCK -->
+                                    <div *ngSwitchCase="'Poppycock'" class="h-100">
+                                        <app-poppycock-player [room]="currentRoom$ | async"
+                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)"
+                                            (definitionSubmitted)="onPoppycockDefSubmitted($event)"
+                                            (voteSubmitted)="onPoppycockVoteSubmitted($event)">
+                                        </app-poppycock-player>
+                                    </div>
+
+                                    <!-- SYMBOLOGY -->
+                                    <div *ngSwitchCase="'Symbology'" class="h-100">
+                                        <app-symbology [room]="(currentRoom$ | async)!">
+                                        </app-symbology>
+                                    </div>
+
+                                    <!-- WISECRACK -->
+                                    <div *ngSwitchCase="'Wisecrack'" class="h-100">
+                                        <app-wisecrack-game [room]="(currentRoom$ | async)!">
+                                        </app-wisecrack-game>
+                                    </div>
+
+                                    <!-- SUSHI TRAIN -->
+                                    <div *ngSwitchCase="'SushiTrain'" class="h-100">
+                                        <app-sushi-train-player [gameState]="(currentRoom$ | async)?.gameData"
+                                            [currentUserId]="getMyConnectionId((currentRoom$ | async)?.players)">
+                                        </app-sushi-train-player>
                                     </div>
 
                                     <!-- DEFAULT MOBILE CONTROLLER -->

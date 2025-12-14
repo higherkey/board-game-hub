@@ -132,13 +132,15 @@ import { AuthService } from '../../services/auth.service';
            flex-direction: column;
            padding: var(--space-lg);
            gap: var(--space-md);
-           border-bottom: 1px solid rgba(0,0,0,0.1);
-           box-shadow: var(--shadow-md);
-           transform: translateY(-100%);
+           border-bottom: 2px solid var(--accent); /* Accent border on mobile menu */
+           box-shadow: var(--shadow-xl); /* Deeper shadow */
+           transform: translateY(-150%); /* Start further up */
            opacity: 0;
            visibility: hidden;
-           transition: all 0.3s ease-in-out;
+           transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); /* Smoother bezier */
            z-index: 999;
+           border-bottom-left-radius: var(--radius-md);
+           border-bottom-right-radius: var(--radius-md);
 
            &.open {
                transform: translateY(0);
@@ -148,6 +150,7 @@ import { AuthService } from '../../services/auth.service';
        }
        
        .nav-item {
+          /* ... existing styles ... */
           color: var(--text-secondary);
           text-decoration: none;
           font-weight: 600;

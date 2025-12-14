@@ -29,6 +29,8 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   listSelectionMode: 'random' | 'manual' = 'random';
   selectedListId: number = 1;
 
+  undoSettings = { allowVoting: true, hostOnly: false };
+
   constructor(
     private readonly signalRService: SignalRService,
     private readonly gameDataService: GameDataService
@@ -39,6 +41,11 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       // Allow Deployed and Testing
       this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
     });
+
+    const room = this.signalRService.currentRoomSubject.value;
+    if (room && room.undoSettings) {
+      this.undoSettings = { ...room.undoSettings };
+    }
   }
 
   ngOnChanges() {
@@ -63,6 +70,10 @@ export class HostSettingsComponent implements OnChanges, OnInit {
 
   updateBoardSize(size: string) {
     this.settings.boardSize = Number.parseInt(size, 10);
+  }
+
+  saveUndoSettings() {
+    this.signalRService.updateUndoSettings(this.undoSettings);
   }
 
   startGame() {

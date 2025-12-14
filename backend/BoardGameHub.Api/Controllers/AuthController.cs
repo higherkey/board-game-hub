@@ -30,7 +30,8 @@ public class AuthController : ControllerBase
         {
             UserName = model.Email,
             Email = model.Email,
-            DisplayName = model.DisplayName
+            DisplayName = model.DisplayName,
+            AvatarUrl = $"https://api.dicebear.com/9.x/avataaars/svg?seed={model.DisplayName}"
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
@@ -52,7 +53,7 @@ public class AuthController : ControllerBase
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
             var token = GenerateJwtToken(user!);
-            return Ok(new { Token = token, User = new { user!.Id, user.DisplayName, user.Email } });
+            return Ok(new { Token = token, User = new { user!.Id, user.DisplayName, user.Email, user.AvatarUrl } });
         }
 
         return BadRequest("Invalid login attempt");
@@ -75,7 +76,7 @@ public class AuthController : ControllerBase
             issuer: null,
             audience: null,
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(7),
+            expires: DateTime.UtcNow.AddHours(2),
             signingCredentials: creds
         );
 

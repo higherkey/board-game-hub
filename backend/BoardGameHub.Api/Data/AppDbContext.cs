@@ -71,32 +71,37 @@ public class AppDbContext : IdentityDbContext<User>
             },
             new GameDefinition 
             { 
-                Id = "Boggle", 
-                Name = "Boggle", 
+                Id = "Babble", 
+                Name = "Babble", 
                 Icon = "🔤", 
                 Description = "Find as many words as you can in the grid of letters before time runs out!", 
                 Status = GameStatus.Deployed 
             },
             new GameDefinition 
             { 
-                Id = "JustOne", 
-                Name = "Just One", 
+                Id = "OneAndOnly", 
+                Name = "One & Only", 
                 Icon = "🃏", 
                 Description = "Work together to guess the mystery word by writing unique one-word clues.", 
                 Status = GameStatus.Deployed 
             },
-            new GameDefinition { Id = "Codenames", Name = "Codenames", Icon = "🕵️‍♀️", Description = "Give one-word clues to help your team guess their agents.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Spyfall", Name = "Spyfall", Icon = "🕵️", Description = "Find the spy among you before they figure out the location.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Pictionary", Name = "Pictionary", Icon = "🎨", Description = "Draw and guess words with your friends.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Uno", Name = "Uno", Icon = "🃏", Description = "The classic card game of matching colors and numbers.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Scrabble", Name = "Scrabble", Icon = "📝", Description = "Create words on the board using letter tiles.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Monopoly", Name = "Monopoly", Icon = "🎩", Description = "Buy, sell, and trade properties to win.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Catan", Name = "Settlers of Catan", Icon = "🏰", Description = "Trade, build, and settle the island of Catan.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "TicketToRide", Name = "Ticket to Ride", Icon = "🚂", Description = "Build train routes across the country.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Battleship", Name = "Battleship", Icon = "🚢", Description = "Sink your opponent's fleet before they sink yours.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Connect4", Name = "Connect 4", Icon = "🔴", Description = "Connect four of your checkers in a row.", Status = GameStatus.Backlog },
+            new GameDefinition { Id = "NomDeCode", Name = "Nom de Code", Icon = "🕵️‍♀️", Description = "Give one-word clues to help your team guess their agents.", Status = GameStatus.Backlog },
+
+            new GameDefinition { Id = "Warships", Name = "Warships", Icon = "🚢", Description = "Sink your opponent's fleet before they sink yours.", Status = GameStatus.Backlog },
+            new GameDefinition { Id = "FourInARow", Name = "Four in a Row", Icon = "🔴", Description = "Connect four of your checkers in a row.", Status = GameStatus.Backlog },
             new GameDefinition { Id = "Checkers", Name = "Checkers", Icon = "🏁", Description = "Jump over opponent pieces to capture them.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Chess", Name = "Chess", Icon = "♟️", Description = "Strategic board game played on a checkered board.", Status = GameStatus.Backlog }
+
+            
+            // New User Picks
+            new GameDefinition { Id = "UniversalTranslator", Name = "Universal Translator", Icon = "👽", Description = "Communication game with a hidden traitor.", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "Pictophone", Name = "Pictophone", Icon = "🎨", Description = "Telephone with drawings.", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "Wisecrack", Name = "Wisecrack", Icon = "💬", Description = "Answer simple prompts with witty answers.", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "Poppycock", Name = "Poppycock", Icon = "🤥", Description = "Bluff your friends with fake definitions.", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "Symbology", Name = "Symbology", Icon = "💡", Description = "Communicate ideas using universal icons.", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "BreakingNews", Name = "Breaking News", Icon = "📰", Description = "Frantic teleprompter fun where writers sabotage the anchor.", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "Deepfake", Name = "Deepfake", Icon = "🤖", Description = "A generative AI tries to blend in with human artists.", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "SushiTrain", Name = "Sushi Train!", Icon = "🍣", Description = "Draft the best meal from the passing conveyor belt!", Status = GameStatus.Deployed },
+            new GameDefinition { Id = "GreatMinds", Name = "Great Minds", Icon = "🧠", Description = "Synchronize your minds and play cards in ascending order without speaking!", Status = GameStatus.Deployed }
         );
     }
 }

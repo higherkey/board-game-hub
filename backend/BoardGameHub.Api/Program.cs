@@ -75,11 +75,20 @@ builder.Services.AddSignalR()
         options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 builder.Services.AddSingleton<RoomService>();
-builder.Services.AddSingleton<BoggleService>();
+builder.Services.AddSingleton<IBabbleService, BabbleService>();
+builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
+builder.Services.AddSingleton<DeepfakeGameService>();
 // Register Game Services
 builder.Services.AddSingleton<IGameService, ScatterbrainGameService>();
-builder.Services.AddSingleton<IGameService, BoggleGameService>();
-builder.Services.AddSingleton<IGameService, JustOneService>();
+builder.Services.AddSingleton<IGameService, BabbleGameService>();
+builder.Services.AddSingleton<IGameService, OneAndOnlyService>();
+builder.Services.AddSingleton<IGameService, BreakingNewsGameService>();
+builder.Services.AddSingleton<IGameService, UniversalTranslatorService>();
+builder.Services.AddSingleton<IGameService, SymbologyGameService>();
+builder.Services.AddSingleton<IGameService, PictophoneService>();
+builder.Services.AddSingleton<IGameService, WisecrackGameService>();
+builder.Services.AddSingleton<IGameService, SushiTrainGameService>();
+builder.Services.AddSingleton<IGameService, BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameService>();
 
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<SocialService>();

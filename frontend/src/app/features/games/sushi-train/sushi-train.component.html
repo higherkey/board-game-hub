@@ -1,0 +1,81 @@
+<div class="sushi-board relative min-h-screen bg-orange-50 p-4">
+    <div class="header text-center mb-8">
+        <h1 class="text-4xl font-bold text-red-600 mb-2">🍣 Sushi Train! 🚄</h1>
+        <div class="flex justify-center items-center gap-4 text-xl">
+            <span class="bg-white px-4 py-2 rounded-full shadow">
+                Round {{gameState?.round}}/3
+            </span>
+            <span *ngIf="gameState?.isRoundOver" class="bg-yellow-400 px-4 py-2 rounded-full font-bold animate-bounce">
+                Round Over! Check Scores!
+            </span>
+            <span *ngIf="gameState?.isGameOver"
+                class="bg-green-500 text-white px-4 py-2 rounded-full font-bold animate-pulse">
+                GAME OVER!
+            </span>
+        </div>
+    </div>
+
+    <!-- Players Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        <div *ngFor="let p of players"
+            class="player-mat bg-white rounded-xl shadow-lg border-2 border-orange-200 overflow-hidden relative"
+            [ngClass]="{'opacity-50': !getPlayerState(p.connectionId)}">
+
+            <!-- Header -->
+            <div class="bg-orange-100 p-3 flex justify-between items-center border-b border-orange-200">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
+                        <img *ngIf="p.avatarUrl" [src]="p.avatarUrl" class="w-full h-full object-cover"
+                            alt="User Avatar">
+                        <span *ngIf="!p.avatarUrl"
+                            class="text-xs flex items-center justify-center h-full">{{p.name[0]}}</span>
+                    </div>
+                    <span class="font-bold text-lg text-gray-800">{{p.name}}</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-2xl font-bold text-orange-600">{{getPlayerState(p.connectionId)?.totalScore || 0}}
+                        pts</span>
+                    <span class="text-xs text-gray-500">+{{getPlayerState(p.connectionId)?.roundScore || 0}} this
+                        round</span>
+                </div>
+            </div>
+
+            <!-- Hand Status (Hidden/Shown) -->
+            <div class="status-bar bg-gray-100 p-2 text-center text-sm"
+                [ngClass]="{'bg-green-100 text-green-700': getPlayerState(p.connectionId)?.hasSelected}">
+                <span *ngIf="!gameState?.isRoundOver">
+                    {{ getPlayerState(p.connectionId)?.hasSelected ? '✅ Ready!' : 'Thinking...' }}
+                </span>
+                <span *ngIf="gameState?.isRoundOver">
+                    Waiting for next round...
+                </span>
+            </div>
+
+            <!-- Tableau (Played Cards) -->
+            <div class="tableau p-4 min-h-[200px] flex flex-wrap content-start gap-2">
+                <div *ngFor="let card of getPlayerState(p.connectionId)?.tableau"
+                    class="card-token bg-white border border-gray-300 rounded shadow-sm p-1 w-16 h-20 flex flex-col items-center justify-center transform transition-all hover:scale-110"
+                    [ngClass]="{'ring-2 ring-yellow-400': card.isNew}">
+                    <div class="text-3xl mb-1">{{getCardEmoji(card.type)}}</div>
+                    <div class="text-[0.6rem] text-center leading-tight truncate w-full px-1">{{getCardName(card.type)}}
+                    </div>
+                </div>
+
+                <div *ngIf="getPlayerState(p.connectionId)?.tableau?.length === 0"
+                    class="w-full h-full flex items-center justify-center text-gray-400 italic mt-8">
+                    Empty Plate
+                </div>
+            </div>
+
+            <!-- Puddings (Stored) -->
+            <div class="puddings bg-orange-50 p-2 border-t border-orange-100 flex gap-1 items-center overflow-x-auto"
+                *ngIf="getPlayerState(p.connectionId)?.puddings?.length">
+                <span class="text-xs font-bold text-orange-800 mr-2">Dessert:</span>
+                <div *ngFor="let pudding of getPlayerState(p.connectionId)?.puddings" class="text-xl" title="Pudding">
+                    🍮
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -43,7 +43,30 @@ public class Room
     public Dictionary<string, List<string>> PlayerAnswers { get; set; } = new();
     
     // PlayerId -> Round Score
+    // PlayerId -> Round Score
     public Dictionary<string, int> RoundScores { get; set; } = new();
+
+    // Undo System
+    // Stack of JSON snapshots to revert to. Restrict to last 10?
+    public Stack<string> StateHistory { get; set; } = new();
+    public UndoSettings UndoSettings { get; set; } = new();
+    public UndoVote? CurrentVote { get; set; }
+}
+
+public class UndoSettings
+{
+    public bool AllowVoting { get; set; } = true;    // If true, players can request undo -> vote
+    public bool HostOnly { get; set; } = false;      // If true, only host can undo (no vote needed)
+}
+
+public class UndoVote
+{
+    public string InitiatorId { get; set; } = string.Empty;
+    public string InitiatorName { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    // PlayerId -> Bool (True=Yes, False=No)
+    public Dictionary<string, bool> Votes { get; set; } = new();
 }
 
 public class GameSettings
@@ -66,6 +89,15 @@ public enum GameType
 {
     None = 0,
     Scatterbrain = 1,
-    Boggle = 2,
-    JustOne = 3
+    Babble = 2,
+    OneAndOnly = 3,
+    BreakingNews = 4,
+    Deepfake = 5,
+    Poppycock = 6,
+    Pictophone = 7,
+    UniversalTranslator = 8,
+    Symbology = 9,
+    Wisecrack = 10,
+    SushiTrain = 11,
+    GreatMinds = 12
 }

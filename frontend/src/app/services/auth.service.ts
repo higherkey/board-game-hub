@@ -7,6 +7,7 @@ export interface User {
     id: string;
     email: string;
     displayName: string;
+    avatarUrl?: string;
 }
 
 export interface AuthResponse {
@@ -21,8 +22,14 @@ export class AuthService {
     private apiUrl = 'http://localhost:5109/api/auth'; // Hardcoded for dev as per project structure usually
     private currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
+
+    get currentUserValue(): User | null {
+        return this.currentUserSubject.value;
+    }
+
     private tokenKey = 'auth_token';
     private userKey = 'auth_user';
+    private expirationKey = 'auth_expires_at';
 
     constructor(private http: HttpClient, private router: Router) {
         this.loadStoredSession();
@@ -31,12 +38,22 @@ export class AuthService {
     private loadStoredSession() {
         const token = localStorage.getItem(this.tokenKey);
         const userStr = localStorage.getItem(this.userKey);
-        if (token && userStr) {
-            try {
-                this.currentUserSubject.next(JSON.parse(userStr));
-            } catch {
+        const expiresAt = localStorage.getItem(this.expirationKey);
+
+        if (token && userStr && expiresAt) {
+            const now = Date.now();
+            if (now < parseInt(expiresAt)) {
+                try {
+                    this.currentUserSubject.next(JSON.parse(userStr));
+                } catch {
+                    this.logout();
+                }
+            } else {
                 this.logout();
             }
+        } else {
+            // Cleanup partial data
+            this.logout();
         }
     }
 
@@ -49,6 +66,11 @@ export class AuthService {
             tap(response => {
                 localStorage.setItem(this.tokenKey, response.token);
                 localStorage.setItem(this.userKey, JSON.stringify(response.user));
+
+                // Set expiry to 2 hours from now (matching backend)
+                const expiresAt = Date.now() + (2 * 60 * 60 * 1000);
+                localStorage.setItem(this.expirationKey, expiresAt.toString());
+
                 this.currentUserSubject.next(response.user);
             })
         );
@@ -57,6 +79,7 @@ export class AuthService {
     logout() {
         localStorage.removeItem(this.tokenKey);
         localStorage.removeItem(this.userKey);
+        localStorage.removeItem(this.expirationKey);
         this.currentUserSubject.next(null);
         this.router.navigate(['/login']);
     }
@@ -66,6 +89,16 @@ export class AuthService {
     }
 
     isAuthenticated(): boolean {
-        return !!this.getToken();
+        const token = this.getToken();
+        const expiresAt = localStorage.getItem(this.expirationKey);
+
+        if (!token || !expiresAt) return false;
+
+        const isValid = Date.now() < parseInt(expiresAt);
+        if (!isValid) {
+            this.logout();
+            return false;
+        }
+        return true;
     }
 }

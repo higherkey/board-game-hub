@@ -1,0 +1,91 @@
+<div class="breaking-news-container h-100 w-100 d-flex flex-column">
+
+    <!-- ANCHOR VIEW (Teleprompter) -->
+    <div *ngIf="isAnchor"
+        class="teleprompter-view flex-grow-1 bg-black text-white position-relative overflow-hidden d-flex justify-content-center">
+        <!-- Overlay -->
+        <div
+            class="position-absolute top-0 start-0 w-100 p-3 d-flex justify-content-between z-index-top pointer-events-none">
+            <span class="badge bg-danger fs-4 animate-pulse">LIVE</span>
+            <span class="fs-4 fw-bold">Breaking News</span>
+        </div>
+
+        <!-- Scrolling Content -->
+        <div class="prompter-content text-center py-5" [style.transform]="'translateY(-' + scrollPosition + 'px)'"
+            style="transition: transform 0.3s ease-out;">
+            <!-- Massive Padding to start -->
+            <div style="height: 40vh;"></div>
+
+            <h1 class="display-3 fw-bold mb-5">{{ state?.scriptTitle }}</h1>
+
+            <div class="script-body display-2 fw-bold px-5" style="line-height: 1.5;">
+                <ng-container *ngFor="let token of scriptTokens; let i = index">
+                    <span [id]="'token-' + i" class="mx-1 d-inline-block transition-colors"
+                        [class.text-muted]="token.isSpoken" [class.text-white]="!token.isSpoken"
+                        [class.current-word]="!token.isSpoken && i === currentWordIndex"
+                        [class.text-warning]="token.isSlot && !token.isSpoken"
+                        [class.text-decoration-underline]="token.isSlot">
+                        {{ token.text }}
+                    </span>
+                </ng-container>
+            </div>
+
+            <!-- Massive Padding to end -->
+            <div style="height: 100vh;"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="position-absolute bottom-0 end-0 p-3 bg-dark opacity-75 rounded d-flex gap-2 z-index-top">
+            <button class="btn btn-sm" [class.btn-light]="!isPlaying" [class.btn-warning]="isPlaying"
+                (click)="togglePlay()">
+                {{ isPlaying ? 'Pause Scroll' : 'Auto Scroll' }}
+            </button>
+
+            <button class="btn btn-sm" [class.btn-outline-light]="!isListening" [class.btn-danger]="isListening"
+                (click)="toggleVoice()">
+                <i class="bi bi-mic-fill me-1"></i>
+                {{ isListening ? 'Listening...' : 'Voice Mode' }}
+            </button>
+        </div>
+
+        <!-- Debug/Feedback for Voice -->
+        <div *ngIf="isListening" class="position-absolute bottom-0 start-0 p-3 text-white opacity-50">
+            <small>Listening... (Say the words to advance)</small>
+        </div>
+    </div>
+
+
+    <!-- WRITER VIEW (Input List) -->
+    <div *ngIf="!isAnchor" class="writer-view h-100 d-flex flex-column bg-light p-3 overflow-auto">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold">You are a WRITER</h3>
+            <p class="text-muted">Sabotage the anchor by filling in the blanks!</p>
+        </div>
+
+        <div class="row g-3 justify-content-center">
+            <ng-container *ngFor="let slot of mySlots">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card shadow-sm border-primary">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between">
+                            <span class="fw-bold">Slot #{{slot.id + 1}}</span>
+                            <span class="badge bg-white text-primary">{{ slot.type }}</span>
+                        </div>
+                        <div class="card-body">
+                            <!-- Binding to local variable, on change send update -->
+                            <input type="text" class="form-control form-control-lg fw-bold text-center"
+                                [value]="slot.currentValue === '______' ? '' : slot.currentValue" placeholder="..."
+                                (input)="onSlotChange(slot.id, $any($event.target).value)">
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+            <div *ngIf="mySlots.length === 0" class="col-12 text-center mt-5">
+                <div class="alert alert-warning">
+                    No slots assigned to you for this script! Just watch the chaos!
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

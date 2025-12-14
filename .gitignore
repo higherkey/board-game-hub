@@ -9,6 +9,7 @@
 [Rr]elease/
 x64/
 x86/
+backend/BoardGameHub.Api/wwwroot/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/

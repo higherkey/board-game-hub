@@ -125,98 +125,42 @@ namespace BoardGameHub.Api.Migrations
                         },
                         new
                         {
-                            Id = "Boggle",
+                            Id = "Babble",
                             Description = "Find as many words as you can in the grid of letters before time runs out!",
                             Icon = "🔤",
-                            Name = "Boggle",
+                            Name = "Babble",
                             Status = 0
                         },
                         new
                         {
-                            Id = "JustOne",
+                            Id = "OneAndOnly",
                             Description = "Work together to guess the mystery word by writing unique one-word clues.",
                             Icon = "🃏",
-                            Name = "Just One",
+                            Name = "One & Only",
                             Status = 0
                         },
                         new
                         {
-                            Id = "Codenames",
+                            Id = "NomDeCode",
                             Description = "Give one-word clues to help your team guess their agents.",
                             Icon = "🕵️‍♀️",
-                            Name = "Codenames",
+                            Name = "Nom de Code",
                             Status = 2
                         },
                         new
                         {
-                            Id = "Spyfall",
-                            Description = "Find the spy among you before they figure out the location.",
-                            Icon = "🕵️",
-                            Name = "Spyfall",
-                            Status = 2
-                        },
-                        new
-                        {
-                            Id = "Pictionary",
-                            Description = "Draw and guess words with your friends.",
-                            Icon = "🎨",
-                            Name = "Pictionary",
-                            Status = 2
-                        },
-                        new
-                        {
-                            Id = "Uno",
-                            Description = "The classic card game of matching colors and numbers.",
-                            Icon = "🃏",
-                            Name = "Uno",
-                            Status = 2
-                        },
-                        new
-                        {
-                            Id = "Scrabble",
-                            Description = "Create words on the board using letter tiles.",
-                            Icon = "📝",
-                            Name = "Scrabble",
-                            Status = 2
-                        },
-                        new
-                        {
-                            Id = "Monopoly",
-                            Description = "Buy, sell, and trade properties to win.",
-                            Icon = "🎩",
-                            Name = "Monopoly",
-                            Status = 2
-                        },
-                        new
-                        {
-                            Id = "Catan",
-                            Description = "Trade, build, and settle the island of Catan.",
-                            Icon = "🏰",
-                            Name = "Settlers of Catan",
-                            Status = 2
-                        },
-                        new
-                        {
-                            Id = "TicketToRide",
-                            Description = "Build train routes across the country.",
-                            Icon = "🚂",
-                            Name = "Ticket to Ride",
-                            Status = 2
-                        },
-                        new
-                        {
-                            Id = "Battleship",
+                            Id = "Warships",
                             Description = "Sink your opponent's fleet before they sink yours.",
                             Icon = "🚢",
-                            Name = "Battleship",
+                            Name = "Warships",
                             Status = 2
                         },
                         new
                         {
-                            Id = "Connect4",
+                            Id = "FourInARow",
                             Description = "Connect four of your checkers in a row.",
                             Icon = "🔴",
-                            Name = "Connect 4",
+                            Name = "Four in a Row",
                             Status = 2
                         },
                         new
@@ -229,11 +173,75 @@ namespace BoardGameHub.Api.Migrations
                         },
                         new
                         {
-                            Id = "Chess",
-                            Description = "Strategic board game played on a checkered board.",
-                            Icon = "♟️",
-                            Name = "Chess",
-                            Status = 2
+                            Id = "UniversalTranslator",
+                            Description = "Communication game with a hidden traitor.",
+                            Icon = "👽",
+                            Name = "Universal Translator",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "Pictophone",
+                            Description = "Telephone with drawings.",
+                            Icon = "🎨",
+                            Name = "Pictophone",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "Wisecrack",
+                            Description = "Answer simple prompts with witty answers.",
+                            Icon = "💬",
+                            Name = "Wisecrack",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "Poppycock",
+                            Description = "Bluff your friends with fake definitions.",
+                            Icon = "🤥",
+                            Name = "Poppycock",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "Symbology",
+                            Description = "Communicate ideas using universal icons.",
+                            Icon = "💡",
+                            Name = "Symbology",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "BreakingNews",
+                            Description = "Frantic teleprompter fun where writers sabotage the anchor.",
+                            Icon = "📰",
+                            Name = "Breaking News",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "Deepfake",
+                            Description = "A generative AI tries to blend in with human artists.",
+                            Icon = "🤖",
+                            Name = "Deepfake",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "SushiTrain",
+                            Description = "Draft the best meal from the passing conveyor belt!",
+                            Icon = "🍣",
+                            Name = "Sushi Train!",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = "GreatMinds",
+                            Description = "Synchronize your minds and play cards in ascending order without speaking!",
+                            Icon = "🧠",
+                            Name = "Great Minds",
+                            Status = 0
                         });
                 });
 

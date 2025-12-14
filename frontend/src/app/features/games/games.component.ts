@@ -31,7 +31,12 @@ export class GamesComponent implements OnInit {
     ngOnInit() {
         console.log('Games Component Initialized');
         this.gameDataService.loadGames().subscribe(games => {
-            this.games = games;
+            this.games = games.sort((a, b) => {
+                // Sort by status: Deployed (0) first, checking for string 'Deployed'
+                if (a.status === 'Deployed' && b.status !== 'Deployed') return -1;
+                if (a.status !== 'Deployed' && b.status === 'Deployed') return 1;
+                return 0;
+            });
         });
         this.loadRooms();
 
