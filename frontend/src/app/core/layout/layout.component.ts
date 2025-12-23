@@ -242,7 +242,7 @@ import { AuthService } from '../../services/auth.service';
           top: -10px;
           left: 0;
           right: 0;
-          height: 10px;
+          height: 11px;
           background-color: var(--primary);
           clip-path: polygon(
              0% 100%, 

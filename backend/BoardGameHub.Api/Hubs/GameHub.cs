@@ -11,10 +11,10 @@ using BoardGameHub.Api.Models; // Explicitly for GameSettings
 
 public class GameHub : Hub
 {
-    private readonly RoomService _roomService;
+    private readonly IRoomService _roomService;
     private readonly GameHistoryService _historyService;
 
-    public GameHub(RoomService roomService, GameHistoryService historyService)
+    public GameHub(IRoomService roomService, GameHistoryService historyService)
     {
         _roomService = roomService;
         _historyService = historyService;

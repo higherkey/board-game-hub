@@ -1,6 +1,77 @@
+// Game Room Specific Styles
+
+:host {
+    display: block;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.game-room-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-bottom: 3px solid var(--accent);
+    color: white;
+
+    // Physical lift
+    transform: translateY(0);
+    transition: all 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+    }
+}
+
+.player-list-card {
+    border-top: 4px solid var(--primary);
+}
+
+.bg-accent {
+    background-color: var(--accent);
+}
+
+.alert-surface {
+    background-color: var(--bg-surface);
+    border-left: 5px solid var(--accent);
+}
+
+.shadow-inner {
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.btn-icon {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+
+    &:hover {
+        color: var(--primary) !important;
+        transform: scale(1.1);
+        box-shadow: none;
+    }
+}
+
+.border-bottom-light {
+    border-bottom: 1px solid var(--bg-surface-2);
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 dialog::backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    background-color: rgba(0, 34, 68, 0.7); // Navy tint
+    backdrop-filter: blur(4px);
 }
 
 .main-stage-panel {
@@ -13,4 +84,9 @@ dialog::backdrop {
     &.has-docked-bottom {
         padding-bottom: 140px;
     }
+}
+
+.section-container {
+    // Ensure we don't overflow the page, keep scroll internal if needed
+    height: 100%;
 }

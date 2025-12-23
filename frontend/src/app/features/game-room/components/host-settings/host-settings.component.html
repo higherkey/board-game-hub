@@ -4,100 +4,110 @@
         <h3>Game Settings</h3>
     </div>
 
-    <!-- Game Mode -->
-    <div class="setting-group">
-        <label for="gameType" class="form-label text-secondary small text-uppercase fw-bold">Game Mode</label>
-        <div class="select-wrapper">
-            <select id="gameType" class="form-select bg-surface border-2 shadow-sm" [(ngModel)]="selectedGameType"
-                (change)="changeGameType()">
-                <option *ngFor="let game of availableGames" [value]="game.id">
-                    {{ game.icon }} {{ game.name }}
-                </option>
-            </select>
-            <i class="bi bi-chevron-down"></i>
-        </div>
-    </div>
+    <div class="settings-grid">
+        <!-- LEFT COLUMN -->
+        <div class="settings-col">
+            <!-- Game Mode -->
+            <div class="setting-group">
+                <label for="gameType" class="form-label text-secondary small text-uppercase fw-bold">Game Mode</label>
+                <div class="select-wrapper">
+                    <select id="gameType" class="form-select bg-surface border-2 shadow-sm"
+                        [(ngModel)]="selectedGameType" (change)="changeGameType()">
+                        <option *ngFor="let game of availableGames" [value]="game.id">
+                            {{ game.icon }} {{ game.name }}
+                        </option>
+                    </select>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+            </div>
 
-    <!-- Timer Duration -->
-    <div class="setting-group">
-        <label for="timerDuration">
-            <i class="bi bi-clock"></i>
-            Timer Duration (Seconds)
-        </label>
-
-        <div class="d-flex gap-2 mb-2">
-            <input id="timerDuration" type="number" min="10" max="600" class="form-control"
-                [(ngModel)]="settings.timerDurationSeconds">
-        </div>
-
-        <div class="d-flex gap-2 flex-wrap">
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                (click)="settings.timerDurationSeconds = 30">30s</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                (click)="settings.timerDurationSeconds = 60">60s</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                (click)="settings.timerDurationSeconds = 90">90s</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                (click)="settings.timerDurationSeconds = 120">2m</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                (click)="settings.timerDurationSeconds = 300">5m</button>
-        </div>
-    </div>
-
-    <!-- Undo Settings -->
-    <div class="setting-group">
-        <label>
-            <i class="bi bi-arrow-counterclockwise"></i>
-            Undo Policy
-        </label>
-        <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="allowVoting" [(ngModel)]="undoSettings.allowVoting"
-                (change)="saveUndoSettings()">
-            <label class="form-check-label" for="allowVoting">Allow Undo (Voting)</label>
-        </div>
-    </div>
-
-    <!-- Scatterbrain Settings -->
-    <div *ngIf="selectedGameType === 'Scatterbrain'" class="game-specific-settings">
-        <div class="setting-group">
-            <label for="letterMode">
-                <i class="bi bi-alphabet"></i>
-                Letter Difficulty
-            </label>
-            <div class="select-wrapper">
-                <select id="letterMode" [(ngModel)]="settings.letterMode">
-                    <option [ngValue]="0">🟢 Normal (No Q, V, X, Z)</option>
-                    <option [ngValue]="1">🔴 Hard (Only Q, V, X, Z...)</option>
-                    <option [ngValue]="2">🎲 True Random</option>
-                </select>
-                <i class="bi bi-chevron-down"></i>
+            <!-- Undo Settings -->
+            <div class="setting-group">
+                <label>
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Undo Policy
+                </label>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="allowVoting"
+                        [(ngModel)]="undoSettings.allowVoting" (change)="saveUndoSettings()">
+                    <label class="form-check-label" for="allowVoting">Allow Undo (Voting)</label>
+                </div>
             </div>
         </div>
 
-        <div class="setting-group">
-            <label for="categoryList">
-                <i class="bi bi-list-ul"></i>
-                Categories List
-            </label>
-            <div class="select-wrapper">
-                <select id="categoryList" [(ngModel)]="listSelectionMode" (change)="updateListId()">
-                    <option value="random">🎲 Random List</option>
-                    <option value="manual">📋 Select List #</option>
-                </select>
-                <i class="bi bi-chevron-down"></i>
+        <!-- RIGHT COLUMN -->
+        <div class="settings-col">
+            <!-- Timer Duration -->
+            <div class="setting-group">
+                <label for="timerDuration">
+                    <i class="bi bi-clock"></i>
+                    Timer Duration (Seconds)
+                </label>
+
+                <div class="d-flex gap-2 mb-2">
+                    <input id="timerDuration" type="number" min="10" max="600" class="form-control"
+                        [(ngModel)]="settings.timerDurationSeconds">
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="settings.timerDurationSeconds = 30">30s</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="settings.timerDurationSeconds = 60">60s</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="settings.timerDurationSeconds = 90">90s</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="settings.timerDurationSeconds = 120">2m</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="settings.timerDurationSeconds = 300">5m</button>
+                </div>
             </div>
 
-            <div *ngIf="listSelectionMode === 'manual'" class="list-id-input">
-                <label for="listId" class="sr-only">List ID</label>
-                <input id="listId" type="number" min="1" max="15" [(ngModel)]="selectedListId" (change)="updateListId()"
-                    placeholder="1-15">
+            <!-- Scatterbrain Settings (Conditional) -->
+            <div *ngIf="selectedGameType === 'Scatterbrain'" class="game-specific-settings fade-in">
+                <div class="setting-group">
+                    <label for="letterMode">
+                        <i class="bi bi-alphabet"></i>
+                        Letter Difficulty
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="letterMode" [(ngModel)]="settings.letterMode">
+                            <option [ngValue]="0">🟢 Normal (No Q, V, X, Z)</option>
+                            <option [ngValue]="1">🔴 Hard (Only Q, V, X, Z...)</option>
+                            <option [ngValue]="2">🎲 True Random</option>
+                        </select>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="categoryList">
+                        <i class="bi bi-list-ul"></i>
+                        Categories List
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="categoryList" [(ngModel)]="listSelectionMode" (change)="updateListId()">
+                            <option value="random">🎲 Random List</option>
+                            <option value="manual">📋 Select List #</option>
+                        </select>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+
+                    <div *ngIf="listSelectionMode === 'manual'" class="list-id-input">
+                        <label for="listId" class="sr-only">List ID</label>
+                        <input id="listId" type="number" min="1" max="15" [(ngModel)]="selectedListId"
+                            (change)="updateListId()" placeholder="1-15">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Start Button -->
-    <button type="button" class="btn-start" (click)="startGame()" [disabled]="selectedGameType === 'None'">
-        <i class="bi bi-play-fill"></i>
-        START GAME
-    </button>
+    <!-- Start Button (Full Width footer) -->
+    <div class="mt-4 pt-3 border-top">
+        <button type="button" class="btn-start" (click)="startGame()" [disabled]="selectedGameType === 'None'">
+            <i class="bi bi-play-fill"></i>
+            START GAME
+        </button>
+    </div>
 </div>

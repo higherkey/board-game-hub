@@ -112,7 +112,7 @@ export class GamesComponent implements OnInit {
             }
 
             const code = await this.signalRService.createRoom(this.playerName, true, gameType);
-            this.router.navigate(['/game', code], { queryParams: { name: this.playerName } });
+            this.router.navigate(['/game', code]);
         } catch (e) {
             console.error('Error creating room', e);
             this.toastService.showError('Error creating room. Please try again.');
@@ -124,7 +124,7 @@ export class GamesComponent implements OnInit {
         try {
             const success = await this.signalRService.joinRoom(code, this.playerName);
             if (success) {
-                this.router.navigate(['/game', code], { queryParams: { name: this.playerName } });
+                this.router.navigate(['/game', code]);
             } else {
                 this.toastService.showError('Room not found or full.');
             }

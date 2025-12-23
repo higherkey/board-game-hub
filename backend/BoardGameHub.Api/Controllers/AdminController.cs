@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Identity;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Hubs;

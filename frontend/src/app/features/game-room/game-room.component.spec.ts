@@ -6,16 +6,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 // Stub Components
-@Component({ selector: 'app-game-board', template: '', standalone: true, imports: [] })
-class GameBoardStubComponent {
-  @Input() roomCode: any;
-  @Input() isHost: any;
-}
 
-@Component({ selector: 'app-mobile-controller', template: '', standalone: true, imports: [] })
-class MobileControllerStubComponent {
-  @Input() roomCode: any;
-}
 
 @Component({ selector: 'app-host-settings', template: '', standalone: true, imports: [] })
 class HostSettingsStubComponent {
@@ -57,8 +48,7 @@ class OneAndOnlyPlayerStubComponent {
 }
 
 // Import real components to override
-import { GameBoardComponent } from '../game-board/game-board.component';
-import { MobileControllerComponent } from '../mobile-controller/mobile-controller.component';
+
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
 import { BabbleComponent } from '../games/babble/babble.component';
@@ -105,8 +95,7 @@ describe('GameRoomComponent', () => {
       .overrideComponent(GameRoomComponent, {
         remove: {
           imports: [
-            GameBoardComponent,
-            MobileControllerComponent,
+
             HostSettingsComponent,
             VideoChatComponent,
             BabbleComponent,
@@ -118,8 +107,7 @@ describe('GameRoomComponent', () => {
         },
         add: {
           imports: [
-            GameBoardStubComponent,
-            MobileControllerStubComponent,
+
             HostSettingsStubComponent,
             VideoChatStubComponent,
             BabbleStubComponent,

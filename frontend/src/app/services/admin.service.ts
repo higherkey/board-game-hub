@@ -33,9 +33,9 @@ export interface PlayerSummary {
     providedIn: 'root'
 })
 export class AdminService {
-    private baseUrl = 'http://localhost:5109/admin'; // Direct backend URL for now
+    private readonly baseUrl = 'http://localhost:5109/admin'; // Direct backend URL for now
 
-    constructor(private http: HttpClient) { }
+    constructor(private readonly http: HttpClient) { }
 
     getStats(): Observable<RoomStats> {
         return this.http.get<RoomStats>(`${this.baseUrl}/stats`);

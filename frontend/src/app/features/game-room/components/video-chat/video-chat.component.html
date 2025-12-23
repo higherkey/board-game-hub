@@ -69,7 +69,7 @@
         </div>
 
         <div class="setting-group">
-            <label>View Mode</label>
+            <div class="setting-label">View Mode</div>
             <div class="btn-toggle">
                 <button [class.active]="viewMode === 'sidebar'" (click)="setViewMode('sidebar')"
                     title="Sidebar">Side</button>
@@ -83,7 +83,7 @@
         </div>
 
         <div class="setting-group" *ngIf="viewMode === 'overlay'">
-            <label>Position</label>
+            <div class="setting-label">Position</div>
             <div class="grid-options">
                 <button [class.active]="overlayPosition === 'top-left'"
                     (click)="setOverlayPosition('top-left')">↖</button>
@@ -97,7 +97,7 @@
         </div>
 
         <div class="setting-group" *ngIf="viewMode === 'overlay'">
-            <label>Size</label>
+            <div class="setting-label">Size</div>
             <div class="btn-toggle">
                 <button [class.active]="overlaySize === 'small'" (click)="setOverlaySize('small')">S</button>
                 <button [class.active]="overlaySize === 'medium'" (click)="setOverlaySize('medium')">M</button>

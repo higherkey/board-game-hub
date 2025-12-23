@@ -243,8 +243,18 @@ export class SignalRService {
     if (roomCode) await this.hubConnection.invoke('SubmitUndoVote', roomCode, vote);
   }
 
+  private connectionPromise: Promise<void> | null = null;
+
   public async startConnection(): Promise<void> {
-    if (this.hubConnection.state === HubConnectionState.Disconnected) {
+    if (this.hubConnection.state === HubConnectionState.Connected) {
+      return;
+    }
+
+    if (this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
+    this.connectionPromise = (async () => {
       this.connectionStatus$.next('Connecting');
       try {
         await this.hubConnection.start();
@@ -253,8 +263,13 @@ export class SignalRService {
       } catch (err) {
         console.error('Error while starting connection: ' + err);
         this.connectionStatus$.next('Error');
+        throw err;
+      } finally {
+        this.connectionPromise = null;
       }
-    }
+    })();
+
+    return this.connectionPromise;
   }
 
   public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'Scatterbrain'): Promise<string> {
@@ -289,6 +304,7 @@ export class SignalRService {
     const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName);
     if (room) {
       this.currentRoomSubject.next(room);
+      this.players$.next(room.players); // Sync players immediately
       return true;
     } else {
       console.error('Failed to join room');

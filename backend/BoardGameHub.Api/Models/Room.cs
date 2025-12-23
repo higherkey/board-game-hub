@@ -8,6 +8,7 @@ public class Player
     public string Name { get; set; } = string.Empty;
     public int Score { get; set; }
     public bool IsHost { get; set; }
+    public bool IsConnected { get; set; } = true;
     
     // Optional Auth Info
     public string? UserId { get; set; }

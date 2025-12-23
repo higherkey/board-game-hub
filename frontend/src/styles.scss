@@ -104,11 +104,25 @@ body {
   min-height: 100vh;
   /* Mobile viewport fix */
   min-height: 100dvh;
-  /* The SVG Low-Poly Background */
+  position: relative;
+}
+
+/* 
+ * Performance Fix: Use fixed pseudo-element instead of background-attachment: fixed
+ * This avoids repaints on scroll.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
   background-image: url('assets/background-poly.svg');
-  background-attachment: fixed;
   background-size: cover;
   background-position: center;
+  pointer-events: none;
 }
 
 h1,

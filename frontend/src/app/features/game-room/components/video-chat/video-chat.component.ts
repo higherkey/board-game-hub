@@ -153,10 +153,10 @@ export class VideoChatComponent implements OnInit, OnDestroy {
 
   async requestPiP(videoElement: HTMLVideoElement) {
     try {
-      if (videoElement !== document.pictureInPictureElement) {
-        await videoElement.requestPictureInPicture();
-      } else {
+      if (videoElement === document.pictureInPictureElement) {
         await document.exitPictureInPicture();
+      } else {
+        await videoElement.requestPictureInPicture();
       }
     } catch (error) {
       console.error('PiP failed', error);

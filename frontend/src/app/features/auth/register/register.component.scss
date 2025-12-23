@@ -24,8 +24,8 @@
 
 .card-header {
     background: transparent;
-    color: var(--success);
-    /* Green/Teal for Register */
+    color: var(--secondary);
+    /* Teal for Register */
     padding: 2.5rem 2rem 1rem;
 
     @media (max-width: 480px) {
@@ -42,7 +42,7 @@
     margin: 0;
     font-size: 1.75rem;
     font-weight: 800;
-    color: var(--success);
+    color: var(--secondary);
     text-align: center;
 }
 
@@ -85,7 +85,7 @@
 }
 
 .input-wrapper:focus-within {
-    border-color: var(--success);
+    border-color: var(--secondary);
     background: var(--bg-surface);
     box-shadow: 0 0 0 3px rgba(56, 178, 172, 0.1);
 }
@@ -126,7 +126,7 @@
 }
 
 .toggle-password:hover {
-    color: var(--success);
+    color: var(--secondary);
 }
 
 .error-message {
@@ -153,8 +153,8 @@
 .btn-submit {
     width: 100%;
     padding: 1rem;
-    background: var(--success);
-    /* Green/Teal */
+    background: var(--secondary);
+    /* Teal */
     color: white;
     border: none;
     border-radius: var(--radius-sm);

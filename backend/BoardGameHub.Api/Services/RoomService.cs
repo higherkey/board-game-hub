@@ -1,11 +1,13 @@
 using BoardGameHub.Api.Models;
 using System.Collections.Concurrent;
-
 using System.Text.Json;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BoardGameHub.Api.Services;
 
-public class RoomService
+public class RoomService : IRoomService
 {
     // Concurrent dictionary for thread safety
     private readonly ConcurrentDictionary<string, Room> _rooms = new();
@@ -79,20 +81,38 @@ public class RoomService
             return null;
         }
 
-        // Removed strict State check to allow rejoining or verifying in-game joining if desired, 
-        // but for now keeping basic check if needed. 
-        // Actually, let's allow joining if it's lobby, or maybe handle reconnects later.
-        if (room.State != GameState.Lobby)
+        // 1. RECONNECTION LOGIC: Check if player exists by name
+        var existingPlayer = room.Players.FirstOrDefault(p => p.Name.ToLower() == playerName.ToLower());
+        if (existingPlayer != null)
         {
-             // Optional: Block joining mid-game for now
-             return null;
+            if (existingPlayer.ConnectionId != connectionId)
+            {
+               _connectionRoomMap.TryRemove(existingPlayer.ConnectionId, out _);
+            }
+            
+            existingPlayer.ConnectionId = connectionId;
+            existingPlayer.IsConnected = true; // Mark as connected
+            
+            if (userId != null) existingPlayer.UserId = userId;
+            if (avatarUrl != null) existingPlayer.AvatarUrl = avatarUrl;
+
+            _connectionRoomMap.TryAdd(connectionId, code);
+            return room;
         }
+
+        // 2. NEW PLAYER LOGIC
+        // If room has no host (or all hosts disconnected?), this player becomes host
+        // Logic: If no *Active* host, claim it? Or just if no Host flag exists?
+        // Let's stick to "If no one has IsHost=true", claim it. 
+        // If Host is disconnected, they still have IsHost=true. So we don't steal it yet.
+        bool assignHost = !room.Players.Any(p => p.IsHost);
 
         var newPlayer = new Player
         {
             ConnectionId = connectionId,
             Name = playerName,
-            IsHost = false,
+            IsHost = assignHost,
+            IsConnected = true,
             UserId = userId,
             AvatarUrl = avatarUrl
         };
@@ -135,16 +155,41 @@ public class RoomService
                 var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
                 if (player != null)
                 {
-                    room.Players.Remove(player);
-                    if (room.Players.Count == 0)
-                    {
-                        _rooms.TryRemove(room.Code, out _);
-                        // Room died, cleanup?
-                        // The map entries for other players will be "orphaned" if we don't clean them or if they strictly disconnect.
-                        // Ideally we loop and remove them, but they might already be gone.
-                        // For now this is fine.
-                    }
+                    // SOFT DELETE: Just mark as disconnected
+                    player.IsConnected = false;
+                    
+                    // Trigger cleanup check
+                    CheckRoomLifecycle(room);
                 }
+            }
+        }
+    }
+
+    private void CheckRoomLifecycle(Room room)
+    {
+        // If everyone is disconnected, schedule destruction
+        if (room.Players.All(p => !p.IsConnected))
+        {
+            Task.Run(() => ScheduleRoomDestruction(room.Code));
+        }
+    }
+
+    private async Task ScheduleRoomDestruction(string code)
+    {
+        // Wait 60 seconds
+        await Task.Delay(TimeSpan.FromSeconds(60));
+
+        if (_rooms.TryGetValue(code, out var room))
+        {
+            // If still everyone disconnected, kill it
+            if (room.Players.All(p => !p.IsConnected))
+            {
+                 // Terminate
+                 _rooms.TryRemove(code, out _);
+                 // Also clean up map? Map is already cleaned in RemovePlayer for those IDs.
+                 // But if players reconnected then disconnected, map is updated.
+                 // Map cleanup happens in RemovePlayer.
+                 // So we just drop the room.
             }
         }
     }

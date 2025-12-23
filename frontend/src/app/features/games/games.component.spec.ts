@@ -66,7 +66,7 @@ describe('GamesComponent', () => {
   });
 
   it('createRoom should prompt if name hidden', async () => {
-    spyOn(component, 'getPlayerName').and.returnValue('HostUser');
+    component.playerName = 'HostUser';
     await component.createRoom('Scatterbrain');
     expect(mockSignalRService.createRoom).toHaveBeenCalledWith('HostUser', true, 'Scatterbrain');
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/game', 'ABCD'], { queryParams: { name: 'HostUser' } });

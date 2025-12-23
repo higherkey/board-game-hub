@@ -34,7 +34,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     private refreshSub?: Subscription;
 
-    constructor(private adminService: AdminService) { }
+    constructor(private readonly adminService: AdminService) { }
 
     ngOnInit(): void {
         this.refreshData();

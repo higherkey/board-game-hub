@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SignalRService, GameSettings, Room, Player } from '../../services/signalr.service';
 import { AuthService } from '../../services/auth.service';
-import { GameBoardComponent } from '../game-board/game-board.component';
-import { MobileControllerComponent } from '../mobile-controller/mobile-controller.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
 import { GameReviewComponent } from './components/game-review/game-review.component';
@@ -26,6 +24,7 @@ import { BabbleComponent } from '../games/babble/babble.component';
 import { SushiTrainComponent } from '../games/sushi-train/sushi-train.component';
 import { SushiTrainPlayerComponent } from '../games/sushi-train/sushi-train-player.component';
 import { GreatMindsGameComponent } from '../games/great-minds/great-minds.component';
+import { ScatterbrainComponent } from '../games/scatterbrain/scatterbrain.component';
 
 @Component({
   selector: 'app-game-room',
@@ -33,8 +32,6 @@ import { GreatMindsGameComponent } from '../games/great-minds/great-minds.compon
   imports: [
     CommonModule,
     NgComponentOutlet,
-    GameBoardComponent,
-    MobileControllerComponent,
     HostSettingsComponent,
     VideoChatComponent,
     GameReviewComponent,
@@ -93,7 +90,7 @@ export class GameRoomComponent implements OnInit {
     this.gameStarted$ = this.currentRoom$.pipe(map(r => r?.state === 'Playing' || r?.state === 'Finished'));
 
     this.isHost$ = this.players$.pipe(map((all: Player[]) => {
-      const myName = this.route.snapshot.queryParamMap.get('name');
+      const myName = this.authService.getGuestName() || this.authService.currentUserValue?.displayName;
       const me = all.find(p => p.name === myName);
       return me?.isHost || false;
     }));
@@ -103,17 +100,14 @@ export class GameRoomComponent implements OnInit {
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
     this.signalRService.startConnection();
 
-    // Auto-join if name param exists (e.g. from redirect) or if we have it in guest storage
-    const nameParam = this.route.snapshot.queryParamMap.get('name');
-    const guestName = this.authService.getGuestName();
+    // Auto-join if we have a name in guest storage
+    const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
     const currentRoom = this.signalRService.currentRoomSubject.value;
 
-    const finalName = nameParam || guestName;
-
     // Only join if we aren't already in this room and have a name
-    if (finalName) {
+    if (guestName) {
       if (!currentRoom || currentRoom.code !== this.roomCode) {
-        this.signalRService.joinRoom(this.roomCode, finalName);
+        this.signalRService.joinRoom(this.roomCode, guestName);
       }
     } else {
       // No name found anywhere -> show prompt
@@ -194,7 +188,7 @@ export class GameRoomComponent implements OnInit {
     if (directId) return directId;
 
     const list = players || [];
-    const myName = this.route.snapshot.queryParamMap.get('name');
+    const myName = this.authService.getGuestName() || this.authService.currentUserValue?.displayName;
     const me = list.find((p) => p.name === myName);
     return me?.connectionId || '';
   }
@@ -237,6 +231,9 @@ export class GameRoomComponent implements OnInit {
     switch (room.gameType) {
       case 'Babble':
         this.gameComponent = BabbleComponent;
+        break;
+      case 'Scatterbrain':
+        this.gameComponent = ScatterbrainComponent;
         break;
       case 'OneAndOnly':
         // Host vs Player logic? Or does OneAndOnlyBoardComponent handle both?

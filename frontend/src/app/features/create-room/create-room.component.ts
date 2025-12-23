@@ -54,6 +54,11 @@ export class CreateRoomComponent implements OnInit {
                 await this.signalRService.startConnection();
             }
 
+            // Ensure name is saved for guest
+            if (!this.authService.currentUserValue) {
+                this.authService.setGuestName(this.nickname);
+            }
+
             const code = await this.signalRService.createRoom(
                 this.nickname,
                 this.isPublic,
@@ -61,7 +66,7 @@ export class CreateRoomComponent implements OnInit {
             );
 
             // Navigate to game room
-            this.router.navigate(['/game', code], { queryParams: { name: this.nickname } });
+            this.router.navigate(['/game', code]);
         } catch (e) {
             console.error('Error creating room', e);
             this.toastService.showError('Failed to create room. Please try again.');
