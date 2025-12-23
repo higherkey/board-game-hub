@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { BehaviorSubject } from 'rxjs';
+import { ToastService } from '../shared/services/toast.service';
 
 export interface GameSettings {
   timerDurationSeconds: number;
@@ -15,6 +16,8 @@ export interface Player {
   name: string;
   score: number;
   isHost: boolean;
+  avatarUrl?: string;
+  userId?: string;
 }
 
 export type RoomState = 'Lobby' | 'Playing' | 'Finished';
@@ -69,9 +72,11 @@ export class SignalRService {
   public answerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
   public iceCandidateReceived$ = new BehaviorSubject<{ senderId: string, candidate: string } | null>(null);
 
-  constructor() {
+  constructor(private readonly toastService: ToastService) {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl('http://localhost:5109/gamehub')
+      .withUrl('http://localhost:5109/gamehub', {
+        accessTokenFactory: () => localStorage.getItem('auth_token') || ''
+      })
       .withAutomaticReconnect()
       .build();
 
@@ -80,7 +85,6 @@ export class SignalRService {
     });
 
     this.hubConnection.on('GameStarted', (room: Room) => {
-      console.log('Game Started!', room);
       this.currentRoomSubject.next(room);
     });
 
@@ -145,7 +149,7 @@ export class SignalRService {
     this.hubConnection.on('GameRestored', (room: Room) => {
       // Full state restore
       this.currentRoomSubject.next(room);
-      alert('Game state has been reverted!');
+      this.toastService.showInfo('Game state has been reverted!');
     });
 
     this.hubConnection.on('GameEvent', (type: string, payload: any) => {
@@ -279,6 +283,9 @@ export class SignalRService {
   }
 
   public async joinRoom(roomCode: string, playerName: string): Promise<boolean> {
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
     const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName);
     if (room) {
       this.currentRoomSubject.next(room);
@@ -292,6 +299,13 @@ export class SignalRService {
   public async leaveRoom(roomCode: string): Promise<void> {
     await this.hubConnection.invoke('LeaveRoom', roomCode);
     this.currentRoomSubject.next(null); // Clear local state
+  }
+
+  public async renamePlayer(newName: string): Promise<void> {
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
+    await this.hubConnection.invoke('RenamePlayer', newName);
   }
 
   public async setGameType(roomCode: string, gameType: string): Promise<void> {

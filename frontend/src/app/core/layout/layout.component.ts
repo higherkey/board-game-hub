@@ -43,15 +43,15 @@ import { AuthService } from '../../services/auth.service';
               </div>
            </ng-container>
            <ng-template #guestTemplate>
-              <a routerLink="/login" class="btn btn-sm btn-outline-primary">Login</a>
-              <a routerLink="/register" class="btn btn-sm btn-accent">Sign Up</a>
+              <a routerLink="/login" class="btn btn-sm btn-primary">Login</a>
+              <a routerLink="/register" class="btn btn-sm btn-secondary text-white">Sign Up</a>
            </ng-template>
         </div>
       </header>
 
       <!-- CONTENT -->
       <main class="main-content" role="main">
-         <ng-content></ng-content>
+         <router-outlet></router-outlet>
       </main>
 
       <!-- FOOTER -->

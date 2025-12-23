@@ -31,11 +31,16 @@
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-sm btn-outline-secondary" (click)="settings.timerDurationSeconds = 30">30s</button>
-            <button class="btn btn-sm btn-outline-secondary" (click)="settings.timerDurationSeconds = 60">60s</button>
-            <button class="btn btn-sm btn-outline-secondary" (click)="settings.timerDurationSeconds = 90">90s</button>
-            <button class="btn btn-sm btn-outline-secondary" (click)="settings.timerDurationSeconds = 120">2m</button>
-            <button class="btn btn-sm btn-outline-secondary" (click)="settings.timerDurationSeconds = 300">5m</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="settings.timerDurationSeconds = 30">30s</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="settings.timerDurationSeconds = 60">60s</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="settings.timerDurationSeconds = 90">90s</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="settings.timerDurationSeconds = 120">2m</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="settings.timerDurationSeconds = 300">5m</button>
         </div>
     </div>
 
@@ -91,7 +96,7 @@
     </div>
 
     <!-- Start Button -->
-    <button class="btn-start" (click)="startGame()" [disabled]="selectedGameType === 'None'">
+    <button type="button" class="btn-start" (click)="startGame()" [disabled]="selectedGameType === 'None'">
         <i class="bi bi-play-fill"></i>
         START GAME
     </button>

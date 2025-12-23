@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -30,7 +31,7 @@ public class BreakingNewsGameService : IGameService
 {
     public GameType GameType => GameType.BreakingNews;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         var state = new BreakingNewsState();
 
@@ -72,39 +73,41 @@ public class BreakingNewsGameService : IGameService
         }
 
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
         // Handled by voting phase usually, but standard simple implementation required by interface
         // We can leave this empty or implement simple "1 point for playing" logic
-        if (room.GameData is not BreakingNewsState state) return;
+        if (room.GameData is not BreakingNewsState state) return Task.CompletedTask;
 
         // Maybe give points to the Anchor if they finished?
         // Implementation pending "Voting" feature.
+        return Task.CompletedTask;
     }
 
-    public bool UpdateSlot(Room room, int slotId, string value, string connectionId)
+    public Task<bool> UpdateSlot(Room room, int slotId, string value, string connectionId)
     {
-        if (room.GameData is not BreakingNewsState state) return false;
+        if (room.GameData is not BreakingNewsState state) return Task.FromResult(false);
 
         // Verify slot/owner
-        if (slotId < 0 || slotId >= state.Slots.Count) return false;
+        if (slotId < 0 || slotId >= state.Slots.Count) return Task.FromResult(false);
 
         // Optional: Check if player owns this slot
         // For chaos mode, maybe allow anyone? Design doc said "assigned slots".
         if (state.SlotOwners.TryGetValue(slotId, out var ownerId))
         {
-            if (ownerId != connectionId) return false; // Not your slot
+            if (ownerId != connectionId) return Task.FromResult(false); // Not your slot
         }
 
         var slot = state.Slots[slotId];
-        if (slot.IsLocked) return false; 
+        if (slot.IsLocked) return Task.FromResult(false); 
 
         slot.CurrentValue = value;
         slot.LastEditedBy = connectionId;
 
-        return true;
+        return Task.FromResult(true);
     }
 
     private (string Title, string Template, List<(int Id, string Type)> Slots) GetRandomScript()
@@ -121,5 +124,22 @@ public class BreakingNewsGameService : IGameService
                 (3, "Plural Noun")
             }
         );
+    }
+
+    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_SLOT" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("slotId", out var slotProp) && 
+                 action.Payload.Value.TryGetProperty("value", out var valueProp))
+             {
+                 return await UpdateSlot(room, slotProp.GetInt32(), valueProp.GetString() ?? "", connectionId);
+             }
+        }
+        return false;
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<BreakingNewsState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new BreakingNewsState();
     }
 }

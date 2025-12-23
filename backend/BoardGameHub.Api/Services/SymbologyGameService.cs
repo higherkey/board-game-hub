@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -38,7 +39,7 @@ public class SymbologyGameService : IGameService
         "New York", "Paris", "Tokyo", "London", "Sydney"
     };
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         // 1. Setup State
         var state = new SymbologyState();
@@ -58,20 +59,22 @@ public class SymbologyGameService : IGameService
 
         state.IsRoundActive = true;
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
         // Scores are updated in real-time during correct guess usually, 
         // but this method is called at round end.
         // We can finalize things here if needed.
+        return Task.CompletedTask;
     }
 
-    public bool PlaceMarker(Room room, string playerId, string icon, string markerType, string color)
+    public Task<bool> PlaceMarker(Room room, string playerId, string icon, string markerType, string color)
     {
-        if (room.GameData is not SymbologyState state) return false;
-        if (!state.IsRoundActive) return false;
-        if (state.ActivePlayerId != playerId) return false;
+        if (room.GameData is not SymbologyState state) return Task.FromResult(false);
+        if (!state.IsRoundActive) return Task.FromResult(false);
+        if (state.ActivePlayerId != playerId) return Task.FromResult(false);
 
         var marker = new SymbologyMarker
         {
@@ -81,29 +84,29 @@ public class SymbologyGameService : IGameService
         };
         state.Markers.Add(marker);
         
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool RemoveMarker(Room room, string playerId, string markerId)
+    public Task<bool> RemoveMarker(Room room, string playerId, string markerId)
     {
-        if (room.GameData is not SymbologyState state) return false;
-        if (!state.IsRoundActive) return false;
-        if (state.ActivePlayerId != playerId) return false;
+        if (room.GameData is not SymbologyState state) return Task.FromResult(false);
+        if (!state.IsRoundActive) return Task.FromResult(false);
+        if (state.ActivePlayerId != playerId) return Task.FromResult(false);
 
         var marker = state.Markers.FirstOrDefault(m => m.Id == markerId);
         if (marker != null)
         {
             state.Markers.Remove(marker);
-            return true;
+            return Task.FromResult(true);
         }
-        return false;
+        return Task.FromResult(false);
     }
     
-    public bool SubmitGuess(Room room, string playerId, string guess)
+    public Task<bool> SubmitGuess(Room room, string playerId, string guess)
     {
-        if (room.GameData is not SymbologyState state) return false;
-        if (!state.IsRoundActive) return false;
-        if (state.ActivePlayerId == playerId) return false; // Active player can't guess
+        if (room.GameData is not SymbologyState state) return Task.FromResult(false);
+        if (!state.IsRoundActive) return Task.FromResult(false);
+        if (state.ActivePlayerId == playerId) return Task.FromResult(false); // Active player can't guess
 
         // Log guess
         state.GuessLog.Add($"{room.Players.FirstOrDefault(p => p.ConnectionId == playerId)?.Name ?? "Unknown"}: {guess}");
@@ -117,10 +120,10 @@ public class SymbologyGameService : IGameService
             AddScore(state, state.ActivePlayerId, 10); // Active player also gets points
 
             state.IsRoundActive = false; // End round logic triggered by this result
-            return true;
+            return Task.FromResult(true);
         }
 
-        return false;
+        return Task.FromResult(false);
     }
 
     private void AddScore(SymbologyState state, string playerId, int points)
@@ -128,5 +131,41 @@ public class SymbologyGameService : IGameService
         if (!state.Scores.ContainsKey(playerId))
             state.Scores[playerId] = 0;
         state.Scores[playerId] += points;
+    }
+
+     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "PLACE_MARKER" && action.Payload.HasValue)
+        {
+             var p = action.Payload.Value;
+             if (p.TryGetProperty("icon", out var icon) && 
+                 p.TryGetProperty("markerType", out var type) &&
+                 p.TryGetProperty("color", out var color))
+             {
+                 if(await PlaceMarker(room, connectionId, icon.GetString()??"", type.GetString()??"", color.GetString()??""))
+                     return true;
+             }
+        }
+        else if (action.Type == "REMOVE_MARKER" && action.Payload.HasValue)
+        {
+             if(action.Payload.Value.TryGetProperty("markerId", out var id))
+             {
+                 if(await RemoveMarker(room, connectionId, id.GetString()??""))
+                    return true;
+             }
+        }
+        else if (action.Type == "SUBMIT_GUESS" && action.Payload.HasValue)
+        {
+             if(action.Payload.Value.TryGetProperty("guess", out var guess))
+             {
+                 if(await SubmitGuess(room, connectionId, guess.GetString()??""))
+                    return true;
+             }
+        }
+        return false;
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<SymbologyState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new SymbologyState();
     }
 }

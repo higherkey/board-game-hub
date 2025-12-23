@@ -7,7 +7,7 @@ public class PoppycockGameService : IGameService
 {
     public GameType GameType => GameType.Poppycock;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         var wordData = GetRandomWord();
         var state = new PoppycockState
@@ -17,11 +17,12 @@ public class PoppycockGameService : IGameService
         };
         
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room.GameData is not PoppycockState state) return;
+        if (room.GameData is not PoppycockState state) return Task.CompletedTask;
 
         // Ensure we are in Result phase or moving to it
         // Check votes
@@ -45,12 +46,13 @@ public class PoppycockGameService : IGameService
         
         // Host points? Optional variant -> Dasher gets points if no one guesses real.
         // Skipping for MVP simplicity.
+        return Task.CompletedTask;
     }
 
-    public void SubmitDefinition(Room room, string playerId, string definition)
+    public Task SubmitDefinition(Room room, string playerId, string definition)
     {
-        if (room.GameData is not PoppycockState state) return;
-        if (state.Phase != PoppycockPhase.Faking) return;
+        if (room.GameData is not PoppycockState state) return Task.CompletedTask;
+        if (state.Phase != PoppycockPhase.Faking) return Task.CompletedTask;
 
         state.PlayerSubmissions[playerId] = definition;
 
@@ -65,24 +67,27 @@ public class PoppycockGameService : IGameService
             // We don't shuffle here, the frontend can shuffle or we can create a projected list.
             // But simple to just let frontend shuffle for display to keep state clean.
         }
+        return Task.CompletedTask;
     }
 
-    public void SubmitVote(Room room, string playerId, string votedDefinitionId)
+    public Task SubmitVote(Room room, string playerId, string votedDefinitionId)
     {
-        if (room.GameData is not PoppycockState state) return;
-        if (state.Phase != PoppycockPhase.Voting) return;
+        if (room.GameData is not PoppycockState state) return Task.CompletedTask;
+        if (state.Phase != PoppycockPhase.Voting) return Task.CompletedTask;
         
         // Improve: Prevent voting for self?
-        if (votedDefinitionId == playerId) return; 
+        if (votedDefinitionId == playerId) return Task.CompletedTask; 
 
         state.Votes[playerId] = votedDefinitionId;
 
         // Check if all players have voted
         if (state.Votes.Count == room.Players.Count)
         {
-            CalculateScores(room);
+            CalculateScores(room); // Now async but we can just fire and forget or await if we made this async
+            // CalculateScores updates state synchronous-ish in memory so Task.CompletedTask is fine to return
             state.Phase = PoppycockPhase.Result;
         }
+        return Task.CompletedTask;
     }
 
     private void AddScore(Room room, string playerId, int points)
@@ -114,6 +119,32 @@ public class PoppycockGameService : IGameService
         };
         
         return prompts[new Random().Next(prompts.Length)];
+    }
+
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_DEFINITION" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("definition", out var defProp))
+             {
+                 SubmitDefinition(room, connectionId, defProp.GetString() ?? "");
+                 return Task.FromResult(true);
+             }
+        }
+        else if (action.Type == "SUBMIT_VOTE" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("votedId", out var voteProp))
+             {
+                 SubmitVote(room, connectionId, voteProp.GetString() ?? "");
+                 return Task.FromResult(true);
+             }
+        }
+        return Task.FromResult(false);
+    }
+
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<PoppycockState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new PoppycockState();
     }
 }
 

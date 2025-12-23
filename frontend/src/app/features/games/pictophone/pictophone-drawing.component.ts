@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CanvasDrawComponent } from '../../../shared/components/canvas-draw/canvas-draw.component';
+import { ToastService } from '../../../shared/services/toast.service';
 
 @Component({
     selector: 'app-pictophone-drawing',
@@ -47,27 +48,18 @@ export class PictophoneDrawingComponent {
     currentImage: string | null = null;
     submitted: boolean = false;
 
+    constructor(private readonly toastService: ToastService) { }
+
     onImageGenerated(data: string) {
         this.currentImage = data;
     }
 
     submit() {
-        // Logic relies on CanvasDrawComponent emitting roughly when needed, 
-        // but actually CanvasDraw usually emits on change or needs a trigger.
-        // My CanvasDraw implementation emits on 'imageGenerated' but wait, 
-        // does it emit continuously? 
-        // Looking at CanvasDraw code: emitImage() is called on 'stopDrawing' (mouseup).
-        // So 'currentImage' updates after every stroke.
-
         if (this.currentImage) {
             this.submitted = true;
             this.imageSubmitted.emit(this.currentImage);
         } else {
-            // If they didn't draw anything, maybe we should trigger a "get image" from canvas?
-            // However, we don't have easy access to child method unless we use ViewChild.
-            // Let's assume they made at least one stroke or we rely on them doing so.
-            // Fallback: If no stroke, maybe empty string?
-            alert('Draw something first!');
+            this.toastService.showWarning('Draw something first!');
         }
     }
 }

@@ -1,5 +1,6 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Room } from '../../../services/signalr.service';
 
 @Component({
     selector: 'app-sushi-train',
@@ -8,9 +9,11 @@ import { CommonModule } from '@angular/common';
     templateUrl: './sushi-train.component.html',
     styleUrls: ['./sushi-train.component.scss']
 })
-export class SushiTrainComponent implements OnInit {
-    @Input() gameState: any; // SushiTrainState
-    @Input() players: any[] = [];
+export class SushiTrainComponent {
+    @Input() room: Room | null = null;
+
+    get gameState() { return this.room?.gameData; }
+    get players() { return this.room?.players || []; }
 
     getCardEmoji(type: string): string {
         const map: any = {
@@ -36,7 +39,4 @@ export class SushiTrainComponent implements OnInit {
         return this.gameState?.playerStates?.[playerId];
     }
 
-    ngOnInit() {
-        // Component initialization
-    }
 }

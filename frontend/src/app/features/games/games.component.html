@@ -4,7 +4,7 @@
             <h1 class="display-4 text-primary">Available Games</h1>
             <p class="lead text-secondary">Choose a game to host or join an active room.</p>
         </div>
-        <button class="btn btn-outline-primary" (click)="loadRooms()">
+        <button type="button" class="btn btn-outline-primary" (click)="loadRooms()">
             <i class="bi bi-arrow-clockwise"></i> Refresh
         </button>
     </div>
@@ -17,7 +17,8 @@
                     <h2 class="display-6 mb-3">Host a New Game Night</h2>
                     <p class="lead text-secondary mb-4">Start a lobby and choose your game later. Perfect for getting
                         everyone together first!</p>
-                    <button class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-sm" (click)="createRoom()">
+                    <button type="button" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-sm"
+                        (click)="createRoom()">
                         <i class="bi bi-plus-circle-fill me-2"></i> Create New Room
                     </button>
                 </div>
@@ -40,12 +41,12 @@
                 <h4 class="card-title fw-bold text-primary mb-2">{{game.name}}</h4>
                 <p class="card-text text-secondary small mb-4 flex-grow-1">{{game.description}}</p>
 
-                <button *ngIf="game.status === 'Deployed'" class="btn btn-outline-primary w-100 mt-auto fw-bold"
-                    (click)="createRoom(game.id)">
+                <button *ngIf="game.status === 'Deployed'" type="button"
+                    class="btn btn-outline-primary w-100 mt-auto fw-bold" (click)="createRoom(game.id)">
                     Play Now
                 </button>
-                <button *ngIf="game.status !== 'Deployed'" class="btn btn-sm btn-ghost w-100 mt-auto text-muted"
-                    disabled>
+                <button *ngIf="game.status !== 'Deployed'" type="button"
+                    class="btn btn-sm btn-ghost w-100 mt-auto text-muted" disabled>
                     {{ game.status }}
                 </button>
             </div>
@@ -63,7 +64,7 @@
                         <input [(ngModel)]="roomCode" placeholder="ADBC" maxlength="4"
                             class="form-control text-uppercase text-center"
                             style="letter-spacing: 0.2em; font-weight: 700;">
-                        <button class="btn btn-outline-primary" (click)="joinRoom(roomCode)"
+                        <button type="button" class="btn btn-outline-primary" (click)="joinRoom(roomCode)"
                             [disabled]="!roomCode || roomCode.length < 4">Join</button>
                     </div>
                 </div>
@@ -102,10 +103,35 @@
                         <input id="playerName-{{room.code}}" [(ngModel)]="playerName"
                             class="form-control form-control-sm mb-2" placeholder="Your Name"
                             aria-label="Your name to join room" />
-                        <button class="btn btn-primary w-100 btn-sm" (click)="joinRoom(room.code)"
+                        <button type="button" class="btn btn-primary w-100 btn-sm" (click)="joinRoom(room.code)"
                             [disabled]="!playerName">Join Game</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Name Input Modal -->
+<div class="modal-backdrop fade show" *ngIf="showNameModal" style="z-index: 1050;"></div>
+<div class="modal fade show d-block" *ngIf="showNameModal" tabindex="-1" role="dialog" style="z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content bg-surface shadow-lg border-primary">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title text-primary fw-bold">Enter Your Name</h5>
+                <button type="button" class="btn-close" (click)="cancelCreateRoom()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary small mb-3">Please enter a display name to host this game.</p>
+                <input type="text" class="form-control form-control-lg text-center fw-bold" [(ngModel)]="tempPlayerName"
+                    (keyup.enter)="confirmCreateRoom()" placeholder="e.g. Captain Awesome" autofocus>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-ghost text-secondary" (click)="cancelCreateRoom()">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" (click)="confirmCreateRoom()"
+                    [disabled]="!tempPlayerName">
+                    Start Game
+                </button>
             </div>
         </div>
     </div>

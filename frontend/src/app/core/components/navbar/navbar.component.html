@@ -30,14 +30,15 @@
                 <ng-container *ngIf="currentUser$ | async as user; else loginTemplate">
                     <!-- User Profile -->
                     <div class="dropdown">
-                        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle pointer"
-                            role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button
+                            class="d-flex align-items-center text-white bg-transparent border-0 p-0 pointer"
+                            type="button" id="userMenu" (click)="toggleDropdown()" aria-expanded="false">
                             <img [src]="user.avatarUrl" alt="Avatar"
                                 class="rounded-circle border border-2 border-warning me-2" width="32" height="32">
                             <span class="fw-semibold">{{ user.displayName }}</span>
-                        </a>
+                        </button>
                         <ul class="dropdown-menu dropdown-menu-end bg-dark border-secondary shadow"
-                            aria-labelledby="userMenu">
+                            [class.show]="isDropdownOpen" aria-labelledby="userMenu">
                             <li><button class="dropdown-item text-white" (click)="logout()">Sign Out</button></li>
                         </ul>
                     </div>
@@ -54,14 +55,3 @@
         </div>
     </div>
 </nav>
-
-<style>
-    /* Simple CSS override for dropdown pointer since we aren't using full Bootstrap JS for toggle sometimes */
-    .pointer {
-        cursor: pointer;
-    }
-
-    .dropdown-item:hover {
-        background-color: #3f3f46;
-    }
-</style>

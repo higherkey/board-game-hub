@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
     selector: 'app-games',
@@ -25,13 +26,14 @@ export class GamesComponent implements OnInit {
         private readonly signalRService: SignalRService,
         private readonly router: Router,
         private readonly authService: AuthService,
-        private readonly gameDataService: GameDataService
+        private readonly gameDataService: GameDataService,
+        private readonly toastService: ToastService
     ) { }
 
     ngOnInit() {
         console.log('Games Component Initialized');
         this.gameDataService.loadGames().subscribe(games => {
-            this.games = games.sort((a, b) => {
+            this.games = [...games].sort((a, b) => {
                 // Sort by status: Deployed (0) first, checking for string 'Deployed'
                 if (a.status === 'Deployed' && b.status !== 'Deployed') return -1;
                 if (a.status !== 'Deployed' && b.status === 'Deployed') return 1;
@@ -43,6 +45,9 @@ export class GamesComponent implements OnInit {
         this.authService.currentUser$.subscribe(user => {
             if (user) {
                 this.playerName = user.displayName;
+            } else {
+                // Use guest name if available
+                this.playerName = this.authService.getGuestName() || '';
             }
         });
     }
@@ -61,40 +66,56 @@ export class GamesComponent implements OnInit {
         }
     }
 
+    showNameModal = false;
+    tempPlayerName = '';
+    pendingGameType?: string;
+
     getHostName(players: any[]): string {
         const host = players.find(p => p.isHost);
         return host ? host.name : 'Unknown';
     }
 
     async createRoom(gameType?: string) {
-        let name = this.playerName;
-
-        if (!name) {
-            name = this.getPlayerName();
+        // If user is authenticated OR has a saved guest name, proceed directly
+        if (this.playerName && this.playerName.trim().length > 0) {
+            await this.proceedToCreateRoom(gameType || 'Scatterbrain');
+            return;
         }
 
-        if (!name) return;
+        // Otherwise show modal to capture name
+        this.pendingGameType = gameType || 'Scatterbrain';
+        this.tempPlayerName = '';
+        this.showNameModal = true;
+    }
 
+    async confirmCreateRoom() {
+        if (!this.tempPlayerName) return;
+
+        this.playerName = this.tempPlayerName;
+        if (!this.authService.currentUserValue) {
+            this.authService.setGuestName(this.playerName);
+        }
+        this.showNameModal = false;
+        await this.proceedToCreateRoom(this.pendingGameType || 'Scatterbrain');
+    }
+
+    cancelCreateRoom() {
+        this.showNameModal = false;
+        this.pendingGameType = undefined;
+        this.tempPlayerName = '';
+    }
+
+    private async proceedToCreateRoom(gameType: string) {
         try {
             if (this.signalRService.connectionStatus$.value !== 'Connected') {
                 await this.signalRService.startConnection();
             }
-            // Create room with Game Type (default to Scatterbrain if generic? Or handle in backend?)
-            // If gameType is undefined, backend currently defaults to Scatterbrain anyway in the signature, 
-            // OR we can pass a specific 'Lobby' type if we want no game selected?
-            // For now, let's default to 'Scatterbrain' if specific button clicked, or 'Scatterbrain' if generic 
-            // BUT user wants generic "Create Room" separate. 
-            // Ideally backend supports CreateRoom(..., gameType: 'None') or similar.
-            // Backend `CreateRoom` sig: `string gameType = "Scatterbrain"`.
-            // Let's rely on HostSettings to change it later if they want.
 
-            const typeToUse = gameType || 'Scatterbrain';
-            const code = await this.signalRService.createRoom(name, true, typeToUse);
-
-            this.router.navigate(['/game', code], { queryParams: { name: name } });
+            const code = await this.signalRService.createRoom(this.playerName, true, gameType);
+            this.router.navigate(['/game', code], { queryParams: { name: this.playerName } });
         } catch (e) {
             console.error('Error creating room', e);
-            alert('Error creating room. Please try again.');
+            this.toastService.showError('Error creating room. Please try again.');
         }
     }
 
@@ -105,14 +126,11 @@ export class GamesComponent implements OnInit {
             if (success) {
                 this.router.navigate(['/game', code], { queryParams: { name: this.playerName } });
             } else {
-                alert('Room not found or full.');
+                this.toastService.showError('Room not found or full.');
             }
         } catch (e) {
             console.error('Error joining room', e);
-            alert('Could not join room. Please check the code.');
+            this.toastService.showError('Could not join room. Please check the code.');
         }
-    }
-    getPlayerName(): string {
-        return prompt("Enter your name to host:") || '';
     }
 }

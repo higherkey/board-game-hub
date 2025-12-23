@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -30,7 +31,7 @@ public class WisecrackGameService : IGameService
         "A terrible name for a rock band"
     };
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         var state = new WisecrackState
         {
@@ -48,26 +49,28 @@ public class WisecrackGameService : IGameService
         AssignPrompts(room.Players, state);
 
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
         // Scores are calculated per battle, so maybe just ensure final tally is correct?
         // This is usually called at the VERY END or end of a "round" (set of battles).
         // For Wisecrack, let's say end of all battles is end of round.
+        return Task.CompletedTask;
     }
 
-    public void SubmitAnswer(Room room, string playerId, string promptId, string answerText)
+    public Task SubmitAnswer(Room room, string playerId, string promptId, string answerText)
     {
-        if (room.GameData is not WisecrackState state) return;
-        if (state.Phase != WisecrackPhase.Writing) return;
+        if (room.GameData is not WisecrackState state) return Task.CompletedTask;
+        if (state.Phase != WisecrackPhase.Writing) return Task.CompletedTask;
 
         var player = room.Players.FirstOrDefault(p => p.ConnectionId == playerId);
-        if (player == null) return;
+        if (player == null) return Task.CompletedTask;
 
         // Check if player is assigned to this prompt
         var assignment = state.Assignments.FirstOrDefault(a => a.PromptId == promptId);
-        if (assignment == null || !assignment.AssignedPlayerIds.Contains(playerId)) return;
+        if (assignment == null || !assignment.AssignedPlayerIds.Contains(playerId)) return Task.CompletedTask;
 
         // Add or Update answer
         state.Answers.RemoveAll(a => a.PromptId == promptId && a.PlayerId == playerId);
@@ -88,22 +91,23 @@ public class WisecrackGameService : IGameService
             state.Phase = WisecrackPhase.Battling;
             state.CurrentBattleIndex = 0;
         }
+        return Task.CompletedTask;
     }
 
-    public void SubmitVote(Room room, string playerId, int choice)
+    public Task SubmitVote(Room room, string playerId, int choice)
     {
-        if (room.GameData is not WisecrackState state) return;
-        if (state.Phase != WisecrackPhase.Battling) return;
+        if (room.GameData is not WisecrackState state) return Task.CompletedTask;
+        if (state.Phase != WisecrackPhase.Battling) return Task.CompletedTask;
 
         var battle = state.CurrentBattle;
-        if (battle == null || battle.IsFinished) return;
+        if (battle == null || battle.IsFinished) return Task.CompletedTask;
 
         // Validate voter (can't vote if it's your own answer? Design says players vote on others)
         // Check if player is one of the answerers
         if (battle.AnswerA.PlayerId == playerId || battle.AnswerB.PlayerId == playerId)
         {
             // Usually in Quiplash, answerers DO NOT vote on their own battle.
-            return;
+            return Task.CompletedTask;
         }
 
         // Add/Update Vote
@@ -119,12 +123,13 @@ public class WisecrackGameService : IGameService
         {
             FinishBattle(room, battle);
         }
+        return Task.CompletedTask;
     }
 
-    public void NextBattle(Room room)
+    public Task NextBattle(Room room)
     {
-        if (room.GameData is not WisecrackState state) return;
-        if (state.Phase != WisecrackPhase.Battling) return;
+        if (room.GameData is not WisecrackState state) return Task.CompletedTask;
+        if (state.Phase != WisecrackPhase.Battling) return Task.CompletedTask;
 
         state.CurrentBattleIndex++;
         if (state.CurrentBattleIndex >= state.Battles.Count)
@@ -132,6 +137,7 @@ public class WisecrackGameService : IGameService
             state.Phase = WisecrackPhase.Result;
             state.CurrentBattleIndex = -1;
         }
+        return Task.CompletedTask;
     }
 
     private void FinishBattle(Room room, WisecrackBattle battle)
@@ -221,5 +227,39 @@ public class WisecrackGameService : IGameService
         // Shuffle battles
         var rnd = new Random();
         state.Battles = state.Battles.OrderBy(x => rnd.Next()).ToList();
+    }
+
+    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_ANSWER" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("promptId", out var promptProp) && 
+                 action.Payload.Value.TryGetProperty("answer", out var ansProp))
+             {
+                 await SubmitAnswer(room, connectionId, promptProp.GetString() ?? "", ansProp.GetString() ?? "");
+                 return true;
+             }
+        }
+        else if (action.Type == "SUBMIT_VOTE" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("choice", out var choiceProp))
+             {
+                 await SubmitVote(room, connectionId, choiceProp.GetInt32());
+                 return true;
+             }
+        }
+        else if (action.Type == "NEXT_BATTLE")
+        {
+             await NextBattle(room);
+             return true;
+        }
+
+        return false;
+    }
+
+
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<WisecrackState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new WisecrackState();
     }
 }

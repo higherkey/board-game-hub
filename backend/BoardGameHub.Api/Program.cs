@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +30,12 @@ builder.Services.AddIdentity<User, IdentityRole>(options => {
 .AddDefaultTokenProviders();
 
 // JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_12345_make_it_long_enough";
+// JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException("Jwt:Key is missing from configuration.");
+}
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -74,6 +81,20 @@ builder.Services.AddSignalR()
     .AddJsonProtocol(options => {
         options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddSlidingWindowLimiter("HubRateLimit", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromSeconds(10);
+        opt.SegmentsPerWindow = 5;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 20;
+    });
+});
+
 builder.Services.AddSingleton<RoomService>();
 builder.Services.AddSingleton<IBabbleService, BabbleService>();
 builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
@@ -102,7 +123,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // Angular default port
+        policy.WithOrigins("http://localhost:4200", "http://localhost:62915") // Angular dev ports
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // Required for SignalR
@@ -130,13 +151,16 @@ app.UseStaticFiles();
 
 app.UseCors("AllowFrontend");
 
+app.UseRateLimiter();
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<GameHub>("/gamehub");
-app.MapHub<SocialHub>("/socialhub");
-app.MapHub<AdminHub>("/adminhub");
+app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
+app.MapHub<SocialHub>("/socialhub").RequireRateLimiting("HubRateLimit");
+app.MapHub<AdminHub>("/adminhub").RequireRateLimiting("HubRateLimit");
 app.MapFallbackToFile("index.html");
 
 app.Run();

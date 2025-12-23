@@ -1,99 +1,135 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AdminService, ServerStats } from '../../services/admin.service';
+import { FormsModule } from '@angular/forms';
+import { AdminService, RoomStats, RoomSummary } from '../../services/admin.service';
+import { BehaviorSubject, Subscription, interval } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
     selector: 'app-admin-dashboard',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './admin-dashboard.component.html',
-    styleUrl: './admin-dashboard.component.scss'
+    styleUrls: ['./admin-dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
-    private readonly adminService = inject(AdminService);
-    stats: ServerStats | null = null;
-    loading = true;
-    refreshInterval: any;
+    stats$ = new BehaviorSubject<RoomStats | null>(null);
 
-    expandedRooms = new Set<string>();
-    viewMode: 'list' | 'grid' = 'list';
+    // Modal States
+    showCreateModal = false;
+    showMessageModal = false;
+    showSettingsModal = false;
 
-    ngOnInit() {
-        this.initDashboard();
+    // Form Data
+    createHostName = 'AdminBot';
+    createGameType = 'Scatterbrain';
+
+    globalMessageContent = '';
+
+    settingsRoomCode = '';
+    settingsDuration = 60;
+
+    // UI State
+    expandedRows = new Set<string>();
+
+    private refreshSub?: Subscription;
+
+    constructor(private adminService: AdminService) { }
+
+    ngOnInit(): void {
+        this.refreshData();
+        // Auto-refresh every 3 seconds
+        this.refreshSub = interval(3000).pipe(
+            switchMap(() => this.adminService.getStats())
+        ).subscribe({
+            next: (data) => this.stats$.next(data),
+            error: (err) => console.error('Stats refresh error', err)
+        });
+
+        // Initial load
+        this.adminService.getStats().subscribe(data => this.stats$.next(data));
     }
 
-    setViewMode(mode: 'list' | 'grid') {
-        this.viewMode = mode;
+    ngOnDestroy(): void {
+        this.refreshSub?.unsubscribe();
     }
 
-    private async initDashboard() {
-        try {
-            await this.adminService.startConnection();
-            await this.loadStats();
-
-            // Auto-refresh every second
-            this.refreshInterval = setInterval(() => this.loadStats(), 1000);
-        } catch (err) {
-            console.error('Failed to connect to Admin Hub', err);
-            this.loading = false;
-        }
+    refreshData() {
+        this.adminService.getStats().subscribe(data => this.stats$.next(data));
     }
 
-    ngOnDestroy() {
-        if (this.refreshInterval) clearInterval(this.refreshInterval);
-        this.adminService.stopConnection();
-    }
-
-    async loadStats() {
-        try {
-            this.stats = await this.adminService.getStats();
-        } catch (err) {
-            console.error('Error loading stats', err);
-        } finally {
-            this.loading = false;
-        }
-    }
-
-    toggleRoom(code: string) {
-        if (this.expandedRooms.has(code)) {
-            this.expandedRooms.delete(code);
+    toggleDetails(code: string) {
+        if (this.expandedRows.has(code)) {
+            this.expandedRows.delete(code);
         } else {
-            this.expandedRooms.add(code);
+            this.expandedRows.add(code);
         }
     }
 
-    isExpanded(code: string): boolean {
-        return this.expandedRooms.has(code);
+    // --- Modal Triggers ---
+
+    openCreateModal() {
+        this.showCreateModal = true;
     }
 
-    formatUptime(spanString: string): string {
-        // Backend returns TimeSpan string "d.hh:mm:ss" usually
-        if (!spanString) return '0s';
-        return spanString.split('.')[0];
+    openMessageModal() {
+        this.showMessageModal = true;
     }
 
-    trackByRoom(index: number, room: any): string {
-        return room.code;
+    openSettings(room: RoomSummary) {
+        this.settingsRoomCode = room.code;
+        this.settingsDuration = room.settingsTimer;
+        this.showSettingsModal = true;
     }
 
-    async kickPlayer(roomCode: string, connectionId: string) {
-        if (!confirm('Are you sure you want to kick this player?')) return;
-        try {
-            // Need to expose this in service first, but we can call invoke directly for now or add to service
-            // Creating a quick service method is cleaner.
-            await this.adminService.kickPlayer(roomCode, connectionId);
-            await this.loadStats(); // Refresh immediately
-        } catch (err) {
-            console.error('Failed to kick player', err);
-        }
+    // --- Actions ---
+
+    submitCreateRoom() {
+        if (!this.createHostName) return;
+        this.adminService.createRoom(this.createHostName, this.createGameType).subscribe({
+            next: () => {
+                this.showCreateModal = false;
+                this.refreshData();
+            },
+            error: (err) => alert(err.message)
+        });
     }
 
-    async promoteToHost(roomCode: string, connectionId: string) {
-        try {
-            await this.adminService.promoteToHost(roomCode, connectionId);
-            await this.loadStats();
-        } catch (err) {
-            console.error('Failed to promote player', err);
-        }
+    submitGlobalMessage() {
+        if (!this.globalMessageContent) return;
+        this.adminService.sendGlobalMessage(this.globalMessageContent).subscribe({
+            next: () => {
+                this.showMessageModal = false;
+                this.globalMessageContent = '';
+            },
+            error: (err) => alert(err.message)
+        });
+    }
+
+    submitSettings() {
+        if (!this.settingsRoomCode) return;
+        this.adminService.updateSettings(this.settingsRoomCode, this.settingsDuration).subscribe({
+            next: () => {
+                this.showSettingsModal = false;
+                this.refreshData();
+            },
+            error: (err) => alert(err.message)
+        });
+    }
+
+    startGame(code: string) {
+        if (!confirm(`Start game for room ${code}?`)) return;
+        this.adminService.startGame(code).subscribe({
+            next: () => this.refreshData(),
+            error: (err) => alert(err.message)
+        });
+    }
+
+    terminateRoom(code: string) {
+        if (!confirm(`Are you sure you want to terminate room ${code}?`)) return;
+        this.adminService.terminateRoom(code).subscribe({
+            next: () => this.refreshData(),
+            error: (err) => alert(err.message)
+        });
     }
 }

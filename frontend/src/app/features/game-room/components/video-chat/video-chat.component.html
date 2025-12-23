@@ -1,29 +1,114 @@
-<!-- Join Video Button (shown when video is off) -->
-<div *ngIf="!isVideoActive" class="join-video-prompt">
-    <button class="btn-join-video" (click)="joinVideo()">
-        <span class="icon">📹</span> Join Video Chat
-    </button>
-</div>
+<!-- Join Video Prompt Removed (Moved to Game Room Header) -->
 
 <!-- Video Grid (shown when video is active) -->
-<div *ngIf="isVideoActive" class="video-chat-container">
-    <div class="video-grid">
+<div *ngIf="isVideoActive" class="video-chat-container" [class.overlay-mode]="viewMode === 'overlay'"
+    [class]="overlayPosition" [class.size-small]="overlaySize === 'small'"
+    [class.size-medium]="overlaySize === 'medium'" [class.size-large]="overlaySize === 'large'">
+
+    <!-- Docked/Overlay Grid View -->
+    <div class="video-grid" *ngIf="viewMode !== 'sidebar'">
         <div class="video-container local">
             <video #localVideo autoplay muted playsinline></video>
             <div class="label">You</div>
+            <button class="btn-pip" (click)="requestPiP(localVideo)" title="Picture-in-Picture">📺</button>
         </div>
         <div *ngFor="let remote of remoteStreams" class="video-container remote">
-            <video [srcObject]="remote.stream" autoplay playsinline></video>
+            <video #remoteVideo [srcObject]="remote.stream" autoplay playsinline></video>
             <div class="label">Player {{ remote.peerId.substring(0, 4) }}</div>
+            <button class="btn-pip" (click)="requestPiP(remoteVideo)" title="Picture-in-Picture">📺</button>
         </div>
     </div>
+
+    <!-- Sidebar Participant List -->
+    <div class="participant-list" *ngIf="viewMode === 'sidebar'">
+        <div class="participant-header">
+            <small class="fw-bold">PLAYERS ({{ players.length }})</small>
+        </div>
+        <div class="participant-item" *ngFor="let p of players">
+            <div class="participant-media">
+                <!-- If stream exists, show video -->
+                <div class="video-thumbnail" *ngIf="getStreamForPlayer(p.connectionId) as stream; else avatar">
+                    <video [srcObject]="stream" autoplay playsinline
+                        [muted]="p.connectionId === localConnectionId"></video>
+                </div>
+                <!-- Else show Avatar -->
+                <ng-template #avatar>
+                    <div class="avatar-placeholder" [title]="p.name">
+                        {{ p.name.charAt(0).toUpperCase() }}
+                    </div>
+                </ng-template>
+            </div>
+
+            <div class="participant-info">
+                <div class="name-row">
+                    <span class="name text-truncate" [title]="p.name">{{ p.name }}</span>
+                    <i *ngIf="p.isHost" class="bi bi-star-fill text-warning host-icon" title="Host"></i>
+                </div>
+                <div class="score-badge">{{ p.score || 0 }} pts</div>
+            </div>
+        </div>
+    </div>
+
     <div class="controls">
-        <button (click)="toggleAudio()" [class.muted]="isAudioMuted">
-            {{ isAudioMuted ? 'Unmute' : 'Mute' }}
+        <button (click)="toggleAudio()" [class.muted]="isAudioMuted" title="{{ isAudioMuted ? 'Unmute' : 'Mute' }}">
+            {{ isAudioMuted ? '🔇' : '🎤' }}
         </button>
-        <button (click)="toggleVideo()" [class.muted]="isVideoMuted">
-            {{ isVideoMuted ? 'Show Video' : 'Hide Video' }}
+        <button (click)="toggleVideo()" [class.muted]="isVideoMuted"
+            title="{{ isVideoMuted ? 'Show Video' : 'Hide Video' }}">
+            {{ isVideoMuted ? '📵' : '📹' }}
         </button>
-        <button class="btn-leave" (click)="leaveVideo()">Leave Video</button>
+        <button (click)="toggleSettings()" class="btn-settings" title="Video Layout Settings">⚙️</button>
+        <button class="btn-leave" (click)="leaveVideo()" title="Leave Video Chat">🚪</button>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div class="settings-panel" *ngIf="showSettings">
+        <div class="settings-header">
+            <span>Video Settings</span>
+            <button (click)="toggleSettings()">×</button>
+        </div>
+
+        <div class="setting-group">
+            <label>View Mode</label>
+            <div class="btn-toggle">
+                <button [class.active]="viewMode === 'sidebar'" (click)="setViewMode('sidebar')"
+                    title="Sidebar">Side</button>
+                <button [class.active]="viewMode === 'overlay'" (click)="setViewMode('overlay')"
+                    title="Overlay">Float</button>
+                <button [class.active]="viewMode === 'docked-top'" (click)="setViewMode('docked-top')"
+                    title="Dock Top">Top</button>
+                <button [class.active]="viewMode === 'docked-bottom'" (click)="setViewMode('docked-bottom')"
+                    title="Dock Bottom">Btm</button>
+            </div>
+        </div>
+
+        <div class="setting-group" *ngIf="viewMode === 'overlay'">
+            <label>Position</label>
+            <div class="grid-options">
+                <button [class.active]="overlayPosition === 'top-left'"
+                    (click)="setOverlayPosition('top-left')">↖</button>
+                <button [class.active]="overlayPosition === 'top-right'"
+                    (click)="setOverlayPosition('top-right')">↗</button>
+                <button [class.active]="overlayPosition === 'bottom-left'"
+                    (click)="setOverlayPosition('bottom-left')">↙</button>
+                <button [class.active]="overlayPosition === 'bottom-right'"
+                    (click)="setOverlayPosition('bottom-right')">↘</button>
+            </div>
+        </div>
+
+        <div class="setting-group" *ngIf="viewMode === 'overlay'">
+            <label>Size</label>
+            <div class="btn-toggle">
+                <button [class.active]="overlaySize === 'small'" (click)="setOverlaySize('small')">S</button>
+                <button [class.active]="overlaySize === 'medium'" (click)="setOverlaySize('medium')">M</button>
+                <button [class.active]="overlaySize === 'large'" (click)="setOverlaySize('large')">L</button>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <button class="btn-popout" (click)="openPopout()">
+                🗔 Popout Window
+            </button>
+        </div>
     </div>
 </div>

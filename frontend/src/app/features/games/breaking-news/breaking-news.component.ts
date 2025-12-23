@@ -2,9 +2,10 @@ import { Component, Input, OnChanges, OnInit, SimpleChanges, OnDestroy, ChangeDe
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService } from '../../../services/signalr.service';
+import { ToastService } from '../../../shared/services/toast.service';
 
 // augment the global scope for SpeechRecognition (Chrome only for now)
-declare var webkitSpeechRecognition: any;
+declare let webkitSpeechRecognition: any;
 
 interface ScriptToken {
   id?: number; // for slots
@@ -24,6 +25,7 @@ interface ScriptToken {
 export class BreakingNewsComponent implements OnInit, OnChanges, OnDestroy {
   @Input() room: any; // Type 'Room' properly if available
   @Input() myConnectionId: string = '';
+  @Input() isHost: boolean = false;
 
   state: any; // BreakingNewsState
 
@@ -46,7 +48,8 @@ export class BreakingNewsComponent implements OnInit, OnChanges, OnDestroy {
 
   constructor(
     private readonly signalRService: SignalRService,
-    private cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
+    private readonly toastService: ToastService
   ) { }
 
   ngOnInit() {
@@ -189,8 +192,8 @@ export class BreakingNewsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   startListening() {
-    if (!('webkitSpeechRecognition' in window)) {
-      alert("Voice recognition is not supported in this browser. Try Chrome.");
+    if (!('webkitSpeechRecognition' in globalThis)) {
+      this.toastService.showError("Voice recognition is not supported in this browser. Try Chrome.");
       return;
     }
 
@@ -280,7 +283,7 @@ export class BreakingNewsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   cleanWord(text: string): string {
-    return text.toLowerCase().replace(/[^\w\s]|_/g, "");
+    return text.toLowerCase().replaceAll(/[^\w\s]|_/g, "");
   }
 
   scrollToToken(index: number) {

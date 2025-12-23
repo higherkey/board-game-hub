@@ -47,7 +47,7 @@ export class AuthComponent implements OnInit {
         next: () => {
           this.router.navigate(['/']);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.isLoading = false;
           this.errorMessage = 'Invalid email or password';
           console.error(err);

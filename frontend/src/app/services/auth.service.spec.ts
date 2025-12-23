@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService, AuthResponse, User } from './auth.service';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { Router, provideRouter } from '@angular/router';
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -17,8 +17,12 @@ describe('AuthService', () => {
         localStorage.clear();
 
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, RouterTestingModule],
-            providers: [AuthService]
+            providers: [
+                AuthService,
+                provideRouter([]),
+                provideHttpClient(),
+                provideHttpClientTesting()
+            ]
         });
 
         service = TestBed.inject(AuthService);

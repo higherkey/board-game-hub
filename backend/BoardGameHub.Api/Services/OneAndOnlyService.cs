@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -6,7 +7,7 @@ public class OneAndOnlyService : IGameService
 {
     public GameType GameType => GameType.OneAndOnly;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         // Initialize OneAndOnly State if needed
         var state = new OneAndOnlyState
@@ -16,9 +17,10 @@ public class OneAndOnlyService : IGameService
             GuesserId = SelectGuesser(room)
         };
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
         // Logic handled during game flow mostly, but can finalize here
         if (room.GameData is OneAndOnlyState state)
@@ -27,6 +29,7 @@ public class OneAndOnlyService : IGameService
             // We can track a global score or individual "successes".
             // For now, let's just mark it done.
         }
+        return Task.CompletedTask;
     }
 
     // Additional methods specific to One & Only that will be called by GameHub/RoomService (genericized or casted)
@@ -83,6 +86,33 @@ public class OneAndOnlyService : IGameService
     {
         var words = new[] { "Apple", "Beach", "Computer", "Doctor", "Elephant", "Football", "Guitar", "House", "Igloo", "Jungle" };
         return words[new Random().Next(words.Length)];
+    }
+
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_CLUE" && action.Payload.HasValue)
+        {
+            if (action.Payload.Value.TryGetProperty("clue", out var prop))
+            {
+                SubmitClue(room, connectionId, prop.GetString() ?? "");
+                return Task.FromResult(true);
+            }
+        }
+        else if (action.Type == "SUBMIT_GUESS" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("guess", out var prop))
+            {
+                if (room.GameData is OneAndOnlyState state && state.GuesserId != connectionId) return Task.FromResult(false);
+                SubmitGuess(room, prop.GetString() ?? "");
+                return Task.FromResult(true);
+            }
+        }
+        return Task.FromResult(false);
+    }
+
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<OneAndOnlyState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new OneAndOnlyState();
     }
 }
 

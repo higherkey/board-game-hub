@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -6,7 +7,7 @@ public class SushiTrainGameService : IGameService
 {
     public GameType GameType => GameType.SushiTrain;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         var state = new SushiTrainState();
         
@@ -27,15 +28,17 @@ public class SushiTrainGameService : IGameService
         DealHands(state);
 
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
         // This is called at end of game usually, but we score per round too.
-        if (room.GameData is not SushiTrainState state) return;
+        if (room.GameData is not SushiTrainState state) return Task.CompletedTask;
         
         // Final Scoring (Puddings)
         ScorePuddings(state);
+        return Task.CompletedTask;
     }
 
     public bool SubmitSelection(Room room, string connectionId, string cardId)
@@ -396,5 +399,21 @@ public class SushiTrainGameService : IGameService
             list[k] = list[n];
             list[n] = value;
         }
+    }
+
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_SELECTION" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("cardId", out var cardProp))
+             {
+                 return Task.FromResult(SubmitSelection(room, connectionId, cardProp.GetString() ?? ""));
+             }
+        }
+        return Task.FromResult(false);
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<SushiTrainState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new SushiTrainState();
     }
 }

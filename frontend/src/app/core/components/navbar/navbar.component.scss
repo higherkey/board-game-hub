@@ -1,0 +1,12 @@
+.pointer {
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:hover {
+        opacity: 0.8;
+    }
+}
+
+.dropdown-item:hover {
+    background-color: #3f3f46;
+}

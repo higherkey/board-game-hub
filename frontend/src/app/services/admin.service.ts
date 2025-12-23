@@ -1,70 +1,70 @@
 import { Injectable } from '@angular/core';
-import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
-import { AuthService } from './auth.service';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
-export interface ServerStats {
+export interface RoomStats {
     activeRooms: number;
     totalOnlinePlayers: number;
     uptime: string;
     rooms: RoomSummary[];
 }
 
-export interface PlayerSummary {
-    name: string;
-    isHost: boolean;
-    score: number;
-    userId?: string;
-    connectionId?: string;
-}
-
 export interface RoomSummary {
     code: string;
-    globalState: string;
+    hostName: string;
     gameType: string;
     playerCount: number;
+    globalState: string;
     isPublic: boolean;
-    hostName: string;
+    settingsTimer: number;
     players: PlayerSummary[];
+    roundNumber: number;
+}
+
+export interface PlayerSummary {
+    connectionId: string;
+    name: string;
+    score: number;
+    isHost: boolean;
+    userId?: string;
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class AdminService {
-    private readonly hubConnection: HubConnection;
+    private baseUrl = 'http://localhost:5109/admin'; // Direct backend URL for now
 
-    constructor(private readonly authService: AuthService) {
-        const token = this.authService.getToken();
+    constructor(private http: HttpClient) { }
 
-        this.hubConnection = new HubConnectionBuilder()
-            .withUrl('http://localhost:5109/adminhub', {
-                accessTokenFactory: () => token || ''
-            })
-            .withAutomaticReconnect()
-            .build();
+    getStats(): Observable<RoomStats> {
+        return this.http.get<RoomStats>(`${this.baseUrl}/stats`);
     }
 
-    public async startConnection(): Promise<void> {
-        if (this.hubConnection.state === 'Disconnected') {
-            await this.hubConnection.start();
-        }
+    createRoom(hostName: string, gameType: string): Observable<{ code: string }> {
+        return this.http.post<{ code: string }>(`${this.baseUrl}/rooms/create`, { hostName, gameType });
     }
 
-    public async stopConnection(): Promise<void> {
-        if (this.hubConnection.state === 'Connected') {
-            await this.hubConnection.stop();
-        }
+    createRoomWithCode(code: string, hostName: string, gameType: string): Observable<{ code: string }> {
+        // The backend strictly generates GUIDs now in the controller shown, 
+        // but if we need custom codes, we'd need to update the backend.
+        // For now, adhering to the existing controller contract.
+        return this.createRoom(hostName, gameType);
     }
 
-    public async getStats(): Promise<ServerStats> {
-        return await this.hubConnection.invoke<ServerStats>('GetStats');
+    startGame(code: string): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/rooms/${code}/start`, {});
     }
 
-    public async kickPlayer(roomCode: string, connectionId: string): Promise<void> {
-        return await this.hubConnection.invoke('KickPlayer', roomCode, connectionId);
+    terminateRoom(code: string): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/rooms/${code}/terminate`, {});
     }
 
-    public async promoteToHost(roomCode: string, connectionId: string): Promise<void> {
-        return await this.hubConnection.invoke('PromoteToHost', roomCode, connectionId);
+    updateSettings(code: string, timerDurationSeconds: number): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/rooms/${code}/settings`, { timerDurationSeconds });
+    }
+
+    sendGlobalMessage(message: string): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/rooms/message`, { message, target: 'global' });
     }
 }

@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BoardGameHub.Api.Hubs;
 using System.Security.Claims;
+using System.Text.Json;
 using BoardGameHub.Api.Models; // Explicitly for GameSettings
+
 
 public class GameHub : Hub
 {
@@ -31,6 +33,33 @@ public class GameHub : Hub
         // Broadcast to the creator (and anyone else in the group, though it's just them)
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
         return room.Code;
+    }
+
+    public async Task StartGame(string roomCode, GameSettings settings)
+    {
+        var room = await _roomService.StartGame(roomCode, settings);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("GameStarted", room);
+        }
+    }
+
+    public async Task PauseGame(string roomCode)
+    {
+        var room = _roomService.PauseGame(roomCode);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public async Task ResumeGame(string roomCode)
+    {
+        var room = _roomService.ResumeGame(roomCode);
+        if (room != null)
+        {
+             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
     }
 
     public async Task SetGameType(string roomCode, string gameType)
@@ -142,50 +171,39 @@ public class GameHub : Hub
         return room;
     }
 
-    public async Task StartGame(string roomCode, GameSettings settings)
+    public async Task RenamePlayer(string newName)
     {
-        var room = _roomService.StartGame(roomCode, settings);
+        var room = _roomService.RenamePlayer(Context.ConnectionId, newName);
         if (room != null)
         {
-            await Clients.Group(roomCode).SendAsync("GameStarted", room);
+            // Broadcast generic PlayerJoined to update the list, or we could make a specific PlayerRenamed event
+            // Re-using PlayerJoined is easiest for now as the frontend likely just refreshes the list.
+            await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
         }
-    }
-
-    public async Task PauseGame(string roomCode)
-    {
-        var room = _roomService.PauseGame(roomCode);
-        if (room != null) await Clients.Group(roomCode).SendAsync("GamePaused", room);
-    }
-
-    public async Task ResumeGame(string roomCode)
-    {
-        var room = _roomService.ResumeGame(roomCode);
-        if (room != null) await Clients.Group(roomCode).SendAsync("GameResumed", room);
     }
 
     public async Task SubmitAnswers(string roomCode, List<string> answers)
     {
-        var room = _roomService.SubmitAnswers(roomCode, Context.ConnectionId, answers);
+        var payload = JsonSerializer.SerializeToElement(new { answers });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWERS", payload);
         // Ensure we don't leak answers to others yet, potentially just ack?
         // taking no action for broadcast here, just ack state if needed.
-        await Task.CompletedTask;
     }
 
     public async Task SubmitClue(string roomCode, string clue)
     {
-        var room = _roomService.SubmitClue(roomCode, Context.ConnectionId, clue);
+        var payload = JsonSerializer.SerializeToElement(new { clue });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_CLUE", payload);
         if (room != null)
         {
-            // Just notify that a clue was submitted (not the content)
-            // Or send updated room state (which separates hidden info)
-            // For now, send generic room update
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
     }
 
     public async Task SubmitGuess(string roomCode, string guess)
     {
-        var room = _roomService.SubmitGuess(roomCode, Context.ConnectionId, guess);
+        var payload = JsonSerializer.SerializeToElement(new { guess });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_GUESS", payload);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -194,39 +212,31 @@ public class GameHub : Hub
 
     public async Task SubmitBreakingNewsSlot(string roomCode, int slotId, string value)
     {
-        var room = _roomService.SubmitBreakingNewsSlotValue(roomCode, Context.ConnectionId, slotId, value);
+        var payload = JsonSerializer.SerializeToElement(new { slotId, value });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SLOT", payload);
         if (room != null)
         {
-            // Optimize: Could send only slot update "SlotUpdated", but "RoomUpdated" is easier for MVP
             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
     }
 
-    // --- Deepfake Methods --- note: Should refactor logic into RoomService facade like others
-
-    private DeepfakeGameService GetDeepfakeService() => _roomService.GetGameService<DeepfakeGameService>(GameType.Deepfake);
-    private PictophoneService GetPictophoneService() => _roomService.GetGameService<PictophoneService>(GameType.Pictophone);
-
+    // --- Deepfake Methods ---
+    
     public async Task SubmitPictophonePage(string roomCode, string content)
     {
-        var room = _roomService.GetRoom(roomCode);
-        if (room == null) return;
-
-        var service = GetPictophoneService();
-        if (service != null)
+        var payload = JsonSerializer.SerializeToElement(new { content });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_PAGE", payload);
+        if (room != null)
         {
-            service.SubmitPage(room, Context.ConnectionId, content);
             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
     }
 
     public async Task DeepfakeStroke(string roomCode, string pathData, string color)
     {
-        var room = _roomService.GetRoom(roomCode);
-        if (room == null) return;
-        
-        var service = GetDeepfakeService();
-        if (service != null && service.SubmitStroke(room, Context.ConnectionId, pathData, color))
+        var payload = JsonSerializer.SerializeToElement(new { pathData, color });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_STROKE", payload);
+        if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
@@ -234,11 +244,9 @@ public class GameHub : Hub
 
     public async Task DeepfakeVote(string roomCode, string accusedId)
     {
-        var room = _roomService.GetRoom(roomCode);
-        if (room == null) return;
-
-        var service = GetDeepfakeService();
-        if (service != null && service.SubmitVote(room, Context.ConnectionId, accusedId))
+        var payload = JsonSerializer.SerializeToElement(new { accusedId });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
+        if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
@@ -246,11 +254,9 @@ public class GameHub : Hub
 
     public async Task DeepfakeAiGuess(string roomCode, string guess)
     {
-        var room = _roomService.GetRoom(roomCode);
-        if (room == null) return;
-
-        var service = GetDeepfakeService();
-        if (service != null && service.SubmitAiGuess(room, Context.ConnectionId, guess))
+        var payload = JsonSerializer.SerializeToElement(new { guess });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_AI_GUESS", payload);
+        if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
@@ -260,7 +266,8 @@ public class GameHub : Hub
 
     public async Task SubmitWisecrackAnswer(string roomCode, string promptId, string answer)
     {
-        var room = _roomService.SubmitWisecrackAnswer(roomCode, Context.ConnectionId, promptId, answer);
+        var payload = JsonSerializer.SerializeToElement(new { promptId, answer });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWER", payload);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -269,7 +276,8 @@ public class GameHub : Hub
 
     public async Task SubmitWisecrackVote(string roomCode, int choice)
     {
-        var room = _roomService.SubmitWisecrackVote(roomCode, Context.ConnectionId, choice);
+        var payload = JsonSerializer.SerializeToElement(new { choice });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -278,7 +286,7 @@ public class GameHub : Hub
 
     public async Task NextWisecrackBattle(string roomCode)
     {
-        var room = _roomService.NextWisecrackBattle(roomCode);
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "NEXT_BATTLE", null);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -288,7 +296,8 @@ public class GameHub : Hub
 
     public async Task SubmitPoppycockDefinition(string roomCode, string definition)
     {
-        var room = _roomService.SubmitPoppycockDefinition(roomCode, Context.ConnectionId, definition);
+        var payload = JsonSerializer.SerializeToElement(new { definition });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_DEFINITION", payload);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -297,7 +306,8 @@ public class GameHub : Hub
 
     public async Task SubmitPoppycockVote(string roomCode, string votedId)
     {
-        var room = _roomService.SubmitPoppycockVote(roomCode, Context.ConnectionId, votedId);
+        var payload = JsonSerializer.SerializeToElement(new { votedId });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -307,12 +317,10 @@ public class GameHub : Hub
 
     public async Task EndRound(string roomCode)
     {
-        var room = _roomService.CalculateRoundScores(roomCode);
+        var room = await _roomService.CalculateRoundScores(roomCode);
         if (room != null)
         {
             // Record the round/session results to DB
-            // Note: Since method is async void in service if we don't await, but here we can wait.
-            // But usually we fire and forget or await.
             await _historyService.RecordGameSession(room);
             
             await Clients.Group(roomCode).SendAsync("RoundEnded", room);
@@ -322,7 +330,7 @@ public class GameHub : Hub
     public async Task NextRound(string roomCode)
     {
         // Start next round with same settings, but new letter/list
-        var room = _roomService.StartGame(roomCode, null); 
+        var room = await _roomService.StartGame(roomCode, null); 
         if (room != null)
         {
            await Clients.Group(roomCode).SendAsync("GameStarted", room);
@@ -364,15 +372,12 @@ public class GameHub : Hub
     }
 
     // --- Symbology Methods ---
-    private SymbologyGameService GetSymbologyService() => _roomService.GetGameService<SymbologyGameService>(GameType.Symbology);
 
     public async Task SymbologyPlaceMarker(string roomCode, string icon, string markerType, string color)
     {
-        var room = _roomService.GetRoom(roomCode);
-        if (room == null) return;
-
-        var service = GetSymbologyService();
-        if (service != null && service.PlaceMarker(room, Context.ConnectionId, icon, markerType, color))
+        var payload = JsonSerializer.SerializeToElement(new { icon, markerType, color });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PLACE_MARKER", payload);
+        if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
@@ -380,11 +385,9 @@ public class GameHub : Hub
 
     public async Task SymbologyRemoveMarker(string roomCode, string markerId)
     {
-        var room = _roomService.GetRoom(roomCode);
-        if (room == null) return;
-
-        var service = GetSymbologyService();
-        if (service != null && service.RemoveMarker(room, Context.ConnectionId, markerId))
+        var payload = JsonSerializer.SerializeToElement(new { markerId });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REMOVE_MARKER", payload);
+        if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
@@ -392,7 +395,8 @@ public class GameHub : Hub
 
     public async Task UniversalTranslatorToken(string roomCode, string token)
     {
-        var room = _roomService.SubmitUniversalTranslatorToken(roomCode, Context.ConnectionId, token);
+        var payload = JsonSerializer.SerializeToElement(new { token });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_TOKEN", payload);
         if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -401,7 +405,8 @@ public class GameHub : Hub
 
     public async Task UniversalTranslatorVote(string roomCode, string targetId)
     {
-        var room = _roomService.SubmitUniversalTranslatorVote(roomCode, Context.ConnectionId, targetId);
+        var payload = JsonSerializer.SerializeToElement(new { accusedId = targetId });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
         if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -411,16 +416,15 @@ public class GameHub : Hub
     public async Task UniversalTranslatorForcePhase(string roomCode, string phaseName)
     {
         // Debug/Admin or specific flow trigger
-        if (Enum.TryParse<UniversalTranslatorPhase>(phaseName, out var phase))
-        {
-             var room = _roomService.ForceUniversalTranslatorPhase(roomCode, phase);
-             if (room != null) await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        var payload = JsonSerializer.SerializeToElement(new { phase = phaseName });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_PHASE", payload);
+        if (room != null) await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
     }
 
     public async Task SubmitSushiTrainSelection(string roomCode, string cardId)
     {
-        var room = _roomService.SubmitSushiTrainSelection(roomCode, Context.ConnectionId, cardId);
+        var payload = JsonSerializer.SerializeToElement(new { cardId });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SELECTION", payload);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
@@ -429,7 +433,8 @@ public class GameHub : Hub
 
     public async Task SubmitGreatMindsCard(string roomCode, int cardValue)
     {
-        var room = _roomService.SubmitGreatMindsCard(roomCode, Context.ConnectionId, cardValue);
+        var payload = JsonSerializer.SerializeToElement(new { cardValue });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PLAY_CARD", payload);
         // Room update is handled by specialized broadcasts in GameService
         if (room != null)
         {
@@ -439,7 +444,7 @@ public class GameHub : Hub
 
     public async Task SubmitGreatMindsSync(string roomCode)
     {
-        _roomService.SubmitGreatMindsSync(roomCode, Context.ConnectionId);
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SYNC_TOKEN", null);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

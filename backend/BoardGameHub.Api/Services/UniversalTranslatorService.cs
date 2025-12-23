@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -6,7 +7,7 @@ public class UniversalTranslatorService : IGameService
 {
     public GameType GameType => GameType.UniversalTranslator;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         var state = new UniversalTranslatorState();
         
@@ -52,9 +53,10 @@ public class UniversalTranslatorService : IGameService
         // For now rely on Room Timer (Day Phase).
         
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
         // Scores are binary: Crew Win vs J Win.
         // Usually handled at game end moment. 
@@ -65,34 +67,22 @@ public class UniversalTranslatorService : IGameService
              {
                  // Time ran out -> Vote Phase
                  state.Phase = UniversalTranslatorPhase.VotingForJ;
-                 // Extend timer for voting? RoomService doesn't auto-extend.
-                 // We might need to handle this via a "CheckTimer" or "PhaseTransition" call.
-                 // For MVP, we'll let the frontend trigger "EndRound" which calls this, 
-                 // OR we handle transitions explicitly via actions.
                  
-                 // If "CalculateScores" is called by "EndRound", it implies game over.
-                 // So if we are here at timeout, J Wins (unless we implement the Voting phase mechanic).
-                 // Let's say Timeout = J Wins (standard Werewords rule is Timeout = Vote, but let's simplify for now or implement Vote).
-                 
-                 // Let's implement Vote on Timeout.
-                 // We can't easily change the Room Timer from here without access to Room proper setters or returning state.
-                 // But we have Reference to Room.
-                 // So we can say:
-                 // room.State is still Playing.
-                 // But we need to switch phase.
+                 // Extensions or Phase logic here
              }
         }
+        return Task.CompletedTask;
     }
 
     // --- Game Actions ---
 
-    public bool SubmitToken(Room room, string playerId, string token)
+    public Task<bool> SubmitToken(Room room, string playerId, string token)
     {
-        if (room.GameData is not UniversalTranslatorState state) return false;
-        if (state.Phase != UniversalTranslatorPhase.Day) return false;
+        if (room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
+        if (state.Phase != UniversalTranslatorPhase.Day) return Task.FromResult(false);
         
         // Only Main Computer can submit
-        if (!state.Roles.TryGetValue(playerId, out var role) || role != UniversalTranslatorRole.MainComputer) return false;
+        if (!state.Roles.TryGetValue(playerId, out var role) || role != UniversalTranslatorRole.MainComputer) return Task.FromResult(false);
 
         state.TokenHistory.Add(new TokenEntry 
         { 
@@ -118,12 +108,12 @@ public class UniversalTranslatorService : IGameService
             }
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool SubmitVote(Room room, string voterId, string accusedId)
+    public Task<bool> SubmitVote(Room room, string voterId, string accusedId)
     {
-        if (room.GameData is not UniversalTranslatorState state) return false;
+        if (room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
         
         // Voting for J (after timeout)
         if (state.Phase == UniversalTranslatorPhase.VotingForJ)
@@ -135,7 +125,7 @@ public class UniversalTranslatorService : IGameService
             {
                 ResolveVoteForJ(state, room);
             }
-            return true;
+            return Task.FromResult(true);
         }
         
         // J Guessing Empath (after word found)
@@ -157,11 +147,11 @@ public class UniversalTranslatorService : IGameService
                      state.EndReason = GameEndReason.JEscaped; // J failed to find Empath
                  }
                  state.Phase = UniversalTranslatorPhase.Result;
-                 return true;
+                 return Task.FromResult(true);
              }
         }
 
-        return false;
+        return Task.FromResult(false);
     }
     
     private void ResolveVoteForJ(UniversalTranslatorState state, Room room)
@@ -214,5 +204,41 @@ public class UniversalTranslatorService : IGameService
         var words = new[] { "Robot", "Laser", "Spaceship", "Alien", "Planet", "Star", "Galaxy", "Portal", "Time Machine", "Asteroid" };
         var r = new Random();
         return words[r.Next(words.Length)];
+    }
+
+    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_TOKEN" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("token", out var tokenProp))
+             {
+                 if(await SubmitToken(room, connectionId, tokenProp.GetString() ?? ""))
+                    return true;
+             }
+        }
+        else if (action.Type == "SUBMIT_VOTE" && action.Payload.HasValue)
+        {
+            if (action.Payload.Value.TryGetProperty("accusedId", out var prop))
+            {
+                if(await SubmitVote(room, connectionId, prop.GetString() ?? ""))
+                    return true;
+            }
+        }
+        else if (action.Type == "FORCE_PHASE" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("phase", out var phaseProp))
+             {
+                 if (Enum.TryParse<UniversalTranslatorPhase>(phaseProp.GetString(), out var phase))
+                 {
+                     ForcePhase(room, phase);
+                     return true;
+                 }
+             }
+        }
+        return false;
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<UniversalTranslatorState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new UniversalTranslatorState();
     }
 }

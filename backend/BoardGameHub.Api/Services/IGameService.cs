@@ -5,6 +5,8 @@ namespace BoardGameHub.Api.Services;
 public interface IGameService
 {
     GameType GameType { get; }
-    void StartRound(Room room, GameSettings settings);
-    void CalculateScores(Room room);
+    Task StartRound(Room room, GameSettings settings);
+    Task CalculateScores(Room room);
+    Task<bool> HandleAction(Room room, GameAction action, string connectionId);
+    object DeserializeState(System.Text.Json.JsonElement json);
 }

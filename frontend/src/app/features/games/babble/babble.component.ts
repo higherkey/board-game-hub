@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SignalRService, Room } from '../../../services/signalr.service';
 
 @Component({
   selector: 'app-babble',
@@ -10,7 +11,6 @@ import { FormsModule } from '@angular/forms';
     <div class="babble-container text-center">
       <h2 class="mb-4 text-primary">Babble</h2>
 
-      <!-- Grid Display -->
       <!-- Grid Display -->
       <div class="grid-container d-inline-block p-3 bg-dark rounded shadow-sm mb-4">
         <div class="row g-2 mx-auto" [class.grid-row-4]="boardSize === 4" [class.grid-row-5]="boardSize === 5" [class.grid-row-6]="boardSize === 6">
@@ -71,9 +71,15 @@ import { FormsModule } from '@angular/forms';
   `]
 })
 export class BabbleComponent implements OnChanges {
-  @Input() grid: string[] | null = null;
-  @Input() isPlaying = false;
-  @Output() wordsUpdated = new EventEmitter<string[]>();
+  @Input() room: Room | null = null;
+  @Input() myConnectionId: string = '';
+  @Input() isHost: boolean = false;
+  // Computed property compatibility
+  get isPlaying(): boolean {
+    return this.room?.state === 'Playing';
+  }
+
+  constructor(private readonly signalRService: SignalRService) { }
 
   // Local state for UI
   gridChars: string[] = [];
@@ -84,19 +90,30 @@ export class BabbleComponent implements OnChanges {
   showInfo = false;
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['grid'] && this.grid) {
-      if (typeof this.grid === 'string') {
-        this.gridChars = (this.grid as string).split('');
-      } else {
-        this.gridChars = this.grid;
+    if (changes['room'] && this.room) {
+      // Prioritize gameData if available (new standard), fallback to gameState
+      const data = this.room.gameData || this.room.gameState;
+      const grid = data?.grid;
+
+      if (grid) {
+        if (typeof grid === 'string') {
+          this.gridChars = (grid).split('');
+        } else {
+          this.gridChars = grid;
+        }
+
+        // Deduce size
+        const count = this.gridChars.length;
+        this.boardSize = Math.sqrt(count);
       }
 
-      // Deduce size
-      const count = this.gridChars.length;
-      this.boardSize = Math.sqrt(count);
-
-      this.foundWords = [];
-      this.wordsUpdated.emit(this.foundWords);
+      // We might want to sync found words from server if that existed, 
+      // but for now local tracking is fine or derived from room logic if applicable.
+      // Keeping local foundWords reset on new grid logic if needed, 
+      // but simplistic check here:
+      if (!this.foundWords.length && this.room.roundNumber > 0) {
+        // reset if needed? 
+      }
     }
   }
 
@@ -111,7 +128,8 @@ export class BabbleComponent implements OnChanges {
 
     if (!this.foundWords.includes(word)) {
       this.foundWords.push(word);
-      this.wordsUpdated.emit(this.foundWords);
+      // Call service directly
+      this.signalRService.submitAnswers([word]);
     }
     this.currentWord = '';
   }

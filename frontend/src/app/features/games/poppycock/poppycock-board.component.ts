@@ -146,7 +146,7 @@ export class PoppycockBoardComponent implements OnChanges {
     }
 
     getLetter(index: number): string {
-        return String.fromCharCode(65 + index); // A, B, C...
+        return String.fromCodePoint(65 + index); // A, B, C...
     }
 
     getResults() {
@@ -158,7 +158,7 @@ export class PoppycockBoardComponent implements OnChanges {
         for (const [voterId, targetId] of Object.entries(this.gameData.votes)) {
             const voter = this.room.players.find((p: any) => p.connectionId === voterId);
 
-            let authorName = 'Unknown';
+            let authorName;
             let isCorrect = false;
 
             if (targetId === 'REAL') {

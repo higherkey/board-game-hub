@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SocialComponent } from './social.component';
 
@@ -9,7 +10,8 @@ describe('SocialComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SocialComponent, HttpClientTestingModule, RouterTestingModule]
+      imports: [SocialComponent, RouterTestingModule],
+      providers: [provideHttpClient(), provideHttpClientTesting()]
     })
       .compileComponents();
 

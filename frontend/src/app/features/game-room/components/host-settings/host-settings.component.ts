@@ -13,7 +13,7 @@ import { GameDataService, GameDefinition } from '../../../../services/game-data.
 })
 export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() roomCode!: string;
-  @Input() currentGameType: string = 'Scatterbrain';
+  @Input() currentGameType: string | undefined = 'Scatterbrain';
   @Output() gameStart = new EventEmitter<GameSettings>();
 
   selectedGameType = 'Scatterbrain';
@@ -43,7 +43,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     });
 
     const room = this.signalRService.currentRoomSubject.value;
-    if (room && room.undoSettings) {
+    if (room?.undoSettings) {
       this.undoSettings = { ...room.undoSettings };
     }
   }

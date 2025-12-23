@@ -17,6 +17,8 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
         public bool IsLevelComplete => PlayerHands.Values.All(hand => hand.Count == 0);
         public bool IsGameOver => Lives <= 0;
 
+        public GreatMindsGameState() { }
+
         public GreatMindsGameState(int playerCount)
         {
             Lives = playerCount; // Start lives = number of players

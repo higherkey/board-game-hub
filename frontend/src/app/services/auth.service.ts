@@ -19,20 +19,29 @@ export interface AuthResponse {
     providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = 'http://localhost:5109/api/auth'; // Hardcoded for dev as per project structure usually
-    private currentUserSubject = new BehaviorSubject<User | null>(null);
+    private readonly apiUrl = 'http://localhost:5109/api/auth'; // Hardcoded for dev as per project structure usually
+    private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
 
     get currentUserValue(): User | null {
         return this.currentUserSubject.value;
     }
 
-    private tokenKey = 'auth_token';
-    private userKey = 'auth_user';
-    private expirationKey = 'auth_expires_at';
+    private readonly tokenKey = 'auth_token';
+    private readonly userKey = 'auth_user';
+    private readonly expirationKey = 'auth_expires_at';
+    private readonly guestNameKey = 'guest_name';
 
-    constructor(private http: HttpClient, private router: Router) {
+    constructor(private readonly http: HttpClient, private readonly router: Router) {
         this.loadStoredSession();
+    }
+
+    getGuestName(): string | null {
+        return localStorage.getItem(this.guestNameKey);
+    }
+
+    setGuestName(name: string) {
+        localStorage.setItem(this.guestNameKey, name);
     }
 
     private loadStoredSession() {
@@ -42,18 +51,18 @@ export class AuthService {
 
         if (token && userStr && expiresAt) {
             const now = Date.now();
-            if (now < parseInt(expiresAt)) {
+            if (now < Number.parseInt(expiresAt)) {
                 try {
                     this.currentUserSubject.next(JSON.parse(userStr));
                 } catch {
-                    this.logout();
+                    this.clearSessionState();
                 }
             } else {
-                this.logout();
+                this.clearSessionState();
             }
         } else {
-            // Cleanup partial data
-            this.logout();
+            // Cleanup partial data if any, but don't redirect
+            this.clearSessionState();
         }
     }
 
@@ -77,11 +86,15 @@ export class AuthService {
     }
 
     logout() {
+        this.clearSessionState();
+        this.router.navigate(['/login']);
+    }
+
+    private clearSessionState() {
         localStorage.removeItem(this.tokenKey);
         localStorage.removeItem(this.userKey);
         localStorage.removeItem(this.expirationKey);
         this.currentUserSubject.next(null);
-        this.router.navigate(['/login']);
     }
 
     getToken(): string | null {
@@ -94,7 +107,7 @@ export class AuthService {
 
         if (!token || !expiresAt) return false;
 
-        const isValid = Date.now() < parseInt(expiresAt);
+        const isValid = Date.now() < Number.parseInt(expiresAt);
         if (!isValid) {
             this.logout();
             return false;

@@ -14,13 +14,19 @@ import { Observable } from 'rxjs';
 export class NavbarComponent {
   currentUser$: Observable<any>;
   isCollapsed = true;
+  isDropdownOpen = false;
 
-  constructor(private authService: AuthService, private router: Router) {
+  constructor(private readonly authService: AuthService, private readonly router: Router) {
     this.currentUser$ = this.authService.currentUser$;
+  }
+
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
   }
 
   logout() {
     this.authService.logout();
     this.isCollapsed = true;
+    this.isDropdownOpen = false;
   }
 }

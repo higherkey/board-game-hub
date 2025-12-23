@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { SignalRService } from '../../services/signalr.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
     selector: 'app-create-room',
@@ -21,7 +22,8 @@ export class CreateRoomComponent implements OnInit {
         private readonly signalRService: SignalRService,
         private readonly authService: AuthService,
         private readonly router: Router,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        private readonly toastService: ToastService
     ) { }
 
     ngOnInit() {
@@ -62,7 +64,7 @@ export class CreateRoomComponent implements OnInit {
             this.router.navigate(['/game', code], { queryParams: { name: this.nickname } });
         } catch (e) {
             console.error('Error creating room', e);
-            alert('Failed to create room. Please try again.');
+            this.toastService.showError('Failed to create room. Please try again.');
             this.creating = false;
         }
     }

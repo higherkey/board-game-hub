@@ -6,6 +6,12 @@
                 <i class="bi bi-box-arrow-left"></i> Leave
             </button>
 
+            <!-- Video Chat Toggle -->
+            <button class="btn btn-outline-info btn-sm" (click)="videoChat.joinVideo()"
+                *ngIf="!videoChat.isVideoActive">
+                <i class="bi bi-camera-video"></i> Join Video
+            </button>
+
             <button class="btn btn-warning btn-sm" *ngIf="gameStarted$ | async" (click)="requestUndo()"
                 title="Request Undo">
                 <i class="bi bi-arrow-counterclockwise"></i>
@@ -30,29 +36,50 @@
     </app-undo-toast>
 
     <!-- 2. MAIN BODY (Sidebar + Content) -->
-    <!-- 2. MAIN BODY (Sidebar + Content) -->
     <div class="row flex-grow-1 mt-3 g-3 overflow-hidden position-relative">
-
-        <!-- SIDEBAR (Players & Chat) -->
-        <!-- Visible on desktop (d-md-flex). On mobile, visible only if mobileView === 'players' -->
         <div class="col-md-3 col-lg-2 d-flex flex-column h-100 sidebar-panel" [class.d-none]="mobileView !== 'players'"
             [class.d-flex]="mobileView === 'players'">
 
-            <!-- Video Chat (Always Visible in this panel) -->
-            <div class="video-section mb-3 flex-shrink-0">
-                <app-video-chat></app-video-chat>
+            <!-- Video Chat (Always Visible in this panel, expands when active) -->
+            <div class="video-section mb-3 flex-shrink-0"
+                [class.flex-grow-1]="videoChat.isVideoActive && videoChat.viewMode === 'sidebar'">
+                <app-video-chat #videoChat (viewModeChange)="onVideoLayoutChange($event)"></app-video-chat>
             </div>
 
-            <!-- Player List -->
-            <div class="card bg-surface shadow-sm flex-grow-1 overflow-auto">
+            <!-- Player List (Shown ONLY when Video is INACTIVE) -->
+            <div class="card bg-surface shadow-sm flex-grow-1 overflow-auto" *ngIf="!videoChat.isVideoActive">
                 <div class="card-header bg-secondary text-white py-2">
                     <small class="fw-bold">PLAYERS ({{ (players$ | async)?.length || 0 }})</small>
                 </div>
                 <ul class="list-group list-group-flush small">
                     <li class="list-group-item d-flex justify-content-between align-items-center"
                         *ngFor="let p of players$ | async">
-                        <div class="text-truncate" style="max-width: 100px;" title="{{p.name}}">
-                            {{ p.name }} <i *ngIf="p.isHost" class="bi bi-star-fill text-warning ms-1"></i>
+                        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 80%;"
+                            title="{{p.name}}">
+                            <!-- Inline Rename Input -->
+                            <ng-container
+                                *ngIf="isRenaming && p.connectionId === getMyConnectionId((players$ | async)); else nameDisplay">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" [(ngModel)]="newPlayerName"
+                                        (keyup.enter)="submitRename()" (keyup.escape)="cancelRename()" autofocus>
+                                    <button class="btn btn-success btn-sm" (click)="submitRename()" title="Save">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" (click)="cancelRename()" title="Cancel">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </ng-container>
+
+                            <ng-template #nameDisplay>
+                                <span class="text-truncate" style="max-width: 100px;">{{ p.name }}</span>
+                                <i *ngIf="p.isHost" class="bi bi-star-fill text-warning" title="Host"></i>
+                                <button class="btn btn-link p-0 text-muted ms-1" style="font-size: 0.8rem;"
+                                    *ngIf="p.connectionId === getMyConnectionId((players$ | async))"
+                                    (click)="startRename()" title="Rename">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                            </ng-template>
                         </div>
                         <span class="badge bg-light text-dark border">{{ p.score || 0 }}</span>
                     </li>
@@ -60,10 +87,10 @@
             </div>
         </div>
 
-        <!-- MAIN STAGE -->
-        <!-- Visible on desktop (d-md-flex). On mobile, visible only if mobileView === 'game' -->
         <div class="col-md-9 col-lg-10 h-100 d-flex flex-column overflow-auto main-stage-panel"
-            [class.d-none]="mobileView !== 'game'" [class.d-flex]="mobileView === 'game'">
+            [class.d-none]="mobileView !== 'game'" [class.d-flex]="mobileView === 'game'"
+            [class.has-docked-top]="videoLayout === 'docked-top'"
+            [class.has-docked-bottom]="videoLayout === 'docked-bottom'">
 
             <div class="main-stage card shadow-sm flex-grow-1 border-0 bg-light">
                 <div class="card-body p-4 h-100 d-flex flex-column">
@@ -77,7 +104,7 @@
                             <!-- Host Controls -->
                             <div *ngIf="isHost$ | async; else playerWaiting">
                                 <app-host-settings [roomCode]="roomCode"
-                                    [currentGameType]="(currentRoom$ | async)?.gameType"
+                                    [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                                     (gameStart)="startGame($event)">
                                 </app-host-settings>
                             </div>
@@ -95,143 +122,30 @@
                     <!-- ACTIVE GAME STATE -->
                     <div *ngIf="gameStarted$ | async" class="h-100 w-100">
 
-                        <!-- HOST VIEW -->
                         <div *ngIf="isHost$ | async; else playerView" class="h-100">
-                            <div [ngSwitch]="(currentRoom$ | async)?.gameType" class="h-100">
-                                <!-- JUST ONE -->
-                                <!-- ONE & ONLY -->
-                                <app-one-and-only-board *ngSwitchCase="'OneAndOnly'" [room]="currentRoom$ | async">
-                                </app-one-and-only-board>
+                            <ng-container *ngIf="gameComponent; else fallbackHost">
+                                <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
+                            </ng-container>
 
-                                <!-- BABBLE -->
-                                <app-babble *ngSwitchCase="'Babble'" [grid]="(currentRoom$ | async)?.gameState?.grid"
-                                    [isPlaying]="(currentRoom$ | async)?.state === 'Playing'"
-                                    (wordsUpdated)="onBabbleWordsUpdated($event)">
-                                </app-babble>
-
-                                <!-- BREAKING NEWS -->
-                                <app-breaking-news *ngSwitchCase="'BreakingNews'" [room]="currentRoom$ | async"
-                                    [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
-                                </app-breaking-news>
-
-                                <!-- DEEPFAKE (Disabled) -->
-                                <!-- <app-deepfake-game *ngSwitchCase="'Deepfake'" [room]="currentRoom$ | async">
-                                </app-deepfake-game> -->
-
-                                <!-- UNIVERSAL TRANSLATOR -->
-                                <app-universal-translator *ngSwitchCase="'UniversalTranslator'"
-                                    [room]="currentRoom$ | async">
-                                </app-universal-translator>
-
-                                <!-- PICTOPHONE -->
-                                <app-pictophone-game *ngSwitchCase="'Pictophone'" [room]="(currentRoom$ | async)!"
-                                    [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
-                                </app-pictophone-game>
-
-                                <!-- POPPYCOCK -->
-                                <app-poppycock-board *ngSwitchCase="'Poppycock'" [room]="currentRoom$ | async">
-                                </app-poppycock-board>
-
-                                <!-- SYMBOLOGY -->
-                                <app-symbology *ngSwitchCase="'Symbology'" [room]="(currentRoom$ | async)!">
-                                </app-symbology>
-
-                                <!-- WISECRACK -->
-                                <app-wisecrack-game *ngSwitchCase="'Wisecrack'" [room]="(currentRoom$ | async)!">
-                                </app-wisecrack-game>
-
-                                <!-- SUSHI TRAIN -->
-                                <app-sushi-train *ngSwitchCase="'SushiTrain'"
-                                    [gameState]="(currentRoom$ | async)?.gameData"
-                                    [players]="(currentRoom$ | async)?.players || []">
-                                </app-sushi-train>
-
-                                <!-- SCATTERBRAIN (Default) -->
-                                <div *ngSwitchDefault class="h-100">
-                                    <div [ngSwitch]="(currentRoom$ | async)?.state" class="h-100">
-                                        <app-game-review *ngSwitchCase="'Finished'" [room]="(currentRoom$ | async)!"
-                                            [isHost]="(isHost$ | async)!">
-                                        </app-game-review>
-
-                                        <app-game-board *ngSwitchDefault [roomCode]="roomCode"
-                                            [isHost]="(isHost$ | async)!">
-                                        </app-game-board>
-                                    </div>
+                            <!-- Fallback for non-refactored games or errors -->
+                            <ng-template #fallbackHost>
+                                <div class="h-100 d-flex flex-column align-items-center justify-content-center">
+                                    <app-game-board [roomCode]="roomCode" [isHost]="true"></app-game-board>
                                 </div>
-                            </div>
+                            </ng-template>
                         </div>
 
                         <!-- PLAYER VIEW -->
                         <ng-template #playerView>
                             <div class="h-100 d-flex flex-column justify-content-center">
-                                <div [ngSwitch]="(currentRoom$ | async)?.gameType" class="h-100">
-                                    <!-- JUST ONE -->
-                                    <!-- ONE & ONLY -->
-                                    <div *ngSwitchCase="'OneAndOnly'" class="h-100">
-                                        <app-one-and-only-player [room]="currentRoom$ | async"
-                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)"
-                                            (clueSubmitted)="onClueSubmitted($event)"
-                                            (guessSubmitted)="onGuessSubmitted($event)">
-                                        </app-one-and-only-player>
-                                    </div>
+                                <!-- Dynamic Game Component -->
+                                <ng-container *ngIf="gameComponent; else fallbackPlayer">
+                                    <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
+                                </ng-container>
 
-                                    <!-- BREAKING NEWS -->
-                                    <div *ngSwitchCase="'BreakingNews'" class="h-100">
-                                        <app-breaking-news [room]="currentRoom$ | async"
-                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
-                                        </app-breaking-news>
-                                    </div>
-
-                                    <!-- DEEPFAKE -->
-                                    <div *ngSwitchCase="'Deepfake'" class="h-100">
-                                        <app-deepfake-game [room]="(currentRoom$ | async)!">
-                                        </app-deepfake-game>
-                                    </div>
-
-                                    <div *ngSwitchCase="'UniversalTranslator'" class="h-100">
-                                        <app-universal-translator [room]="currentRoom$ | async">
-                                        </app-universal-translator>
-                                    </div>
-
-                                    <!-- PICTOPHONE -->
-                                    <div *ngSwitchCase="'Pictophone'" class="h-100">
-                                        <app-pictophone-game [room]="(currentRoom$ | async)!"
-                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)">
-                                        </app-pictophone-game>
-                                    </div>
-
-                                    <!-- POPPYCOCK -->
-                                    <div *ngSwitchCase="'Poppycock'" class="h-100">
-                                        <app-poppycock-player [room]="currentRoom$ | async"
-                                            [myConnectionId]="getMyConnectionId((currentRoom$ | async)?.players)"
-                                            (definitionSubmitted)="onPoppycockDefSubmitted($event)"
-                                            (voteSubmitted)="onPoppycockVoteSubmitted($event)">
-                                        </app-poppycock-player>
-                                    </div>
-
-                                    <!-- SYMBOLOGY -->
-                                    <div *ngSwitchCase="'Symbology'" class="h-100">
-                                        <app-symbology [room]="(currentRoom$ | async)!">
-                                        </app-symbology>
-                                    </div>
-
-                                    <!-- WISECRACK -->
-                                    <div *ngSwitchCase="'Wisecrack'" class="h-100">
-                                        <app-wisecrack-game [room]="(currentRoom$ | async)!">
-                                        </app-wisecrack-game>
-                                    </div>
-
-                                    <!-- SUSHI TRAIN -->
-                                    <div *ngSwitchCase="'SushiTrain'" class="h-100">
-                                        <app-sushi-train-player [gameState]="(currentRoom$ | async)?.gameData"
-                                            [currentUserId]="getMyConnectionId((currentRoom$ | async)?.players)">
-                                        </app-sushi-train-player>
-                                    </div>
-
-                                    <!-- DEFAULT MOBILE CONTROLLER -->
-                                    <app-mobile-controller *ngSwitchDefault
-                                        [roomCode]="roomCode"></app-mobile-controller>
-                                </div>
+                                <ng-template #fallbackPlayer>
+                                    <app-mobile-controller [roomCode]="roomCode"></app-mobile-controller>
+                                </ng-template>
                             </div>
                         </ng-template>
 
@@ -256,3 +170,51 @@
         </button>
     </div>
 </div>
+
+
+<!-- Undo Confirmation Modal -->
+
+<dialog #undoDialog class="border-0 p-0 bg-transparent rounded-3">
+    <div class="modal-dialog modal-dialog-centered m-0">
+        <div class="modal-content bg-surface shadow-lg border-warning">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Request
+                    Undo?</h5>
+                <button type="button" class="btn-close" (click)="cancelUndo()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary mb-0">This will pause the game and ask all players to vote on the undo. Are you
+                    sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-ghost text-secondary" (click)="cancelUndo()">Cancel</button>
+                <button type="button" class="btn btn-warning px-4 text-dark fw-bold" (click)="confirmUndo()">
+                    Yes, Request Undo
+                </button>
+            </div>
+        </div>
+    </div>
+</dialog>
+
+<!-- Guest Name Prompt Modal -->
+<dialog #namePromptDialog class="border-0 p-0 bg-transparent rounded-3" [open]="showNamePrompt">
+    <div class="modal-dialog modal-dialog-centered m-0">
+        <div class="modal-content bg-surface shadow-lg border-primary">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title text-primary fw-bold">Ready to Join?</h5>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-3">Please enter a display name to join this game room.</p>
+                <input type="text" class="form-control form-control-lg text-center fw-bold"
+                    [(ngModel)]="promptPlayerName" (keyup.enter)="submitGuestName()" placeholder="e.g. Captain Awesome"
+                    autofocus>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-primary w-100 py-3" (click)="submitGuestName()"
+                    [disabled]="!promptPlayerName">
+                    Enter Game Room
+                </button>
+            </div>
+        </div>
+    </div>
+</dialog>

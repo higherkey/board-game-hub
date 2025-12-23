@@ -19,26 +19,60 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             _hubContext = hubContext;
         }
 
-        public void StartRound(Room room, GameSettings settings)
+        public async Task StartRound(Room room, GameSettings settings)
         {
-            // Initialize State
-            var state = new GreatMindsGameState(room.Players.Count);
-            room.GameData = state;
+            // 1. Setup State
+            var state = new GreatMindsGameState();
             
-            // Deal Level 1
-            state.DealLevel(1);
+            // 2. Initialize Players (Lives = 2 for 2-3p, 1 for >3p usually in The Mind)
+            // Rule book: 2p -> Level 1-12, 2 lives. 3p -> Level 1-10, 2 lives. 4p -> L1-8, 2 lives.
+            // Simplified: Everyone starts with lives? No, Team Lives.
+            state.Lives = room.Players.Count; // One life per player roughly? Or fixed 3? Let's say PlayerCount.
+            state.SyncTokens = 1; // Start with 1 shuriken (renamed to SyncTokens)
+            state.CurrentLevel = 1;
 
-            // Notify Clients
-            BroadcastState(room).Wait();
+            room.GameData = state;
+
+            // 3. Deal Level 1
+            DealCards(room, state);
+
+            await BroadcastState(room);
         }
 
-        public void CalculateScores(Room room)
+        private void DealCards(Room room, GreatMindsGameState state)
         {
-            // No scoring per se, but we could assign points based on level reached?
-            // For now, no-op or maybe give 100 points per level completed?
+            state.PlayerHands.Clear();
+            var deck = Enumerable.Range(1, 100).ToList();
+            var rng = new Random();
+            // Shuffle
+            deck = deck.OrderBy(x => rng.Next()).ToList();
+            
+            int cardsPerPlayer = state.CurrentLevel;
+            int cardIndex = 0;
+
+            foreach(var player in room.Players)
+            {
+                var hand = new List<int>();
+                for(int i=0; i<cardsPerPlayer; i++)
+                {
+                    if (cardIndex < deck.Count)
+                    {
+                        hand.Add(deck[cardIndex++]);
+                    }
+                }
+                hand.Sort();
+                state.PlayerHands[player.ConnectionId] = hand;
+            }
         }
 
-        public bool SubmitCard(Room room, string playerId, int cardValue)
+        public Task CalculateScores(Room room)
+        {
+            // Cooperative, score = Level reached.
+            // No explicit end-of-game scoring except "You won/lost".
+            return Task.CompletedTask;
+        }
+
+        public async Task<bool> SubmitCard(Room room, string playerId, int cardValue)
         {
             var state = GetState(room);
             if (state == null || state.IsGameOver) return false;
@@ -82,16 +116,16 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                     state.PlayerHands[lower.Key].Remove(lower.Value);
                 }
 
-                _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "ERROR_PLAY", new 
+                await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "ERROR_PLAY", new 
                 { 
                     PlayedBy = playerId, 
                     PlayedCard = cardValue, 
                     MissedCards = lowerCardsFound 
-                }).Wait();
+                });
 
                 if (state.IsGameOver)
                 {
-                    _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "GAME_OVER", new { }).Wait();
+                    await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "GAME_OVER", new { });
                 }
             }
             else
@@ -100,23 +134,23 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                 state.PlayerHands[playerId].Remove(cardValue);
                 state.TopCard = cardValue;
                 
-                _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "CARD_PLAYED", new 
+                await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "CARD_PLAYED", new 
                 { 
                     PlayedBy = playerId, 
                     Card = cardValue 
-                }).Wait();
+                });
 
                 if (state.IsLevelComplete)
                 {
-                    NextLevel(room, state).Wait();
+                    await NextLevel(room, state);
                 }
             }
 
-            BroadcastState(room).Wait();
+            await BroadcastState(room);
             return true;
         }
 
-        public bool SubmitSync(Room room, string playerId)
+        public async Task<bool> SubmitSync(Room room, string playerId)
         {
              var state = GetState(room);
              if (state == null || state.IsGameOver || state.SyncTokens <= 0) return false;
@@ -134,17 +168,17 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                  }
              }
 
-             _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "SYNC_EXECUTED", new 
+             await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "SYNC_EXECUTED", new 
              { 
                  DiscardedCards = discardedCards 
-             }).Wait();
+             });
              
              if (state.IsLevelComplete)
              {
-                 NextLevel(room, state).Wait();
+                 await NextLevel(room, state);
              }
 
-             BroadcastState(room).Wait();
+             await BroadcastState(room);
              return true;
         }
 
@@ -164,7 +198,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                 return;
             }
 
-            state.DealLevel(nextLevel);
+            DealCards(room, state);
             await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "LEVEL_START", new { Level = nextLevel });
         }
 
@@ -211,5 +245,25 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             }
             return room.GameData as GreatMindsGameState;
         }
+
+        public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+        {
+            if (action.Type == "PLAY_CARD" && action.Payload.HasValue)
+            {
+                 if (action.Payload.Value.TryGetProperty("cardValue", out var cardProp))
+                 {
+                     return await SubmitCard(room, connectionId, cardProp.GetInt32());
+                 }
+            }
+            else if (action.Type == "SYNC_TOKEN")
+            {
+                return await SubmitSync(room, connectionId);
+            }
+            return false;
+        }
+        public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<GreatMindsGameState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new GreatMindsGameState();
     }
+}
 }

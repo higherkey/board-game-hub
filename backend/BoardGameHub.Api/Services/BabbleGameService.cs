@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -18,18 +19,19 @@ public class BabbleGameService : IGameService
 
     public GameType GameType => GameType.Babble;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         var state = new BabbleState
         {
             Grid = _babbleService.GenerateGrid(settings.BoardSize)
         };
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room.GameData is not BabbleState state) return;
+        if (room.GameData is not BabbleState state) return Task.CompletedTask;
 
         foreach(var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
 
@@ -75,5 +77,28 @@ public class BabbleGameService : IGameService
                 if (playerObj != null) playerObj.Score += points;
             }
         }
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_ANSWERS" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("answers", out var answersProp) && answersProp.ValueKind == System.Text.Json.JsonValueKind.Array)
+             {
+                 var list = new List<string>();
+                 foreach(var item in answersProp.EnumerateArray())
+                 {
+                     list.Add(item.GetString() ?? "");
+                 }
+                 room.PlayerAnswers[connectionId] = list;
+                 return Task.FromResult(true);
+             }
+        }
+        return Task.FromResult(false);
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<BabbleState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new BabbleState();
     }
 }

@@ -1,0 +1,16 @@
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.main-stage-panel {
+    transition: padding 0.3s ease;
+
+    &.has-docked-top {
+        padding-top: 140px;
+    }
+
+    &.has-docked-bottom {
+        padding-bottom: 140px;
+    }
+}

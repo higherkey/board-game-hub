@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace BoardGameHub.Api.Services;
@@ -7,7 +8,7 @@ public class PictophoneService : IGameService
 {
     public GameType GameType => GameType.Pictophone;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         // Initialize State
         var state = new PictophoneState();
@@ -36,23 +37,25 @@ public class PictophoneService : IGameService
         // Let's rely on checking if Book has returned to Owner to end game.
         
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
         // No scoring usually, just for fun.
+        return Task.CompletedTask;
     }
 
-    public void SubmitPage(Room room, string playerId, string content)
+    public Task SubmitPage(Room room, string playerId, string content)
     {
-        if (room.GameData is not PictophoneState state) return;
+        if (room.GameData is not PictophoneState state) return Task.CompletedTask;
 
         // Find the book currently held by this player
         var book = state.Books.FirstOrDefault(b => b.CurrentHolderId == playerId);
-        if (book == null) return;
+        if (book == null) return Task.CompletedTask;
 
         // Check if already submitted for this phase
-        if (state.PendingNextPhase.Contains(playerId)) return; // Already waiting
+        if (state.PendingNextPhase.Contains(playerId)) return Task.CompletedTask; // Already waiting
 
         // Add page to book
         var page = new PictophonePage
@@ -62,17 +65,12 @@ public class PictophoneService : IGameService
             Content = content
         };
         
-        // Store temporarily or append? 
-        // We shouldn't modify the book until everyone is ready, BUT we can append locally and just not rotate yet.
-        // ACTUALLY, simpler to store in a staging area?
-        // Let's append to book but blocking "Next" logic handles the visibility.
-        // Actually best to append to book immediately so we don't lose data, 
-        // but the "CurrentHolder" property determines who sees it.
         book.Pages.Add(page);
         
         state.PendingNextPhase.Add(playerId);
 
         CheckNextPhase(room, state);
+        return Task.CompletedTask;
     }
 
     private void CheckNextPhase(Room room, PictophoneState state)
@@ -133,6 +131,23 @@ public class PictophoneService : IGameService
                 book.CurrentHolderId = players[nextIndex].ConnectionId;
             }
         }
+    }
+
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_PAGE" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("content", out var contentProp))
+             {
+                 SubmitPage(room, connectionId, contentProp.GetString() ?? "");
+                 return Task.FromResult(true);
+             }
+        }
+        return Task.FromResult(false);
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<PictophoneState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new PictophoneState();
     }
 }
 

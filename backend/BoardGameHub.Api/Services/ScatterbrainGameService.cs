@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models; // For Room, Player, GameSettings
+using System.Text.Json;
 // Assuming ScatterbrainData is available in root or Models namespace based on previous usage
 
 namespace BoardGameHub.Api.Services;
@@ -13,7 +14,7 @@ public class ScatterbrainGameService : IGameService
 {
     public GameType GameType => GameType.Scatterbrain;
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         var state = new ScatterbrainState();
 
@@ -35,11 +36,12 @@ public class ScatterbrainGameService : IGameService
         }
 
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room.GameData is not ScatterbrainState state) return;
+        if (room.GameData is not ScatterbrainState state) return Task.CompletedTask;
 
         var categoryCount = state.Categories.Count;
         
@@ -79,5 +81,31 @@ public class ScatterbrainGameService : IGameService
                 }
             }
         }
+        return Task.CompletedTask;
+    }
+
+
+
+
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_ANSWERS" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("answers", out var answersProp) && answersProp.ValueKind == System.Text.Json.JsonValueKind.Array)
+             {
+                 var list = new List<string>();
+                 foreach(var item in answersProp.EnumerateArray())
+                 {
+                     list.Add(item.GetString() ?? "");
+                 }
+                 room.PlayerAnswers[connectionId] = list;
+                 return Task.FromResult(true);
+             }
+        }
+        return Task.FromResult(false);
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<ScatterbrainState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new ScatterbrainState();
     }
 }

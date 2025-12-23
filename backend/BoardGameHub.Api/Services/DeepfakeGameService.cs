@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
@@ -62,38 +63,37 @@ public class DeepfakeGameService : IGameService
         ("Food", "Burger")
     };
 
-    public void StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
-        // 1. Setup State
         var state = new DeepfakeState();
         
-        // 2. Choose Prompt
-        var promptData = _prompts[_random.Next(_prompts.Count)];
-        state.Category = promptData.Category;
-        state.Prompt = promptData.Prompt;
-
-        // 3. Assign Roles (1 AI, rest Humans)
+        // 1. Assign "Faker"
+        // Random player
         if (room.Players.Any())
         {
-            var aiIndex = _random.Next(room.Players.Count);
-            state.AiConnectionId = room.Players[aiIndex].ConnectionId;
+            var fakerIndex = new Random().Next(room.Players.Count);
+            state.AiConnectionId = room.Players[fakerIndex].ConnectionId;
         }
 
-        // 4. Setup Turn Order (Randomize)
-        state.PlayerOrder = room.Players.Select(p => p.ConnectionId).OrderBy(_ => _random.Next()).ToList();
-        state.CurrentTurnIndex = 0;
+        // 2. Select Prompt (Category + Item)
+        state.Prompt = GetRandomPrompt();
 
+        state.Phase = DeepfakePhase.Drawing;
         room.GameData = state;
+        return Task.CompletedTask;
     }
 
-    public void CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        // Simple scoring based on win condition?
-        // Implementing basic logic here if needed, but winning is binary mostly.
-        if (room.GameData is not DeepfakeState state) return;
+        // Handled via "SubmitVote" really, but here we can finalize
+        // Points already added during voting resolution.
+        return Task.CompletedTask;
+    }
 
-        // If AI Won, give AI points? If Humans Won, give Humans points?
-        // For now, let's just mark the winner in the state.
+    private string GetRandomPrompt()
+    {
+        var promptData = _prompts[_random.Next(_prompts.Count)];
+        return promptData.Prompt;
     }
 
     public bool SubmitStroke(Room room, string connectionId, string pathData, string color)
@@ -199,5 +199,39 @@ public class DeepfakeGameService : IGameService
         
         state.Phase = DeepfakePhase.Results;
         return true;
+    }
+
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    {
+        if (action.Type == "SUBMIT_STROKE" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("pathData", out var pathProp) && 
+                 action.Payload.Value.TryGetProperty("color", out var colorProp))
+             {
+                 if(SubmitStroke(room, connectionId, pathProp.GetString() ?? "", colorProp.GetString() ?? ""))
+                    return Task.FromResult(true);
+             }
+        }
+        else if (action.Type == "SUBMIT_VOTE" && action.Payload.HasValue)
+        {
+            if (action.Payload.Value.TryGetProperty("accusedId", out var prop))
+            {
+                if(SubmitVote(room, connectionId, prop.GetString() ?? ""))
+                    return Task.FromResult(true);
+            }
+        }
+        else if (action.Type == "SUBMIT_AI_GUESS" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("guess", out var prop))
+            {
+                if(SubmitAiGuess(room, connectionId, prop.GetString() ?? ""))
+                    return Task.FromResult(true);
+            }
+        }
+        return Task.FromResult(false);
+    }
+    public object DeserializeState(System.Text.Json.JsonElement json)
+    {
+        return json.Deserialize<DeepfakeState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new DeepfakeState();
     }
 }
