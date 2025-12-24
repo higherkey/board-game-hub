@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, Output, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,23 +6,38 @@ import { CommonModule } from '@angular/common';
     standalone: true,
     imports: [CommonModule],
     template: `
-    <div class="canvas-wrapper border rounded bg-white position-relative" style="touch-action: none;">
+    <div class="canvas-wrapper border rounded bg-white position-relative shadow-sm" style="touch-action: none;">
       <canvas #canvas class="d-block w-100" [height]="height" style="cursor: crosshair"></canvas>
       
-      <div class="tools position-absolute top-0 end-0 p-2">
-         <button class="btn btn-sm btn-outline-danger" (click)="clear()">
+      <!-- TOOL OVERLAY -->
+      <div class="tools position-absolute top-0 end-0 p-2 d-flex flex-column gap-2">
+         <button class="btn btn-sm btn-light shadow-sm" (click)="undo()" [disabled]="undoStack.length <= 1" title="Undo">
+            <i class="bi bi-arrow-90deg-left"></i>
+         </button>
+         <button class="btn btn-sm btn-outline-danger shadow-sm" (click)="clear()" title="Clear All">
             <i class="bi bi-trash"></i>
          </button>
+      </div>
+
+      <!-- BRUSH INDICATOR (Optional/Subtle) -->
+      <div class="position-absolute bottom-0 start-0 p-2 pointer-events-none">
+          <div class="rounded-circle border bg-white shadow-sm" 
+               [style.width.px]="lineWidth * 2" 
+               [style.height.px]="lineWidth * 2"
+               [style.background-color]="color"></div>
       </div>
     </div>
   `,
     styles: [`
-    .canvas-wrapper { overflow: hidden; }
+    .canvas-wrapper { overflow: hidden; background: #fff; }
+    .pointer-events-none { pointer-events: none; }
   `]
 })
-export class CanvasDrawComponent implements AfterViewInit {
+export class CanvasDrawComponent implements AfterViewInit, OnChanges {
     @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
-    @Input() height = 300;
+    @Input() height = 400;
+    @Input() color = '#000000';
+    @Input() lineWidth = 3;
     @Output() imageGenerated = new EventEmitter<string>();
 
     private ctx!: CanvasRenderingContext2D;
@@ -30,15 +45,34 @@ export class CanvasDrawComponent implements AfterViewInit {
     private lastX = 0;
     private lastY = 0;
 
+    undoStack: string[] = [];
+
     ngAfterViewInit() {
+        this.initCanvas();
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (this.ctx) {
+            if (changes['color']) this.ctx.strokeStyle = this.color;
+            if (changes['lineWidth']) this.ctx.lineWidth = this.lineWidth;
+        }
+    }
+
+    private initCanvas() {
         const canvas = this.canvasRef.nativeElement;
-        // Set actual width to match display width
         canvas.width = canvas.offsetWidth;
 
-        this.ctx = canvas.getContext('2d')!;
-        this.ctx.lineWidth = 3;
+        this.ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+        this.ctx.lineWidth = this.lineWidth;
         this.ctx.lineCap = 'round';
-        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineJoin = 'round';
+        this.ctx.strokeStyle = this.color;
+
+        // Fill white background initially
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        this.saveToUndoStack();
 
         // Mouse Events
         canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
@@ -50,24 +84,23 @@ export class CanvasDrawComponent implements AfterViewInit {
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            this.startDrawing(mouseEvent);
+            this.startDrawing(this.createMouseEvent('mousedown', touch));
         });
 
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            this.draw(mouseEvent);
+            this.draw(this.createMouseEvent('mousemove', touch));
         });
 
         canvas.addEventListener('touchend', () => this.stopDrawing());
+    }
+
+    private createMouseEvent(type: string, touch: Touch): MouseEvent {
+        return new MouseEvent(type, {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
     }
 
     private startDrawing(e: MouseEvent) {
@@ -90,26 +123,53 @@ export class CanvasDrawComponent implements AfterViewInit {
     private stopDrawing() {
         if (this.isDrawing) {
             this.isDrawing = false;
+            this.saveToUndoStack();
             this.emitImage();
         }
     }
 
     private getCoords(e: MouseEvent): [number, number] {
         const rect = this.canvasRef.nativeElement.getBoundingClientRect();
+        const scaleX = this.canvasRef.nativeElement.width / rect.width;
+        const scaleY = this.canvasRef.nativeElement.height / rect.height;
         return [
-            e.clientX - rect.left,
-            e.clientY - rect.top
+            (e.clientX - rect.left) * scaleX,
+            (e.clientY - rect.top) * scaleY
         ];
     }
 
     clear() {
-        this.ctx.clearRect(0, 0, this.canvasRef.nativeElement.width, this.canvasRef.nativeElement.height);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillRect(0, 0, this.canvasRef.nativeElement.width, this.canvasRef.nativeElement.height);
+        this.saveToUndoStack();
         this.emitImage();
     }
 
+    undo() {
+        if (this.undoStack.length > 1) {
+            this.undoStack.pop(); // Remove current state
+            const previousState = this.undoStack[this.undoStack.length - 1];
+            this.loadFromDataUrl(previousState);
+        }
+    }
+
+    private saveToUndoStack() {
+        const data = this.canvasRef.nativeElement.toDataURL();
+        this.undoStack.push(data);
+        if (this.undoStack.length > 20) this.undoStack.shift();
+    }
+
+    private loadFromDataUrl(dataUrl: string) {
+        const img = new Image();
+        img.onload = () => {
+            this.ctx.clearRect(0, 0, this.canvasRef.nativeElement.width, this.canvasRef.nativeElement.height);
+            this.ctx.drawImage(img, 0, 0);
+            this.emitImage();
+        };
+        img.src = dataUrl;
+    }
+
     private emitImage() {
-        // Debounce? Or just emit on every stroke end?
-        // Basic implementation: Export as Base64
         const data = this.canvasRef.nativeElement.toDataURL('image/png');
         this.imageGenerated.emit(data);
     }

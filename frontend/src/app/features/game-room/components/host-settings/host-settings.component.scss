@@ -133,9 +133,7 @@
     font-size: 1rem;
 }
 
-.game-specific-settings {
-    // Flows naturally in the column now
-}
+// Flows naturally in the column now
 
 .list-id-input {
     margin-top: 0.75rem;
@@ -171,7 +169,7 @@
 .btn-start {
     width: 100%;
     padding: 1rem;
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(135deg, #228b22 0%, #008b8b 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -187,9 +185,17 @@
     letter-spacing: 1px;
 }
 
-.btn-start:hover {
+.btn-start:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+}
+
+.btn-start:disabled {
+    background: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .btn-start i {

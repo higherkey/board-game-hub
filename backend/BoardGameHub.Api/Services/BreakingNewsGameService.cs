@@ -126,6 +126,12 @@ public class BreakingNewsGameService : IGameService
         );
     }
 
+    public async Task EndRound(Room room)
+    {
+        room.State = GameState.Finished;
+        await CalculateScores(room);
+    }
+
     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "SUBMIT_SLOT" && action.Payload.HasValue)

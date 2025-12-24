@@ -13,6 +13,7 @@
                 <div class="select-wrapper">
                     <select id="gameType" class="form-select bg-surface border-2 shadow-sm"
                         [(ngModel)]="selectedGameType" (change)="changeGameType()">
+                        <option value="None">-- Choose Game --</option>
                         <option *ngFor="let game of availableGames" [value]="game.id">
                             {{ game.icon }} {{ game.name }}
                         </option>

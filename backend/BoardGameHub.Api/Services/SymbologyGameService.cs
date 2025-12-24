@@ -133,7 +133,13 @@ public class SymbologyGameService : IGameService
         state.Scores[playerId] += points;
     }
 
-     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public async Task EndRound(Room room)
+    {
+        room.State = GameState.Finished;
+        await CalculateScores(room);
+    }
+
+    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "PLACE_MARKER" && action.Payload.HasValue)
         {

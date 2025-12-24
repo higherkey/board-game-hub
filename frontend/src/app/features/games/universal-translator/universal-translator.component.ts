@@ -1,21 +1,28 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../services/signalr.service';
+import { UniversalTranslatorRulesComponent } from './components/universal-translator-rules.component';
 
 @Component({
     selector: 'app-universal-translator',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, UniversalTranslatorRulesComponent],
     template: `
-    <div class="h-full flex flex-col items-center justify-center p-4 bg-gray-900 text-white font-mono gap-4">
+    <div class="h-full flex flex-col items-center justify-center p-4 bg-gray-900 text-white font-mono gap-4 relative">
       
+      <!-- RULES MODAL -->
+      <app-universal-translator-rules *ngIf="showRules" (dismiss)="showRules = false"></app-universal-translator-rules>
+
       <!-- HEADER: Phase & Timer -->
-      <div class="w-full max-w-4xl flex justify-between items-center bg-gray-800 p-4 rounded-lg shadow-lg">
+      <div class="w-full max-w-4xl flex justify-between items-center bg-gray-800 p-4 rounded-lg shadow-lg border border-cyan-900/50">
          <div class="flex flex-col">
-             <h2 class="text-xl font-bold text-cyan-400">UNIVERSAL TRANSLATOR</h2>
-             <span class="text-sm text-gray-400">Phase: {{ gameState?.phase }}</span>
+             <div class="flex items-center gap-3">
+                <h2 class="text-xl font-bold text-cyan-400">UNIVERSAL TRANSLATOR</h2>
+                <button (click)="showRules = true" class="text-[10px] bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 px-2 py-0.5 rounded border border-cyan-400/30 uppercase tracking-tighter">Mission Rules</button>
+             </div>
+             <span class="text-sm text-gray-400 uppercase tracking-widest">{{ gameState?.phase }} PROTOCOL</span>
          </div>
-         <div class="text-3xl font-bold text-red-500" *ngIf="gameState?.phase === 'Day'">
+         <div class="text-3xl font-bold text-red-500 animate-pulse font-mono shadow-[0_0_10px_rgba(239,68,68,0.3)]" *ngIf="gameState?.phase === 'Day'">
              {{ timerDisplay }}
          </div>
       </div>
@@ -36,11 +43,15 @@ import { Room, SignalRService } from '../../../services/signalr.service';
         <div class="flex-1 bg-gray-800 rounded-lg p-6 flex flex-col items-center justify-center border border-gray-700 relative">
             
             <!-- ROLE REVEAL / INFO -->
-            <div class="absolute top-4 left-4">
-               <span class="text-xs uppercase tracking-widest text-gray-500">Your Role</span>
-               <div class="text-xl font-bold" [ngClass]="getRoleClass()">{{ myRole }}</div>
-               <div *ngIf="myTargetWord" class="mt-2 text-sm bg-black/50 px-2 py-1 rounded">
-                   Target: <span class="text-yellow-400 font-mono">{{ myTargetWord }}</span>
+            <div class="absolute top-4 left-4 max-w-[200px]">
+               <span class="text-xs uppercase tracking-widest text-gray-500">Your Identity</span>
+               <div class="text-xl font-bold border-b border-gray-700 pb-1 mb-2" [ngClass]="getRoleClass()">{{ myRole }}</div>
+               
+               <p class="text-[10px] text-gray-400 mb-3 leading-tight">{{ getRoleDescription() }}</p>
+
+               <div *ngIf="myTargetWord" class="bg-cyan-900/30 border border-cyan-500/30 p-2 rounded-lg animate-pulse">
+                   <span class="text-[9px] text-cyan-500 block uppercase mb-1">Target Frequency</span>
+                   <span class="text-lg text-yellow-400 font-mono tracking-widest">{{ myTargetWord }}</span>
                </div>
             </div>
 
@@ -53,24 +64,70 @@ import { Room, SignalRService } from '../../../services/signalr.service';
                 </div>
             </div>
 
+            <!-- NIGHT PHASE: WORD SELECTION (Main Computer) -->
+            <div *ngIf="gameState?.phase === 'Night' && isMainComputer" class="w-full flex flex-col items-center">
+                <h3 class="text-xl text-cyan-400 mb-6 font-mono">ESTABLISHING UPLINK... SELECT TARGET FREQUENCY</h3>
+                <div class="grid grid-cols-1 gap-4 w-full max-w-sm">
+                    <button *ngFor="let word of gameState?.wordChoices" 
+                            (click)="pickWord(word)"
+                            class="p-4 bg-gray-800 hover:bg-cyan-900 border-2 border-cyan-800 hover:border-cyan-400 rounded-xl text-lg font-bold transition-all transform hover:scale-105">
+                        {{ word }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- NIGHT PHASE: WAITING (Others) -->
+            <div *ngIf="gameState?.phase === 'Night' && !isMainComputer" class="text-center">
+                <div class="text-6xl mb-6 animate-pulse">📡</div>
+                <h3 class="text-xl text-gray-400">WAITING FOR MAIN COMPUTER...</h3>
+                <p class="text-sm text-gray-600 mt-2 font-mono italic">"Analyzing cosmic background radiation..."</p>
+            </div>
+
             <!-- MAIN COMPUTER VIEW (Day) -->
             <div *ngIf="isMainComputer && gameState?.phase === 'Day'" class="flex flex-col gap-4 w-full h-full justify-center items-center">
                 <p class="text-center text-cyan-200 mb-4 animate-pulse">Incoming Audio Query...</p>
                 <div class="grid grid-cols-2 gap-4 w-full max-w-md">
-                     <button (click)="sendToken('Yes')" class="btn-token bg-green-600 hover:bg-green-500">YES</button>
-                     <button (click)="sendToken('No')" class="btn-token bg-red-600 hover:bg-red-500">NO</button>
-                     <button (click)="sendToken('Maybe')" class="btn-token bg-yellow-600 hover:bg-yellow-500">MAYBE</button>
-                     <button (click)="sendToken('So Close')" class="btn-token bg-purple-600 hover:bg-purple-500">SO CLOSE</button>
-                     <button (click)="sendToken('Way Off')" class="btn-token bg-gray-600 hover:bg-gray-500">WAY OFF</button>
-                     <button (click)="sendToken('Correct')" class="btn-token bg-cyan-600 hover:bg-cyan-500 col-span-2">CORRECT!</button>
+                     <button (click)="sendToken('Yes')" [disabled]="getTokenRemaining('Yes') <= 0" class="btn-token bg-green-600 hover:bg-green-500 disabled:opacity-30 disabled:grayscale">
+                        YES ({{ getTokenRemaining('Yes') }})
+                     </button>
+                     <button (click)="sendToken('No')" [disabled]="getTokenRemaining('No') <= 0" class="btn-token bg-red-600 hover:bg-red-500 disabled:opacity-30 disabled:grayscale">
+                        NO ({{ getTokenRemaining('No') }})
+                     </button>
+                     <button (click)="sendToken('Maybe')" [disabled]="getTokenRemaining('Maybe') <= 0" class="btn-token bg-yellow-600 hover:bg-yellow-500 disabled:opacity-30 disabled:grayscale">
+                        MAYBE ({{ getTokenRemaining('Maybe') }})
+                     </button>
+                     <button (click)="sendToken('So Close')" [disabled]="getTokenRemaining('So Close') <= 0" class="btn-token bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:grayscale">
+                        SO CLOSE ({{ getTokenRemaining('So Close') }})
+                     </button>
+                     <button (click)="sendToken('Way Off')" [disabled]="getTokenRemaining('Way Off') <= 0" class="btn-token bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:grayscale">
+                        WAY OFF ({{ getTokenRemaining('Way Off') }})
+                     </button>
+                     <button (click)="sendToken('Correct')" [disabled]="getTokenRemaining('Correct') <= 0" class="btn-token bg-cyan-600 hover:bg-cyan-500 col-span-2 disabled:opacity-30 disabled:grayscale">
+                        CORRECT!
+                     </button>
                 </div>
             </div>
 
             <!-- CREW VIEW (Day) -->
-            <div *ngIf="!isMainComputer && gameState?.phase === 'Day'" class="text-center opacity-80">
-                <div class="text-6xl mb-4">🎤</div>
-                <p>Ask the Main Computer questions.</p>
-                <p class="text-xs text-gray-400 mt-2">Wait for the token response.</p>
+            <div *ngIf="!isMainComputer && gameState?.phase === 'Day'" class="text-center w-full px-12">
+                <div *ngIf="myRole === 'Crew'" class="animate-bounce text-6xl mb-6">🎤</div>
+                <div *ngIf="myRole === 'J'" class="animate-pulse text-6xl mb-6">😈</div>
+                <div *ngIf="myRole === 'Empath'" class="animate-pulse text-6xl mb-6">👁️</div>
+
+                <div [ngSwitch]="myRole">
+                    <ng-container *ngSwitchCase="'Crew'">
+                        <p class="text-lg text-cyan-200">INTERROGATION IN PROGRESS</p>
+                        <p class="text-sm text-gray-500 mt-2 italic font-mono">Ask YES/NO questions. Narrow down the target.</p>
+                    </ng-container>
+                    <ng-container *ngSwitchCase="'J'">
+                        <p class="text-lg text-red-400 font-bold uppercase tracking-tighter">DATA CORRUPTION ACTIVE</p>
+                        <p class="text-sm text-gray-500 mt-2 italic font-mono">Knowledge is power. Guide them away from the truth.</p>
+                    </ng-container>
+                    <ng-container *ngSwitchCase="'Empath'">
+                        <p class="text-lg text-purple-400 font-bold uppercase tracking-tighter">TELEPATHIC LINK ESTABLISHED</p>
+                        <p class="text-sm text-gray-500 mt-2 italic font-mono">Help the Crew find the word, but do not break cover.</p>
+                    </ng-container>
+                </div>
             </div>
 
             <!-- VOTE VIEW (VotingForJ) -->
@@ -126,6 +183,7 @@ export class UniversalTranslatorComponent implements OnChanges {
     timerDisplay: string = '00:00';
     private timerInterval: any;
 
+    showRules = false;
     myVote: string | null = null;
 
     constructor(
@@ -197,9 +255,18 @@ export class UniversalTranslatorComponent implements OnChanges {
         this.signalR.submitUniversalTranslatorToken(token);
     }
 
+    pickWord(word: string) {
+        if (!this.isMainComputer) return;
+        this.signalR.pickUniversalTranslatorWord(word);
+    }
+
     vote(targetId: string) {
         this.myVote = targetId;
         this.signalR.submitUniversalTranslatorVote(targetId);
+    }
+
+    getTokenRemaining(token: string): number {
+        return this.gameState?.tokenLimits?.[token] ?? 0;
     }
 
     getTokenClass(token: string): string {
@@ -224,7 +291,23 @@ export class UniversalTranslatorComponent implements OnChanges {
     }
 
     formatEndReason(reason: string): string {
-        // GameEndReason enum to text
-        return reason; // "WordGuessed", "JFound" etc.
+        switch (reason) {
+            case 'WordGuessed': return 'The Crew correctly identified the target signal!';
+            case 'TimeExpired': return 'Transmission lost. The uplink has timed out.';
+            case 'JFound': return 'The Saboteur has been apprehended and neutralized.';
+            case 'JEscaped': return 'The Saboteur successfully bypassed the firewall.';
+            case 'EmpathAssassinated': return 'The Empath was compromised! Data breach successful.';
+            default: return reason || 'Mission Terminated.';
+        }
+    }
+
+    getRoleDescription(): string {
+        switch (this.myRole) {
+            case 'MainComputer': return 'You provide binary data to the Crew. Use your tokens wisely.';
+            case 'J': return 'Sabotage the signal. Waste time. If the word is found, find the Empath.';
+            case 'Empath': return 'Guide the Crew to the word. If you are found by the J, everyone loses.';
+            case 'Crew': return 'Analyze the tokens. Decode the signal. Find the hidden J.';
+            default: return 'Observing data stream...';
+        }
     }
 }

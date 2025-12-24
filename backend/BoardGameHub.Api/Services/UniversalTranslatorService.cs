@@ -45,15 +45,49 @@ public class UniversalTranslatorService : IGameService
         }
         
         state.Roles = roles;
-        state.TargetWord = GetRandomWord();
-        state.Phase = UniversalTranslatorPhase.Day;
+        state.WordChoices = GetRandomWords(3);
+        state.Phase = UniversalTranslatorPhase.Setup;
         
-        // Timer handled by room.RoundEndTime in RoomService generally, 
-        // but we can track specific phase end here if we want sub-phases.
-        // For now rely on Room Timer (Day Phase).
+        // Token Limits (Typical Werewords config)
+        state.TokenLimits = new Dictionary<string, int>
+        {
+             { "Yes", 30 },
+             { "No", 30 },
+             { "Maybe", 5 },
+             { "So Close", 1 },
+             { "Way Off", 1 },
+             { "Correct", 1 }
+        };
         
         room.GameData = state;
         return Task.CompletedTask;
+    }
+
+    private List<string> GetRandomWords(int count)
+    {
+        var pool = new[] { "Robot", "Laser", "Spaceship", "Alien", "Planet", "Star", "Galaxy", "Portal", "Time Machine", "Asteroid", "Black Hole", "Supernova", "Satellite", "Astronaut", "Comet", "Nebula", "Telescope", "Mars", "Pluto", "Rocket" };
+        var r = new Random();
+        return pool.OrderBy(x => r.Next()).Take(count).ToList();
+    }
+
+    public Task<bool> PickWord(Room room, string playerId, string word)
+    {
+        if (room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
+        if (state.Phase != UniversalTranslatorPhase.Setup) return Task.FromResult(false);
+
+        // Only Main Computer can pick
+        if (!state.Roles.TryGetValue(playerId, out var role) || role != UniversalTranslatorRole.MainComputer) return Task.FromResult(false);
+        if (!state.WordChoices.Contains(word)) return Task.FromResult(false);
+
+        state.TargetWord = word;
+        state.Phase = UniversalTranslatorPhase.Day;
+        
+        // Start 4 minute timer for Day Phase (Standard)
+        // Note: Room timer is usually handled by roundDurationSeconds in settings
+        // But we can set a specific end time here if we want to be explicit.
+        room.RoundEndTime = DateTime.UtcNow.AddMinutes(4);
+
+        return Task.FromResult(true);
     }
 
     public Task CalculateScores(Room room)
@@ -84,6 +118,17 @@ public class UniversalTranslatorService : IGameService
         // Only Main Computer can submit
         if (!state.Roles.TryGetValue(playerId, out var role) || role != UniversalTranslatorRole.MainComputer) return Task.FromResult(false);
 
+        // Check Token Limits
+        if (state.TokenLimits.TryGetValue(token, out var remaining))
+        {
+            if (remaining <= 0) return Task.FromResult(false);
+            state.TokenLimits[token] = remaining - 1;
+        }
+        else
+        {
+            return Task.FromResult(false); // Token type not found
+        }
+
         state.TokenHistory.Add(new TokenEntry 
         { 
             Token = token, 
@@ -107,48 +152,48 @@ public class UniversalTranslatorService : IGameService
                 state.Phase = UniversalTranslatorPhase.Result;
             }
         }
+        else if (state.TokenLimits.Values.Sum() <= 0)
+        {
+            // Out of tokens -> Time up logic
+            state.Phase = UniversalTranslatorPhase.VotingForJ;
+            state.EndReason = GameEndReason.TimeExpired;
+        }
 
         return Task.FromResult(true);
     }
 
-    public Task<bool> SubmitVote(Room room, string voterId, string accusedId)
+    public Task<bool> SubmitVote(Room room, string playerId, string target)
     {
         if (room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
-        
-        // Voting for J (after timeout)
+
         if (state.Phase == UniversalTranslatorPhase.VotingForJ)
         {
-            state.Votes[voterId] = accusedId;
-            // Check if everyone voted (except Main Computer? usually everyone votes including MC)
-            var voters = room.Players.Count; 
-            if (state.Votes.Count >= voters)
+            state.Votes[playerId] = target;
+            
+            // Trigger resolution when all non-MC players have voted
+            var votersCount = state.Roles.Values.Count(r => r != UniversalTranslatorRole.MainComputer);
+            if (state.Votes.Count >= votersCount)
             {
                 ResolveVoteForJ(state, room);
             }
             return Task.FromResult(true);
         }
-        
-        // J Guessing Empath (after word found)
-        if (state.Phase == UniversalTranslatorPhase.JGuessingEmpath)
+        else if (state.Phase == UniversalTranslatorPhase.JGuessingEmpath)
         {
-            // Only J handles this
-             if (state.Roles.TryGetValue(voterId, out var role) && role == UniversalTranslatorRole.J)
+             // J guesses 'target' is Empath
+             var accusedRole = state.Roles.GetValueOrDefault(target, UniversalTranslatorRole.Crew);
+             if (accusedRole == UniversalTranslatorRole.Empath)
              {
-                 // J guesses 'accusedId' is Empath
-                 var accusedRole = state.Roles.GetValueOrDefault(accusedId, UniversalTranslatorRole.Crew); // Default to crew if not found
-                 if (accusedRole == UniversalTranslatorRole.Empath)
-                 {
-                     state.Winner = "J";
-                     state.EndReason = GameEndReason.EmpathAssassinated;
-                 }
-                 else
-                 {
-                     state.Winner = "Crew";
-                     state.EndReason = GameEndReason.JEscaped; // J failed to find Empath
-                 }
-                 state.Phase = UniversalTranslatorPhase.Result;
-                 return Task.FromResult(true);
+                 state.Winner = "J";
+                 state.EndReason = GameEndReason.EmpathAssassinated;
              }
+             else
+             {
+                 state.Winner = "Crew";
+                 state.EndReason = GameEndReason.JEscaped; 
+             }
+             state.Phase = UniversalTranslatorPhase.Result;
+             return Task.FromResult(true);
         }
 
         return Task.FromResult(false);
@@ -158,35 +203,37 @@ public class UniversalTranslatorService : IGameService
     {
         // Tally votes
         var counts = state.Votes.Values.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
-        var max =0;
-        string? target = null;
         
-        foreach(var kvp in counts)
+        if (!counts.Any())
         {
-            if (kvp.Value > max)
-            {
-                max = kvp.Value;
-                target = kvp.Key;
-            }
+            state.Winner = "J";
+            state.EndReason = GameEndReason.JEscaped;
+            state.Phase = UniversalTranslatorPhase.Result;
+            return;
         }
-        
-        // Logic: Majority wins? 
-        if (target != null && state.Roles.TryGetValue(target, out var role))
+
+        var maxVotes = counts.Values.Max();
+        var topCandidates = counts.Where(x => x.Value == maxVotes).Select(x => x.Key).ToList();
+
+        // If there's a tie, Crew loses (J escapes)
+        if (topCandidates.Count > 1)
         {
-            if (role == UniversalTranslatorRole.J)
+            state.Winner = "J";
+            state.EndReason = GameEndReason.JEscaped;
+        }
+        else
+        {
+            var target = topCandidates.First();
+            if (state.Roles.TryGetValue(target, out var role) && role == UniversalTranslatorRole.J)
             {
-                 state.Winner = "Crew";
-                 state.EndReason = GameEndReason.JFound;
+                state.Winner = "Crew";
+                state.EndReason = GameEndReason.JFound;
             }
             else
             {
                 state.Winner = "J";
                 state.EndReason = GameEndReason.JEscaped;
             }
-        }
-        else
-        {
-            state.Winner = "J"; // Tie or no vote?
         }
         state.Phase = UniversalTranslatorPhase.Result;
     }
@@ -224,6 +271,14 @@ public class UniversalTranslatorService : IGameService
                     return true;
             }
         }
+        else if (action.Type == "PICK_WORD" && action.Payload.HasValue)
+        {
+             if (action.Payload.Value.TryGetProperty("word", out var wordProp))
+             {
+                 if(await PickWord(room, connectionId, wordProp.GetString() ?? ""))
+                    return true;
+             }
+        }
         else if (action.Type == "FORCE_PHASE" && action.Payload.HasValue)
         {
              if (action.Payload.Value.TryGetProperty("phase", out var phaseProp))
@@ -237,6 +292,12 @@ public class UniversalTranslatorService : IGameService
         }
         return false;
     }
+    public async Task EndRound(Room room)
+    {
+        room.State = GameState.Finished;
+        await CalculateScores(room);
+    }
+
     public object DeserializeState(System.Text.Json.JsonElement json)
     {
         return json.Deserialize<UniversalTranslatorState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new UniversalTranslatorState();

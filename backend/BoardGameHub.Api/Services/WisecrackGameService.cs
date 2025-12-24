@@ -258,6 +258,12 @@ public class WisecrackGameService : IGameService
     }
 
 
+    public async Task EndRound(Room room)
+    {
+        room.State = GameState.Finished;
+        await CalculateScores(room);
+    }
+
     public object DeserializeState(System.Text.Json.JsonElement json)
     {
         return json.Deserialize<WisecrackState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new WisecrackState();

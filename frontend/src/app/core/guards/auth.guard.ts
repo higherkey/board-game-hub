@@ -6,6 +6,11 @@ export const authGuard: CanActivateFn = (route, state) => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
+    // Bypass check if NOT on frontend dev port (Assumes backend/tunnel deployment)
+    if (globalThis.location.port !== '4200') {
+        return true;
+    }
+
     if (authService.isAuthenticated()) {
         return true;
     }

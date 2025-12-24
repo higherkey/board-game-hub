@@ -26,7 +26,7 @@ public class Room
     public GameType GameType { get; set; } = GameType.None; 
     public bool IsPublic { get; set; } = false;
 
-    // Generic Game State (Holds ScatterbrainState or BoggleState)
+    // Generic Game State
     public object? GameData { get; set; }
     public int RoundNumber { get; set; } = 0;
     

@@ -9,8 +9,7 @@
 .card {
     transition: all 0.2s ease-in-out;
     border: none;
-    border-bottom: 3px solid var(--border-color);
-    /* Base border */
+    border-bottom: 3px solid transparent;
     background: var(--bg-surface);
     position: relative;
     overflow: hidden;
@@ -21,38 +20,25 @@
             0 100%, 0 10px);
 
     &.border-accent {
-        border-bottom-color: var(--accent);
+        border-bottom-color: var(--accent) !important;
     }
+}
 
-    &.hover-card:hover {
+.hover-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
         transform: translateY(-5px);
-        border-bottom-color: var(--accent);
-        /* Teal Accent on Hover */
-        box-shadow: 0 10px 20px rgba(0, 51, 102, 0.1) !important;
-
-        /* Add a subtle low-poly glow or accent */
-        &::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, transparent 50%, var(--accent) 50%);
-            opacity: 0.2;
-        }
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     }
+}
+
+.card-text.small {
+    font-size: 0.9rem !important;
+    line-height: 1.4;
 }
 
 .opacity-75 {
     opacity: 0.6;
     filter: grayscale(100%);
-}
-
-.games-grid,
-.lobbies-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
 }

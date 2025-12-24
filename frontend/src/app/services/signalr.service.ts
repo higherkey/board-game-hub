@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { BehaviorSubject } from 'rxjs';
 import { ToastService } from '../shared/services/toast.service';
+import { AuthService } from './auth.service';
 
 export interface GameSettings {
   timerDurationSeconds: number;
@@ -72,13 +73,18 @@ export class SignalRService {
   public answerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
   public iceCandidateReceived$ = new BehaviorSubject<{ senderId: string, candidate: string } | null>(null);
 
-  constructor(private readonly toastService: ToastService) {
+  constructor(
+    private readonly toastService: ToastService,
+    private readonly authService: AuthService
+  ) {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl('http://localhost:5109/gamehub', {
+      .withUrl('/gamehub', {
         accessTokenFactory: () => localStorage.getItem('auth_token') || ''
       })
       .withAutomaticReconnect()
       .build();
+
+    this.loadActiveRooms();
 
     this.hubConnection.on('PlayerJoined', (players: Player[]) => {
       this.players$.next(players);
@@ -172,15 +178,26 @@ export class SignalRService {
     this.hubConnection.on('ReceiveIceCandidate', (senderId: string, candidate: string) => {
       this.iceCandidateReceived$.next({ senderId, candidate });
     });
+
+    this.hubConnection.on('RoomTerminated', (message: string) => {
+      const room = this.currentRoomSubject.value;
+      if (room) {
+        this.removeActiveRoom(room.code);
+        this.currentRoomSubject.next(null);
+        this.toastService.showError(message || 'Room has been closed');
+      }
+    });
   }
 
   // ... startConnection implementation ...
 
-  public async startGame(settings: GameSettings | null): Promise<void> {
-    const roomCode = this.currentRoomSubject.value?.code;
-    if (roomCode) {
-      await this.hubConnection.invoke('StartGame', roomCode, settings);
-    }
+  public async startGame(settings: GameSettings | null = null): Promise<void> {
+    await this.hubConnection.invoke('StartGame', this.currentRoomSubject.value?.code, settings);
+  }
+
+  public sendGameAction(actionType: string, payload: any) {
+    this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value?.code, actionType, payload)
+      .catch(err => console.error(err));
   }
 
   public async pauseGame(): Promise<void> {
@@ -203,8 +220,8 @@ export class SignalRService {
       .catch(err => console.error(err));
   }
 
-  public submitGuess(guess: string) {
-    this.hubConnection.invoke('SubmitGuess', this.currentRoomSubject.value!.code, guess)
+  public submitGuess(guess: string, isPass: boolean = false) {
+    this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value!.code, 'SUBMIT_GUESS', { guess, isPass })
       .catch(err => console.error(err));
   }
 
@@ -272,8 +289,62 @@ export class SignalRService {
     return this.connectionPromise;
   }
 
-  public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'Scatterbrain'): Promise<string> {
-    const roomCode = await this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType);
+  // --- Active Room Persistence ---
+  private readonly ACTIVE_ROOMS_KEY = 'my_active_rooms';
+  public activeRooms$ = new BehaviorSubject<{ code: string, gameType: string, lastPlayed: string }[]>([]);
+
+  public getActiveRooms(): { code: string, gameType: string, lastPlayed: string }[] {
+    const raw = localStorage.getItem(this.ACTIVE_ROOMS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  private loadActiveRooms() {
+    this.activeRooms$.next(this.getActiveRooms());
+  }
+
+  private saveActiveRoom(code: string, gameType: string) {
+    const rooms = this.getActiveRooms().filter(r => r.code !== code);
+    rooms.unshift({ code, gameType, lastPlayed: new Date().toISOString() });
+    localStorage.setItem(this.ACTIVE_ROOMS_KEY, JSON.stringify(rooms));
+    this.loadActiveRooms();
+  }
+
+  public removeActiveRoom(code: string) {
+    const rooms = this.getActiveRooms().filter(r => r.code !== code);
+    localStorage.setItem(this.ACTIVE_ROOMS_KEY, JSON.stringify(rooms));
+    this.loadActiveRooms();
+  }
+
+  public async validateActiveRooms(): Promise<void> {
+    const currentRooms = this.getActiveRooms();
+    if (currentRooms.length === 0) return;
+
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
+
+    try {
+      const codes = currentRooms.map(r => r.code);
+      const validCodes: string[] = await this.hubConnection.invoke('ValidateRooms', codes);
+
+      const prunedRooms = currentRooms.filter(r => validCodes.includes(r.code));
+
+      if (prunedRooms.length !== currentRooms.length) {
+        localStorage.setItem(this.ACTIVE_ROOMS_KEY, JSON.stringify(prunedRooms));
+        this.loadActiveRooms();
+      }
+    } catch (err) {
+      console.error('Failed to validate active rooms:', err);
+    }
+  }
+
+  public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None'): Promise<string> {
+    const guestId = this.authService.getGuestId();
+    const roomCode = await this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId);
+
+    // Save to active rooms
+    this.saveActiveRoom(roomCode, gameType);
+
     // Initialize currentRoomSubject with the room code so startGame can use it
     this.currentRoomSubject.next({
       code: roomCode,
@@ -301,10 +372,12 @@ export class SignalRService {
     if (this.hubConnection.state !== HubConnectionState.Connected) {
       await this.startConnection();
     }
-    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName);
+    const guestId = this.authService.getGuestId();
+    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName, guestId);
     if (room) {
       this.currentRoomSubject.next(room);
       this.players$.next(room.players); // Sync players immediately
+      this.saveActiveRoom(roomCode, room.gameType); // Persist
       return true;
     } else {
       console.error('Failed to join room');
@@ -314,6 +387,7 @@ export class SignalRService {
 
   public async leaveRoom(roomCode: string): Promise<void> {
     await this.hubConnection.invoke('LeaveRoom', roomCode);
+    this.removeActiveRoom(roomCode); // Remove from list
     this.currentRoomSubject.next(null); // Clear local state
   }
 
@@ -323,6 +397,7 @@ export class SignalRService {
     }
     await this.hubConnection.invoke('RenamePlayer', newName);
   }
+  // ... rest of file
 
   public async setGameType(roomCode: string, gameType: string): Promise<void> {
     await this.hubConnection.invoke('SetGameType', roomCode, gameType);
@@ -376,6 +451,11 @@ export class SignalRService {
       .catch(err => console.error(err));
   }
 
+  public pickUniversalTranslatorWord(word: string) {
+    this.hubConnection.invoke('UniversalTranslatorPickWord', this.currentRoomSubject.value!.code, word)
+      .catch(err => console.error(err));
+  }
+
   // --- Poppycock Methods ---
   public submitPoppycockDefinition(definition: string) {
     this.hubConnection.invoke('SubmitPoppycockDefinition', this.currentRoomSubject.value!.code, definition)
@@ -391,6 +471,27 @@ export class SignalRService {
   public submitPictophonePage(content: string) {
     this.hubConnection.invoke('SubmitPictophonePage', this.currentRoomSubject.value!.code, content)
       .catch(err => console.error(err));
+  }
+
+  public submitPictophoneDraft(content: string) {
+    this.hubConnection.invoke('SubmitPictophoneDraft', this.currentRoomSubject.value!.code, content)
+      .catch(err => console.error(err));
+  }
+
+  public async forcePictophoneNext(roomCode: string) {
+    await this.hubConnection.invoke('ForcePictophoneNext', roomCode);
+  }
+
+  public async revealPictophoneNext(roomCode: string) {
+    await this.hubConnection.invoke('RevealPictophoneNext', roomCode);
+  }
+
+  public async starPictophonePage(roomCode: string, bookIndex: number, pageIndex: number): Promise<void> {
+    await this.hubConnection.invoke('StarPictophonePage', roomCode, bookIndex, pageIndex);
+  }
+
+  public async getPictophoneSuggestions(): Promise<string[]> {
+    return await this.hubConnection.invoke('GetPictophoneSuggestions');
   }
   // --- Symbology Methods ---
   public symbologyPlaceMarker(icon: string, type: string, color: string) {
@@ -420,6 +521,11 @@ export class SignalRService {
   // --- Sushi Train ---
   public submitSushiTrainSelection(cardId: string) {
     this.hubConnection.invoke('SubmitSushiTrainSelection', this.currentRoomSubject.value!.code, cardId)
+      .catch(err => console.error(err));
+  }
+
+  public toggleSushiTrainChopsticks() {
+    this.hubConnection.invoke('ToggleSushiTrainChopsticks', this.currentRoomSubject.value!.code)
       .catch(err => console.error(err));
   }
 

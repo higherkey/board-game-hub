@@ -4,6 +4,7 @@ using System.Text.Json;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
 
 namespace BoardGameHub.Api.Services;
 
@@ -14,10 +15,17 @@ public class RoomService : IRoomService
     // Map ConnectionId -> RoomCode for O(1) lookup
     private readonly ConcurrentDictionary<string, string> _connectionRoomMap = new();
     private readonly IEnumerable<IGameService> _gameServices;
+    private readonly Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub> _adminHubContext;
+    private readonly Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> _gameHubContext;
 
-    public RoomService(IEnumerable<IGameService> gameServices)
+    public RoomService(
+        IEnumerable<IGameService> gameServices,
+        Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub> adminHubContext,
+        Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> gameHubContext)
     {
         _gameServices = gameServices;
+        _adminHubContext = adminHubContext;
+        _gameHubContext = gameHubContext;
     }
 
     public T? GetGameService<T>(GameType type) where T : class
@@ -63,6 +71,7 @@ public class RoomService : IRoomService
         if (_rooms.TryAdd(code, room))
         {
             _connectionRoomMap.TryAdd(hostConnectionId, code);
+            NotifyStatsChanged();
         }
         return room;
     }
@@ -81,8 +90,8 @@ public class RoomService : IRoomService
             return null;
         }
 
-        // 1. RECONNECTION LOGIC: Check if player exists by name
-        var existingPlayer = room.Players.FirstOrDefault(p => p.Name.ToLower() == playerName.ToLower());
+        // 1. RECONNECTION LOGIC: Check if player exists by ID (UserId or GuestId)
+        var existingPlayer = room.Players.FirstOrDefault(p => userId != null && p.UserId == userId);
         if (existingPlayer != null)
         {
             if (existingPlayer.ConnectionId != connectionId)
@@ -92,11 +101,13 @@ public class RoomService : IRoomService
             
             existingPlayer.ConnectionId = connectionId;
             existingPlayer.IsConnected = true; // Mark as connected
+            existingPlayer.Name = playerName; // Update name in case it changed
             
             if (userId != null) existingPlayer.UserId = userId;
             if (avatarUrl != null) existingPlayer.AvatarUrl = avatarUrl;
 
             _connectionRoomMap.TryAdd(connectionId, code);
+            NotifyStatsChanged();
             return room;
         }
 
@@ -120,6 +131,7 @@ public class RoomService : IRoomService
         room.Players.Add(newPlayer);
         _connectionRoomMap.TryAdd(connectionId, code);
         
+        NotifyStatsChanged();
         return room;
     }
 
@@ -160,6 +172,7 @@ public class RoomService : IRoomService
                     
                     // Trigger cleanup check
                     CheckRoomLifecycle(room);
+                    NotifyStatsChanged();
                 }
             }
         }
@@ -186,10 +199,11 @@ public class RoomService : IRoomService
             {
                  // Terminate
                  _rooms.TryRemove(code, out _);
-                 // Also clean up map? Map is already cleaned in RemovePlayer for those IDs.
-                 // But if players reconnected then disconnected, map is updated.
-                 // Map cleanup happens in RemovePlayer.
-                 // So we just drop the room.
+                 
+                 // Notify anyone who might still be listening (though unlikely if all disconnected)
+                 await _gameHubContext.Clients.Group(code).SendAsync("RoomTerminated", "Room closed due to inactivity");
+
+                 NotifyStatsChanged();
             }
         }
     }
@@ -197,6 +211,8 @@ public class RoomService : IRoomService
     public void TerminateRoom(string code)
     {
         _rooms.TryRemove(code.ToUpper(), out _);
+        _ = _gameHubContext.Clients.Group(code.ToUpper()).SendAsync("RoomTerminated", "Room terminated by administrator");
+        NotifyStatsChanged();
     }
 
     public async Task<Room?> StartGame(string code, GameSettings? settings = null)
@@ -230,6 +246,7 @@ public class RoomService : IRoomService
         // Set Timer
         room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
         
+        NotifyStatsChanged();
         return room;
     }
 
@@ -280,12 +297,10 @@ public class RoomService : IRoomService
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         if (service != null)
         {
-            await service.CalculateScores(room);
+            await service.EndRound(room);
         }
         
-        // Change state to Finished
-        room.State = GameState.Finished; 
-        
+        NotifyStatsChanged();
         return room;
     }
 
@@ -299,6 +314,7 @@ public class RoomService : IRoomService
         // Clear votes if game type is manually force set? 
         room.NextGameVotes.Clear();
         
+        NotifyStatsChanged();
         return room;
     }
 
@@ -332,6 +348,14 @@ public class RoomService : IRoomService
         return room;
     }
 
+    public List<string> ValidateRooms(List<string> codes)
+    {
+        return codes
+            .Where(c => _rooms.ContainsKey(c.ToUpper()))
+            .Select(c => c.ToUpper())
+            .ToList();
+    }
+
     public ServerStats GetServerStats()
     {
         var activeRooms = _rooms.Values.ToList();
@@ -362,6 +386,11 @@ public class RoomService : IRoomService
         };
 
         return stats;
+    }
+
+    private void NotifyStatsChanged()
+    {
+        _ = _adminHubContext.Clients.All.SendAsync("StatsUpdated", GetServerStats());
     }
 
     private string GenerateRoomCode()
@@ -518,7 +547,7 @@ public class RoomService : IRoomService
             
             // Re-assign generic GameData requires careful deserialization if it became JsonElement
             // The JsonSerializer might have turned `object` GameData into `JsonElement`.
-            // We need to re-deserialize it to the specific type (JustOneState, BoggleState).
+            // We need to re-deserialize it to the specific type (JustOneState, ScatterbrainState, etc.).
             if (currentRoom.GameData is JsonElement jsonElement)
             {
                  var service = _gameServices.FirstOrDefault(s => s.GameType == currentRoom.GameType);

@@ -1,4 +1,78 @@
+/* Fonts */
+@font-face {
+  font-family: 'Outfit';
+  src: url('assets/fonts/outfit-300.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('assets/fonts/outfit-400.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('assets/fonts/outfit-600.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('assets/fonts/outfit-800.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('assets/fonts/quicksand-300.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('assets/fonts/quicksand-400.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('assets/fonts/quicksand-500.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('assets/fonts/quicksand-600.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('assets/fonts/quicksand-700.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
 /* Global Design System - Physical/Paper Theme */
+
 :root {
   /* Color Palette */
   --bg-base: #f7f3e8;
@@ -132,9 +206,11 @@ h4,
 h5,
 h6 {
   font-family: 'Outfit', sans-serif;
-  font-weight: 800;
+  font-weight: 500;
   color: var(--primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 /* Utilities */

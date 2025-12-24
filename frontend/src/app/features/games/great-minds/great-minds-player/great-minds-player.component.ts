@@ -67,6 +67,13 @@ import { SignalRService } from '../../../../services/signalr.service';
       justify-content: center;
       transition: transform 0.1s, filter 0.2s;
       position: relative;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
     }
 
     .play-btn:active:not(:disabled) {

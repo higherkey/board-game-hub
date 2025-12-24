@@ -39,6 +39,8 @@ public class SushiPlayerState
     public List<SushiCard> Puddings { get; set; } = new(); // Kept aside
     
     public string? SelectedCardId { get; set; }
+    public string? SelectedCardId2 { get; set; }
+    public bool IsUsingChopsticks { get; set; }
     public bool HasSelected { get; set; }
     
     // Using Chopsticks logic: If they use chopsticks, they select 2 cards.

@@ -25,6 +25,12 @@ import { CanvasDrawComponent } from '../../../shared/components/canvas-draw/canv
                     <input type="text" class="form-control form-control-lg" [(ngModel)]="guess" placeholder="Enter guess...">
                     <button class="btn btn-primary" (click)="sendGuess()">Submit</button>
                 </div>
+                <div class="mt-3">
+                    <button class="btn btn-outline-secondary w-100" (click)="sendPass()">
+                        <i class="bi bi-skip-forward"></i> Skip Round (Pass)
+                    </button>
+                    <p class="small text-muted mt-2">Passing avoids the penalty for a wrong guess!</p>
+                </div>
             </div>
 
             <div *ngIf="gameData?.phase === 0" class="mt-5">
@@ -65,7 +71,7 @@ export class OneAndOnlyPlayerComponent {
     @Input() room: any;
     @Input() myConnectionId: string = '';
     @Output() clueSubmitted = new EventEmitter<string>();
-    @Output() guessSubmitted = new EventEmitter<string>();
+    @Output() guessSubmitted = new EventEmitter<{ guess: string, isPass: boolean }>();
 
     guess: string = '';
     currentImage: string | null = null;
@@ -84,7 +90,11 @@ export class OneAndOnlyPlayerComponent {
 
     sendGuess() {
         if (this.guess) {
-            this.guessSubmitted.emit(this.guess);
+            this.guessSubmitted.emit({ guess: this.guess, isPass: false });
         }
+    }
+
+    sendPass() {
+        this.guessSubmitted.emit({ guess: '', isPass: true });
     }
 }

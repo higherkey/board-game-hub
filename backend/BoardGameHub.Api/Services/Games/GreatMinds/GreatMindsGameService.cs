@@ -184,22 +184,28 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
 
         private async Task NextLevel(Room room, GreatMindsGameState state)
         {
-            // Bonus Rewards
+            // Bonus Rewards: Level 2 complete (+1 life), Level 3 complete (+1 life, +1 sync), etc.
+            // Following official rules:
+            // Reward Level 2, 7, 10 -> +1 Life
+            // Reward Level 3, 5, 8 -> +1 Sync Token
+            // Let's stick to my plan for simplicity or align with official?
+            // User plan: Level 3, 6, 9 -> +1 Life, +1 Sync Token. This is fine.
             if (state.CurrentLevel == 3 || state.CurrentLevel == 6 || state.CurrentLevel == 9)
             {
                 state.Lives++;
                 state.SyncTokens++;
+                await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "REWARD_GRANTED", new { Lives = state.Lives, SyncTokens = state.SyncTokens });
             }
 
-            int nextLevel = state.CurrentLevel + 1;
-            if (nextLevel > 12)
+            state.CurrentLevel++;
+            if (state.CurrentLevel > 12)
             {
                 await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "VICTORY", new { });
                 return;
             }
 
             DealCards(room, state);
-            await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "LEVEL_START", new { Level = nextLevel });
+            await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "LEVEL_START", new { Level = state.CurrentLevel });
         }
 
         private async Task BroadcastState(Room room)
@@ -261,7 +267,13 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             }
             return false;
         }
-        public object DeserializeState(System.Text.Json.JsonElement json)
+        public async Task EndRound(Room room)
+        {
+            room.State = GameState.Finished;
+            await CalculateScores(room);
+        }
+
+    public object DeserializeState(System.Text.Json.JsonElement json)
     {
         return json.Deserialize<GreatMindsGameState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new GreatMindsGameState();
     }

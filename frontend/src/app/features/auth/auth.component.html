@@ -24,8 +24,8 @@
         <div class="input-wrapper"
           [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
           <i class="bi bi-lock"></i>
-          <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password"
-            placeholder="Enter your password" autocomplete="current-password">
+          <input [type]="showPassword ? 'text' : 'password'" id="password" name="password" formControlName="password"
+            autocomplete="current-password" placeholder="Enter your password">
           <button type="button" class="toggle-password" (click)="togglePassword()" tabindex="-1">
             <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
           </button>
@@ -39,6 +39,15 @@
       <div class="alert-error" *ngIf="errorMessage">
         <i class="bi bi-exclamation-circle"></i>
         {{ errorMessage }}
+      </div>
+
+      <!-- Stay Signed In Control -->
+      <div class="form-group checkbox-group">
+        <label class="checkbox-container">
+          <input type="checkbox" formControlName="staySignedInLonger">
+          <span class="checkmark"></span>
+          Stay signed in longer (1 week)
+        </label>
       </div>
 
       <!-- Submit Button -->

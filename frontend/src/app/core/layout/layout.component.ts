@@ -4,10 +4,12 @@ import { RouterModule, Router } from '@angular/router';
 import { LogoComponent } from '../../shared/logo/logo.component';
 import { AuthService } from '../../services/auth.service';
 
+import { ActiveGamesComponent } from '../../features/active-games/active-games.component';
+
 @Component({
    selector: 'app-layout',
    standalone: true,
-   imports: [CommonModule, RouterModule, LogoComponent],
+   imports: [CommonModule, RouterModule, LogoComponent, ActiveGamesComponent],
    template: `
     <div class="app-shell">
       <!-- HEADER -->
@@ -25,12 +27,15 @@ import { AuthService } from '../../services/auth.service';
 
         <nav class="main-nav" [class.open]="mobileMenuOpen" role="navigation" aria-label="Main Navigation">
            <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" (click)="closeMobileMenu()">Home</a>
+           <a routerLink="/play" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Play</a>
            <a routerLink="/games" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Games</a>
            <a routerLink="/about" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">About</a>
            <a routerLink="/social" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Social</a>
         </nav>
         
         <div class="auth-actions">
+           <app-active-games *ngIf="!isBackendPort"></app-active-games>
+
            <ng-container *ngIf="currentUser$ | async as user; else guestTemplate">
               <div class="user-profile">
                  <span class="username">{{ user.displayName }}</span>
@@ -268,6 +273,7 @@ export class LayoutComponent {
    currentUser$ = this.authService.currentUser$;
 
    mobileMenuOpen = false;
+   isBackendPort = globalThis.location.port !== '4200';
 
    toggleMobileMenu() {
       this.mobileMenuOpen = !this.mobileMenuOpen;

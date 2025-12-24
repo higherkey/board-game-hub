@@ -25,6 +25,7 @@ import { SushiTrainComponent } from '../games/sushi-train/sushi-train.component'
 import { SushiTrainPlayerComponent } from '../games/sushi-train/sushi-train-player.component';
 import { GreatMindsGameComponent } from '../games/great-minds/great-minds.component';
 import { ScatterbrainComponent } from '../games/scatterbrain/scatterbrain.component';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
   selector: 'app-game-room',
@@ -73,7 +74,8 @@ export class GameRoomComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly signalRService: SignalRService,
     private readonly router: Router,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly toastService: ToastService
   ) {
     this.players$ = this.signalRService.players$;
     this.connectionStatus$ = this.signalRService.connectionStatus$;
@@ -107,7 +109,13 @@ export class GameRoomComponent implements OnInit {
     // Only join if we aren't already in this room and have a name
     if (guestName) {
       if (!currentRoom || currentRoom.code !== this.roomCode) {
-        this.signalRService.joinRoom(this.roomCode, guestName);
+        this.signalRService.joinRoom(this.roomCode, guestName).then(success => {
+          if (!success) {
+            this.toastService.showError(`Room ${this.roomCode} not found or no longer active.`);
+            this.signalRService.removeActiveRoom(this.roomCode);
+            this.router.navigate(['/games']);
+          }
+        });
       }
     } else {
       // No name found anywhere -> show prompt
@@ -170,8 +178,12 @@ export class GameRoomComponent implements OnInit {
     this.signalRService.submitClue(clue);
   }
 
-  onGuessSubmitted(guess: string) {
-    this.signalRService.submitGuess(guess);
+  onGuessSubmitted(event: { guess: string, isPass: boolean } | string) {
+    if (typeof event === 'string') {
+      this.signalRService.submitGuess(event);
+    } else {
+      this.signalRService.submitGuess(event.guess, event.isPass);
+    }
   }
 
   onPoppycockDefSubmitted(def: string) {

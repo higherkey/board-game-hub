@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService, Room } from '../../../services/signalr.service';
 import { Subscription } from 'rxjs';
+import { DeepfakeRulesComponent } from './components/deepfake-rules/deepfake-rules.component';
 
 interface DeepfakeState {
   prompt: string;
@@ -27,7 +28,7 @@ interface DeepfakeStroke {
 @Component({
   selector: 'app-deepfake-game',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DeepfakeRulesComponent],
   templateUrl: './deepfake-game.component.html',
   styleUrl: './deepfake-game.component.scss'
 })
@@ -39,7 +40,7 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
   get myId(): string { return this.signalRService.getConnectionId() || ''; }
   get amIAi(): boolean { return this.state?.aiConnectionId === this.myId; }
   get isMyTurn(): boolean {
-    if (!this.state || this.state.phase !== 0) return false;
+    if (!this.state?.playerOrder) return false;
     const turnPlayerId = this.state.playerOrder[this.state.currentTurnIndex % this.state.playerOrder.length];
     return turnPlayerId === this.myId;
   }
@@ -56,26 +57,38 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
   // AI Guess
   aiGuess: string = '';
 
+  // History Playback
+  playbackStrokes: DeepfakeStroke[] = [];
+  playbackIndex: number = 0;
+  private playbackInterval: any;
+
+  // UI State
+  showRules: boolean = false;
+
   // Canvas
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   private ctx!: CanvasRenderingContext2D;
   private isDrawing = false;
   private currentPath: { x: number, y: number }[] = [];
 
-  private subscriptions = new Subscription();
+  private readonly subscriptions = new Subscription();
 
-  constructor(private signalRService: SignalRService) { }
+  constructor(private readonly signalRService: SignalRService) { }
 
   ngOnInit(): void {
     // Subscribe to room updates to redraw canvas when strokes change
     this.subscriptions.add(
       this.signalRService.currentRoom$.subscribe(updatedRoom => {
         if (updatedRoom) {
+          const oldPhase = (this.room?.gameData as DeepfakeState)?.phase;
           const oldStrokesCount = (this.room?.gameData as DeepfakeState)?.strokes?.length || 0;
           this.room = updatedRoom;
+          const newPhase = (this.room.gameData as DeepfakeState)?.phase;
           const newStrokesCount = (this.room.gameData as DeepfakeState)?.strokes?.length || 0;
 
-          if (newStrokesCount !== oldStrokesCount) {
+          if (newPhase === 2 && oldPhase !== 2) {
+            this.startHistoryPlayback();
+          } else if (newStrokesCount !== oldStrokesCount && newPhase !== 2) {
             this.redrawCanvas();
           }
         }
@@ -94,6 +107,7 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    if (this.playbackInterval) clearInterval(this.playbackInterval);
   }
 
   resizeCanvas() {
@@ -169,8 +183,11 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
 
     if (!this.state) return;
 
-    // Draw all confirmed strokes
-    this.state.strokes.forEach(stroke => {
+    // Which strokes to draw? Use state.strokes normally, or playbackStrokes in results phase
+    const strokesToDraw = this.state.phase === 2 ? this.playbackStrokes : this.state.strokes;
+
+    // Draw confirmed strokes
+    strokesToDraw.forEach(stroke => {
       this.ctx.strokeStyle = stroke.color;
       this.ctx.lineWidth = 3;
       this.ctx.lineCap = 'round';
@@ -188,6 +205,22 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  private startHistoryPlayback() {
+    this.playbackStrokes = [];
+    this.playbackIndex = 0;
+    if (this.playbackInterval) clearInterval(this.playbackInterval);
+
+    this.playbackInterval = setInterval(() => {
+      if (this.playbackIndex < this.state.strokes.length) {
+        this.playbackStrokes.push(this.state.strokes[this.playbackIndex]);
+        this.playbackIndex++;
+        this.redrawCanvas();
+      } else {
+        clearInterval(this.playbackInterval);
+      }
+    }, 1000); // 1 stroke per second
+  }
+
   // Helpers
   getPlayerName(id: string): string {
     return this.room.players.find(p => p.connectionId === id)?.name || 'Unknown';
@@ -197,7 +230,7 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
     // Generate consistent color from ID
     let hash = 0;
     for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+      hash = id.codePointAt(i)! + ((hash << 5) - hash);
     }
     const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
     return '#' + '00000'.substring(0, 6 - c.length) + c;

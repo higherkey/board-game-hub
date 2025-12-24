@@ -101,7 +101,7 @@ public class AppDbContext : IdentityDbContext<User>
             new GameDefinition { Id = "BreakingNews", Name = "Breaking News", Icon = "📰", Description = "Frantic teleprompter fun where writers sabotage the anchor.", Status = GameStatus.Deployed },
             new GameDefinition { Id = "Deepfake", Name = "Deepfake", Icon = "🤖", Description = "A generative AI tries to blend in with human artists.", Status = GameStatus.Deployed },
             new GameDefinition { Id = "SushiTrain", Name = "Sushi Train!", Icon = "🍣", Description = "Draft the best meal from the passing conveyor belt!", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "GreatMinds", Name = "Great Minds", Icon = "🧠", Description = "Synchronize your minds and play cards in ascending order without speaking!", Status = GameStatus.Deployed }
+            new GameDefinition { Id = "GreatMinds", Name = "Great Minds", Icon = "🌟", Description = "Synchronize your minds and play cards in ascending order without speaking!", Status = GameStatus.Deployed }
         );
     }
 }

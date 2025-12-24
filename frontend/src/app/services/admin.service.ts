@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 
 export interface RoomStats {
     activeRooms: number;
@@ -33,9 +34,43 @@ export interface PlayerSummary {
     providedIn: 'root'
 })
 export class AdminService {
-    private readonly baseUrl = 'http://localhost:5109/admin'; // Direct backend URL for now
+    private readonly baseUrl = '/admin'; // Use relative path for standalone deployment compat
+    private hubConnection: HubConnection | null = null;
+    private readonly statsSubject = new BehaviorSubject<RoomStats | null>(null);
+    public stats$ = this.statsSubject.asObservable();
 
     constructor(private readonly http: HttpClient) { }
+
+    public async startConnection() {
+        if (this.hubConnection) return;
+
+        this.hubConnection = new HubConnectionBuilder()
+            .withUrl('/adminhub', {
+                accessTokenFactory: () => localStorage.getItem('auth_token') || ''
+            })
+            .withAutomaticReconnect()
+            .build();
+
+        this.hubConnection.on('StatsUpdated', (stats: RoomStats) => {
+            this.statsSubject.next(stats);
+        });
+
+        try {
+            await this.hubConnection.start();
+            console.log('AdminHub connection started');
+            // Fetch initial stats
+            this.getStats().subscribe(stats => this.statsSubject.next(stats));
+        } catch (err) {
+            console.error('Error while starting AdminHub connection: ' + err);
+        }
+    }
+
+    public async stopConnection() {
+        if (this.hubConnection) {
+            await this.hubConnection.stop();
+            this.hubConnection = null;
+        }
+    }
 
     getStats(): Observable<RoomStats> {
         return this.http.get<RoomStats>(`${this.baseUrl}/stats`);

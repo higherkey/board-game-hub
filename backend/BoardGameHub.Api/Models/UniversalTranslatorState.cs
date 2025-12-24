@@ -2,11 +2,14 @@ namespace BoardGameHub.Api.Models;
 
 public class UniversalTranslatorState
 {
+    public List<string> WordChoices { get; set; } = new();
+    public Dictionary<string, int> TokenLimits { get; set; } = new(); // TokenName -> Count
     public string TargetWord { get; set; } = string.Empty;
     public Dictionary<string, UniversalTranslatorRole> Roles { get; set; } = new(); // ConnectionId -> Role
     public List<TokenEntry> TokenHistory { get; set; } = new();
     public UniversalTranslatorPhase Phase { get; set; } = UniversalTranslatorPhase.Setup;
     public DateTime? TimerEndTime { get; set; }
+    public DateTime? PhaseEndTime { get; set; }
     
     // Votes for "Who is J" or "Who is Empath"
     public Dictionary<string, string> Votes { get; set; } = new(); // VoterId -> AccusedId

@@ -1,12 +1,36 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { OneAndOnlyRulesComponent } from './one-and-only-rules.component';
 
 @Component({
     selector: 'app-one-and-only-board',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, OneAndOnlyRulesComponent],
     template: `
-    <div class="w-100 text-center">
+    <div class="w-100 text-center position-relative">
+      
+      <!-- Session Stats Bar -->
+      <div class="session-stats d-flex justify-content-center gap-4 mb-3 p-2 bg-dark rounded shadow-sm" *ngIf="gameData">
+        <div class="stat-item">
+            <span class="text-success fw-bold">Correct:</span> {{ gameData.correctRounds || 0 }}
+        </div>
+        <div class="stat-item">
+            <span class="text-danger fw-bold">Failed:</span> {{ gameData.failedRounds || 0 }}
+        </div>
+        <div class="stat-item">
+            <span class="text-info fw-bold">Total:</span> {{ gameData.totalRoundsPlayed || 0 }}
+        </div>
+        <button class="btn btn-sm btn-outline-warning ms-4" (click)="showRules = !showRules">
+            <i class="bi" [class.bi-info-circle]="!showRules" [class.bi-x-circle]="showRules"></i>
+            {{ showRules ? 'Hide Rules' : 'How to Play' }}
+        </button>
+      </div>
+
+      <!-- Rules Overlay -->
+      <div *ngIf="showRules" class="rules-overlay position-absolute top-0 start-50 translate-middle-x w-100 h-100 d-flex align-items-center justify-content-center z-3" style="background: rgba(0,0,0,0.8); min-height: 80vh;">
+         <app-one-and-only-rules></app-one-and-only-rules>
+      </div>
+
       <h2 class="mb-4 display-4 text-primary">One & Only</h2>
 
       <!-- Phase: Clue Giving -->
@@ -68,7 +92,10 @@ import { CommonModule } from '@angular/common';
 
       <!-- Phase: Result -->
       <div *ngIf="gameData?.phase === 2" class="card bg-surface shadow-md border-0 p-4 mb-4">
-          <h1 class="display-3 mb-3 fw-bold" [class.text-success]="gameData?.result === 'Success'" [class.text-danger]="gameData?.result === 'Failure'">
+          <h1 class="display-3 mb-3 fw-bold" 
+              [class.text-success]="gameData?.result === 'Success'" 
+              [class.text-danger]="gameData?.result === 'Failure'"
+              [class.text-info]="gameData?.result === 'Passed'">
               {{ gameData?.result }}!
           </h1>
           <h3 class="mb-4 text-primary">Target Word: <span class="text-accent">{{ gameData?.targetWord }}</span></h3>
@@ -81,6 +108,7 @@ export class OneAndOnlyBoardComponent implements OnChanges {
     @Input() room: any;
 
     gameData: any;
+    showRules = false;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['room']) {

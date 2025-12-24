@@ -10,9 +10,9 @@ namespace BoardGameHub.Api.Hubs;
 [Authorize]
 public class SocialHub : Hub
 {
-    private readonly SocialService _socialService;
+    private readonly ISocialService _socialService;
 
-    public SocialHub(SocialService socialService)
+    public SocialHub(ISocialService socialService)
     {
         _socialService = socialService;
     }

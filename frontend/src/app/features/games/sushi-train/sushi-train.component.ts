@@ -1,16 +1,18 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room } from '../../../services/signalr.service';
+import { SushiRulesComponent } from './sushi-rules.component';
 
 @Component({
     selector: 'app-sushi-train',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, SushiRulesComponent],
     templateUrl: './sushi-train.component.html',
     styleUrls: ['./sushi-train.component.scss']
 })
 export class SushiTrainComponent {
     @Input() room: Room | null = null;
+    showRules = false;
 
     get gameState() { return this.room?.gameData; }
     get players() { return this.room?.players || []; }

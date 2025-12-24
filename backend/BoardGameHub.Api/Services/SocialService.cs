@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BoardGameHub.Api.Services;
 
-public class SocialService
+public class SocialService : ISocialService
 {
     private readonly AppDbContext _context;
 

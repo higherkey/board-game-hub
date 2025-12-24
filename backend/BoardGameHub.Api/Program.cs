@@ -112,8 +112,8 @@ builder.Services.AddSingleton<IGameService, SushiTrainGameService>();
 builder.Services.AddSingleton<IGameService, BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameService>();
 
 // Persistence Services (Scoped because they use DbContext)
-builder.Services.AddScoped<SocialService>();
-builder.Services.AddScoped<GameHistoryService>();
+builder.Services.AddScoped<ISocialService, SocialService>();
+builder.Services.AddScoped<IGameHistoryService, GameHistoryService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -161,6 +161,13 @@ app.MapControllers();
 app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
 app.MapHub<SocialHub>("/socialhub").RequireRateLimiting("HubRateLimit");
 app.MapHub<AdminHub>("/adminhub").RequireRateLimiting("HubRateLimit");
+
+app.MapGet("/", async context =>
+{
+    context.Response.Redirect("/admin");
+    await Task.CompletedTask;
+});
+
 app.MapFallbackToFile("index.html");
 
 app.Run();

@@ -1,17 +1,18 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
     selector: 'app-about',
     standalone: true,
-    imports: [CommonModule, RouterModule],
+    imports: [CommonModule, RouterModule, PageHeaderComponent],
     template: `
-    <div class="container py-5">
-        <div class="text-center mb-5">
-            <h1 class="display-4 text-primary">How to Play</h1>
-            <p class="lead text-secondary">Turn your smartphone into the ultimate game controller.</p>
-        </div>
+    <div class="container pb-5">
+        <app-page-header 
+            title="How to Play" 
+            subtitle="Turn your smartphone into the ultimate game controller.">
+        </app-page-header>
 
         <div class="row align-items-center mb-5">
             <div class="col-md-6 order-md-2">

@@ -12,18 +12,32 @@ using BoardGameHub.Api.Models; // Explicitly for GameSettings
 public class GameHub : Hub
 {
     private readonly IRoomService _roomService;
-    private readonly GameHistoryService _historyService;
+    private readonly IGameHistoryService _historyService;
 
-    public GameHub(IRoomService roomService, GameHistoryService historyService)
+    public async Task SubmitAction(string roomCode, string actionType, JsonElement payload)
+    {
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, actionType, payload);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public GameHub(IRoomService roomService, IGameHistoryService historyService)
     {
         _roomService = roomService;
         _historyService = historyService;
     }
 
-    public async Task<string> CreateRoom(string playerName, bool isPublic, string gameType = "Scatterbrain")
+    public Task<List<string>> ValidateRooms(List<string> codes)
+    {
+        return Task.FromResult(_roomService.ValidateRooms(codes));
+    }
+
+    public async Task<string> CreateRoom(string playerName, bool isPublic, string gameType = "OneAndOnly", string? guestId = null)
     {
         Enum.TryParse<GameType>(gameType, true, out var type);
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
         // If logged in, preferred username might come from claims, or they can override it. 
         // For now, let's prioritize the submitted name, but link the userId.
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
@@ -155,9 +169,9 @@ public class GameHub : Hub
         return await Task.FromResult(_roomService.GetPublicRooms());
     }
 
-    public async Task<Room?> JoinRoom(string roomCode, string playerName)
+    public async Task<Room?> JoinRoom(string roomCode, string playerName, string? guestId = null)
     {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
         var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, playerName, userId, avatarUrl);
@@ -186,8 +200,10 @@ public class GameHub : Hub
     {
         var payload = JsonSerializer.SerializeToElement(new { answers });
         var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWERS", payload);
-        // Ensure we don't leak answers to others yet, potentially just ack?
-        // taking no action for broadcast here, just ack state if needed.
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
     }
 
     public async Task SubmitClue(string roomCode, string clue)
@@ -230,6 +246,46 @@ public class GameHub : Hub
         {
             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
+    }
+
+    public async Task SubmitPictophoneDraft(string roomCode, string content)
+    {
+        var payload = JsonSerializer.SerializeToElement(new { content });
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_DRAFT", payload);
+    }
+
+    public async Task ForcePictophoneNext(string roomCode)
+    {
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_NEXT_PHASE", null);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public async Task RevealPictophoneNext(string roomCode)
+    {
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REVEAL_NEXT", null);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public async Task StarPictophonePage(string roomCode, int bookIndex, int pageIndex)
+    {
+        var payload = JsonSerializer.SerializeToElement(new { bookIndex, pageIndex });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "STAR_PAGE", payload);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public List<string> GetPictophoneSuggestions()
+    {
+        var service = _roomService.GetGameService<PictophoneService>(GameType.Pictophone);
+        return service?.GetPromptSuggestions() ?? new List<string>();
     }
 
     public async Task DeepfakeStroke(string roomCode, string pathData, string color)
@@ -421,10 +477,26 @@ public class GameHub : Hub
         if (room != null) await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
     }
 
+    public async Task UniversalTranslatorPickWord(string roomCode, string word)
+    {
+        var payload = JsonSerializer.SerializeToElement(new { word });
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PICK_WORD", payload);
+        if (room != null) await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+    }
+
     public async Task SubmitSushiTrainSelection(string roomCode, string cardId)
     {
         var payload = JsonSerializer.SerializeToElement(new { cardId });
         var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SELECTION", payload);
+        if (room != null)
+        {
+             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public async Task ToggleSushiTrainChopsticks(string roomCode)
+    {
+        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "TOGGLE_CHOPSTICKS", null);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);

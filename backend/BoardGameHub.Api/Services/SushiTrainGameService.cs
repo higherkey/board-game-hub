@@ -47,14 +47,60 @@ public class SushiTrainGameService : IGameService
         if (!state.PlayerStates.TryGetValue(connectionId, out var playerState)) return false;
 
         // Validation
-        if (playerState.HasSelected) return true; // Already done
+        if (playerState.HasSelected) return true; // Already confirmed
+        
         var card = playerState.Hand.FirstOrDefault(c => c.Id == cardId);
         if (card == null) return false; // Card not in hand
 
-        playerState.SelectedCardId = cardId;
-        playerState.HasSelected = true;
+        // If using chopsticks, we need two cards
+        if (playerState.IsUsingChopsticks)
+        {
+            if (playerState.SelectedCardId == null)
+            {
+                playerState.SelectedCardId = cardId;
+                // Don't set HasSelected yet
+            }
+            else if (playerState.SelectedCardId == cardId)
+            {
+                // Already picked this one
+                return false;
+            }
+            else
+            {
+                playerState.SelectedCardId2 = cardId;
+                playerState.HasSelected = true;
+            }
+        }
+        else
+        {
+            playerState.SelectedCardId = cardId;
+            playerState.HasSelected = true;
+        }
 
         CheckTurnComplete(room, state);
+        return true;
+    }
+
+    public bool ToggleChopsticks(Room room, string connectionId)
+    {
+        if (room.GameData is not SushiTrainState state) return false;
+        if (!state.PlayerStates.TryGetValue(connectionId, out var playerState)) return false;
+
+        // Check if player has chopsticks in tableau
+        var chopsticks = playerState.Tableau.FirstOrDefault(c => c.Type == SushiType.Chopsticks);
+        if (chopsticks == null) return false;
+
+        // Toggle
+        playerState.IsUsingChopsticks = !playerState.IsUsingChopsticks;
+        
+        // Reset selections if toggling off
+        if (!playerState.IsUsingChopsticks)
+        {
+            playerState.SelectedCardId = null;
+            playerState.SelectedCardId2 = null;
+            playerState.HasSelected = false;
+        }
+
         return true;
     }
 
@@ -71,18 +117,29 @@ public class SushiTrainGameService : IGameService
         // 1. Move Selected Cards to Tableau
         foreach (var p in state.PlayerStates.Values)
         {
-            var card = p.Hand.First(c => c.Id == p.SelectedCardId);
-            p.Hand.Remove(card);
-            
-            // Logic for Wasabi Pairing?
-            // "If you choose a squid/salmon/egg and have a wasabi with no nigiri on it, it scores x3"
-            // We can just put it on the board, scoring will handle "Next Wasabi check"
-            // Visuals might want to stack them, but for now list is fine.
-            
-            card.IsNew = true; // For UI highlight
-            p.Tableau.Add(card);
+            // First Card
+            var card1 = p.Hand.First(c => c.Id == p.SelectedCardId);
+            p.Hand.Remove(card1);
+            card1.IsNew = true;
+            p.Tableau.Add(card1);
+
+            // Second Card (Chopsticks)
+            if (p.IsUsingChopsticks && p.SelectedCardId2 != null)
+            {
+                var card2 = p.Hand.First(c => c.Id == p.SelectedCardId2);
+                p.Hand.Remove(card2);
+                card2.IsNew = true;
+                p.Tableau.Add(card2);
+
+                // Return Chopsticks to Hand
+                var chopsticks = p.Tableau.First(c => c.Type == SushiType.Chopsticks);
+                p.Tableau.Remove(chopsticks);
+                p.Hand.Add(chopsticks); // This hand will be passed to next player
+            }
             
             p.SelectedCardId = null;
+            p.SelectedCardId2 = null;
+            p.IsUsingChopsticks = false;
             p.HasSelected = false;
         }
 
@@ -275,7 +332,7 @@ public class SushiTrainGameService : IGameService
         // End of game check
         // Most = +6, Least = -6
         // Ties split +6. Ties for least split -6.
-        // If 2 players: No penalty for least? Standard rules: "2 Player game: No penalty for least."
+        // If 2 players: No penalty for least.
         
         var counts = state.PlayerStates.Values.Select(p => new 
         { 
@@ -286,6 +343,9 @@ public class SushiTrainGameService : IGameService
         int max = counts.Max(x => x.Count);
         int min = counts.Min(x => x.Count);
 
+        // If all players have the same number of puddings, no points are awarded.
+        if (max == min) return;
+
         // Most
         var mosts = counts.Where(x => x.Count == max).ToList();
         int mostPts = 6 / mosts.Count;
@@ -295,10 +355,6 @@ public class SushiTrainGameService : IGameService
         if (state.PlayerStates.Count > 2)
         {
             var leasts = counts.Where(x => x.Count == min).ToList();
-            // What if everyone is equal? max == min. Then everyone gets +6/N, and logic for least might trigger too?
-            // "If all players have same number, split +6, ignore -6."
-            if (max == min) return; 
-
             int leastPts = -6 / leasts.Count;
             foreach (var l in leasts) l.Player.TotalScore += leastPts;
         }
@@ -401,6 +457,12 @@ public class SushiTrainGameService : IGameService
         }
     }
 
+    public async Task EndRound(Room room)
+    {
+        room.State = GameState.Finished;
+        await CalculateScores(room);
+    }
+
     public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "SUBMIT_SELECTION" && action.Payload.HasValue)
@@ -409,6 +471,10 @@ public class SushiTrainGameService : IGameService
              {
                  return Task.FromResult(SubmitSelection(room, connectionId, cardProp.GetString() ?? ""));
              }
+        }
+        else if (action.Type == "TOGGLE_CHOPSTICKS")
+        {
+            return Task.FromResult(ToggleChopsticks(room, connectionId));
         }
         return Task.FromResult(false);
     }

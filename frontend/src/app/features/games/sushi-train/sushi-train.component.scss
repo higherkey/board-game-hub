@@ -1,8 +1,55 @@
+.sushi-board {
+    background: radial-gradient(circle at center, #fff5e6 0%, #ffdfba 100%);
+}
+
+.player-mat {
+    background: #fff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), inset 0 0 40px rgba(255, 136, 0, 0.05);
+    transition: all 0.4s ease;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+        opacity: 0.1;
+        pointer-events: none;
+    }
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(220, 38, 38, 0.1);
+    }
+}
+
 .card-token {
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 8px;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    box-shadow: 3px 3px 6px #d9d9d9, -3px -3px 6px #ffffff;
+
+    &:hover {
+        transform: rotate(2deg) scale(1.1);
+        z-index: 10;
+    }
 }
 
 @keyframes popIn {
-    from { transform: scale(0); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+    from {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+::selection {
+    background: #ff5733;
+    color: white;
 }

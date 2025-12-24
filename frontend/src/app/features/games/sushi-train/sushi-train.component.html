@@ -1,15 +1,34 @@
-<div class="sushi-board relative min-h-screen bg-orange-50 p-4">
+<div class="sushi-board relative min-h-screen bg-orange-50 p-4 overflow-x-hidden">
+    <!-- Rules Button -->
+    <button (click)="showRules = true"
+        class="fixed bottom-6 right-6 z-40 bg-red-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl hover:bg-red-700 transition-all hover:scale-110 active:scale-95 border-4 border-white">
+        🥢
+    </button>
+
+    <!-- Rules Overlay -->
+    <div *ngIf="showRules"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div class="relative w-full max-w-2xl transform animate-in zoom-in-95 duration-300">
+            <button (click)="showRules = false"
+                class="absolute -top-3 -right-3 z-10 bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-xl hover:bg-gray-100 transition-all active:scale-90 border-2 border-red-500">
+                ✕
+            </button>
+            <app-sushi-rules></app-sushi-rules>
+        </div>
+    </div>
+
     <div class="header text-center mb-8">
-        <h1 class="text-4xl font-bold text-red-600 mb-2">🍣 Sushi Train! 🚄</h1>
+        <h1 class="text-4xl font-bold text-red-600 mb-2 drop-shadow-sm">🍣 Sushi Train! 🚄</h1>
         <div class="flex justify-center items-center gap-4 text-xl">
-            <span class="bg-white px-4 py-2 rounded-full shadow">
+            <span class="bg-white px-4 py-2 rounded-full shadow border-b-4 border-orange-200">
                 Round {{gameState?.round}}/3
             </span>
-            <span *ngIf="gameState?.isRoundOver" class="bg-yellow-400 px-4 py-2 rounded-full font-bold animate-bounce">
+            <span *ngIf="gameState?.isRoundOver"
+                class="bg-yellow-400 px-4 py-2 rounded-full font-bold animate-bounce shadow-lg">
                 Round Over! Check Scores!
             </span>
             <span *ngIf="gameState?.isGameOver"
-                class="bg-green-500 text-white px-4 py-2 rounded-full font-bold animate-pulse">
+                class="bg-green-500 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-lg">
                 GAME OVER!
             </span>
         </div>

@@ -10,16 +10,16 @@ namespace BoardGameHub.Api.Controllers;
 [Route("admin")]
 public class AdminController : Controller
 {
-    private readonly RoomService _roomService;
-    private readonly SocialService _socialService;
+    private readonly IRoomService _roomService;
+    private readonly ISocialService _socialService;
     private readonly IHubContext<GameHub> _gameHub;
     private readonly IHubContext<SocialHub> _socialHub;
     private readonly IWebHostEnvironment _env;
     private readonly UserManager<User> _userManager;
 
     public AdminController(
-        RoomService roomService, 
-        SocialService socialService,
+        IRoomService roomService, 
+        ISocialService socialService,
         IHubContext<GameHub> gameHub,
         IHubContext<SocialHub> socialHub,
         IWebHostEnvironment env,
@@ -38,7 +38,6 @@ public class AdminController : Controller
     [HttpGet("stats")]
     public IActionResult GetStats()
     {
-        if (!_env.IsDevelopment()) return NotFound();
         return Ok(_roomService.GetServerStats());
     }
 
@@ -48,7 +47,6 @@ public class AdminController : Controller
     [HttpPost("rooms/create")]
     public IActionResult CreateRoom([FromBody] CreateRoomAuth req)
     {
-        if (!_env.IsDevelopment()) return NotFound();
         Enum.TryParse<GameType>(req.GameType, true, out var type);
         var room = _roomService.CreateRoom(Guid.NewGuid().ToString(), req.HostName, true, type);
         return Ok(new { room.Code });
@@ -58,7 +56,6 @@ public class AdminController : Controller
     [HttpPost("rooms/{code}/start")]
     public async Task<IActionResult> StartGame(string code)
     {
-        if (!_env.IsDevelopment()) return NotFound();
         
         var room = _roomService.StartGame(code);
         if (room == null) return NotFound();
@@ -70,7 +67,6 @@ public class AdminController : Controller
     [HttpPost("rooms/{code}/terminate")]
     public async Task<IActionResult> TerminateRoom(string code)
     {
-        if (!_env.IsDevelopment()) return NotFound();
         
         // Notify players first
         await _gameHub.Clients.Group(code.ToUpper()).SendAsync("RoomTerminated", "Room closed by administrator.");
@@ -83,7 +79,6 @@ public class AdminController : Controller
     [HttpPost("rooms/{code}/settings")]
     public async Task<IActionResult> UpdateSettings(string code, [FromBody] UpdateSettingsReq req)
     {
-        if (!_env.IsDevelopment()) return NotFound();
         var room = _roomService.GetRoom(code);
         if (room == null) return NotFound();
 
@@ -98,7 +93,6 @@ public class AdminController : Controller
     [HttpPost("rooms/message")]
     public async Task<IActionResult> SendMessage([FromBody] MsgReq req)
     {
-        if (!_env.IsDevelopment()) return NotFound();
         
         if (req.Target == "global")
         {

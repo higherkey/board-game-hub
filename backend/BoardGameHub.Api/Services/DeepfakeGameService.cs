@@ -52,15 +52,30 @@ public class DeepfakeGameService : IGameService
         ("Animals", "Giraffe"),
         ("Animals", "Elephant"),
         ("Animals", "Penguin"),
+        ("Animals", "Kangaroo"),
+        ("Animals", "Octopus"),
+        ("Animals", "Peacock"),
         ("Landmarks", "Eiffel Tower"),
         ("Landmarks", "Pyramids"),
         ("Landmarks", "Statue of Liberty"),
+        ("Landmarks", "Great Wall of China"),
+        ("Landmarks", "Colosseum"),
         ("Objects", "Bicycle"),
         ("Objects", "Guitar"),
         ("Objects", "Chair"),
+        ("Objects", "Toaster"),
+        ("Objects", "Headphones"),
+        ("Objects", "Microscope"),
         ("Food", "Pizza"),
         ("Food", "Ice Cream"),
-        ("Food", "Burger")
+        ("Food", "Burger"),
+        ("Food", "Sushi"),
+        ("Food", "Taco"),
+        ("Food", "Croissant"),
+        ("Fantasy", "Dragon"),
+        ("Fantasy", "Unicorn"),
+        ("Fantasy", "Wizard"),
+        ("Fantasy", "Castle")
     };
 
     public Task StartRound(Room room, GameSettings settings)
@@ -199,6 +214,12 @@ public class DeepfakeGameService : IGameService
         
         state.Phase = DeepfakePhase.Results;
         return true;
+    }
+
+    public async Task EndRound(Room room)
+    {
+        room.State = GameState.Finished;
+        await CalculateScores(room);
     }
 
     public Task<bool> HandleAction(Room room, GameAction action, string connectionId)

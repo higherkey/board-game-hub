@@ -13,10 +13,10 @@ import { GameDataService, GameDefinition } from '../../../../services/game-data.
 })
 export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() roomCode!: string;
-  @Input() currentGameType: string | undefined = 'Scatterbrain';
+  @Input() currentGameType: string | undefined = 'None';
   @Output() gameStart = new EventEmitter<GameSettings>();
 
-  selectedGameType = 'Scatterbrain';
+  selectedGameType = 'None';
   availableGames: GameDefinition[] = [];
 
   settings: GameSettings = {

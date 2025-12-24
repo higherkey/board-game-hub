@@ -24,7 +24,8 @@ export class AuthComponent implements OnInit {
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
+      password: ['', [Validators.required]],
+      staySignedInLonger: [false]
     });
   }
 
@@ -43,7 +44,8 @@ export class AuthComponent implements OnInit {
       this.isLoading = true;
       this.errorMessage = '';
 
-      this.authService.login(this.loginForm.value).subscribe({
+      const { email, password, staySignedInLonger } = this.loginForm.value;
+      this.authService.login({ email, password }, staySignedInLonger).subscribe({
         next: () => {
           this.router.navigate(['/']);
         },

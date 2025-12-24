@@ -33,7 +33,7 @@ export class SocialService {
         const token = this.authService.getToken();
 
         this.hubConnection = new HubConnectionBuilder()
-            .withUrl('http://localhost:5109/socialhub', {
+            .withUrl('/socialhub', {
                 accessTokenFactory: () => token || ''
             })
             .withAutomaticReconnect()

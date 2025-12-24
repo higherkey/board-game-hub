@@ -1,0 +1,27 @@
+.page-header {
+    padding-top: 0.5rem;
+    /* Smaller top spacing */
+    padding-bottom: 3.5rem;
+    /* Larger bottom spacing */
+}
+
+h1 {
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.01em;
+}
+
+.lead {
+    font-size: 1.25rem;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        padding-top: 1rem;
+        padding-bottom: 1.5rem;
+    }
+
+    h1 {
+        font-size: calc(1.475rem + 2.7vw);
+    }
+}

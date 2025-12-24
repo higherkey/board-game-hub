@@ -97,6 +97,12 @@ public class BabbleGameService : IGameService
         }
         return Task.FromResult(false);
     }
+    public async Task EndRound(Room room)
+    {
+        room.State = GameState.Finished;
+        await CalculateScores(room);
+    }
+
     public object DeserializeState(System.Text.Json.JsonElement json)
     {
         return json.Deserialize<BabbleState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new BabbleState();

@@ -32,6 +32,7 @@ public interface IRoomService
     Room? SubmitUndoVote(string code, string connectionId, bool vote);
 
     // Stats & Helpers
+    List<string> ValidateRooms(List<string> codes);
     ServerStats GetServerStats();
     T? GetGameService<T>(GameType type) where T : class;
 }

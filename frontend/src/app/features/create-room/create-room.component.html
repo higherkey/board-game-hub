@@ -16,15 +16,43 @@
                         </div>
 
                         <!-- Game Type Selection -->
-                        <div class="mb-4">
-                            <label for="gameType" class="form-label fw-bold">Choose Game (Optional)</label>
-                            <select id="gameType" class="form-select form-select-lg" [(ngModel)]="selectedGameType"
-                                name="gameType">
-                                <option value="None">Decide Later (Lobby)</option>
-                                <option value="Scatterbrain">🧠 Scatterbrain</option>
-                                <option value="Babble">🔤 Babble</option>
-                            </select>
-                            <div class="form-text">You can always change the game later in the lobby.</div>
+                        <div class="mb-4 position-relative">
+                            <label for="gameTypeInput" class="form-label fw-bold">Choose Game (Optional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-secondary"></i>
+                                </span>
+                                <input class="form-control form-control-lg border-start-0" id="gameTypeInput"
+                                    [(ngModel)]="searchTerm" name="searchTerm" placeholder="Type to search or select..."
+                                    (input)="filterGames()" (keydown)="handleKeyDown($event)"
+                                    (focus)="showDropdown = true" (blur)="onBlur()" autocomplete="off">
+                            </div>
+
+                            <!-- Custom Dropdown Menu -->
+                            <div class="dropdown-menu w-100 shadow-sm scrollable-menu"
+                                [class.show]="showDropdown && (filteredGames.length > 0 || !searchTerm)"
+                                style="max-height: 250px; overflow-y: auto;">
+                                <button type="button" class="dropdown-item py-2 px-3 border-bottom"
+                                    [class.active]="focusIndex === -1 && showDropdown" (mousedown)="selectGame(null)">
+                                    <span class="me-2 text-secondary">❔</span> Decide Later (Lobby)
+                                </button>
+                                <button type="button"
+                                    class="dropdown-item py-2 px-3 border-bottom d-flex align-items-center"
+                                    *ngFor="let game of filteredGames; let i = index" [class.active]="focusIndex === i"
+                                    (mousedown)="selectGame(game)">
+                                    <span class="me-3 display-6 fs-5">{{game.icon}}</span>
+                                    <div>
+                                        <div class="fw-bold">{{formatGameName(game)}}</div>
+                                        <div class="small text-secondary text-truncate" style="max-width: 300px;">
+                                            {{game.description}}</div>
+                                    </div>
+                                </button>
+                                <div *ngIf="filteredGames.length === 0 && searchTerm"
+                                    class="dropdown-item text-muted disabled">
+                                    No games found matching "{{searchTerm}}"
+                                </div>
+                            </div>
+                            <div class="form-text">You can always find more games in the lobby.</div>
                         </div>
 
                         <!-- Room Options -->

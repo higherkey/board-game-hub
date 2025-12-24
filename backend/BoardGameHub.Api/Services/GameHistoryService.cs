@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BoardGameHub.Api.Services;
 
-public class GameHistoryService
+public class GameHistoryService : IGameHistoryService
 {
     private readonly AppDbContext _context;
 

@@ -2,8 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, RoomStats, RoomSummary } from '../../services/admin.service';
-import { BehaviorSubject, Subscription, interval } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Observable, Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-admin-dashboard',
@@ -13,7 +12,7 @@ import { switchMap } from 'rxjs/operators';
     styleUrls: ['./admin-dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
-    stats$ = new BehaviorSubject<RoomStats | null>(null);
+    stats$: Observable<RoomStats | null>;
 
     // Modal States
     showCreateModal = false;
@@ -34,28 +33,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     private refreshSub?: Subscription;
 
-    constructor(private readonly adminService: AdminService) { }
+    constructor(private readonly adminService: AdminService) {
+        this.stats$ = this.adminService.stats$;
+    }
 
     ngOnInit(): void {
-        this.refreshData();
-        // Auto-refresh every 3 seconds
-        this.refreshSub = interval(3000).pipe(
-            switchMap(() => this.adminService.getStats())
-        ).subscribe({
-            next: (data) => this.stats$.next(data),
-            error: (err) => console.error('Stats refresh error', err)
-        });
-
-        // Initial load
-        this.adminService.getStats().subscribe(data => this.stats$.next(data));
+        this.adminService.startConnection();
     }
 
     ngOnDestroy(): void {
-        this.refreshSub?.unsubscribe();
+        this.adminService.stopConnection();
     }
 
     refreshData() {
-        this.adminService.getStats().subscribe(data => this.stats$.next(data));
+        this.adminService.getStats().subscribe(); // Service updates the subject
     }
 
     toggleDetails(code: string) {

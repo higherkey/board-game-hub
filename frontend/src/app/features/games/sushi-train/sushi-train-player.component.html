@@ -15,13 +15,30 @@
 
     <!-- Draft View -->
     <div *ngIf="!myState?.hasSelected && myHand.length > 0" class="flex-1 flex flex-col">
-        <h3 class="text-lg font-bold text-center mb-4 text-gray-700">Pick a dish to keep:</h3>
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-700">
+                <span *ngIf="!isUsingChopsticks">Pick a dish:</span>
+                <span *ngIf="isUsingChopsticks">Pick 2 dishes: ({{selectedCount}}/2)</span>
+            </h3>
 
-        <div class="flex-1 overflow-y-auto grid grid-cols-2 gap-4 pb-4">
+            <!-- Chopsticks Activation -->
+            <button *ngIf="hasChopsticksInTableau" (click)="toggleChopsticks()"
+                [class.bg-orange-600]="isUsingChopsticks" [class.text-white]="isUsingChopsticks"
+                [class.bg-white]="!isUsingChopsticks"
+                class="px-3 py-1 rounded-full border-2 border-orange-500 text-xs font-bold transition-all shadow-sm">
+                {{ isUsingChopsticks ? 'Cancel 🥢' : 'Use 🥢' }}
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto grid grid-cols-2 gap-3 pb-4">
             <button *ngFor="let card of myHand" (click)="selectCard(card.id)"
-                class="bg-white p-3 rounded-xl shadow-md border-2 border-gray-100 hover:border-orange-500 active:scale-95 active:bg-orange-50 transition-all flex flex-col items-center justify-center min-h-[140px] relative">
+                [class.border-orange-500]="isCardSelected(card.id)" [class.bg-orange-50]="isCardSelected(card.id)"
+                class="bg-white p-3 rounded-xl shadow-md border-2 border-gray-100 hover:border-orange-500 active:scale-95 transition-all flex flex-col items-center justify-center min-h-[130px] relative">
 
-                <div *ngIf="selectedId === card.id" class="absolute inset-0 bg-orange-500 opacity-20 rounded-xl"></div>
+                <div *ngIf="isCardSelected(card.id)"
+                    class="absolute top-2 right-2 bg-orange-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                    ✓
+                </div>
 
                 <div class="text-5xl mb-2">{{getCardEmoji(card.type)}}</div>
                 <div class="font-bold text-gray-800 text-sm">{{getCardName(card.type)}}</div>

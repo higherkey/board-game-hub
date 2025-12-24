@@ -25,11 +25,37 @@ export class SushiTrainPlayerComponent {
         return this.myState?.hand || [];
     }
 
+    get hasChopsticksInTableau(): boolean {
+        return this.myState?.tableau?.some((c: any) => c.type === 'Chopsticks') || false;
+    }
+
+    get isUsingChopsticks(): boolean {
+        return this.myState?.isUsingChopsticks || false;
+    }
+
+    get selectedCount(): number {
+        let count = 0;
+        if (this.myState?.selectedCardId) count++;
+        if (this.myState?.selectedCardId2) count++;
+        return count;
+    }
+
+    toggleChopsticks() {
+        if (this.myState?.hasSelected) return;
+        this.signalRService.toggleSushiTrainChopsticks();
+    }
+
     selectCard(cardId: string) {
         if (this.myState?.hasSelected) return;
 
-        this.selectedId = cardId;
+        // Prevent selecting the same card twice if using chopsticks
+        if (this.isUsingChopsticks && this.myState?.selectedCardId === cardId) return;
+
         this.signalRService.submitSushiTrainSelection(cardId);
+    }
+
+    isCardSelected(cardId: string): boolean {
+        return this.myState?.selectedCardId === cardId || this.myState?.selectedCardId2 === cardId;
     }
 
     getCardEmoji(type: string): string {
