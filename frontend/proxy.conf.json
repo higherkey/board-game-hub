@@ -1,0 +1,25 @@
+{
+    "/api": {
+        "target": "http://localhost:5109",
+        "secure": false
+    },
+    "/gamehub": {
+        "target": "http://localhost:5109",
+        "secure": false,
+        "ws": true
+    },
+    "/socialhub": {
+        "target": "http://localhost:5109",
+        "secure": false,
+        "ws": true
+    },
+    "/adminhub": {
+        "target": "http://localhost:5109",
+        "secure": false,
+        "ws": true
+    },
+    "/admin": {
+        "target": "http://localhost:5109",
+        "secure": false
+    }
+}

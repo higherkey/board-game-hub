@@ -1,10 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthComponent } from './auth.component';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { ReactiveFormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
 
 describe('AuthComponent', () => {
   let component: AuthComponent;
@@ -18,18 +17,17 @@ describe('AuthComponent', () => {
       login: jasmine.createSpy('login').and.returnValue(of({ token: 'abc' }))
     };
 
-    mockRouter = {
-      navigate: jasmine.createSpy('navigate')
-    };
-
     await TestBed.configureTestingModule({
-      imports: [AuthComponent, ReactiveFormsModule, RouterTestingModule],
+      imports: [AuthComponent, ReactiveFormsModule],
       providers: [
-        { provide: AuthService, useValue: mockAuthService },
-        { provide: Router, useValue: mockRouter }
+        provideRouter([]),
+        { provide: AuthService, useValue: mockAuthService }
       ]
     })
       .compileComponents();
+
+    mockRouter = TestBed.inject(Router);
+    spyOn(mockRouter, 'navigate');
   });
 
   it('should create', () => {

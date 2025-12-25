@@ -72,19 +72,16 @@ public class UniversalTranslatorService : IGameService
 
     public Task<bool> PickWord(Room room, string playerId, string word)
     {
-        if (room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
+        if (room == null || room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
         if (state.Phase != UniversalTranslatorPhase.Setup) return Task.FromResult(false);
 
         // Only Main Computer can pick
         if (!state.Roles.TryGetValue(playerId, out var role) || role != UniversalTranslatorRole.MainComputer) return Task.FromResult(false);
-        if (!state.WordChoices.Contains(word)) return Task.FromResult(false);
+        if (state.WordChoices == null || !state.WordChoices.Contains(word)) return Task.FromResult(false);
 
         state.TargetWord = word;
         state.Phase = UniversalTranslatorPhase.Day;
         
-        // Start 4 minute timer for Day Phase (Standard)
-        // Note: Room timer is usually handled by roundDurationSeconds in settings
-        // But we can set a specific end time here if we want to be explicit.
         room.RoundEndTime = DateTime.UtcNow.AddMinutes(4);
 
         return Task.FromResult(true);
@@ -112,7 +109,7 @@ public class UniversalTranslatorService : IGameService
 
     public Task<bool> SubmitToken(Room room, string playerId, string token)
     {
-        if (room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
+        if (room == null || room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
         if (state.Phase != UniversalTranslatorPhase.Day) return Task.FromResult(false);
         
         // Only Main Computer can submit
@@ -126,7 +123,7 @@ public class UniversalTranslatorService : IGameService
         }
         else
         {
-            return Task.FromResult(false); // Token type not found
+            return Task.FromResult(false); 
         }
 
         state.TokenHistory.Add(new TokenEntry 
@@ -138,10 +135,9 @@ public class UniversalTranslatorService : IGameService
         // "Correct" token ends game immediately
         if (token == "Correct")
         {
-            state.Winner = "Crew"; // Tentative, J gets to guess Empath
+            state.Winner = "Crew";
             state.EndReason = GameEndReason.WordGuessed;
             
-            // If Empath exists, J gets a chance
             bool empathExists = state.Roles.Values.Any(r => r == UniversalTranslatorRole.Empath);
             if (empathExists)
             {
@@ -154,7 +150,6 @@ public class UniversalTranslatorService : IGameService
         }
         else if (state.TokenLimits.Values.Sum() <= 0)
         {
-            // Out of tokens -> Time up logic
             state.Phase = UniversalTranslatorPhase.VotingForJ;
             state.EndReason = GameEndReason.TimeExpired;
         }
@@ -164,7 +159,7 @@ public class UniversalTranslatorService : IGameService
 
     public Task<bool> SubmitVote(Room room, string playerId, string target)
     {
-        if (room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
+        if (room == null || room.GameData is not UniversalTranslatorState state) return Task.FromResult(false);
 
         if (state.Phase == UniversalTranslatorPhase.VotingForJ)
         {
@@ -180,7 +175,6 @@ public class UniversalTranslatorService : IGameService
         }
         else if (state.Phase == UniversalTranslatorPhase.JGuessingEmpath)
         {
-             // J guesses 'target' is Empath
              var accusedRole = state.Roles.GetValueOrDefault(target, UniversalTranslatorRole.Crew);
              if (accusedRole == UniversalTranslatorRole.Empath)
              {
@@ -199,8 +193,10 @@ public class UniversalTranslatorService : IGameService
         return Task.FromResult(false);
     }
     
-    private void ResolveVoteForJ(UniversalTranslatorState state, Room room)
+    public void ResolveVoteForJ(UniversalTranslatorState state, Room room)
     {
+        if (state == null) return;
+
         // Tally votes
         var counts = state.Votes.Values.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
         
@@ -215,7 +211,6 @@ public class UniversalTranslatorService : IGameService
         var maxVotes = counts.Values.Max();
         var topCandidates = counts.Where(x => x.Value == maxVotes).Select(x => x.Key).ToList();
 
-        // If there's a tie, Crew loses (J escapes)
         if (topCandidates.Count > 1)
         {
             state.Winner = "J";
@@ -240,43 +235,35 @@ public class UniversalTranslatorService : IGameService
     
     public void ForcePhase(Room room, UniversalTranslatorPhase phase)
     {
-        if (room.GameData is UniversalTranslatorState state)
+        if (room != null && room.GameData is UniversalTranslatorState state)
         {
             state.Phase = phase;
         }
     }
 
-    private string GetRandomWord()
-    {
-        var words = new[] { "Robot", "Laser", "Spaceship", "Alien", "Planet", "Star", "Galaxy", "Portal", "Time Machine", "Asteroid" };
-        var r = new Random();
-        return words[r.Next(words.Length)];
-    }
-
     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
+        if (room == null || action == null) return false;
+
         if (action.Type == "SUBMIT_TOKEN" && action.Payload.HasValue)
         {
              if (action.Payload.Value.TryGetProperty("token", out var tokenProp))
              {
-                 if(await SubmitToken(room, connectionId, tokenProp.GetString() ?? ""))
-                    return true;
+                 return await SubmitToken(room, connectionId, tokenProp.GetString() ?? "");
              }
         }
         else if (action.Type == "SUBMIT_VOTE" && action.Payload.HasValue)
         {
             if (action.Payload.Value.TryGetProperty("accusedId", out var prop))
             {
-                if(await SubmitVote(room, connectionId, prop.GetString() ?? ""))
-                    return true;
+                return await SubmitVote(room, connectionId, prop.GetString() ?? "");
             }
         }
         else if (action.Type == "PICK_WORD" && action.Payload.HasValue)
         {
              if (action.Payload.Value.TryGetProperty("word", out var wordProp))
              {
-                 if(await PickWord(room, connectionId, wordProp.GetString() ?? ""))
-                    return true;
+                 return await PickWord(room, connectionId, wordProp.GetString() ?? "");
              }
         }
         else if (action.Type == "FORCE_PHASE" && action.Payload.HasValue)
@@ -292,6 +279,7 @@ public class UniversalTranslatorService : IGameService
         }
         return false;
     }
+
     public async Task EndRound(Room room)
     {
         room.State = GameState.Finished;

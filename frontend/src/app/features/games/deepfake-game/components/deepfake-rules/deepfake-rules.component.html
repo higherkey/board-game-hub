@@ -1,0 +1,53 @@
+<div class="rules-overlay" (click)="rulesClose.emit()">
+    <div class="rules-card glassmorphism animate-in" (click)="$event.stopPropagation()">
+        <header class="rules-header">
+            <h2>Deepfake Rules</h2>
+            <button class="close-btn" (click)="rulesClose.emit()">&times;</button>
+        </header>
+
+        <main class="rules-body">
+            <section class="rule-section">
+                <h3><span class="icon">🎭</span> The Roles</h3>
+                <div class="role-grid">
+                    <div class="role-item human">
+                        <h4>Human Artist</h4>
+                        <p>Knows the <strong>Secret Prompt</strong>. Draw just enough to prove you know it, but keep it
+                            subtle.</p>
+                    </div>
+                    <div class="role-item ai">
+                        <h4>Artificial Intelligence</h4>
+                        <p>Only knows the <strong>Category</strong>. Mimic others to blend in and try to guess the word!
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rule-section">
+                <h3><span class="icon">✏️</span> Gameplay</h3>
+                <ul>
+                    <li>Players take turns drawing <strong>one continuous stroke</strong>.</li>
+                    <li>There are <strong>2 complete rounds</strong> of drawing.</li>
+                    <li>After drawing, everyone votes on who they think is the <strong>AI</strong>.</li>
+                </ul>
+            </section>
+
+            <section class="rule-section">
+                <h3><span class="icon">🏆</span> Winning</h3>
+                <div class="win-grid">
+                    <div class="win-item">
+                        <h4>Artists Win</h4>
+                        <p>If the AI is identified AND fails to guess the secret prompt.</p>
+                    </div>
+                    <div class="win-item">
+                        <h4>AI Wins</h4>
+                        <p>If they escape detection OR if they guess the prompt after being caught.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="rules-footer">
+            <button class="primary-btn" (click)="rulesClose.emit()">Got it!</button>
+        </footer>
+    </div>
+</div>

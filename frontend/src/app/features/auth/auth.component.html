@@ -11,7 +11,8 @@
         <label for="email">Email Address</label>
         <div class="input-wrapper" [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
           <i class="bi bi-envelope"></i>
-          <input type="email" id="email" formControlName="email" placeholder="you@example.com" autocomplete="email">
+          <input type="email" id="email" name="email" formControlName="email" placeholder="you@example.com"
+            autocomplete="username">
         </div>
         <span class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
           Please enter a valid email address
@@ -25,7 +26,7 @@
           [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
           <i class="bi bi-lock"></i>
           <input [type]="showPassword ? 'text' : 'password'" id="password" name="password" formControlName="password"
-            autocomplete="current-password" placeholder="Enter your password">
+            [attr.autocomplete]="showPassword ? 'off' : 'current-password'" placeholder="Enter your password">
           <button type="button" class="toggle-password" (click)="togglePassword()" tabindex="-1">
             <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
           </button>

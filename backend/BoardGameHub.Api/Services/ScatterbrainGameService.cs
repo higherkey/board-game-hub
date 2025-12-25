@@ -53,78 +53,86 @@ public class ScatterbrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        if (room.GameData is not ScatterbrainState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not ScatterbrainState state) return;
 
-        var categoryCount = state.Categories.Count;
-        var currentLetter = char.ToLowerInvariant(state.CurrentLetter ?? ' ');
-        
-        // Initialize scores for this round
-        foreach(var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
-
-        for (int i = 0; i < categoryCount; i++)
+        try
         {
-            var answersForCategory = new List<(string PlayerId, string Answer, int Score)>();
-            
-            // Collect non-empty answers
-            foreach (var player in room.Players)
+            var categoryCount = state.Categories.Count;
+            var currentLetter = char.ToLowerInvariant(state.CurrentLetter ?? ' ');
+
+            // Ensure RoundScores is initialized for all players
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            for (int i = 0; i < categoryCount; i++)
             {
-                if (room.PlayerAnswers.TryGetValue(player.ConnectionId, out var pAnswers) && i < pAnswers.Count)
+                var answersForCategory = new List<(string PlayerId, string Answer, int Score)>();
+
+                // Collect non-empty answers
+                foreach (var player in room.Players)
                 {
-                    var originalAns = pAnswers[i]?.Trim() ?? "";
-                    var ans = originalAns.ToLowerInvariant();
-                    
-                    if (!string.IsNullOrWhiteSpace(ans))
+                    if (player == null) continue;
+                    if (room.PlayerAnswers.TryGetValue(player.ConnectionId, out var pAnswers) && pAnswers != null && i < pAnswers.Count)
                     {
-                        // Check Veto
-                        bool isVetoed = state.Vetoes.TryGetValue(player.ConnectionId, out var playerVetoes) && playerVetoes.Contains(i);
-                        if (isVetoed) continue;
+                        var originalAns = pAnswers[i]?.Trim() ?? "";
+                        var ans = originalAns.ToLowerInvariant();
 
-                        // Check initial letter
-                        if (ans[0] != currentLetter) continue;
-
-                        // Calculate points (Alliteration Bonus)
-                        // Rule: +1 for each word starting with the letter.
-                        // e.g. "Marilyn Monroe" = 2 pts for M.
-                        var words = originalAns.Split(new[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
-                        int points = 0;
-                        foreach(var word in words)
+                        if (!string.IsNullOrWhiteSpace(ans))
                         {
-                            if (char.ToLowerInvariant(word[0]) == currentLetter) points++;
+                            // Check Veto
+                            bool isVetoed = state.Vetoes.TryGetValue(player.ConnectionId, out var playerVetoes) && playerVetoes != null && playerVetoes.Contains(i);
+                            if (isVetoed) continue;
+
+                            // Check initial letter
+                            if (ans.Length > 0 && ans[0] != currentLetter) continue;
+
+                            // Calculate points (Alliteration Bonus)
+                            var words = originalAns.Split(new[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
+                            int points = 0;
+                            foreach (var word in words)
+                            {
+                                if (word.Length > 0 && char.ToLowerInvariant(word[0]) == currentLetter) points++;
+                            }
+
+                            if (points > 0)
+                            {
+                                answersForCategory.Add((player.ConnectionId, ans, points));
+                            }
+                        }
+                    }
+                }
+
+                // Group by answer text to find duplicates
+                var grouped = answersForCategory.GroupBy(x => x.Answer);
+
+                foreach (var group in grouped)
+                {
+                    // Unique answer!
+                    if (group.Count() == 1)
+                    {
+                        var winner = group.First();
+                        if (room.RoundScores.ContainsKey(winner.PlayerId))
+                        {
+                            room.RoundScores[winner.PlayerId] += winner.Score;
                         }
 
-                        if (points > 0)
-                        {
-                            answersForCategory.Add((player.ConnectionId, ans, points));
-                        }
+                        var playerObj = room.Players.FirstOrDefault(p => p.ConnectionId == winner.PlayerId);
+                        if (playerObj != null) playerObj.Score += winner.Score;
                     }
                 }
             }
 
-            // Group by answer text to find duplicates
-            var grouped = answersForCategory.GroupBy(x => x.Answer);
-            
-            foreach (var group in grouped)
-            {
-                // Unique answer!
-                if (group.Count() == 1)
-                {
-                    var winner = group.First();
-                    room.RoundScores[winner.PlayerId] += winner.Score;
-                    
-                    var playerObj = room.Players.FirstOrDefault(p => p.ConnectionId == winner.PlayerId);
-                    if (playerObj != null) playerObj.Score += winner.Score;
-                }
-            }
+            state.Phase = ScatterbrainPhase.Result;
+            room.GameData = state;
         }
-
-        state.Phase = ScatterbrainPhase.Result;
-        return Task.CompletedTask;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Scatterbrain CalculateScores: {ex.Message}");
+            throw;
+        }
     }
-
-
-
 
     public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
@@ -132,77 +140,78 @@ public class ScatterbrainGameService : IGameService
 
         switch (action.Type)
         {
-            case "SUBMIT_ANSWERS":
-                if (action.Payload.HasValue && action.Payload.Value.TryGetProperty("answers", out var answersProp) && answersProp.ValueKind == JsonValueKind.Array)
+            case "SUBMIT_ANSWER":
+                if (action.Payload.HasValue)
                 {
-                    var list = new List<string>();
-                    foreach (var item in answersProp.EnumerateArray())
+                    try
                     {
-                        list.Add(item.GetString() ?? "");
+                        var answers = action.Payload.Value.Deserialize<List<string>>();
+                        if (answers != null)
+                        {
+                            room.PlayerAnswers[connectionId] = answers;
+                            return Task.FromResult(true);
+                        }
                     }
-                    room.PlayerAnswers[connectionId] = list;
-
-                    // If everyone submitted, move to validation? 
-                    // Usually we wait for timer or Host to "End Round".
-                    // But if we want auto-transition:
-                    if (room.PlayerAnswers.Count == room.Players.Count(p => p.IsConnected))
+                    catch
                     {
-                        state.Phase = ScatterbrainPhase.Validation;
-                        room.RoundEndTime = null; // Stop timer
+                        return Task.FromResult(false);
                     }
-                    return Task.FromResult(true);
                 }
                 break;
 
-            case "TOGGLE_VETO":
-                if (action.Payload.HasValue && 
-                    action.Payload.Value.TryGetProperty("targetPlayerId", out var targetIdProp) &&
-                    action.Payload.Value.TryGetProperty("categoryIndex", out var indexProp))
+            case "VETO":
+                if (action.Payload.HasValue && action.Payload.Value.ValueKind == JsonValueKind.Number)
                 {
-                    var targetId = targetIdProp.GetString();
-                    var categoryIndex = indexProp.GetInt32();
-                    if (targetId == null) return Task.FromResult(false);
+                    int index = action.Payload.Value.GetInt32();
+                    if (!state.Vetoes.ContainsKey(connectionId))
+                    {
+                        state.Vetoes[connectionId] = new List<int>();
+                    }
 
-                    if (!state.Vetoes.ContainsKey(targetId)) state.Vetoes[targetId] = new List<int>();
-                    
-                    if (state.Vetoes[targetId].Contains(categoryIndex))
-                        state.Vetoes[targetId].Remove(categoryIndex);
+                    var list = state.Vetoes[connectionId];
+                    if (list.Contains(index))
+                    {
+                        list.Remove(index);
+                    }
                     else
-                        state.Vetoes[targetId].Add(categoryIndex);
-
+                    {
+                        list.Add(index);
+                    }
                     return Task.FromResult(true);
                 }
                 break;
-
             case "NEXT_PHASE":
                 if (state.Phase == ScatterbrainPhase.Writing)
                 {
                     state.Phase = ScatterbrainPhase.Validation;
-                    room.RoundEndTime = null;
+                    return Task.FromResult(true);
                 }
                 else if (state.Phase == ScatterbrainPhase.Validation)
                 {
-                    return CalculateScores(room).ContinueWith(_ => true);
+                    // Transition to Result -> This is effectively EndRound
+                    // Use the standardized logic
+                    // We can't await EndRound easily here because HandleAction returns Task<bool> and EndRound is Task.
+                    // But we can just call it and return true, letting it run. Await is better though.
+                    // Actually, simpler: Set phase to Result?
+                    // CalculateScores sets phase to Result. 
+                    // Let's call EndRound.
+                    // Warning: We need to fire the state update. RoomService usually does this after HandleAction returns true.
+                    // If we call EndRound, it modifies state.
+                    
+                    // We need to execute the async EndRound.
+                    _ = EndRound(room); 
+                    return Task.FromResult(true);
                 }
-                return Task.FromResult(true);
+                break;
         }
 
         return Task.FromResult(false);
     }
+
     public async Task EndRound(Room room)
     {
-        if (room.GameData is not ScatterbrainState state) return;
-
-        if (state.Phase == ScatterbrainPhase.Writing)
-        {
-            state.Phase = ScatterbrainPhase.Validation;
-            room.RoundEndTime = null;
-        }
-        else if (state.Phase == ScatterbrainPhase.Validation)
-        {
-            await CalculateScores(room);
-            room.State = GameState.Finished;
-        }
+        room.State = GameState.Finished;
+        await CalculateScores(room);
     }
 
     public object DeserializeState(System.Text.Json.JsonElement json)

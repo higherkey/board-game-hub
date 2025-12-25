@@ -55,17 +55,14 @@ import { WisecrackRulesComponent } from './wisecrack-rules.component';
 })
 export class WisecrackGameComponent implements OnInit {
   @Input() room!: Room;
+  @Input() myConnectionId: string = '';
+  @Input() isHost: boolean = false;
   showRules = false;
 
   constructor(private readonly signalRService: SignalRService) { }
 
-  get isHost(): boolean {
-    const host = this.room.players.find(p => p.isHost);
-    return this.playerId === host?.connectionId;
-  }
-
   get playerId(): string {
-    return this.signalRService.getConnectionId() || '';
+    return this.myConnectionId;
   }
 
   ngOnInit(): void {

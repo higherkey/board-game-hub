@@ -31,19 +31,50 @@ public class SushiTrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        // This is called at end of game usually, but we score per round too.
-        if (room.GameData is not SushiTrainState state) return Task.CompletedTask;
-        
-        // Final Scoring (Puddings)
-        ScorePuddings(state);
-        return Task.CompletedTask;
+        if (room == null || room.GameData is not SushiTrainState state) return;
+
+        try
+        {
+            // Ensure RoundScores is initialized for all players
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            // Sushi Train scores are calculated per mini-round (hand rotation) 
+            // and summarized at the end of each round (1, 2, 3).
+            // We should sync the state's total scores to the Room's player scores.
+            foreach (var pState in state.PlayerStates.Values)
+            {
+                var player = room.Players.FirstOrDefault(pl => pl.ConnectionId == pState.PlayerId);
+                if (player != null)
+                {
+                    player.Score = pState.TotalScore; // Total accumulated so far
+                    room.RoundScores[pState.PlayerId] = pState.RoundScore; // Recent round
+                }
+            }
+
+            // Final game-end scoring (Puddings)
+            if (state.IsGameOver)
+            {
+                ScorePuddings(state);
+                // Sync again after puddings
+                foreach (var pState in state.PlayerStates.Values)
+                {
+                    var player = room.Players.FirstOrDefault(pl => pl.ConnectionId == pState.PlayerId);
+                    if (player != null) player.Score = pState.TotalScore;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+             Console.WriteLine($"Error in SushiTrain CalculateScores: {ex.Message}");
+        }
     }
 
     public bool SubmitSelection(Room room, string connectionId, string cardId)
     {
-        if (room.GameData is not SushiTrainState state) return false;
+        if (room == null || room.GameData is not SushiTrainState state) return false;
         if (!state.PlayerStates.TryGetValue(connectionId, out var playerState)) return false;
 
         // Validation

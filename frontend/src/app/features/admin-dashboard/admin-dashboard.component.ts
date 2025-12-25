@@ -31,7 +31,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     // UI State
     expandedRows = new Set<string>();
 
-    private refreshSub?: Subscription;
+    private readonly refreshSub?: Subscription;
 
     constructor(private readonly adminService: AdminService) {
         this.stats$ = this.adminService.stats$;

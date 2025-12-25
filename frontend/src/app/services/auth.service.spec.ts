@@ -49,7 +49,7 @@ describe('AuthService', () => {
                 expect(service.isAuthenticated()).toBeTrue();
             });
 
-            const req = httpMock.expectOne('http://localhost:5109/api/auth/login');
+            const req = httpMock.expectOne('/api/auth/login');
             expect(req.request.method).toBe('POST');
             req.flush(mockAuthResponse);
         });
@@ -80,7 +80,7 @@ describe('AuthService', () => {
     describe('Register', () => {
         it('should POST to /register', () => {
             service.register({}).subscribe();
-            const req = httpMock.expectOne('http://localhost:5109/api/auth/register');
+            const req = httpMock.expectOne('/api/auth/register');
             expect(req.request.method).toBe('POST');
             req.flush({});
         });

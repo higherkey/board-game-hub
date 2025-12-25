@@ -202,6 +202,9 @@ public class RoomService : IRoomService
                  
                  // Notify anyone who might still be listening (though unlikely if all disconnected)
                  await _gameHubContext.Clients.Group(code).SendAsync("RoomTerminated", "Room closed due to inactivity");
+                 
+                 // Notify all clients that this room is gone (for Active Tables list)
+                 await _gameHubContext.Clients.All.SendAsync("RoomDeleted", code);
 
                  NotifyStatsChanged();
             }
@@ -212,6 +215,7 @@ public class RoomService : IRoomService
     {
         _rooms.TryRemove(code.ToUpper(), out _);
         _ = _gameHubContext.Clients.Group(code.ToUpper()).SendAsync("RoomTerminated", "Room terminated by administrator");
+        _ = _gameHubContext.Clients.All.SendAsync("RoomDeleted", code.ToUpper());
         NotifyStatsChanged();
     }
 

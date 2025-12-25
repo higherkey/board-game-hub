@@ -1,0 +1,88 @@
+.fw-black {
+    font-weight: 900;
+}
+
+.bg-surface-3 {
+    background-color: #f8f9fa;
+}
+
+.reveal-card {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.page-enter {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.line-height-tight {
+    line-height: 1.1;
+}
+
+.reveal-next-btn:active {
+    transform: scale(0.95);
+}
+
+.btn-star {
+    width: 48px;
+    height: 48px;
+    background: #fff;
+    border: 2px solid #ffc107;
+    color: #ffc107;
+    transition: all 0.2s ease;
+}
+
+.btn-star:hover:not(:disabled) {
+    background: #fff3cd;
+    transform: scale(1.1) rotate(5deg);
+}
+
+.btn-star.starred {
+    background: #ffc107;
+    color: #fff;
+    border-color: #ffc107;
+    animation: burst 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes burst {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.4);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.star-count-badge {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

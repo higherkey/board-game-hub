@@ -98,11 +98,57 @@ public class DeepfakeGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        // Handled via "SubmitVote" really, but here we can finalize
-        // Points already added during voting resolution.
-        return Task.CompletedTask;
+        if (room == null || room.GameData is not DeepfakeState state) return;
+
+        try
+        {
+            // Ensure RoundScores is initialized for all players
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            // Deepfake scoring logic
+            // Humans get points for catching AI.
+            // AI gets points for escaping.
+            // These are usually handled when the phase ends. 
+            // We can finalize them here to be certain.
+
+            if (state.Phase == DeepfakePhase.Results)
+            {
+                if (state.AiWon)
+                {
+                    AddPoints(room, state.AiConnectionId, 500); // AI wins big
+                }
+                else if (state.AiCaught)
+                {
+                    // Humans who voted correctly get points
+                    foreach (var vote in state.Votes)
+                    {
+                        if (vote.Value == state.AiConnectionId)
+                        {
+                            AddPoints(room, vote.Key, 100);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Deepfake CalculateScores: {ex.Message}");
+        }
+    }
+
+    private void AddPoints(Room room, string playerId, int points)
+    {
+        if (string.IsNullOrEmpty(playerId)) return;
+        
+        var player = room.Players.FirstOrDefault(p => p.ConnectionId == playerId);
+        if (player != null) player.Score += points;
+
+        if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+        if (!room.RoundScores.ContainsKey(playerId)) room.RoundScores[playerId] = 0;
+        room.RoundScores[playerId] += points;
     }
 
     private string GetRandomPrompt()
@@ -113,10 +159,16 @@ public class DeepfakeGameService : IGameService
 
     public bool SubmitStroke(Room room, string connectionId, string pathData, string color)
     {
-        if (room.GameData is not DeepfakeState state) return false;
+        if (room == null || room.GameData is not DeepfakeState state) return false;
         if (state.Phase != DeepfakePhase.Drawing) return false;
 
-        // Check it's this player's turn
+        // Check it's this player's turn (with safety)
+        if (state.PlayerOrder == null || !state.PlayerOrder.Any())
+        {
+            // Auto-initialize order if empty
+            state.PlayerOrder = room.Players.Select(p => p.ConnectionId).OrderBy(x => Guid.NewGuid()).ToList();
+        }
+
         var currentPlayerId = state.PlayerOrder[state.CurrentTurnIndex % state.PlayerOrder.Count];
         if (currentPlayerId != connectionId) return false;
 
@@ -132,7 +184,6 @@ public class DeepfakeGameService : IGameService
         state.CurrentTurnIndex++;
 
         // Check if Game Over (Round Limit Reached)
-        // Total turns = Players * 2
         var totalTurns = state.PlayerOrder.Count * state.TotalRounds;
         if (state.CurrentTurnIndex >= totalTurns)
         {
@@ -144,11 +195,9 @@ public class DeepfakeGameService : IGameService
 
     public bool SubmitVote(Room room, string voterId, string accusedId)
     {
-        if (room.GameData is not DeepfakeState state) return false;
+        if (room == null || room.GameData is not DeepfakeState state) return false;
         if (state.Phase != DeepfakePhase.Voting) return false;
 
-        // AI can vote too (to bluff), or maybe not? 
-        // Typically everyone votes.
         state.Votes[voterId] = accusedId;
 
         // Check if everyone has voted
@@ -162,6 +211,8 @@ public class DeepfakeGameService : IGameService
 
     private void DetermineVoteResult(DeepfakeState state, Room room)
     {
+        if (state.Votes.Count == 0) return;
+
         // Count votes
         var voteCounts = state.Votes.GroupBy(v => v.Value)
                                     .ToDictionary(g => g.Key, g => g.Count());
@@ -169,20 +220,11 @@ public class DeepfakeGameService : IGameService
         // Find most voted
         var maxVotes = voteCounts.Values.Max();
         var mostVotedIds = voteCounts.Where(x => x.Value == maxVotes).Select(x => x.Key).ToList();
-
-        // If tie, or AI not caught?
-        // Simplest Rule: Majority required. If tie, AI escapes? 
-        // Or if ANY of the top voted is AI, they are caught?
-        // Let's say: If the AI has the strictly highest votes (or tied for highest), they are caught.
         
         if (mostVotedIds.Contains(state.AiConnectionId))
         {
             // AI Caught!
             state.AiCaught = true;
-            // Now AI has a chance to guess (handled in client by showing input)
-            // Phase stays Voting? Or move to Results but allow Guest input?
-            // Actually, if AI Caught, we wait for their guess.
-            // If AI NOT Caught, Game Over -> AI Wins.
         }
         else
         {
@@ -190,19 +232,19 @@ public class DeepfakeGameService : IGameService
             state.AiCaught = false;
             state.AiWon = true; 
             state.Phase = DeepfakePhase.Results;
+            _ = CalculateScores(room);
         }
     }
 
     public bool SubmitAiGuess(Room room, string connectionId, string guess)
     {
-        if (room.GameData is not DeepfakeState state) return false;
+        if (room == null || room.GameData is not DeepfakeState state) return false;
         // Must be AI
         if (connectionId != state.AiConnectionId) return false;
         // Must be caught
-        if (!state.AiCaught) return false; // Or maybe they can guess anytime? Design says "If caught".
+        if (!state.AiCaught) return false;
 
-        // Verify Guess (Exact match or loose?)
-        // Simple case-insensitive
+        // Verify Guess
         if (string.Equals(guess.Trim(), state.Prompt, StringComparison.OrdinalIgnoreCase))
         {
             state.AiWon = true; // AI snatched victory!
@@ -213,6 +255,7 @@ public class DeepfakeGameService : IGameService
         }
         
         state.Phase = DeepfakePhase.Results;
+        _ = CalculateScores(room);
         return true;
     }
 

@@ -59,9 +59,14 @@ export class CreateRoomComponent implements OnInit {
             });
         });
 
-        // Pre-fill name if logged in
+        // Pre-fill name if logged in or has guest session
         this.authService.currentUser$.subscribe(user => {
-            if (user) this.nickname = user.displayName;
+            if (user) {
+                this.nickname = user.displayName;
+            } else {
+                const guestName = this.authService.getGuestName();
+                if (guestName) this.nickname = guestName;
+            }
         });
     }
 
@@ -71,7 +76,7 @@ export class CreateRoomComponent implements OnInit {
         // Only if it doesn't already have a space
         const name = game.name;
         if (name.includes(' ')) return name;
-        return name.replace(/([a-z])([A-Z])/g, '$1 $2');
+        return name.replaceAll(/([a-z])([A-Z])/g, '$1 $2');
     }
 
     filterGames() {

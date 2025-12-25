@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Identity;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Hubs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BoardGameHub.Api.Controllers;
 
+[ApiController]
 [Route("admin")]
-public class AdminController : Controller
+public class AdminController : ControllerBase
 {
     private readonly IRoomService _roomService;
     private readonly ISocialService _socialService;

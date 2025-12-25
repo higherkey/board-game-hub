@@ -97,9 +97,9 @@
 
 <!-- Custom Name Input Modal -->
 <div class="modal-backdrop fade show" *ngIf="showNameModal" style="z-index: 1050;"></div>
-<div class="modal fade show d-block" *ngIf="showNameModal" tabindex="-1" role="dialog" aria-modal="true"
-    style="z-index: 1055;">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+<dialog open class="modal fade show d-block" *ngIf="showNameModal" tabindex="-1" aria-modal="true"
+    style="z-index: 1055; background: transparent; border: none; padding: 0;">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-surface shadow-lg border-primary">
             <div class="modal-header border-bottom-0 pb-0">
                 <h5 class="modal-title text-primary fw-bold">Enter Your Name</h5>
@@ -119,4 +119,4 @@
             </div>
         </div>
     </div>
-</div>
+</dialog>

@@ -10,67 +10,8 @@ import { Subscription } from 'rxjs';
   selector: 'app-great-minds',
   standalone: true,
   imports: [CommonModule, GreatMindsBoardComponent, GreatMindsPlayerComponent, GreatMindsRulesComponent],
-  template: `
-    <div class="great-minds-container">
-      <div class="top-nav" *ngIf="!isHost">
-        <button class="info-btn" (click)="showRules = true" title="How to Play">
-          <span>?</span>
-        </button>
-      </div>
-
-      <app-great-minds-rules 
-        *ngIf="showRules" 
-        (closeRules)="showRules = false">
-      </app-great-minds-rules>
-
-      <ng-container *ngIf="isHost; else playerView">
-        <app-great-minds-board [gameState]="gameState"></app-great-minds-board>
-      </ng-container>
-      <ng-template #playerView>
-        <app-great-minds-player 
-            [gameState]="gameState" 
-            [myConnectionId]="myConnectionId">
-        </app-great-minds-player>
-      </ng-template>
-    </div>
-  `,
-  styles: [`
-    .great-minds-container {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      color: white;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    .top-nav {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      z-index: 50;
-    }
-
-    .info-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.1);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      backdrop-filter: blur(5px);
-      transition: all 0.2s;
-    }
-
-    .info-btn:hover {
-      background: rgba(255,255,255,0.2);
-    }
-  `]
+  templateUrl: './great-minds.component.html',
+  styleUrls: ['./great-minds.component.scss']
 })
 export class GreatMindsGameComponent implements OnInit, OnDestroy {
   @Input() isHost: boolean = false;

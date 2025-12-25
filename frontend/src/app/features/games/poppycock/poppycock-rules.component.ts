@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
     <div class="rules-container p-4 rounded-4 shadow-lg text-white">
       <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
         <h2 class="display-6 fw-bold text-accent mb-0">How to Play Poppycock</h2>
-        <button class="btn-close btn-close-white" (click)="close.emit()"></button>
+        <button class="btn-close btn-close-white" (click)="closeRules.emit()"></button>
       </div>
 
       <div class="rules-content">
@@ -56,7 +56,7 @@ import { CommonModule } from '@angular/common';
         </section>
 
         <div class="text-center mt-4">
-          <button class="btn btn-accent btn-lg px-5 fw-bold shadow-sm" (click)="close.emit()">
+          <button class="btn btn-accent btn-lg px-5 fw-bold shadow-sm" (click)="closeRules.emit()">
             Let's Play!
           </button>
         </div>
@@ -86,5 +86,5 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class PoppycockRulesComponent {
-  @Output() close = new EventEmitter<void>();
+  @Output() closeRules = new EventEmitter<void>();
 }

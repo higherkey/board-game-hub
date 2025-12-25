@@ -24,10 +24,10 @@
 
             <!-- Undo Settings -->
             <div class="setting-group">
-                <label>
+                <div class="group-label">
                     <i class="bi bi-arrow-counterclockwise"></i>
                     Undo Policy
-                </label>
+                </div>
                 <div class="form-check form-switch mb-2">
                     <input class="form-check-input" type="checkbox" id="allowVoting"
                         [(ngModel)]="undoSettings.allowVoting" (change)="saveUndoSettings()">
@@ -98,6 +98,25 @@
                         <label for="listId" class="sr-only">List ID</label>
                         <input id="listId" type="number" min="1" max="15" [(ngModel)]="selectedListId"
                             (change)="updateListId()" placeholder="1-15">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Babble Settings (Conditional) -->
+            <div *ngIf="selectedGameType === 'Babble'" class="game-specific-settings fade-in">
+                <div class="setting-group">
+                    <label for="boardSize">
+                        <i class="bi bi-grid-3x3"></i>
+                        Board Size
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="boardSize" [(ngModel)]="settings.boardSize"
+                            (change)="updateBoardSize(settings.boardSize + '')">
+                            <option [ngValue]="4">4x4 (Classic)</option>
+                            <option [ngValue]="5">5x5 (Big Babble)</option>
+                            <option [ngValue]="6">6x6 (Super Babble)</option>
+                        </select>
+                        <i class="bi bi-chevron-down"></i>
                     </div>
                 </div>
             </div>

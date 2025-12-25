@@ -36,7 +36,7 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
         <div class="auth-actions">
            <app-active-games *ngIf="!isBackendPort"></app-active-games>
 
-           <ng-container *ngIf="currentUser$ | async as user; else guestTemplate">
+           <ng-container *ngIf="currentUser$ | async as user">
               <div class="user-profile">
                  <span class="username">{{ user.displayName }}</span>
                  <button routerLink="/settings" class="btn btn-sm btn-outline-primary">
@@ -47,10 +47,22 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
                  </button>
               </div>
            </ng-container>
-           <ng-template #guestTemplate>
+
+           <!-- Guest State -->
+           <ng-container *ngIf="(currentUser$ | async) === null && isGuest">
+                <div class="user-profile">
+                    <span class="username text-secondary">Guest</span>
+                    <button (click)="logout()" class="btn btn-sm btn-ghost" title="Leave Guest Session">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+           </ng-container>
+
+           <!-- Not Logged In -->
+           <ng-container *ngIf="(currentUser$ | async) === null && !isGuest">
               <a routerLink="/login" class="btn btn-sm btn-primary">Login</a>
               <a routerLink="/register" class="btn btn-sm btn-secondary text-white">Sign Up</a>
-           </ng-template>
+           </ng-container>
         </div>
       </header>
 
@@ -274,6 +286,10 @@ export class LayoutComponent {
 
    mobileMenuOpen = false;
    isBackendPort = globalThis.location.port !== '4200';
+
+   get isGuest(): boolean {
+      return this.authService.isAuthenticated();
+   }
 
    toggleMobileMenu() {
       this.mobileMenuOpen = !this.mobileMenuOpen;

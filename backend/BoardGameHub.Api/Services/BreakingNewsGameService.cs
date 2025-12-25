@@ -76,33 +76,39 @@ public class BreakingNewsGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        // Handled by voting phase usually, but standard simple implementation required by interface
-        // We can leave this empty or implement simple "1 point for playing" logic
-        if (room.GameData is not BreakingNewsState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not BreakingNewsState state) return;
 
-        // Maybe give points to the Anchor if they finished?
-        // Implementation pending "Voting" feature.
-        return Task.CompletedTask;
+        try
+        {
+            // Ensure RoundScores is initialized for all players (Reset to 0)
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            // Breaking News implementation of scoring is currently minimal.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in BreakingNews CalculateScores: {ex.Message}");
+        }
     }
 
     public Task<bool> UpdateSlot(Room room, int slotId, string value, string connectionId)
     {
-        if (room.GameData is not BreakingNewsState state) return Task.FromResult(false);
+        if (room == null || room.GameData is not BreakingNewsState state) return Task.FromResult(false);
 
         // Verify slot/owner
         if (slotId < 0 || slotId >= state.Slots.Count) return Task.FromResult(false);
 
         // Optional: Check if player owns this slot
-        // For chaos mode, maybe allow anyone? Design doc said "assigned slots".
         if (state.SlotOwners.TryGetValue(slotId, out var ownerId))
         {
             if (ownerId != connectionId) return Task.FromResult(false); // Not your slot
         }
 
         var slot = state.Slots[slotId];
-        if (slot.IsLocked) return Task.FromResult(false); 
+        if (slot == null || slot.IsLocked) return Task.FromResult(false); 
 
         slot.CurrentValue = value;
         slot.LastEditedBy = connectionId;
@@ -134,10 +140,12 @@ public class BreakingNewsGameService : IGameService
 
     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
+        if (room == null || action == null) return false;
+
         if (action.Type == "SUBMIT_SLOT" && action.Payload.HasValue)
         {
              if (action.Payload.Value.TryGetProperty("slotId", out var slotProp) && 
-                 action.Payload.Value.TryGetProperty("value", out var valueProp))
+                  action.Payload.Value.TryGetProperty("value", out var valueProp))
              {
                  return await UpdateSlot(room, slotProp.GetInt32(), valueProp.GetString() ?? "", connectionId);
              }

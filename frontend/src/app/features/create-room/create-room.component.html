@@ -70,8 +70,8 @@
                             <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold"
                                 [disabled]="!nickname || creating">
                                 <span *ngIf="!creating">Create Room <i class="bi bi-arrow-right-circle ms-2"></i></span>
-                                <span *ngIf="creating" class="spinner-border spinner-border-sm" role="status"
-                                    aria-hidden="true"></span>
+                                <output *ngIf="creating" class="spinner-border spinner-border-sm"
+                                    aria-hidden="true"></output>
                             </button>
                             <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancel</button>
                         </div>

@@ -1,0 +1,17 @@
+.rules-overlay {
+    background: rgba(0, 0, 0, 0.8);
+    min-height: 80vh;
+}
+
+.clue-card {
+    min-width: 150px;
+}
+
+.clue-image {
+    max-height: 100px;
+}
+
+.clue-image-invalid {
+    max-height: 100px;
+    filter: grayscale(1);
+}

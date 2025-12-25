@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GameRoomComponent } from './game-room.component';
 import { SignalRService } from '../../services/signalr.service';
+import { AuthService } from '../../services/auth.service';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
@@ -66,15 +67,19 @@ describe('GameRoomComponent', () => {
   const playersSubject = new BehaviorSubject<any[]>([]);
   const roomSubject = new BehaviorSubject<any>(null);
   const connectionSubject = new BehaviorSubject<string>('Connected');
+  const currentRoomSubject = new BehaviorSubject<any>(null); // Added for consistency with mock
 
   beforeEach(async () => {
     mockSignalRService = {
       players$: playersSubject.asObservable(),
       currentRoom$: roomSubject.asObservable(),
       connectionStatus$: connectionSubject.asObservable(),
+      currentRoomSubject: currentRoomSubject, // Added missing subject
       startConnection: jasmine.createSpy('startConnection').and.returnValue(Promise.resolve()),
       joinRoom: jasmine.createSpy('joinRoom').and.returnValue(Promise.resolve(true)),
-      startGame: jasmine.createSpy('startGame')
+      removeActiveRoom: jasmine.createSpy('removeActiveRoom'),
+      startGame: jasmine.createSpy('startGame'),
+      getConnectionId: jasmine.createSpy('getConnectionId').and.returnValue('conn1')
     };
 
     mockActivatedRoute = {
@@ -84,11 +89,19 @@ describe('GameRoomComponent', () => {
       }
     };
 
+    const mockAuthService = {
+      currentUser$: new BehaviorSubject(null),
+      getGuestId: jasmine.createSpy('getGuestId').and.returnValue('guest-uuid'),
+      getUserIdOrGuestId: jasmine.createSpy('getUserIdOrGuestId').and.returnValue('guest-uuid'),
+      getGuestName: jasmine.createSpy('getGuestName').and.returnValue('Guest')
+    };
+
     await TestBed.configureTestingModule({
       imports: [GameRoomComponent],
       providers: [
         provideRouter([]),
         { provide: SignalRService, useValue: mockSignalRService },
+        { provide: AuthService, useValue: mockAuthService },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]
     })
@@ -132,13 +145,13 @@ describe('GameRoomComponent', () => {
   it('should initialize and join room', () => {
     expect(component.roomCode).toBe('ABCD');
     expect(mockSignalRService.startConnection).toHaveBeenCalled();
-    expect(mockSignalRService.joinRoom).toHaveBeenCalledWith('ABCD', 'TestUser');
+    expect(mockSignalRService.joinRoom).toHaveBeenCalledWith('ABCD', 'Guest');
   });
 
   it('should identify host correctly', (done) => {
     const players = [
       { name: 'Other', isHost: false },
-      { name: 'TestUser', isHost: true }
+      { name: 'Guest', isHost: true }
     ];
     playersSubject.next(players);
 

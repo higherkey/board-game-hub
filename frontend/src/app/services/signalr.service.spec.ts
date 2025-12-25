@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { SignalRService } from './signalr.service';
 import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
+import { AuthService } from './auth.service';
+import { ToastService } from '../shared/services/toast.service';
 
 describe('SignalRService', () => {
   let service: SignalRService;
@@ -37,7 +39,26 @@ describe('SignalRService', () => {
     spyOn(HubConnectionBuilder.prototype, 'withAutomaticReconnect').and.returnValue(builderSpy);
     spyOn(HubConnectionBuilder.prototype, 'build').and.returnValue(mockHubConnection);
 
-    TestBed.configureTestingModule({});
+    const mockAuthService = {
+      getGuestId: jasmine.createSpy('getGuestId').and.returnValue('guest-uuid')
+    };
+
+    const mockToastService = {
+      showInfo: jasmine.createSpy('showInfo'),
+      showError: jasmine.createSpy('showError')
+    };
+
+    // Default mock behavior for invoke to return valid Promises to avoid crashes
+    mockHubConnection.invoke.and.returnValue(Promise.resolve());
+    mockHubConnection.invoke.withArgs('ValidateRooms', jasmine.any(Array)).and.returnValue(Promise.resolve([]));
+
+    TestBed.configureTestingModule({
+      providers: [
+        SignalRService,
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: ToastService, useValue: mockToastService }
+      ]
+    });
     service = TestBed.inject(SignalRService);
   });
 
@@ -66,35 +87,46 @@ describe('SignalRService', () => {
 
     it('should update status to Error if start fails', async () => {
       mockHubConnection.start.and.returnValue(Promise.reject(new Error('Network Error')));
-      await service.startConnection();
+      try {
+        await service.startConnection();
+      } catch (e) {
+        // Expected error
+      }
       expect(service.connectionStatus$.value).toBe('Error');
     });
   });
 
   describe('Room Interactions', () => {
     it('createRoom should invoke CreateRoom and update currentRoomSubject', async () => {
-      mockHubConnection.invoke.and.returnValue(Promise.resolve('ABCD'));
+      mockHubConnection.invoke.withArgs('CreateRoom', 'Host', true, 'Scatterbrain', 'guest-uuid').and.returnValue(Promise.resolve('ABCD'));
+      // Also mock ValidateRooms which might be called?
+      mockHubConnection.invoke.withArgs('ValidateRooms', jasmine.any(Array)).and.returnValue(Promise.resolve([]));
 
-      const code = await service.createRoom('Host', true);
+      const code = await service.createRoom('Host', true, 'Scatterbrain');
 
-      expect(mockHubConnection.invoke).toHaveBeenCalledWith('CreateRoom', 'Host', true, 'Scatterbrain');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('CreateRoom', 'Host', true, 'Scatterbrain', 'guest-uuid');
       expect(code).toBe('ABCD');
       expect(service.currentRoomSubject.value?.code).toBe('ABCD');
       expect(service.currentRoomSubject.value?.gameType).toBe('Scatterbrain');
     });
 
     it('joinRoom should invoke JoinRoom and update currentRoomSubject on success', async () => {
-      mockHubConnection.invoke.and.returnValue(Promise.resolve(true));
+      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid').and.returnValue(Promise.resolve({
+        code: 'ABCD',
+        players: [],
+        gameType: 'Scatterbrain',
+        settings: { timerDurationSeconds: 60, letterMode: 0 }
+      }));
 
       const result = await service.joinRoom('ABCD', 'Player');
 
-      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid');
       expect(result).toBeTrue();
       expect(service.currentRoomSubject.value?.code).toBe('ABCD');
     });
 
     it('joinRoom should NOT update currentRoomSubject on failure', async () => {
-      mockHubConnection.invoke.and.returnValue(Promise.resolve(false));
+      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid').and.returnValue(Promise.resolve(null));
 
       const result = await service.joinRoom('ABCD', 'Player');
 

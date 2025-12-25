@@ -30,56 +30,91 @@ public class PoppycockGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        if (room.GameData is not PoppycockState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not PoppycockState state) return;
 
-        var votesForReal = state.Votes.Values.Count(v => v == "REAL");
-
-        // 1. Scoring for Voters
-        foreach (var voteEntry in state.Votes)
+        try
         {
-            var voterId = voteEntry.Key;
-            var votedDefinitionId = voteEntry.Value;
+            // Ensure RoundScores is initialized for all players
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
 
-            if (votedDefinitionId == "REAL")
+            var votesForReal = state.Votes.Values.Count(v => v == "REAL");
+
+            // 1. Scoring for Voters
+            foreach (var voteEntry in state.Votes)
             {
-                AddScore(room, voterId, 3); // +3 for correct answer
+                var voterId = voteEntry.Key;
+                var votedDefinitionId = voteEntry.Value;
+
+                if (votedDefinitionId == "REAL")
+                {
+                    AddPoints(room, voterId, 3); // +3 for correct answer
+                }
+                else
+                {
+                    // +2 to the author of the lie that fooled you
+                    AddPoints(room, votedDefinitionId, 2);
+                }
             }
-            else
+
+            // 1.5 Scoring for "The Natural" (Correct during faking phase)
+            foreach (var id in state.CorrectSubmissions)
             {
-                // +2 to the author of the lie that fooled you
-                AddScore(room, votedDefinitionId, 2); 
+                AddPoints(room, id, 3);
+            }
+
+            // 2. Scoring for the Dasher
+            if (state.DasherId != null)
+            {
+                // If NO ONE guessed the real answer, Dasher gets +3
+                if (votesForReal == 0)
+                {
+                    AddPoints(room, state.DasherId, 3);
+                }
             }
         }
-
-        // 2. Scoring for the Dasher
-        if (state.DasherId != null)
+        catch (Exception ex)
         {
-            // If NO ONE guessed the real answer, Dasher gets +3
-            if (votesForReal == 0)
-            {
-                AddScore(room, state.DasherId, 3);
-            }
+            Console.WriteLine($"Error in Poppycock CalculateScores: {ex.Message}");
+            throw;
         }
+    }
 
-        return Task.CompletedTask;
+    private void AddPoints(Room room, string playerId, int points)
+    {
+        if (room.RoundScores.ContainsKey(playerId)) 
+            room.RoundScores[playerId] += points;
+        else 
+            room.RoundScores[playerId] = points;
+
+        var player = room.Players.FirstOrDefault(p => p.ConnectionId == playerId);
+        if (player != null)
+        {
+            player.Score += points;
+        }
     }
 
     public Task SubmitDefinition(Room room, string playerId, string definition)
     {
-        if (room.GameData is not PoppycockState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not PoppycockState state) return Task.CompletedTask;
         if (state.Phase != PoppycockPhase.Faking) return Task.CompletedTask;
         if (playerId == state.DasherId) return Task.CompletedTask; // Dasher doesn't submit
 
         // Check for "The Natural" (Exact or close match)
-        var realDef = state.CurrentPrompt.RealDefinition.ToLower().Trim();
+        var realDef = state.CurrentPrompt.RealDefinition?.ToLower().Trim() ?? "";
         var submittedDef = definition.ToLower().Trim();
         
         if (submittedDef == realDef)
         {
             state.CorrectSubmissions.Add(playerId);
-            AddScore(room, playerId, 3); // Bonus for knowing it!
+            // Score initialization is tricky here because CalculateScores resets it.
+            // But "The Natural" happens in-phase. 
+            // In Balderdash, you get points immediately. 
+            // Let's ensure AddPoints is safe even if RoundScores isn't fully reset yet, 
+            // OR we handle "Natural" points in CalculateScores by tracking them.
+            // Tracking is safer.
         }
         else
         {
@@ -99,14 +134,9 @@ public class PoppycockGameService : IGameService
 
     public Task SubmitVote(Room room, string playerId, string votedDefinitionId)
     {
-        if (room.GameData is not PoppycockState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not PoppycockState state) return Task.CompletedTask;
         if (state.Phase != PoppycockPhase.Voting) return Task.CompletedTask;
         
-        // Dasher doesn't vote? In Balderdash, Dasher reads. 
-        // In our app, Dasher is a spectator for voting usually, but let's allow or skip.
-        // Rules say: "Dasher doesn't submit a fake... Dasher gets points if no one gets it right."
-        // So Dasher shouldn't vote to sway it? Or they vote?
-        // Usually Dasher knows the answer, so voting is weird. Let's skip Dasher voting.
         if (playerId == state.DasherId) return Task.CompletedTask;
 
         // Prevent voting for self
@@ -122,7 +152,7 @@ public class PoppycockGameService : IGameService
         
         if (state.Votes.Count >= expectedVoters)
         {
-            CalculateScores(room);
+            _ = CalculateScores(room); // Fire and forget or await? Pattern says Task.
             state.Phase = PoppycockPhase.Result;
         }
         return Task.CompletedTask;
@@ -135,6 +165,7 @@ public class PoppycockGameService : IGameService
         {
             player.Score += points;
             
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
             if (!room.RoundScores.ContainsKey(playerId)) room.RoundScores[playerId] = 0;
             room.RoundScores[playerId] += points;
         }

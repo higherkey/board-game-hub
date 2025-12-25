@@ -6,6 +6,14 @@
     }
 }
 
+.games-grid {
+    display: grid;
+    // Lowered min width to 180px for smaller cards
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+    padding-bottom: 2rem;
+}
+
 .card {
     transition: all 0.2s ease-in-out;
     border: none;

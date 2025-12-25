@@ -47,6 +47,7 @@ export interface Room {
   // Scores
   // Scores
   roundScores: { [key: string]: number };
+  playerAnswers?: { [key: string]: string[] };
 
   // Undo System
   currentVote: any; // { initiatorId, initiatorName, votes: {} }
@@ -187,6 +188,19 @@ export class SignalRService {
         this.toastService.showError(message || 'Room has been closed');
       }
     });
+
+    this.hubConnection.on('RoomDeleted', (code: string) => {
+      this.removeActiveRoom(code);
+    });
+
+    this.hubConnection.on('RoomGameTypeChanged', (code: string, gameType: string) => {
+      this.updateActiveRoomGameType(code, gameType);
+    });
+
+    this.hubConnection.onreconnected(() => {
+      console.log('SignalR Reconnected');
+      this.validateActiveRooms();
+    });
   }
 
   // ... startConnection implementation ...
@@ -277,6 +291,9 @@ export class SignalRService {
         await this.hubConnection.start();
         this.connectionStatus$.next('Connected');
         console.log('SignalR Connection started');
+
+        // Proactively validate active rooms on startup to catch any that closed while offline
+        this.validateActiveRooms();
       } catch (err) {
         console.error('Error while starting connection: ' + err);
         this.connectionStatus$.next('Error');
@@ -307,6 +324,16 @@ export class SignalRService {
     rooms.unshift({ code, gameType, lastPlayed: new Date().toISOString() });
     localStorage.setItem(this.ACTIVE_ROOMS_KEY, JSON.stringify(rooms));
     this.loadActiveRooms();
+  }
+
+  private updateActiveRoomGameType(code: string, gameType: string) {
+    const rooms = this.getActiveRooms();
+    const room = rooms.find(r => r.code === code);
+    if (room) {
+      room.gameType = gameType;
+      localStorage.setItem(this.ACTIVE_ROOMS_KEY, JSON.stringify(rooms));
+      this.loadActiveRooms();
+    }
   }
 
   public removeActiveRoom(code: string) {

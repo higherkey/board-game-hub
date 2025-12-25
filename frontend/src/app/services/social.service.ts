@@ -29,7 +29,7 @@ export class SocialService {
     public friendRequests$ = this.friendRequestsSubject.asObservable();
     public friends$ = this.friendsSubject.asObservable();
 
-    constructor(private authService: AuthService) {
+    constructor(private readonly authService: AuthService) {
         const token = this.authService.getToken();
 
         this.hubConnection = new HubConnectionBuilder()

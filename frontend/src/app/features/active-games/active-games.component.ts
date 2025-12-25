@@ -1,8 +1,9 @@
-import { Component, HostListener, ElementRef } from '@angular/core';
+import { Component, HostListener, ElementRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../services/signalr.service';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
     selector: 'app-active-games',
@@ -189,7 +190,7 @@ import { Observable } from 'rxjs';
     }
   `]
 })
-export class ActiveGamesComponent {
+export class ActiveGamesComponent implements OnInit {
     activeRooms$: Observable<any[]>;
     count$: Observable<number>;
     isOpen = false;
@@ -203,6 +204,17 @@ export class ActiveGamesComponent {
         this.count$ = new Observable(subscriber => {
             this.activeRooms$.subscribe(rooms => subscriber.next(rooms.length));
         });
+
+        // specific trigger for navigation updates
+        this.router.events.pipe(
+            filter(event => event instanceof NavigationEnd)
+        ).subscribe(() => {
+            this.signalRService.validateActiveRooms();
+        });
+    }
+
+    ngOnInit() {
+        this.signalRService.validateActiveRooms();
     }
 
     @HostListener('document:click', ['$event'])

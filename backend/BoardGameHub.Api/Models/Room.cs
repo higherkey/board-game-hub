@@ -49,8 +49,10 @@ public class Room
 
     // Undo System
     // Stack of JSON snapshots to revert to. Restrict to last 10?
+    [System.Text.Json.Serialization.JsonIgnore]
     public Stack<string> StateHistory { get; set; } = new();
     public UndoSettings UndoSettings { get; set; } = new();
+    
     public UndoVote? CurrentVote { get; set; }
 }
 

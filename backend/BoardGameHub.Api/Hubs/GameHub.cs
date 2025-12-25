@@ -84,6 +84,8 @@ public class GameHub : Hub
             if (room != null)
             {
                 await Clients.Group(roomCode).SendAsync("GameTypeChanged", type.ToString());
+                // Global broadcast for Active Tables list
+                await Clients.All.SendAsync("RoomGameTypeChanged", roomCode, type.ToString());
                 await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
             }
         }
@@ -373,13 +375,34 @@ public class GameHub : Hub
 
     public async Task EndRound(string roomCode)
     {
-        var room = await _roomService.CalculateRoundScores(roomCode);
-        if (room != null)
+        try 
         {
-            // Record the round/session results to DB
-            await _historyService.RecordGameSession(room);
+            if (string.IsNullOrEmpty(roomCode)) return;
+
+            var room = await _roomService.CalculateRoundScores(roomCode.Trim().ToUpperInvariant());
             
-            await Clients.Group(roomCode).SendAsync("RoundEnded", room);
+            if (room != null)
+            {
+                // Record history with extra safety
+                try 
+                {
+                    if (_historyService != null && room.Players.Any())
+                    {
+                        await _historyService.RecordGameSession(room);
+                    }
+                }
+                catch (Exception hex)
+                {
+                    Console.WriteLine($"Error recording game history for room {roomCode}: {hex.Message}");
+                }
+                
+                await Clients.Group(roomCode.ToUpper()).SendAsync("RoundEnded", room);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in EndRound for room {roomCode}: {ex.Message}");
+            throw new HubException("An unexpected error occurred during score calculation.");
         }
     }
 

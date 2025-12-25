@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoardGameHub.Api", "BoardGameHub.Api\BoardGameHub.Api.csproj", "{D6C6A286-B340-4C9C-BC76-37BE0D91B594}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoardGameHub.Tests", "BoardGameHub.Tests\BoardGameHub.Tests.csproj", "{DC97D929-5A45-4984-952B-A6824AAACBCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{D6C6A286-B340-4C9C-BC76-37BE0D91B594}.Release|x64.Build.0 = Release|Any CPU
 		{D6C6A286-B340-4C9C-BC76-37BE0D91B594}.Release|x86.ActiveCfg = Release|Any CPU
 		{D6C6A286-B340-4C9C-BC76-37BE0D91B594}.Release|x86.Build.0 = Release|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Debug|x64.Build.0 = Debug|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Debug|x86.Build.0 = Debug|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Release|x64.ActiveCfg = Release|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Release|x64.Build.0 = Release|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Release|x86.ActiveCfg = Release|Any CPU
+		{DC97D929-5A45-4984-952B-A6824AAACBCF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

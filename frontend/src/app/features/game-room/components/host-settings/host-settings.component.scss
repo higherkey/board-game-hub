@@ -44,7 +44,8 @@
     margin-bottom: 1.5rem;
 }
 
-.setting-group label {
+.setting-group label,
+.setting-group .group-label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -54,7 +55,8 @@
     font-size: 0.9rem;
 }
 
-.setting-group label i {
+.setting-group label i,
+.setting-group .group-label i {
     color: #6c757d;
 }
 
@@ -169,7 +171,7 @@
 .btn-start {
     width: 100%;
     padding: 1rem;
-    background: linear-gradient(135deg, #228b22 0%, #008b8b 100%);
+    background: linear-gradient(135deg, #186618 0%, #006666 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -192,7 +194,7 @@
 
 .btn-start:disabled {
     background: #e9ecef;
-    color: #adb5bd;
+    color: #5c5c5c;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;

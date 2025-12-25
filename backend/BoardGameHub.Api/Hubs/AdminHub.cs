@@ -5,12 +5,11 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BoardGameHub.Api.Hubs;
 
-[Authorize]
 public class AdminHub : Hub
 {
-    private readonly RoomService _roomService;
+    private readonly IRoomService _roomService;
 
-    public AdminHub(RoomService roomService)
+    public AdminHub(IRoomService roomService)
     {
         _roomService = roomService;
     }

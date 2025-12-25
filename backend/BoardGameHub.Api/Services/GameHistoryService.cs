@@ -18,6 +18,23 @@ public class GameHistoryService : IGameHistoryService
         // This accepts the in-memory Room object and saves it as a GameSession
         if (room.Players.Count == 0) return; // Don't save empty games
 
+        // Find all User IDs in the room and check which ones actually exist in the DB
+        var potentialUserIds = room.Players
+            .Select(p => p.UserId)
+            .Where(id => !string.IsNullOrEmpty(id))
+            .Distinct()
+            .ToList();
+
+        var validUserIds = new HashSet<string>();
+        if (potentialUserIds.Any())
+        {
+            validUserIds = (await _context.Users
+                .Where(u => potentialUserIds.Contains(u.Id))
+                .Select(u => u.Id)
+                .ToListAsync())
+                .ToHashSet();
+        }
+
         var session = new GameSession
         {
             RoomCode = room.Code,
@@ -37,8 +54,11 @@ public class GameHistoryService : IGameHistoryService
             var p = sortedPlayers[i];
             var userId = p.UserId;
             
-            // If UserId is empty string (guest), make it null for DB
-            if (string.IsNullOrEmpty(userId)) userId = null;
+            // If UserId is empty string or not found in DB (Guest UUID), set to null
+            if (string.IsNullOrEmpty(userId) || !validUserIds.Contains(userId))
+            {
+                userId = null;
+            }
 
             sessionPlayers.Add(new GameSessionPlayer
             {

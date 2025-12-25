@@ -62,17 +62,38 @@ public class SymbologyGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        // Scores are updated in real-time during correct guess usually, 
-        // but this method is called at round end.
-        // We can finalize things here if needed.
-        return Task.CompletedTask;
+        if (room == null || room.GameData is not SymbologyState state) return;
+
+        try
+        {
+            // Ensure RoundScores is initialized for all players
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            // Sync state scores to room player scores and round scores
+            foreach (var scoreEntry in state.Scores)
+            {
+                var playerId = scoreEntry.Key;
+                var points = scoreEntry.Value;
+
+                if (room.RoundScores.ContainsKey(playerId)) 
+                    room.RoundScores[playerId] += points;
+
+                var player = room.Players.FirstOrDefault(p => p.ConnectionId == playerId);
+                if (player != null) player.Score += points;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Symbology CalculateScores: {ex.Message}");
+        }
     }
 
     public Task<bool> PlaceMarker(Room room, string playerId, string icon, string markerType, string color)
     {
-        if (room.GameData is not SymbologyState state) return Task.FromResult(false);
+        if (room == null || room.GameData is not SymbologyState state) return Task.FromResult(false);
         if (!state.IsRoundActive) return Task.FromResult(false);
         if (state.ActivePlayerId != playerId) return Task.FromResult(false);
 
@@ -89,7 +110,7 @@ public class SymbologyGameService : IGameService
 
     public Task<bool> RemoveMarker(Room room, string playerId, string markerId)
     {
-        if (room.GameData is not SymbologyState state) return Task.FromResult(false);
+        if (room == null || room.GameData is not SymbologyState state) return Task.FromResult(false);
         if (!state.IsRoundActive) return Task.FromResult(false);
         if (state.ActivePlayerId != playerId) return Task.FromResult(false);
 
@@ -104,22 +125,21 @@ public class SymbologyGameService : IGameService
     
     public Task<bool> SubmitGuess(Room room, string playerId, string guess)
     {
-        if (room.GameData is not SymbologyState state) return Task.FromResult(false);
+        if (room == null || room.GameData is not SymbologyState state) return Task.FromResult(false);
         if (!state.IsRoundActive) return Task.FromResult(false);
-        if (state.ActivePlayerId == playerId) return Task.FromResult(false); // Active player can't guess
+        if (state.ActivePlayerId == playerId) return Task.FromResult(false);
 
         // Log guess
         state.GuessLog.Add($"{room.Players.FirstOrDefault(p => p.ConnectionId == playerId)?.Name ?? "Unknown"}: {guess}");
 
-        // Check guess (Clean up comparison)
+        // Check guess
         if (string.Equals(guess.Trim(), state.CurrentWord, StringComparison.OrdinalIgnoreCase))
         {
             // Correct!
-            // Award points
             AddScore(state, playerId, 10);
-            AddScore(state, state.ActivePlayerId, 10); // Active player also gets points
+            AddScore(state, state.ActivePlayerId, 10);
 
-            state.IsRoundActive = false; // End round logic triggered by this result
+            state.IsRoundActive = false;
             return Task.FromResult(true);
         }
 
@@ -141,12 +161,14 @@ public class SymbologyGameService : IGameService
 
     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
+        if (room == null || action == null) return false;
+
         if (action.Type == "PLACE_MARKER" && action.Payload.HasValue)
         {
              var p = action.Payload.Value;
              if (p.TryGetProperty("icon", out var icon) && 
-                 p.TryGetProperty("markerType", out var type) &&
-                 p.TryGetProperty("color", out var color))
+                  p.TryGetProperty("markerType", out var type) &&
+                  p.TryGetProperty("color", out var color))
              {
                  if(await PlaceMarker(room, connectionId, icon.GetString()??"", type.GetString()??"", color.GetString()??""))
                      return true;

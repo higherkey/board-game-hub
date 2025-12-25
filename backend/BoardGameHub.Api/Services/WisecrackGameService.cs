@@ -52,17 +52,31 @@ public class WisecrackGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        // Scores are calculated per battle, so maybe just ensure final tally is correct?
-        // This is usually called at the VERY END or end of a "round" (set of battles).
-        // For Wisecrack, let's say end of all battles is end of round.
-        return Task.CompletedTask;
+        if (room == null || room.GameData is not WisecrackState state) return;
+
+        try
+        {
+            // Ensure RoundScores is initialized for all players
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            // Wisecrack scores are awarded during FinishBattle, but we can re-verify or 
+            // recalculate here if we wanted to be perfectly robust.
+            // For now, let's just ensure all players are in RoundScores.
+            // Actually, to follow the pattern, let's track battle scores in state and sum them here.
+            // For now, I'll just make sure the existing logic is safe.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Wisecrack CalculateScores: {ex.Message}");
+        }
     }
 
     public Task SubmitAnswer(Room room, string playerId, string promptId, string answerText)
     {
-        if (room.GameData is not WisecrackState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
         if (state.Phase != WisecrackPhase.Writing) return Task.CompletedTask;
 
         var player = room.Players.FirstOrDefault(p => p.ConnectionId == playerId);
@@ -96,17 +110,15 @@ public class WisecrackGameService : IGameService
 
     public Task SubmitVote(Room room, string playerId, int choice)
     {
-        if (room.GameData is not WisecrackState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
         if (state.Phase != WisecrackPhase.Battling) return Task.CompletedTask;
 
         var battle = state.CurrentBattle;
         if (battle == null || battle.IsFinished) return Task.CompletedTask;
 
-        // Validate voter (can't vote if it's your own answer? Design says players vote on others)
-        // Check if player is one of the answerers
+        // Validate voter (can't vote if it's your own answer)
         if (battle.AnswerA.PlayerId == playerId || battle.AnswerB.PlayerId == playerId)
         {
-            // Usually in Quiplash, answerers DO NOT vote on their own battle.
             return Task.CompletedTask;
         }
 
@@ -115,9 +127,8 @@ public class WisecrackGameService : IGameService
         battle.Votes.Add(new WisecrackVote { PlayerId = playerId, Choice = choice });
 
         // Auto-finish battle if everyone (audience/others) voted?
-        // Audience = All Players - 2 Answerers.
         int expectedVotes = room.Players.Count - 2;
-        if (expectedVotes < 0) expectedVotes = 0; // Should not happen with >=3 players
+        if (expectedVotes < 0) expectedVotes = 0;
 
         if (battle.Votes.Count >= expectedVotes)
         {
@@ -128,7 +139,7 @@ public class WisecrackGameService : IGameService
 
     public Task NextBattle(Room room)
     {
-        if (room.GameData is not WisecrackState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
         if (state.Phase != WisecrackPhase.Battling) return Task.CompletedTask;
 
         state.CurrentBattleIndex++;
@@ -136,6 +147,7 @@ public class WisecrackGameService : IGameService
         {
             state.Phase = WisecrackPhase.Result;
             state.CurrentBattleIndex = -1;
+            _ = CalculateScores(room);
         }
         return Task.CompletedTask;
     }
@@ -150,26 +162,29 @@ public class WisecrackGameService : IGameService
         if (votesA > votesB)
         {
             battle.WinnerPlayerId = battle.AnswerA.PlayerId;
-            AddScore(room, battle.AnswerA.PlayerId, 100 + (votesA * 50)); 
-            // example scoring
+            AddPoints(room, battle.AnswerA.PlayerId, 100 + (votesA * 50)); 
         }
         else if (votesB > votesA)
         {
             battle.WinnerPlayerId = battle.AnswerB.PlayerId;
-            AddScore(room, battle.AnswerB.PlayerId, 100 + (votesB * 50));
+            AddPoints(room, battle.AnswerB.PlayerId, 100 + (votesB * 50));
         }
         else
         {
             battle.WinnerPlayerId = "TIE";
-            AddScore(room, battle.AnswerA.PlayerId, 50);
-            AddScore(room, battle.AnswerB.PlayerId, 50);
+            AddPoints(room, battle.AnswerA.PlayerId, 50);
+            AddPoints(room, battle.AnswerB.PlayerId, 50);
         }
     }
 
-    private void AddScore(Room room, string playerId, int points)
+    private void AddPoints(Room room, string playerId, int points)
     {
         var p = room.Players.FirstOrDefault(x => x.ConnectionId == playerId);
         if (p != null) p.Score += points;
+
+        if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+        if (!room.RoundScores.ContainsKey(playerId)) room.RoundScores[playerId] = 0;
+        room.RoundScores[playerId] += points;
     }
 
     private void AssignPrompts(List<Player> players, WisecrackState state)

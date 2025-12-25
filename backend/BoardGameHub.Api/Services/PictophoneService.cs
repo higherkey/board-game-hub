@@ -34,15 +34,28 @@ public class PictophoneService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public async Task CalculateScores(Room room)
     {
-        // No scoring usually, just for fun.
-        return Task.CompletedTask;
+        if (room == null || room.GameData is not PictophoneState state) return;
+
+        try
+        {
+            // Ensure RoundScores is initialized for all players (Reset to 0)
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            // Pictophone is purely creative, so no points are awarded normally.
+            // We could potentially award "Stars" as points if we wanted to later.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Pictophone CalculateScores: {ex.Message}");
+        }
     }
 
     public Task SubmitPage(Room room, string playerId, string content)
     {
-        if (room.GameData is not PictophoneState state) return Task.CompletedTask;
+        if (room == null || room.GameData is not PictophoneState state) return Task.CompletedTask;
 
         // Find the book currently held by this player
         var book = state.Books.FirstOrDefault(b => b.CurrentHolderId == playerId);
@@ -137,7 +150,7 @@ public class PictophoneService : IGameService
 
     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
-        if (room.GameData is not PictophoneState state) return false;
+        if (room == null || room.GameData is not PictophoneState state) return false;
 
         switch (action.Type)
         {

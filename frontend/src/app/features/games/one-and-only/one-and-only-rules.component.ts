@@ -2,61 +2,10 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-    selector: 'app-one-and-only-rules',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
-    <div class="rules-container p-4 bg-dark text-white rounded shadow-lg border border-warning" style="max-width: 600px; margin: 0 auto;">
-      <h2 class="text-warning mb-4 text-center">How to Play: One and Only</h2>
-      
-      <div class="rule-step mb-3 d-flex align-items-start gap-3">
-        <div class="badge bg-primary fs-5 mt-1">1</div>
-        <div>
-          <h5 class="mb-1">The Mystery Word</h5>
-          <p class="small text-white-50">One player is the **Guesser**. Everyone else sees a mystery word that the Guesser must identify.</p>
-        </div>
-      </div>
-
-      <div class="rule-step mb-3 d-flex align-items-start gap-3">
-        <div class="badge bg-primary fs-5 mt-1">2</div>
-        <div>
-          <h5 class="mb-1">Give Your Clue</h5>
-          <p class="small text-white-50">Clue Givers write or draw **ONE** unique clue on their phone plaque. Be creative but careful!</p>
-        </div>
-      </div>
-
-      <div class="rule-step mb-3 d-flex align-items-start gap-3">
-        <div class="badge bg-danger fs-5 mt-1">3</div>
-        <div>
-          <h5 class="mb-1">Elimination Phase</h5>
-          <p class="small text-white-50 text-warning">If two or more players give the **SAME** clue (e.g. both write "Water"), those clues are **ELIMINATED** and the Guesser never sees them!</p>
-        </div>
-      </div>
-
-      <div class="rule-step mb-3 d-flex align-items-start gap-3">
-        <div class="badge bg-success fs-5 mt-1">4</div>
-        <div>
-          <h5 class="mb-1">The Big Guess</h5>
-          <p class="small text-white-50">The Guesser looks at the remaining unique clues and makes a single guess. If they're right, the whole team wins the round!</p>
-        </div>
-      </div>
-
-      <div class="mt-4 text-center">
-        <p class="fst-italic text-info">"Work together to keep your clues unique!"</p>
-      </div>
-    </div>
-  `,
-    styles: [`
-    .rules-container {
-      background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
-    }
-    .rule-step {
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      padding-bottom: 1rem;
-    }
-    .rule-step:last-child {
-      border-bottom: none;
-    }
-  `]
+  selector: 'app-one-and-only-rules',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './one-and-only-rules.component.html',
+  styleUrls: ['./one-and-only-rules.component.scss']
 })
 export class OneAndOnlyRulesComponent { }
