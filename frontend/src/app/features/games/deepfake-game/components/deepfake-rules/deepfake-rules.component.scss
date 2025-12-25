@@ -1,4 +1,5 @@
 .rules-overlay {
+    all: unset;
     position: fixed;
     top: 0;
     left: 0;
@@ -11,6 +12,8 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    box-sizing: border-box;
+    cursor: pointer;
 }
 
 .glassmorphism {
@@ -148,7 +151,7 @@ ul li {
 }
 
 .primary-btn {
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
     color: white;
     border: none;
     padding: 12px 40px;

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthComponent } from './auth.component';
 import { AuthService } from '../../services/auth.service';
 import { Router, provideRouter } from '@angular/router';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ReactiveFormsModule } from '@angular/forms';
 
 describe('AuthComponent', () => {

@@ -1,3 +1,13 @@
 .btn-token {
-    @apply py-6 rounded-lg font-bold text-xl transition-transform active:scale-95 shadow-md border-b-4 border-black/20;
+    padding: 1.5rem 0;
+    border-radius: var(--radius-lg);
+    font-weight: 700;
+    font-size: 1.25rem;
+    transition: transform 0.2s ease-in-out;
+    box-shadow: var(--shadow-md);
+    border-bottom: 4px solid rgba(0, 0, 0, 0.2);
+
+    &:active {
+        transform: scale(0.95);
+    }
 }

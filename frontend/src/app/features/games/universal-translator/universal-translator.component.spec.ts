@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UniversalTranslatorComponent } from './universal-translator.component';
 import { SignalRService } from '../../../services/signalr.service';
-import { of } from 'rxjs';
 
 describe('UniversalTranslatorComponent', () => {
     let component: UniversalTranslatorComponent;

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { LayoutComponent } from './layout.component';
 import { AuthService } from '../../services/auth.service';
 import { of } from 'rxjs';
@@ -10,8 +10,9 @@ describe('LayoutComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LayoutComponent, RouterTestingModule],
+      imports: [LayoutComponent],
       providers: [
+        provideRouter([]),
         {
           provide: AuthService,
           useValue: { currentUser$: of(null), isAuthenticated: () => false }

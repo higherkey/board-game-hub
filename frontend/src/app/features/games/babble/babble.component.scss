@@ -15,7 +15,10 @@
 .babble-view {
     min-height: 100%;
     padding: 2rem;
-    background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    background-color: var(--babble-bg);
+    backdrop-filter: blur(10px);
+    background-image:
+        radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
         radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
     display: flex;
     flex-direction: column;
@@ -35,6 +38,7 @@
         margin: 0;
         background: linear-gradient(to right, var(--babble-primary), var(--babble-secondary));
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -1px;
     }
@@ -207,8 +211,8 @@
 }
 
 .word-chip {
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(99, 102, 241, 0.4);
     color: #c7d2fe;
     padding: 0.25rem 0.75rem;
     border-radius: 2rem;
@@ -228,8 +232,9 @@
     .status-badge {
         display: inline-block;
         padding: 0.5rem 1.5rem;
-        background: rgba(34, 197, 94, 0.1);
-        color: #4ade80;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        color: #86efac;
         border-radius: 2rem;
         font-weight: 700;
         margin-bottom: 1.5rem;
@@ -410,7 +415,7 @@
 
         .points-val {
             font-weight: 700;
-            color: #4ade80; // Success Green
+            color: #bbf7d0; // Lighter green for better contrast
 
             &.zero {
                 color: var(--text-dim);

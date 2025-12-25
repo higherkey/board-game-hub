@@ -52,7 +52,7 @@
                 <div class="card bg-base border-0 shadow-sm p-3 clue-card">
                     <!-- If clue is an image (Base64), show it, else text -->
                     <ng-container *ngIf="isBase64(clue.value); else textClue">
-                        <img [src]="clue.value" class="img-fluid clue-image">
+                        <img [src]="clue.value" [alt]="'Visual clue by ' + clue.player" class="img-fluid clue-image">
                     </ng-container>
                     <ng-template #textClue>
                         <h4 class="m-0 text-primary fw-bold">{{ clue.value }}</h4>
@@ -65,7 +65,7 @@
             <div *ngFor="let clue of getInvalidClues()" class="col-auto opacity-50">
                 <div class="card bg-secondary text-white p-3 position-relative clue-card">
                     <ng-container *ngIf="isBase64(clue); else textInvalid">
-                        <img [src]="clue" class="img-fluid clue-image-invalid">
+                        <img [src]="clue" alt="Invalid visual clue" class="img-fluid clue-image-invalid">
                     </ng-container>
                     <ng-template #textInvalid>
                         <h4 class="m-0 text-decoration-line-through">{{ clue }}</h4>

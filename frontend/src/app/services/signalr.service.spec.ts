@@ -17,7 +17,7 @@ describe('SignalRService', () => {
 
   beforeEach(() => {
     // 1. Create the Mock HubConnection
-    mockHubConnection = jasmine.createSpyObj('HubConnection', ['start', 'invoke', 'on', 'stop', 'off']);
+    mockHubConnection = jasmine.createSpyObj('HubConnection', ['start', 'invoke', 'on', 'stop', 'off', 'onreconnected', 'onreconnecting', 'onclose']);
 
     // Default state
     mockHubConnection.state = HubConnectionState.Disconnected;
@@ -87,11 +87,9 @@ describe('SignalRService', () => {
 
     it('should update status to Error if start fails', async () => {
       mockHubConnection.start.and.returnValue(Promise.reject(new Error('Network Error')));
-      try {
-        await service.startConnection();
-      } catch (e) {
-        // Expected error
-      }
+
+      await expectAsync(service.startConnection()).toBeRejectedWithError('Network Error');
+
       expect(service.connectionStatus$.value).toBe('Error');
     });
   });
@@ -179,7 +177,7 @@ describe('SignalRService', () => {
 
     it('submitAnswers should invoke SubmitAnswers', async () => {
       const answers = ['apple', 'banana'];
-      await service.submitAnswers(answers);
+      service.submitAnswers(answers);
       expect(mockHubConnection.invoke).toHaveBeenCalledWith('SubmitAnswers', 'TEST', answers);
     });
 

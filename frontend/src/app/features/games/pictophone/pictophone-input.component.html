@@ -43,7 +43,9 @@
 
         <ng-template #waitingTemplate>
             <div class="text-muted p-5">
-                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                <output class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Ready and waiting...</span>
+                </output>
                 <h4 class="fw-bold">Ready!</h4>
                 <p>Waiting for everyone else to finish...</p>
             </div>

@@ -25,7 +25,9 @@
         </div>
 
         <div *ngIf="gameData?.phase === 0" class="mt-5">
-            <div class="spinner-border text-light" role="status"></div>
+            <output class="spinner-border text-light">
+                <span class="visually-hidden">Calculating...</span>
+            </output>
             <p class="mt-2 text-white">Using telepathy...</p>
         </div>
     </div>

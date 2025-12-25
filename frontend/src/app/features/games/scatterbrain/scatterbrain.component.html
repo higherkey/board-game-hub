@@ -68,8 +68,9 @@
                 </div>
                 <div class="card-body p-4 bg-surface-2">
                     <div class="mb-4" *ngFor="let cat of room.gameData?.categories; let i = index">
-                        <label class="form-label fw-bold small text-secondary mb-1">{{ i + 1 }}. {{ cat }}</label>
-                        <input type="text" class="form-control form-control-lg border-0 shadow-sm"
+                        <label [attr.for]="'answer-' + i" class="form-label fw-bold small text-secondary mb-1">{{ i + 1
+                            }}. {{ cat }}</label>
+                        <input [id]="'answer-' + i" type="text" class="form-control form-control-lg border-0 shadow-sm"
                             [(ngModel)]="answers[i]" (blur)="submitAnswers()"
                             [placeholder]="'Starts with ' + room.gameData.currentLetter" autocomplete="off">
                     </div>
@@ -110,7 +111,8 @@
                             <td class="fw-bold text-secondary bg-surface-2"><span class="text-primary me-2">{{ i+1
                                     }}.</span> {{ cat }}</td>
                             <td *ngFor="let p of room.players" class="text-center p-1">
-                                <div class="answer-box p-2 rounded cursor-pointer transition-all border"
+                                <button type="button"
+                                    class="answer-box p-2 rounded cursor-pointer transition-all border w-100 h-100"
                                     (click)="isHost && toggleVeto(p.connectionId, i)"
                                     [class.bg-danger-subtle]="isVetoed(p.connectionId, i)"
                                     [class.border-danger]="isVetoed(p.connectionId, i)"
@@ -126,7 +128,7 @@
                                             answer</span></ng-template>
                                     <i *ngIf="isVetoed(p.connectionId, i)"
                                         class="bi bi-x-circle-fill text-danger ms-2"></i>
-                                </div>
+                                </button>
                             </td>
                         </tr>
                     </tbody>

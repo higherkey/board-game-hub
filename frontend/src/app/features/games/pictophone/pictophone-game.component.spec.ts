@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PictophoneGameComponent } from './pictophone-game.component';
 import { SignalRService } from '../../../services/signalr.service';
-import { of } from 'rxjs';
 
 describe('PictophoneGameComponent', () => {
     let component: PictophoneGameComponent;

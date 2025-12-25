@@ -27,7 +27,9 @@
         </div>
 
         <div class="alert alert-info border-0 bg-info bg-opacity-10 text-primary fw-bold fs-5">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            <output class="spinner-border spinner-border-sm me-2">
+                <span class="visually-hidden">Loading definitions...</span>
+            </output>
             Waiting for definitions... ({{ getSubmissionCount() }} / {{ getExpectedSubmissionCount() }})
         </div>
     </div>

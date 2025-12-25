@@ -16,7 +16,7 @@
     <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
         <div
             class="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-3 pb-20">
-            <div *ngFor="let item of icons" (click)="onIconClick(item)"
+            <button type="button" *ngFor="let item of icons" (click)="onIconClick(item)"
                 class="aspect-square relative flex items-center justify-center bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-750 transition-all duration-200 group border border-gray-700/50 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10">
 
                 <!-- Icon -->
@@ -25,13 +25,14 @@
 
                 <!-- Markers Container -->
                 <div class="absolute inset-0 p-1 flex flex-wrap content-start justify-end gap-1 pointer-events-none">
-                    <div *ngFor="let m of getMarkersForIcon(item.icon)" (click)="onMarkerClick($event, m)"
+                    <button type="button" *ngFor="let m of getMarkersForIcon(item.icon)"
+                        (click)="onMarkerClick($event, m)"
                         [class]="'w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-gray-900 text-white text-xs font-bold pointer-events-auto cursor-pointer transform hover:scale-125 transition-transform ' + (m.markerType === 'Main' ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400')"
                         [title]="m.markerType">
                         {{ m.markerType === 'Main' ? '?' : '!' }}
-                    </div>
+                    </button>
                 </div>
-            </div>
+            </button>
         </div>
     </div>
 </div>

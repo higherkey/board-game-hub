@@ -175,7 +175,7 @@ export class BabbleComponent implements OnChanges, OnDestroy {
       }
 
       const endTime = new Date(this.room.roundEndTime).getTime();
-      const now = new Date().getTime();
+      const now = Date.now();
       const diff = endTime - now;
 
       if (diff <= 0) {

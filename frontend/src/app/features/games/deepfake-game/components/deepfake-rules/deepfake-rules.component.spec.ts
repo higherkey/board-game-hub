@@ -19,4 +19,34 @@ describe('DeepfakeRulesComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy();
     });
+
+    it('should emit rulesClose when clicking the overlay', () => {
+        spyOn(component.rulesClose, 'emit');
+        const overlay = fixture.nativeElement.querySelector('.rules-overlay');
+        overlay.click();
+        expect(component.rulesClose.emit).toHaveBeenCalled();
+    });
+
+    it('should emit rulesClose when pressing Enter on the overlay', () => {
+        spyOn(component.rulesClose, 'emit');
+        const overlay = fixture.nativeElement.querySelector('.rules-overlay');
+        const event = new KeyboardEvent('keydown', { key: 'Enter' });
+        overlay.dispatchEvent(event);
+        expect(component.rulesClose.emit).toHaveBeenCalled();
+    });
+
+    it('should emit rulesClose when pressing Space on the overlay', () => {
+        spyOn(component.rulesClose, 'emit');
+        const overlay = fixture.nativeElement.querySelector('.rules-overlay');
+        const event = new KeyboardEvent('keydown', { key: 'Space' });
+        overlay.dispatchEvent(event);
+        expect(component.rulesClose.emit).toHaveBeenCalled();
+    });
+
+    it('should NOT emit rulesClose when clicking the card (event propagation should be stopped)', () => {
+        spyOn(component.rulesClose, 'emit');
+        const card = fixture.nativeElement.querySelector('.rules-card');
+        card.click();
+        expect(component.rulesClose.emit).not.toHaveBeenCalled();
+    });
 });
