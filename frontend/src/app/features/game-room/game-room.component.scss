@@ -90,3 +90,17 @@ dialog::backdrop {
     // Ensure we don't overflow the page, keep scroll internal if needed
     height: 100%;
 }
+
+.score-circle {
+    width: 28px;
+    height: 28px;
+    background-color: #6c757d; // Gray background
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}

@@ -19,8 +19,8 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
         </div>
       </div>
 
-      <!-- Grid Display -->
-      <div class="grid-stage">
+      <!-- Grid Display (Shared Screen Only) -->
+      <div class="grid-stage" *ngIf="isHost">
         <div class="babble-grid" [class]="'size-' + boardSize">
            <div class="letter-tile animate-pop" 
                 *ngFor="let char of gridChars; let i = index"
@@ -32,7 +32,10 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
       
       <!-- Host View -->
       <div *ngIf="isHost" class="controls-section host-dashboard">
-          <app-end-round-button (endRound)="handleEndRound()" *ngIf="isPlaying"></app-end-round-button>
+          <app-end-round-button (endRound)="handleEndRound()" *ngIf="isPlaying" [disabled]="isEnding"></app-end-round-button>
+          <div *ngIf="isEnding && isPlaying" class="mt-3 text-accent fw-bold">
+              <span class="spinner-border spinner-border-sm me-2"></span> Ending...
+          </div>
       </div>
 
       <!-- Player View -->
@@ -58,7 +61,7 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
       <!-- RESULTS VIEW (for both Host and Players when finished) -->
       <div *ngIf="isFinished" class="results-section fade-in">
           <div class="results-header">
-              <h3>Round Results</h3>
+              <h3>{{ isHost ? 'Round Results' : 'Your Results' }}</h3>
               <button class="btn-primary btn-next" (click)="handleNextRound()" *ngIf="isHost">
                   Start Next Round <i class="bi bi-arrow-right"></i>
               </button>
@@ -68,7 +71,7 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
           </div>
 
           <div class="results-list">
-              <div class="result-row" *ngFor="let res of lastRoundResults">
+              <div class="result-row" *ngFor="let res of displayResults">
                   <div class="word-col">
                       <span class="word-text" [class.strike]="!res.isOnGrid">
                           {{ res.word }}
@@ -78,7 +81,7 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
                       <span class="badge-tag bg-info" *ngIf="res.isDuplicate">Duplicate</span>
                   </div>
                   
-                  <div class="players-col">
+                  <div class="players-col" *ngIf="isHost">
                       <div class="player-mini-chip" *ngFor="let pid of res.foundBy">
                           {{ getPlayerName(pid) }}
                       </div>
@@ -89,7 +92,7 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
                   </div>
               </div>
               
-              <div *ngIf="lastRoundResults.length === 0" class="text-center text-secondary py-4">
+              <div *ngIf="displayResults.length === 0" class="text-center text-secondary py-4">
                   No words found this round!
               </div>
           </div>
@@ -115,9 +118,16 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     return this.room?.state === 'Finished';
   }
 
+  get displayResults(): any[] {
+    if (this.isHost) return this.lastRoundResults;
+    // For players, only show words they found
+    return this.lastRoundResults.filter(r => r.foundBy.includes(this.myConnectionId));
+  }
+
   // Timer Logic
   timerText: string = '--:--';
   isUrgent: boolean = false;
+  isEnding: boolean = false;
   private timerInterval: any;
 
   constructor(private readonly signalRService: SignalRService) { }
@@ -133,6 +143,10 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['room'] && this.room) {
+      if (this.isFinished) {
+        this.isEnding = false; // Reset ending flag when results arrive
+      }
+
       const data = this.room.gameData || this.room.gameState;
       const grid = data?.grid;
 
@@ -219,9 +233,13 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   }
 
   handleEndRound() {
+    if (this.isEnding) return;
     console.log('[Babble] Host triggered End Round');
     if (this.isHost && this.room) {
-      this.signalRService.endRound();
+      this.isEnding = true; // Show immediate feedback
+      this.signalRService.endRound().catch(() => {
+        this.isEnding = false;
+      });
     }
   }
 
