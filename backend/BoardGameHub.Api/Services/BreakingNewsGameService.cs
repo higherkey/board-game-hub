@@ -76,9 +76,9 @@ public class BreakingNewsGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not BreakingNewsState state) return;
+        if (room == null || room.GameData is not BreakingNewsState state) return Task.CompletedTask;
 
         try
         {
@@ -92,6 +92,7 @@ public class BreakingNewsGameService : IGameService
         {
             Console.WriteLine($"Error in BreakingNews CalculateScores: {ex.Message}");
         }
+        return Task.CompletedTask;
     }
 
     public Task<bool> UpdateSlot(Room room, int slotId, string value, string connectionId)

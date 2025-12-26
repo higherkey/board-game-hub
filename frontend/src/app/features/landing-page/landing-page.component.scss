@@ -3,7 +3,7 @@
 }
 
 .hero-title {
-    font-size: 5rem;
+    font-size: clamp(3.5rem, 12vw, 7rem);
     font-weight: 900;
     line-height: 0.9;
     letter-spacing: -0.03em;
@@ -25,10 +25,10 @@
         &::after {
             content: '';
             position: absolute;
-            bottom: 10px;
-            left: -10px;
+            bottom: clamp(6px, 1.5vw, 12px);
+            left: -5%;
             width: 110%;
-            height: 20px;
+            height: clamp(12px, 3vw, 24px);
             background: var(--accent);
             opacity: 0.3;
             z-index: -1;

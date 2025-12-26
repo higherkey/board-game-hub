@@ -53,9 +53,9 @@ public class ScatterbrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not ScatterbrainState state) return;
+        if (room == null || room.GameData is not ScatterbrainState state) return Task.CompletedTask;
 
         try
         {
@@ -132,6 +132,7 @@ public class ScatterbrainGameService : IGameService
             Console.WriteLine($"Error in Scatterbrain CalculateScores: {ex.Message}");
             throw;
         }
+        return Task.CompletedTask;
     }
 
     public Task<bool> HandleAction(Room room, GameAction action, string connectionId)

@@ -31,9 +31,9 @@ public class SushiTrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not SushiTrainState state) return;
+        if (room == null || room.GameData is not SushiTrainState state) return Task.CompletedTask;
 
         try
         {
@@ -70,6 +70,7 @@ public class SushiTrainGameService : IGameService
         {
              Console.WriteLine($"Error in SushiTrain CalculateScores: {ex.Message}");
         }
+        return Task.CompletedTask;
     }
 
     public bool SubmitSelection(Room room, string connectionId, string cardId)

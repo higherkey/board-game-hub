@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../services/signalr.service';
 
@@ -86,14 +86,10 @@ import { Room, SignalRService } from '../../../services/signalr.service';
     </div>
   `
 })
-export class WisecrackBoardComponent implements OnChanges {
+export class WisecrackBoardComponent {
   @Input() room!: Room;
 
-  constructor(private signalRService: SignalRService) { }
-
-  ngOnChanges(): void {
-    // React to changes
-  }
+  constructor(private readonly signalRService: SignalRService) { }
 
   get state(): any {
     return this.room.gameData;

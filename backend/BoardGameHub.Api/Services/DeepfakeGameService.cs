@@ -98,9 +98,9 @@ public class DeepfakeGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not DeepfakeState state) return;
+        if (room == null || room.GameData is not DeepfakeState state) return Task.CompletedTask;
 
         try
         {
@@ -137,6 +137,7 @@ public class DeepfakeGameService : IGameService
         {
             Console.WriteLine($"Error in Deepfake CalculateScores: {ex.Message}");
         }
+        return Task.CompletedTask;
     }
 
     private void AddPoints(Room room, string playerId, int points)

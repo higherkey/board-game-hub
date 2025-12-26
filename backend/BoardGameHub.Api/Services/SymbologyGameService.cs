@@ -62,9 +62,9 @@ public class SymbologyGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not SymbologyState state) return;
+        if (room == null || room.GameData is not SymbologyState state) return Task.CompletedTask;
 
         try
         {
@@ -89,6 +89,7 @@ public class SymbologyGameService : IGameService
         {
             Console.WriteLine($"Error in Symbology CalculateScores: {ex.Message}");
         }
+        return Task.CompletedTask;
     }
 
     public Task<bool> PlaceMarker(Room room, string playerId, string icon, string markerType, string color)

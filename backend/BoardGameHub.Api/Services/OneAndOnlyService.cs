@@ -20,23 +20,23 @@ public class OneAndOnlyService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is OneAndOnlyState state)
-        {
-            try
-            {
-                // Ensure RoundScores is initialized for all players (Reset to 0)
-                if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
-                foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+        if (room == null || room.GameData is not OneAndOnlyState state) return Task.CompletedTask;
 
-                // One and Only implemention of scoring is currently minimal for cooperative rounds.
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in OneAndOnly CalculateScores: {ex.Message}");
-            }
+        try
+        {
+            // Ensure RoundScores is initialized for all players (Reset to 0)
+            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
+            foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
+
+            // One and Only implemention of scoring is currently minimal for cooperative rounds.
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in OneAndOnly CalculateScores: {ex.Message}");
+        }
+        return Task.CompletedTask;
     }
 
     // Additional methods specific to One & Only that will be called by GameHub/RoomService (genericized or casted)
@@ -140,30 +140,30 @@ public class OneAndOnlyService : IGameService
         return words[new Random().Next(words.Length)];
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
-        if (room == null || action == null) return false;
+        if (room == null || action == null) return Task.FromResult(false);
 
         if (action.Type == "SUBMIT_CLUE" && action.Payload.HasValue)
         {
             if (action.Payload.Value.TryGetProperty("clue", out var prop))
             {
                 SubmitClue(room, connectionId, prop.GetString() ?? "");
-                return true;
+                return Task.FromResult(true);
             }
         }
         else if (action.Type == "SUBMIT_GUESS" && action.Payload.HasValue)
         {
-             if (action.Payload.Value.TryGetProperty("guess", out var prop))
+            if (action.Payload.Value.TryGetProperty("guess", out var prop))
             {
-                if (room.GameData is OneAndOnlyState state && state.GuesserId != connectionId) return false;
+                if (room.GameData is OneAndOnlyState state && state.GuesserId != connectionId) return Task.FromResult(false);
                 
                 bool isPass = action.Payload.Value.TryGetProperty("isPass", out var passProp) && passProp.GetBoolean();
                 SubmitGuess(room, prop.GetString(), isPass);
-                return true;
+                return Task.FromResult(true);
             }
         }
-        return false;
+        return Task.FromResult(false);
     }
 
     public async Task EndRound(Room room)

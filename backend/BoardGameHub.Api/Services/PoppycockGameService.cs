@@ -30,9 +30,9 @@ public class PoppycockGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not PoppycockState state) return;
+        if (room == null || room.GameData is not PoppycockState state) return Task.CompletedTask;
 
         try
         {
@@ -80,6 +80,7 @@ public class PoppycockGameService : IGameService
             Console.WriteLine($"Error in Poppycock CalculateScores: {ex.Message}");
             throw;
         }
+        return Task.CompletedTask;
     }
 
     private void AddPoints(Room room, string playerId, int points)

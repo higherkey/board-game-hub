@@ -52,9 +52,9 @@ public class WisecrackGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not WisecrackState state) return;
+        if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
 
         try
         {
@@ -72,6 +72,7 @@ public class WisecrackGameService : IGameService
         {
             Console.WriteLine($"Error in Wisecrack CalculateScores: {ex.Message}");
         }
+        return Task.CompletedTask;
     }
 
     public Task SubmitAnswer(Room room, string playerId, string promptId, string answerText)

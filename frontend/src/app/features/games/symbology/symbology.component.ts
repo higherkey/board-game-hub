@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Room, SignalRService } from '../../../services/signalr.service';
@@ -12,7 +12,7 @@ import { IconBoardComponent } from './icon-board/icon-board.component';
     templateUrl: './symbology.component.html',
     styleUrls: ['./symbology.component.scss']
 })
-export class SymbologyComponent implements OnChanges {
+export class SymbologyComponent {
     @Input() room!: Room;
 
     guess: string = '';
@@ -29,13 +29,9 @@ export class SymbologyComponent implements OnChanges {
     // but if we want round scores we look at room.roundScores.
 
     constructor(
-        private signalR: SignalRService,
-        private auth: AuthService
+        private readonly signalR: SignalRService,
+        private readonly auth: AuthService
     ) { }
-
-    ngOnChanges(changes: SimpleChanges): void {
-        // React to changes
-    }
 
     submitGuess() {
         if (!this.guess.trim()) return;

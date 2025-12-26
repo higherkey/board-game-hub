@@ -34,9 +34,9 @@ public class PictophoneService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task CalculateScores(Room room)
+    public Task CalculateScores(Room room)
     {
-        if (room == null || room.GameData is not PictophoneState state) return;
+        if (room == null || room.GameData is not PictophoneState state) return Task.CompletedTask;
 
         try
         {
@@ -51,6 +51,7 @@ public class PictophoneService : IGameService
         {
             Console.WriteLine($"Error in Pictophone CalculateScores: {ex.Message}");
         }
+        return Task.CompletedTask;
     }
 
     public Task SubmitPage(Room room, string playerId, string content)
