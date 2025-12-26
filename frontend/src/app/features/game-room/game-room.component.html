@@ -5,7 +5,7 @@
         class="game-room-header px-4 py-2 mb-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
             <button class="btn btn-outline-light btn-sm" (click)="leaveRoom()">
-                <i class="bi bi-box-arrow-left"></i> Leave
+                <i class="bi bi-box-arrow-left"></i> QUIT ROOM
             </button>
 
             <!-- Video Chat Toggle -->
@@ -14,7 +14,8 @@
                 <i class="bi bi-camera-video"></i> Join Video
             </button>
 
-            <button class="btn btn-warning btn-sm" *ngIf="gameStarted$ | async" (click)="requestUndo()"
+            <button class="btn btn-warning btn-sm"
+                *ngIf="(gameStarted$ | async) && (currentRoom$ | async)?.gameType !== 'Babble'" (click)="requestUndo()"
                 title="Request Undo">
                 <i class="bi bi-arrow-counterclockwise"></i>
             </button> <!-- Warning preserved for Undo as it's an "alert" action -->

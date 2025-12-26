@@ -31,10 +31,22 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
       </div>
       
       <!-- Host View -->
-      <div *ngIf="isHost" class="controls-section host-dashboard">
-          <app-end-round-button (endRound)="handleEndRound()" *ngIf="isPlaying" [disabled]="isEnding"></app-end-round-button>
-          <div *ngIf="isEnding && isPlaying" class="mt-3 text-accent fw-bold">
-              <span class="spinner-border spinner-border-sm me-2"></span> Ending...
+      <div *ngIf="isHost && isPlaying" class="controls-section host-dashboard">
+          <div class="d-flex flex-column align-items-center gap-3">
+              <app-end-round-button (endRound)="handleEndRound()" [disabled]="isEnding"></app-end-round-button>
+              
+              <div class="d-flex gap-2">
+                  <button *ngIf="!isPaused" class="btn btn-outline-warning" (click)="handlePause()">
+                      <i class="bi bi-pause-fill me-1"></i> Pause Timer
+                  </button>
+                  <button *ngIf="isPaused" class="btn btn-warning" (click)="handleResume()">
+                      <i class="bi bi-play-fill me-1"></i> Resume Timer
+                  </button>
+              </div>
+
+              <div *ngIf="isEnding" class="text-accent fw-bold animate-pulse">
+                  <span class="spinner-border spinner-border-sm me-2"></span> Ending...
+              </div>
           </div>
       </div>
 
@@ -43,8 +55,8 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
           <!-- Input -->
           <div class="word-input-wrapper mb-4">
               <input id="babbleWord" [(ngModel)]="currentWord" (keyup.enter)="submitWord()" 
-                     placeholder="Type word..." [disabled]="!isPlaying" />
-              <button class="btn-submit" (click)="submitWord()" [disabled]="!isPlaying">
+                     placeholder="Type word..." [disabled]="!isPlaying || isPaused" />
+              <button class="btn-submit" (click)="submitWord()" [disabled]="!isPlaying || isPaused">
                  <i class="bi bi-plus-lg"></i>
               </button>
           </div>
@@ -73,12 +85,11 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
           <div class="results-list">
               <div class="result-row" *ngFor="let res of displayResults">
                   <div class="word-col">
-                      <span class="word-text" [class.strike]="!res.isOnGrid">
+                      <span class="word-text" [class.strike]="!res.isOnGrid || res.isDuplicate" [class.text-muted]="res.isDuplicate">
                           {{ res.word }}
                       </span>
                       <span class="badge-tag bg-warning text-dark" *ngIf="!res.isOnGrid">Not on Grid</span>
                       <span class="badge-tag bg-danger" *ngIf="!res.isInDictionary">Unknown Word</span>
-                      <span class="badge-tag bg-info" *ngIf="res.isDuplicate">Duplicate</span>
                   </div>
                   
                   <div class="players-col" *ngIf="isHost">
@@ -118,6 +129,10 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     return this.room?.state === 'Finished';
   }
 
+  get isPaused(): boolean {
+    return this.room?.isPaused || false;
+  }
+
   get displayResults(): any[] {
     if (this.isHost) return this.lastRoundResults;
     // For players, only show words they found
@@ -143,35 +158,34 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['room'] && this.room) {
-      if (this.isFinished) {
-        this.isEnding = false; // Reset ending flag when results arrive
-      }
+      this.updateStateFromRoom();
+    }
+  }
 
-      const data = this.room.gameData || this.room.gameState;
-      const grid = data?.grid;
+  private updateStateFromRoom() {
+    if (this.isFinished) {
+      this.isEnding = false;
+    }
 
-      // Update Results
-      if (data?.lastRoundResults) {
-        this.lastRoundResults = data.lastRoundResults;
-      }
+    const data = this.room?.gameData || this.room?.gameState;
+    if (data?.lastRoundResults) {
+      this.lastRoundResults = data.lastRoundResults;
+    }
 
-      if (grid) {
-        const oldGrid = this.gridChars.join('');
-        const newGrid = typeof grid === 'string' ? grid : grid.join('');
+    if (data?.grid) {
+      this.processGridUpdate(data.grid);
+    }
 
-        if (oldGrid !== newGrid) {
-          this.gridChars = newGrid.split('');
-          this.boardSize = Math.sqrt(this.gridChars.length);
-          this.foundWords = []; // Reset on new word set
-          this.lastRoundResults = [];
-        }
-      }
+    this.isPlaying ? this.startTimer() : this.stopTimer();
+  }
 
-      if (this.isPlaying) {
-        this.startTimer();
-      } else {
-        this.stopTimer();
-      }
+  private processGridUpdate(grid: any) {
+    const newGrid = typeof grid === 'string' ? grid : grid.join('');
+    if (this.gridChars.join('') !== newGrid) {
+      this.gridChars = newGrid.split('');
+      this.boardSize = Math.sqrt(this.gridChars.length);
+      this.foundWords = [];
+      this.lastRoundResults = [];
     }
   }
 
@@ -188,19 +202,18 @@ export class BabbleComponent implements OnChanges, OnDestroy {
         return;
       }
 
+      if (this.isPaused) {
+        this.timerText = 'PAUSED';
+        this.isUrgent = false;
+        return;
+      }
+
       const endTime = new Date(this.room.roundEndTime).getTime();
       const now = Date.now();
       const diff = endTime - now;
 
       if (diff <= 0) {
-        this.timerText = '00:00';
-        this.isUrgent = true;
-        this.stopTimer();
-
-        // Host triggers end round automatically when time is up
-        if (this.isHost && this.isPlaying) {
-          this.handleEndRound();
-        }
+        this.handleTimerEnd();
         return;
       }
 
@@ -213,6 +226,15 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     }, 500);
   }
 
+  private handleTimerEnd() {
+    this.timerText = '00:00';
+    this.isUrgent = true;
+    this.stopTimer();
+    if (this.isHost && this.isPlaying) {
+      this.handleEndRound();
+    }
+  }
+
   private stopTimer() {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
@@ -221,7 +243,7 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   }
 
   submitWord() {
-    if (!this.currentWord) return;
+    if (!this.currentWord || this.isPaused) return;
     const word = this.currentWord.trim().toUpperCase();
     if (word.length < 3) return;
 
@@ -236,7 +258,7 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     if (this.isEnding) return;
     console.log('[Babble] Host triggered End Round');
     if (this.isHost && this.room) {
-      this.isEnding = true; // Show immediate feedback
+      this.isEnding = true;
       this.signalRService.endRound().catch(() => {
         this.isEnding = false;
       });
@@ -247,6 +269,18 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     console.log('[Babble] Host triggered Next Round');
     if (this.isHost && this.room) {
       this.signalRService.nextRound();
+    }
+  }
+
+  handlePause() {
+    if (this.isHost) {
+      this.signalRService.pauseGame();
+    }
+  }
+
+  handleResume() {
+    if (this.isHost) {
+      this.signalRService.resumeGame();
     }
   }
 

@@ -89,6 +89,11 @@ export class SignalRService {
 
     this.hubConnection.on('PlayerJoined', (players: Player[]) => {
       this.players$.next(players);
+      const current = this.currentRoomSubject.value;
+      if (current) {
+        current.players = players;
+        this.currentRoomSubject.next({ ...current });
+      }
     });
 
     this.hubConnection.on('GameStarted', (room: Room) => {
@@ -372,22 +377,25 @@ export class SignalRService {
     // Save to active rooms
     this.saveActiveRoom(roomCode, gameType);
 
-    // Initialize currentRoomSubject with the room code so startGame can use it
-    this.currentRoomSubject.next({
-      code: roomCode,
-      players: [],
-      state: 'Lobby',
-      settings: { timerDurationSeconds: 60, letterMode: 0 },
-      gameType: gameType,
-      gameState: null,
-      gameData: null,
-      roundNumber: 0,
-      isPaused: false,
-      roundScores: {},
-      nextGameVotes: {},
-      currentVote: null,
-      undoSettings: { allowVoting: true, hostOnly: false }
-    });
+    // Initialize currentRoomSubject only if not already set by an event
+    const current = this.currentRoomSubject.value;
+    if (!current || current.code !== roomCode) {
+      this.currentRoomSubject.next({
+        code: roomCode,
+        players: [],
+        state: 'Lobby',
+        settings: { timerDurationSeconds: 60, letterMode: 0 },
+        gameType: gameType,
+        gameState: null,
+        gameData: null,
+        roundNumber: 0,
+        isPaused: false,
+        roundScores: {},
+        nextGameVotes: {},
+        currentVote: null,
+        undoSettings: { allowVoting: true, hostOnly: false }
+      });
+    }
     return roomCode;
   }
 
