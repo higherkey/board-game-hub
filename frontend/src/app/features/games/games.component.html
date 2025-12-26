@@ -1,27 +1,140 @@
-<div class="container pb-4">
-    <app-page-header title="All Games" subtitle="Browse our collection of available board games.">
-    </app-page-header>
+<div class="container pb-4 pt-4">
+    <div class="row g-4">
+        <!-- Sidebar Filters -->
+        <aside class="col-lg-3">
+            <div class="filter-card bg-surface shadow-sm p-4 sticky-top">
+                <h3 class="h5 fw-bold mb-4 text-primary d-flex align-items-center gap-2">
+                    <i class="bi bi-filter-right"></i> Refine Games
+                </h3>
 
-    <!-- Games Grid -->
-    <div class="games-grid">
-        <div *ngFor="let game of games">
-            <div class="card h-100 bg-surface shadow-sm hover-card d-flex flex-column text-center p-2"
-                [class.border-accent]="game.status === 'Deployed'" [class.opacity-75]="game.status !== 'Deployed'">
+                <!-- Search -->
+                <div class="search-box mb-4">
+                    <label for="gameSearchInput" class="filter-label">Search Games</label>
+                    <div class="input-group">
+                        <span class="input-group-text border-0 bg-light"><i class="bi bi-search"></i></span>
+                        <input id="gameSearchInput" type="text" class="form-control border-0 bg-light"
+                            placeholder="Find a game..." [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()">
+                    </div>
+                </div>
 
-                <div class="mb-3 display-6 text-primary" aria-hidden="true">{{game.icon}}</div>
-                <h4 class="card-title text-primary mb-2">{{game.name}}</h4>
-                <p class="card-text text-secondary small mb-4 flex-grow-1">{{game.description}}</p>
+                <!-- Sort -->
+                <div class="filter-group mb-4">
+                    <label for="sortOrderSelect" class="filter-label">Sort Order</label>
+                    <select id="sortOrderSelect" class="form-select border-0 bg-light" [(ngModel)]="sortBy"
+                        (change)="applyFilters()">
+                        <option value="status">Status</option>
+                        <option value="name">Name (A-Z)</option>
+                        <option value="complexity">Complexity</option>
+                        <option value="time">Play Time</option>
+                    </select>
+                </div>
 
-                <div class="mt-auto">
-                    <button *ngIf="game.status === 'Deployed'" class="btn btn-primary w-100 py-2 fw-bold shadow-sm"
-                        style="font-size: 0.8rem; letter-spacing: 0.02em;" [routerLink]="['/create-room']"
-                        [queryParams]="{gameType: game.id}">
-                        CREATE ROOM
+                <!-- Players -->
+                <div class="filter-group mb-4">
+                    <label for="playerCountSelect" class="filter-label">Players</label>
+                    <select id="playerCountSelect" class="form-select border-0 bg-light" [(ngModel)]="playerCount"
+                        (change)="applyFilters()">
+                        <option [ngValue]="null">Any count</option>
+                        <option [ngValue]="2">2 Players</option>
+                        <option [ngValue]="3">3 Players</option>
+                        <option [ngValue]="4">4 Players</option>
+                        <option [ngValue]="5">5+ Players</option>
+                    </select>
+                </div>
+
+                <!-- Tags -->
+                <div class="filter-group">
+                    <label class="filter-label">Mechanics & Tags</label>
+                    <div class="tag-cloud">
+                        <button *ngFor="let tag of allTags" class="btn-tag" [class.active]="selectedTag === tag"
+                            (click)="setTag(tag)">
+                            {{ tag }}
+                        </button>
+                    </div>
+                    <button *ngIf="selectedTag" class="btn btn-link btn-sm text-decoration-none p-0 mt-2"
+                        (click)="selectedTag = ''; applyFilters()">
+                        Clear tag
                     </button>
-                    <span *ngIf="game.status !== 'Deployed'" class="badge bg-secondary w-100 py-2">{{ game.status
-                        }}</span>
                 </div>
             </div>
-        </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h1 class="display-5 fw-bold text-primary mb-1">Games Gallery</h1>
+                    <p class="text-secondary mb-0">Browse and play our collection of {{ games.length }} games.</p>
+                </div>
+                <div class="text-muted small">
+                    Showing {{ filteredGames.length }} games
+                </div>
+            </div>
+
+            <!-- Games Grid -->
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                <div class="col" *ngFor="let game of filteredGames">
+                    <div class="card h-100 game-card glass-card shadow-sm" [class.deployed]="game.status === 'Deployed'"
+                        [class.testing]="game.status === 'Testing'" [class.backlog]="game.status === 'Backlog'">
+
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="game-icon-bg shadow-sm">{{ game.icon }}</div>
+                                <span *ngIf="game.status !== 'Deployed'" class="badge status-pill"
+                                    [attr.data-status]="game.status">
+                                    {{ game.status === 'Testing' ? 'In Testing' : game.status }}
+                                </span>
+                            </div>
+
+                            <h4 class="fw-bold mb-2 text-primary">{{ game.name }}</h4>
+                            <p class="text-secondary small mb-4 flex-grow-1">{{ game.description }}</p>
+
+                            <!-- Metadata -->
+                            <div class="game-meta d-flex justify-content-between pt-3 border-top mt-auto">
+                                <div class="meta-item" title="Players">
+                                    <i class="bi bi-people-fill text-accent"></i>
+                                    <span>{{ game.minPlayers }}{{ game.maxPlayers > game.minPlayers ? '-' +
+                                        game.maxPlayers : '' }}</span>
+                                </div>
+                                <div class="meta-item" title="Duration">
+                                    <i class="bi bi-clock-fill text-accent"></i>
+                                    <span>{{ game.averagePlayTime }}m</span>
+                                </div>
+                                <div class="meta-item" title="Complexity">
+                                    <i class="bi bi-bar-chart-fill text-accent"></i>
+                                    <span>{{ game.complexity }}/5</span>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="mt-auto">
+                                <button *ngIf="game.status === 'Deployed' || game.status === 'Testing'"
+                                    class="btn btn-primary w-100 py-2 fw-bold shadow-sm"
+                                    style="font-size: 0.8rem; letter-spacing: 0.02em;" [routerLink]="['/game/create']"
+                                    [queryParams]="{gameType: game.id}">
+                                    CREATE ROOM
+                                </button>
+                                <span *ngIf="game.status === 'Testing'"
+                                    class="badge bg-info text-dark w-100 py-2 mt-2">In Testing</span>
+                                <span *ngIf="game.status === 'Backlog'" class="badge bg-secondary w-100 py-2">{{
+                                    game.status
+                                    }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="filteredGames.length === 0" class="empty-state text-center py-5">
+                <div class="display-1 mb-3">👻</div>
+                <h3 class="fw-bold">No games found</h3>
+                <p class="text-secondary">We couldn't find any games matching your current filters.</p>
+                <button class="btn btn-primary mt-3"
+                    (click)="searchQuery=''; selectedTag=''; playerCount=null; applyFilters()">
+                    Reset All Filters
+                </button>
+            </div>
+        </main>
     </div>
 </div>

@@ -99,6 +99,14 @@ export class AdminService {
         return this.http.post<void>(`${this.baseUrl}/rooms/${code}/settings`, { timerDurationSeconds });
     }
 
+    getGames(): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/games`);
+    }
+
+    updateGame(id: string, game: any): Observable<any> {
+        return this.http.put<any>(`${this.baseUrl}/games/${id}`, game);
+    }
+
     sendGlobalMessage(message: string): Observable<void> {
         return this.http.post<void>(`${this.baseUrl}/rooms/message`, { message, target: 'global' });
     }

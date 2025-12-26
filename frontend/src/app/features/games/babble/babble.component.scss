@@ -2,7 +2,7 @@
     --babble-primary: #6366f1;
     --babble-secondary: #a855f7;
     --babble-accent: #f43f5e;
-    --babble-bg: rgba(23, 23, 23, 0.8);
+    --babble-bg: rgba(23, 23, 23, 0.5);
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
     --text-dim: #94a3b8;
@@ -24,6 +24,33 @@
     flex-direction: column;
     gap: 2rem;
     animation: fadeIn 0.5s ease-out;
+    position: relative; // For absolute positioning of children
+    transition: all 0.5s ease-in-out;
+
+    &.showing-results {
+        justify-content: center;
+
+        .grid-stage {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            transform: scale(0.5);
+            transform-origin: top right;
+            margin: 0;
+            z-index: 10;
+        }
+
+        .babble-header {
+            margin-bottom: 0; // Reduce spacing when grid moves
+        }
+
+        .results-section {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            z-index: 5;
+        }
+    }
 }
 
 .babble-header {
@@ -85,6 +112,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); // Bouncy transition
 }
 
 .babble-grid {

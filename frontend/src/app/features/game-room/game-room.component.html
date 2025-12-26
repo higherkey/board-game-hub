@@ -20,7 +20,8 @@
             </button> <!-- Warning preserved for Undo as it's an "alert" action -->
 
             <div class="d-flex flex-column ms-2">
-                <span class="badge bg-white text-primary fs-6 shadow-sm">Room: {{ roomCode }}</span>
+                <span class="badge bg-white text-primary fs-6 shadow-sm" *ngIf="roomCode && roomCode !== 'create'">Room:
+                    {{ roomCode }}</span>
             </div>
 
             <span class="text-white-50 small ms-2 d-flex align-items-center gap-1"
@@ -66,32 +67,9 @@
                         *ngFor="let p of players$ | async">
                         <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 80%;"
                             title="{{p.name}}">
-
-                            <!-- Inline Rename Input -->
-                            <ng-container
-                                *ngIf="isRenaming && p.connectionId === getMyConnectionId((players$ | async)); else nameDisplay">
-                                <div class="input-group input-group-sm">
-                                    <input type="text" class="form-control" [(ngModel)]="newPlayerName"
-                                        (keyup.enter)="submitRename()" (keyup.escape)="cancelRename()" autofocus>
-                                    <button class="btn btn-success btn-sm" (click)="submitRename()" title="Save">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                    <button class="btn btn-secondary btn-sm" (click)="cancelRename()" title="Cancel">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                </div>
-                            </ng-container>
-
-                            <ng-template #nameDisplay>
-                                <span class="text-truncate fw-bold text-primary" style="max-width: 100px;">{{ p.name
-                                    }}</span>
-                                <i *ngIf="p.isHost" class="bi bi-star-fill text-warning ms-1" title="Host"></i>
-                                <button class="btn btn-icon p-0 text-muted ms-1" style="font-size: 0.8rem;"
-                                    *ngIf="p.connectionId === getMyConnectionId((players$ | async))"
-                                    (click)="startRename()" title="Rename">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-                            </ng-template>
+                            <span class="text-truncate fw-bold text-primary" style="max-width: 100px;">{{ p.name
+                                }}</span>
+                            <i *ngIf="p.isHost" class="bi bi-star-fill text-warning ms-1" title="Host"></i>
                         </div>
                         <span class="badge bg-secondary text-white rounded-pill">{{ p.score || 0 }}</span>
                     </li>
@@ -108,8 +86,55 @@
             <div class="main-stage flex-grow-1 bg-surface-2 rounded-3 shadow-inner p-3 h-100">
                 <div class="h-100 d-flex flex-column">
 
+                    <!-- ENTRY STAGE (Name / Room Creation) -->
+                    <div *ngIf="needsName"
+                        class="h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                        <div class="card shadow-lg border-primary p-4 p-md-5 w-100" style="max-width: 600px;">
+                            <h2 class="display-6 mb-4 fw-bold text-primary">{{ isCreating ? 'Host a New Game' : 'Ready
+                                to Join?' }}</h2>
+
+                            <div class="mb-4 text-start">
+                                <label for="playerNameInput" class="form-label fw-bold text-secondary">Your Display
+                                    Name</label>
+                                <input id="playerNameInput" type="text" class="form-control form-control-lg fw-bold"
+                                    [(ngModel)]="promptPlayerName" (keyup.enter)="submitEntry()"
+                                    placeholder="e.g. Captain Awesome" autofocus>
+                                <p class="text-muted small mt-1">This is how other players will see you.</p>
+                            </div>
+
+                            <ng-container *ngIf="isCreating">
+                                <div class="mb-4 text-start">
+                                    <label for="gameTypeSelect" class="form-label fw-bold text-secondary">Initial Game
+                                        (Optional)</label>
+                                    <select id="gameTypeSelect" class="form-select form-select-lg"
+                                        [(ngModel)]="selectedGameType">
+                                        <option value="None">Decide Later (Lobby)</option>
+                                        <option *ngFor="let game of availableGames" [value]="game.id">{{ game.name }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-4 text-start">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="publicSwitch"
+                                            [(ngModel)]="isPublic" [attr.aria-checked]="isPublic">
+                                        <label class="form-check-label fw-bold text-secondary" for="publicSwitch">
+                                            {{ isPublic ? 'Public Room' : 'Private Room' }}
+                                        </label>
+                                    </div>
+                                    <p class="text-muted small">Public rooms appear on the discovery page.</p>
+                                </div>
+                            </ng-container>
+
+                            <button type="button" class="btn btn-primary w-100 py-3 fw-bold fs-5 shadow-sm"
+                                (click)="submitEntry()" [disabled]="!promptPlayerName">
+                                {{ isCreating ? 'CREATE ROOM' : 'ENTER GAME ROOM' }}
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- LOBBY STATE -->
-                    <div *ngIf="!(gameStarted$ | async)"
+                    <div *ngIf="!needsName && !(gameStarted$ | async)"
                         class="h-100 d-flex flex-column align-items-center justify-content-center text-center">
                         <div class="w-100" style="max-width: 1000px;">
                             <h2 class="display-6 mb-4 fw-bold text-primary">Waiting for Game</h2>
@@ -126,8 +151,10 @@
 
                             <ng-template #playerWaiting>
                                 <div class="alert alert-surface border-accent shadow-sm py-5">
-                                    <h4 class="alert-heading text-accent mb-3"><i
-                                            class="bi bi-hourglass-split fs-1"></i></h4>
+                                    <h4 class="alert-heading text-accent mb-3">
+                                        <i class="bi bi-hourglass-split fs-1" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Waiting</span>
+                                    </h4>
                                     <h5 class="text-primary fw-bold">Host is setting up</h5>
                                     <p class="mb-0 text-secondary">Sit tight! The game will start soon.</p>
                                 </div>
@@ -136,7 +163,7 @@
                     </div>
 
                     <!-- ACTIVE GAME STATE -->
-                    <div *ngIf="gameStarted$ | async" class="h-100 w-100 fade-in">
+                    <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in">
 
 
                         <ng-container *ngIf="gameComponent">
@@ -174,8 +201,8 @@
 
 
     <!-- 3. MOBILE TAB BAR (Small Screens Only) -->
-    <div
-        class="d-md-none mt-auto mobile-tab-bar bg-primary text-white d-flex justify-content-around py-2 flex-shrink-0 shadow-lg">
+    <div class="d-md-none mt-auto mobile-tab-bar bg-primary text-white d-flex justify-content-around py-2 flex-shrink-0 shadow-lg"
+        *ngIf="!needsName">
         <button class="btn btn-link text-white-50 text-decoration-none d-flex flex-column align-items-center"
             [class.text-white]="mobileView === 'game'" (click)="setMobileView('game')">
             <i class="bi bi-controller fs-4"></i>
@@ -208,29 +235,6 @@
                 <button type="button" class="btn btn-ghost text-secondary" (click)="cancelUndo()">Cancel</button>
                 <button type="button" class="btn btn-warning px-4 text-dark fw-bold" (click)="confirmUndo()">
                     Yes, Request Undo
-                </button>
-            </div>
-        </div>
-    </div>
-</dialog>
-
-<!-- Guest Name Prompt Modal -->
-<dialog #namePromptDialog class="border-0 p-0 bg-transparent rounded-3" [open]="showNamePrompt">
-    <div class="modal-dialog modal-dialog-centered m-0">
-        <div class="modal-content bg-surface shadow-lg border-primary">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title text-primary fw-bold">Ready to Join?</h5>
-            </div>
-            <div class="modal-body py-4">
-                <p class="text-secondary mb-3">Please enter a display name to join this game room.</p>
-                <input type="text" class="form-control form-control-lg text-center fw-bold"
-                    [(ngModel)]="promptPlayerName" (keyup.enter)="submitGuestName()" placeholder="e.g. Captain Awesome"
-                    autofocus>
-            </div>
-            <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-primary w-100 py-3" (click)="submitGuestName()"
-                    [disabled]="!promptPlayerName">
-                    Enter Game Room
                 </button>
             </div>
         </div>

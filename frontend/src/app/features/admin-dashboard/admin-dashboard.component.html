@@ -7,118 +7,250 @@
         </div>
     </div>
 
-    <!-- Metrics -->
-    <div class="row mb-4" *ngIf="stats$ | async as stats">
-        <div class="col-md-4">
-            <div class="card p-3">
-                <div class="text-secondary text-uppercase small fw-bold">Rooms</div>
-                <div class="fs-2 fw-bold">{{ stats.activeRooms }}</div>
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button class="nav-link" [class.active]="activeTab === 'rooms'" (click)="setTab('rooms')">Room
+                Management</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" [class.active]="activeTab === 'games'" (click)="setTab('games')">Game
+                Management</button>
+        </li>
+    </ul>
+
+    <div *ngIf="activeTab === 'rooms'">
+        <!-- Metrics -->
+        <div class="row mb-4" *ngIf="stats$ | async as stats">
+            <div class="col-md-4">
+                <div class="card p-3">
+                    <div class="text-secondary text-uppercase small fw-bold">Rooms</div>
+                    <div class="fs-2 fw-bold">{{ stats.activeRooms }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3">
+                    <div class="text-secondary text-uppercase small fw-bold">Players</div>
+                    <div class="fs-2 fw-bold">{{ stats.totalOnlinePlayers }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3">
+                    <div class="text-secondary text-uppercase small fw-bold">Uptime</div>
+                    <div class="fs-2 fw-bold">{{ stats.uptime.split('.')[0] }}</div>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card p-3">
-                <div class="text-secondary text-uppercase small fw-bold">Players</div>
-                <div class="fs-2 fw-bold">{{ stats.totalOnlinePlayers }}</div>
+
+        <!-- Active Rooms Card -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Active Rooms</h5>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card p-3">
-                <div class="text-secondary text-uppercase small fw-bold">Uptime</div>
-                <div class="fs-2 fw-bold">{{ stats.uptime.split('.')[0] }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Game</th>
+                                <th>Host</th>
+                                <th>Players</th>
+                                <th>State</th>
+                                <th style="width: 280px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ng-container *ngIf="stats$ | async as stats">
+                                <tr *ngIf="stats.rooms.length === 0">
+                                    <td colspan="6" class="text-center py-4 text-muted">No active rooms found.</td>
+                                </tr>
+
+                                <ng-container *ngFor="let room of stats.rooms">
+                                    <tr>
+                                        <td><code>{{ room.code }}</code></td>
+                                        <td>
+                                            <span class="badge" [class.bg-primary]="room.gameType === 'Scatterbrain'"
+                                                [class.bg-warning]="room.gameType === 'Babble'"
+                                                [class.text-dark]="room.gameType === 'Babble'">
+                                                {{ room.gameType }}
+                                            </span>
+                                        </td>
+                                        <td>{{ room.hostName }}</td>
+                                        <td>{{ room.playerCount }}</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">{{ room.globalState }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button *ngIf="room.globalState === 'Lobby'" class="btn btn-success"
+                                                    (click)="startGame(room.code)">Start</button>
+                                                <button class="btn btn-outline-secondary"
+                                                    (click)="openSettings(room)">Settings</button>
+                                                <button class="btn btn-outline-danger"
+                                                    (click)="terminateRoom(room.code)">End</button>
+                                                <button class="btn btn-light border" (click)="toggleDetails(room.code)">
+                                                    Details {{ expandedRows.has(room.code) ? '▲' : '▼' }}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Expanded Details Row -->
+                                    <tr *ngIf="expandedRows.has(room.code)" class="bg-light">
+                                        <td colspan="6" class="p-3">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <h6 class="fw-bold text-secondary">Game Info</h6>
+                                                    <ul class="list-unstyled small">
+                                                        <li><strong>Round:</strong> {{ room.roundNumber }}</li>
+                                                        <li><strong>Timer:</strong> {{ room.settingsTimer }}s</li>
+                                                        <li><strong>Access:</strong> {{ room.isPublic ? 'Public' :
+                                                            'Private'
+                                                            }}</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <h6 class="fw-bold text-secondary">Players ({{ room.players.length
+                                                        }})
+                                                    </h6>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <div *ngFor="let p of room.players"
+                                                            class="badge bg-white text-dark border p-2 d-flex align-items-center gap-2">
+                                                            <span *ngIf="p.isHost" title="Host">👑</span>
+                                                            {{ p.name }}
+                                                            <span class="badge bg-light text-secondary border">{{
+                                                                p.score
+                                                                }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </ng-container>
+                            </ng-container>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Active Rooms Card -->
+<!-- Game Management Tab -->
+<div *ngIf="activeTab === 'games'">
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-bold">Active Rooms</h5>
+            <h5 class="mb-0 fw-bold">Installed Games</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Code</th>
                             <th>Game</th>
-                            <th>Host</th>
+                            <th>Status</th>
                             <th>Players</th>
-                            <th>State</th>
-                            <th style="width: 280px;">Actions</th>
+                            <th>Complexity</th>
+                            <th>Time</th>
+                            <th style="width: 150px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <ng-container *ngIf="stats$ | async as stats">
-                            <tr *ngIf="stats.rooms.length === 0">
-                                <td colspan="6" class="text-center py-4 text-muted">No active rooms found.</td>
-                            </tr>
-
-                            <ng-container *ngFor="let room of stats.rooms">
-                                <tr>
-                                    <td><code>{{ room.code }}</code></td>
-                                    <td>
-                                        <span class="badge" [class.bg-primary]="room.gameType === 'Scatterbrain'"
-                                            [class.bg-warning]="room.gameType === 'Babble'"
-                                            [class.text-dark]="room.gameType === 'Babble'">
-                                            {{ room.gameType }}
-                                        </span>
-                                    </td>
-                                    <td>{{ room.hostName }}</td>
-                                    <td>{{ room.playerCount }}</td>
-                                    <td>
-                                        <span class="badge bg-light text-dark border">{{ room.globalState }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button *ngIf="room.globalState === 'Lobby'" class="btn btn-success"
-                                                (click)="startGame(room.code)">Start</button>
-                                            <button class="btn btn-outline-secondary"
-                                                (click)="openSettings(room)">Settings</button>
-                                            <button class="btn btn-outline-danger"
-                                                (click)="terminateRoom(room.code)">End</button>
-                                            <button class="btn btn-light border" (click)="toggleDetails(room.code)">
-                                                Details {{ expandedRows.has(room.code) ? '▲' : '▼' }}
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Expanded Details Row -->
-                                <tr *ngIf="expandedRows.has(room.code)" class="bg-light">
-                                    <td colspan="6" class="p-3">
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <h6 class="fw-bold text-secondary">Game Info</h6>
-                                                <ul class="list-unstyled small">
-                                                    <li><strong>Round:</strong> {{ room.roundNumber }}</li>
-                                                    <li><strong>Timer:</strong> {{ room.settingsTimer }}s</li>
-                                                    <li><strong>Access:</strong> {{ room.isPublic ? 'Public' : 'Private'
-                                                        }}</li>
-                                                </ul>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <h6 class="fw-bold text-secondary">Players ({{ room.players.length }})
-                                                </h6>
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    <div *ngFor="let p of room.players"
-                                                        class="badge bg-white text-dark border p-2 d-flex align-items-center gap-2">
-                                                        <span *ngIf="p.isHost" title="Host">👑</span>
-                                                        {{ p.name }}
-                                                        <span class="badge bg-light text-secondary border">{{ p.score
-                                                            }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </ng-container>
-                        </ng-container>
+                        <tr *ngFor="let game of games">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="fs-4">{{ game.icon }}</span>
+                                    <div>
+                                        <div class="fw-bold">{{ game.name }}</div>
+                                        <div class="small text-muted">{{ game.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge" [class.bg-success]="game.status === 'Deployed'"
+                                    [class.bg-warning]="game.status === 'Testing'"
+                                    [class.bg-secondary]="game.status === 'Backlog'">
+                                    {{ game.status }}
+                                </span>
+                            </td>
+                            <td>{{ game.minPlayers }}-{{ game.maxPlayers }}</td>
+                            <td>{{ game.complexity }}/5</td>
+                            <td>{{ game.averagePlayTime }}m</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary"
+                                    (click)="openEditGame(game)">Edit</button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Edit Game Modal -->
+<div class="modal fade" [class.show]="showEditGameModal" [style.display]="showEditGameModal ? 'block' : 'none'"
+    tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" *ngIf="selectedGame">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Game: {{ selectedGame.name }}</h5>
+                <button type="button" class="btn-close" (click)="showEditGameModal = false"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" [(ngModel)]="selectedGame.name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Icon (Emoji or URL)</label>
+                        <input type="text" class="form-control" [(ngModel)]="selectedGame.icon">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" rows="2" [(ngModel)]="selectedGame.description"></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" [(ngModel)]="selectedGame.status">
+                            <option value="Deployed">Deployed</option>
+                            <option value="Testing">Testing</option>
+                            <option value="Backlog">Backlog</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Min Players</label>
+                        <input type="number" class="form-control" [(ngModel)]="selectedGame.minPlayers">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Max Players</label>
+                        <input type="number" class="form-control" [(ngModel)]="selectedGame.maxPlayers">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Complexity (1-5)</label>
+                        <input type="number" class="form-control" min="1" max="5" [(ngModel)]="selectedGame.complexity">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Avg. Time (min)</label>
+                        <input type="number" class="form-control" [(ngModel)]="selectedGame.averagePlayTime">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Tags (comma separated)</label>
+                        <input type="text" class="form-control" [(ngModel)]="selectedGame.tags"
+                            placeholder="Word,Party,Strategy...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showEditGameModal = false">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="submitEditGame()">Save Attributes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="showEditGameModal"></div>
 
 <!-- Create Room Modal (Hidden by default, used via Template Reference if we were strict, but using simplistic *ngIf overlay for speed/consistency with other modals in this project) -->
 <div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'"

@@ -18,8 +18,16 @@ public class GameDefinition
     public string Description { get; set; } = string.Empty;
     public GameStatus Status { get; set; }
     
+    // New Attributes
+    public int MinPlayers { get; set; } = 2;
+    public int MaxPlayers { get; set; } = 8;
+    public int Complexity { get; set; } = 1; // 1-5
+    public int AveragePlayTime { get; set; } = 30; // minutes
+    public string Tags { get; set; } = string.Empty; // e.g. "Word,Party,Social"
+    
     // This maps to the GameType enum used in Room logic, but stored as string or int? 
     // For simplicity, let's keep it as string ID matching the Room GameType, 
     // or we can add a specific property if needed. 
     // The 'Id' itself can serve as the unique key used in code.
+    public string? CodeKey { get; set; } // Map to GameType enum string if needed
 }

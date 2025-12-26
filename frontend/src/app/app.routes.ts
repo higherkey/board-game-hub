@@ -26,7 +26,6 @@ export const routes: Routes = [
             { path: 'play', component: PlayComponent, title: 'Play & Connect' },
             { path: 'games', component: GamesComponent, title: 'Games Library' },
             { path: 'social', component: SocialComponent, canActivate: [authGuard], title: 'Social' },
-            { path: 'create-room', loadComponent: () => import('./features/create-room/create-room.component').then(m => m.CreateRoomComponent), title: 'Create Room' },
             { path: 'about', loadComponent: () => import('./features/about/about.component').then(m => m.AboutComponent), title: 'About' },
             { path: 'login', component: AuthComponent, title: 'Login' },
             { path: 'register', loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent), title: 'Register' },

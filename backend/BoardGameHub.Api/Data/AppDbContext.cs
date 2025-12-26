@@ -67,7 +67,8 @@ public class AppDbContext : IdentityDbContext<User>
                 Name = "Scatterbrain", 
                 Icon = "🧠", 
                 Description = "The classic party game. Come up with unique answers for categories for a chosen letter.", 
-                Status = GameStatus.Deployed 
+                Status = GameStatus.Testing,
+                MinPlayers = 2, MaxPlayers = 10, Complexity = 1, AveragePlayTime = 15, Tags = "Word,Party,Timed"
             },
             new GameDefinition 
             { 
@@ -75,7 +76,8 @@ public class AppDbContext : IdentityDbContext<User>
                 Name = "Babble", 
                 Icon = "🔤", 
                 Description = "Find as many words as you can in the grid of letters before time runs out!", 
-                Status = GameStatus.Deployed 
+                Status = GameStatus.Testing,
+                MinPlayers = 1, MaxPlayers = 8, Complexity = 2, AveragePlayTime = 10, Tags = "Word,Puzzle,Timed"
             },
             new GameDefinition 
             { 
@@ -83,25 +85,65 @@ public class AppDbContext : IdentityDbContext<User>
                 Name = "One & Only", 
                 Icon = "🃏", 
                 Description = "Work together to guess the mystery word by writing unique one-word clues.", 
-                Status = GameStatus.Deployed 
+                Status = GameStatus.Testing,
+                MinPlayers = 3, MaxPlayers = 7, Complexity = 1, AveragePlayTime = 20, Tags = "Cooperative,Word,Social"
             },
-            new GameDefinition { Id = "NomDeCode", Name = "Nom de Code", Icon = "🕵️‍♀️", Description = "Give one-word clues to help your team guess their agents.", Status = GameStatus.Backlog },
+            new GameDefinition { 
+                Id = "NomDeCode", Name = "Nom de Code", Icon = "🕵️‍♀️", Description = "Give one-word clues to help your team guess their agents.", Status = GameStatus.Backlog,
+                MinPlayers = 4, MaxPlayers = 8, Complexity = 2, AveragePlayTime = 25, Tags = "Teams,Word,Social"
+            },
 
-            new GameDefinition { Id = "Warships", Name = "Warships", Icon = "🚢", Description = "Sink your opponent's fleet before they sink yours.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "FourInARow", Name = "Four in a Row", Icon = "🔴", Description = "Connect four of your checkers in a row.", Status = GameStatus.Backlog },
-            new GameDefinition { Id = "Checkers", Name = "Checkers", Icon = "🏁", Description = "Jump over opponent pieces to capture them.", Status = GameStatus.Backlog },
+            new GameDefinition { 
+                Id = "Warships", Name = "Warships", Icon = "🚢", Description = "Sink your opponent's fleet before they sink yours.", Status = GameStatus.Backlog,
+                MinPlayers = 2, MaxPlayers = 2, Complexity = 2, AveragePlayTime = 15, Tags = "Strategy,Combat"
+            },
+            new GameDefinition { 
+                Id = "FourInARow", Name = "Four in a Row", Icon = "🔴", Description = "Connect four of your checkers in a row.", Status = GameStatus.Backlog,
+                MinPlayers = 2, MaxPlayers = 2, Complexity = 1, AveragePlayTime = 5, Tags = "Strategy,Puzzle"
+            },
+            new GameDefinition { 
+                Id = "Checkers", Name = "Checkers", Icon = "🏁", Description = "Jump over opponent pieces to capture them.", Status = GameStatus.Backlog,
+                MinPlayers = 2, MaxPlayers = 2, Complexity = 2, AveragePlayTime = 15, Tags = "Strategy,Classic"
+            },
 
             
             // New User Picks
-            new GameDefinition { Id = "UniversalTranslator", Name = "Universal Translator", Icon = "👽", Description = "Communication game with a hidden traitor.", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "Pictophone", Name = "Pictophone", Icon = "🎨", Description = "Telephone with drawings.", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "Wisecrack", Name = "Wisecrack", Icon = "💬", Description = "Answer simple prompts with witty answers.", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "Poppycock", Name = "Poppycock", Icon = "🤥", Description = "Bluff your friends with fake definitions.", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "Symbology", Name = "Symbology", Icon = "💡", Description = "Communicate ideas using universal icons.", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "BreakingNews", Name = "Breaking News", Icon = "📰", Description = "Frantic teleprompter fun where writers sabotage the anchor.", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "Deepfake", Name = "Deepfake", Icon = "🤖", Description = "A generative AI tries to blend in with human artists.", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "SushiTrain", Name = "Sushi Train!", Icon = "🍣", Description = "Draft the best meal from the passing conveyor belt!", Status = GameStatus.Deployed },
-            new GameDefinition { Id = "GreatMinds", Name = "Great Minds", Icon = "🌟", Description = "Synchronize your minds and play cards in ascending order without speaking!", Status = GameStatus.Deployed }
+            new GameDefinition { 
+                Id = "UniversalTranslator", Name = "Universal Translator", Icon = "👽", Description = "Communication game with a hidden traitor.", Status = GameStatus.Testing,
+                MinPlayers = 4, MaxPlayers = 8, Complexity = 3, AveragePlayTime = 45, Tags = "Social Deduction,Sci-Fi,Bluffing"
+            },
+            new GameDefinition { 
+                Id = "Pictophone", Name = "Pictophone", Icon = "🎨", Description = "Telephone with drawings.", Status = GameStatus.Testing,
+                MinPlayers = 4, MaxPlayers = 12, Complexity = 1, AveragePlayTime = 30, Tags = "Drawing,Party,Humor"
+            },
+            new GameDefinition { 
+                Id = "Wisecrack", Name = "Wisecrack", Icon = "💬", Description = "Answer simple prompts with witty answers.", Status = GameStatus.Testing,
+                MinPlayers = 3, MaxPlayers = 8, Complexity = 1, AveragePlayTime = 20, Tags = "Humor,Social,Party"
+            },
+            new GameDefinition { 
+                Id = "Poppycock", Name = "Poppycock", Icon = "🤥", Description = "Bluff your friends with fake definitions.", Status = GameStatus.Testing,
+                MinPlayers = 3, MaxPlayers = 8, Complexity = 2, AveragePlayTime = 30, Tags = "Bluffing,Word,Social"
+            },
+            new GameDefinition { 
+                Id = "Symbology", Name = "Symbology", Icon = "💡", Description = "Communicate ideas using universal icons.", Status = GameStatus.Testing,
+                MinPlayers = 3, MaxPlayers = 8, Complexity = 2, AveragePlayTime = 20, Tags = "Cooperative,Communication,Icons"
+            },
+            new GameDefinition { 
+                Id = "BreakingNews", Name = "Breaking News", Icon = "📰", Description = "Frantic teleprompter fun where writers sabotage the anchor.", Status = GameStatus.Testing,
+                MinPlayers = 3, MaxPlayers = 10, Complexity = 1, AveragePlayTime = 15, Tags = "Humor,Social,Party,Timed"
+            },
+            new GameDefinition { 
+                Id = "Deepfake", Name = "Deepfake", Icon = "🤖", Description = "A generative AI tries to blend in with human artists.", Status = GameStatus.Testing,
+                MinPlayers = 4, MaxPlayers = 10, Complexity = 2, AveragePlayTime = 20, Tags = "Social Deduction,Drawing,AI"
+            },
+            new GameDefinition { 
+                Id = "SushiTrain", Name = "Sushi Train!", Icon = "🍣", Description = "Draft the best meal from the passing conveyor belt!", Status = GameStatus.Testing,
+                MinPlayers = 2, MaxPlayers = 5, Complexity = 2, AveragePlayTime = 25, Tags = "Drafting,Card Game,Family"
+            },
+            new GameDefinition { 
+                Id = "GreatMinds", Name = "Great Minds", Icon = "🌟", Description = "Synchronize your minds and play cards in ascending order without speaking!", Status = GameStatus.Testing,
+                MinPlayers = 2, MaxPlayers = 4, Complexity = 2, AveragePlayTime = 20, Tags = "Cooperative,Card Game,Social"
+            }
         );
     }
 }

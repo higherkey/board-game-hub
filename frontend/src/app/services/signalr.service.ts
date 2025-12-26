@@ -415,7 +415,14 @@ export class SignalRService {
   public async leaveRoom(roomCode: string): Promise<void> {
     await this.hubConnection.invoke('LeaveRoom', roomCode);
     this.removeActiveRoom(roomCode); // Remove from list
-    this.currentRoomSubject.next(null); // Clear local state
+    this.clearState();
+  }
+
+  public clearState() {
+    this.currentRoomSubject.next(null);
+    this.players$.next([]);
+    this.gameState$.next(null);
+    this.gameEvents$.next(null);
   }
 
   public async renamePlayer(newName: string): Promise<void> {

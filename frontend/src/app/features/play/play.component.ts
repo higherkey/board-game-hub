@@ -22,10 +22,6 @@ export class PlayComponent implements OnInit {
     roomCode = '';
     games: GameDefinition[] = [];
 
-    showNameModal = false;
-    tempPlayerName = '';
-    pendingGameType?: string;
-
     constructor(
         private readonly signalRService: SignalRService,
         private readonly router: Router,
@@ -67,62 +63,5 @@ export class PlayComponent implements OnInit {
     getHostName(players: any[]): string {
         const host = players.find(p => p.isHost);
         return host ? host.name : 'Unknown';
-    }
-
-    async createRoom(gameType?: string) {
-        if (this.playerName && this.playerName.trim().length > 0) {
-            await this.proceedToCreateRoom(gameType || 'None');
-            return;
-        }
-
-        this.pendingGameType = gameType || 'None';
-        this.tempPlayerName = '';
-        this.showNameModal = true;
-    }
-
-    async confirmCreateRoom() {
-        if (!this.tempPlayerName) return;
-
-        this.playerName = this.tempPlayerName;
-        if (!this.authService.currentUserValue) {
-            this.authService.setGuestName(this.playerName);
-        }
-        this.showNameModal = false;
-        await this.proceedToCreateRoom(this.pendingGameType || 'None');
-    }
-
-    cancelCreateRoom() {
-        this.showNameModal = false;
-        this.pendingGameType = undefined;
-        this.tempPlayerName = '';
-    }
-
-    private async proceedToCreateRoom(gameType: string) {
-        try {
-            if (this.signalRService.connectionStatus$.value !== 'Connected') {
-                await this.signalRService.startConnection();
-            }
-
-            const code = await this.signalRService.createRoom(this.playerName, true, gameType);
-            this.router.navigate(['/game', code]);
-        } catch (e) {
-            console.error('Error creating room', e);
-            this.toastService.showError('Error creating room. Please try again.');
-        }
-    }
-
-    async joinRoom(code: string) {
-        if (!code) return;
-        try {
-            const success = await this.signalRService.joinRoom(code, this.playerName);
-            if (success) {
-                this.router.navigate(['/game', code]);
-            } else {
-                this.toastService.showError('Room not found or full.');
-            }
-        } catch (e) {
-            console.error('Error joining room', e);
-            this.toastService.showError('Could not join room. Please check the code.');
-        }
     }
 }

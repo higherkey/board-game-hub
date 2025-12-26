@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService, Session } from '../../../services/auth.service';
 import { Observable } from 'rxjs';
 import { ActiveGamesComponent } from '../../../features/active-games/active-games.component';
 
@@ -13,21 +13,27 @@ import { ActiveGamesComponent } from '../../../features/active-games/active-game
   styleUrls: ['./navbar.component.scss']
 })
 export class NavbarComponent {
-  currentUser$: Observable<any>;
+  session$: Observable<Session | null>;
   isCollapsed = true;
   isDropdownOpen = false;
 
   constructor(private readonly authService: AuthService, private readonly router: Router) {
-    this.currentUser$ = this.authService.currentUser$;
+    this.session$ = this.authService.session$;
   }
 
-  toggleDropdown() {
+  toggleDropdown(event: Event) {
+    event.stopPropagation();
     this.isDropdownOpen = !this.isDropdownOpen;
   }
 
   logout() {
     this.authService.logout();
     this.isCollapsed = true;
+    this.isDropdownOpen = false;
+  }
+
+  @HostListener('document:click')
+  closeDropdown() {
     this.isDropdownOpen = false;
   }
 }

@@ -9,6 +9,11 @@ export interface GameDefinition {
     icon: string;
     description: string;
     status: 'Deployed' | 'Testing' | 'Backlog';
+    minPlayers: number;
+    maxPlayers: number;
+    complexity: number;
+    averagePlayTime: number;
+    tags: string;
 }
 
 @Injectable({

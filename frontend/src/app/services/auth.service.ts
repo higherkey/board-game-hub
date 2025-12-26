@@ -15,6 +15,13 @@ export interface AuthResponse {
     user: User;
 }
 
+export interface Session {
+    name: string;
+    isGuest: boolean;
+    avatarUrl?: string;
+    email?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -22,6 +29,9 @@ export class AuthService {
     private readonly apiUrl = '/api/auth'; // Relative path for tunnel compatibility
     private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
+
+    private readonly sessionSubject = new BehaviorSubject<Session | null>(null);
+    public session$ = this.sessionSubject.asObservable();
 
     get currentUserValue(): User | null {
         return this.currentUserSubject.value;
@@ -42,6 +52,7 @@ export class AuthService {
     constructor(private readonly http: HttpClient, private readonly router: Router) {
         this.loadStoredSession();
         this.setupActivityListeners();
+        this.updateSession();
     }
 
     private setupActivityListeners() {
@@ -79,6 +90,7 @@ export class AuthService {
     setGuestName(name: string) {
         localStorage.setItem(this.guestNameKey, name);
         this.refreshGuestSession();
+        this.updateSession();
     }
 
     refreshGuestSession() {
@@ -90,6 +102,30 @@ export class AuthService {
             const expiresAt = Date.now() + this.DEFAULT_ABSOLUTE_TIMEOUT;
             localStorage.setItem(this.expirationKey, expiresAt.toString());
         }
+    }
+
+    private updateSession() {
+        const user = this.currentUserSubject.value;
+        if (user) {
+            this.sessionSubject.next({
+                name: user.displayName,
+                isGuest: false,
+                avatarUrl: user.avatarUrl,
+                email: user.email
+            });
+            return;
+        }
+
+        const guestName = this.getGuestName();
+        if (guestName) {
+            this.sessionSubject.next({
+                name: guestName,
+                isGuest: true
+            });
+            return;
+        }
+
+        this.sessionSubject.next(null);
     }
 
     getUserIdOrGuestId(): string {
@@ -140,12 +176,14 @@ export class AuthService {
                 localStorage.setItem(this.staySignedInKey, staySignedInLonger.toString());
 
                 this.currentUserSubject.next(response.user);
+                this.updateSession();
             })
         );
     }
 
     logout() {
         this.clearSessionState();
+        this.updateSession();
         this.router.navigate(['/login']);
     }
 

@@ -8,10 +8,11 @@ import { HostSettingsComponent } from './components/host-settings/host-settings.
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
 import { GameReviewComponent } from './components/game-review/game-review.component';
 import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
-import { map, Observable } from 'rxjs';
+import { map, Observable, take } from 'rxjs';
 import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
 import { OneAndOnlyBoardComponent } from '../games/one-and-only/one-and-only-board.component';
 import { OneAndOnlyPlayerComponent } from '../games/one-and-only/one-and-only-player.component';
+import { GameDataService, GameDefinition } from '../../services/game-data.service';
 import { BreakingNewsComponent } from '../games/breaking-news/breaking-news.component';
 import { UniversalTranslatorComponent } from '../games/universal-translator/universal-translator.component';
 import { PoppycockBoardComponent } from '../games/poppycock/poppycock-board.component';
@@ -45,13 +46,19 @@ import { ToastService } from '../../shared/services/toast.service';
 })
 export class GameRoomComponent implements OnInit {
   roomCode = '';
-  showNamePrompt = false;
+  isCreating = false;
+  needsName = false;
   promptPlayerName = '';
   players$: Observable<Player[]>;
   connectionStatus$: Observable<string>;
   gameStarted$: Observable<boolean>;
   isHost$: Observable<boolean>;
-  currentRoom$: Observable<Room | null>; // Typed properly?
+  currentRoom$: Observable<Room | null>;
+
+  // Creation options
+  selectedGameType = 'None';
+  isPublic = true;
+  availableGames: GameDefinition[] = [];
 
   // Dynamic Loading
   gameComponent: Type<any> | null = null;
@@ -75,7 +82,8 @@ export class GameRoomComponent implements OnInit {
     private readonly signalRService: SignalRService,
     private readonly router: Router,
     private readonly authService: AuthService,
-    private readonly toastService: ToastService
+    private readonly toastService: ToastService,
+    private readonly gameDataService: GameDataService
   ) {
     this.players$ = this.signalRService.players$;
     this.connectionStatus$ = this.signalRService.connectionStatus$;
@@ -99,72 +107,83 @@ export class GameRoomComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.roomCode = this.route.snapshot.paramMap.get('code') || '';
+    this.route.paramMap.subscribe(params => {
+      this.roomCode = params.get('code') || '';
+      this.isCreating = this.roomCode === 'create';
+
+      if (this.isCreating) {
+        this.signalRService.clearState();
+        this.needsName = true;
+      }
+    });
+
     this.signalRService.startConnection();
 
-    // Auto-join if we have a name in guest storage
-    const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
-    const currentRoom = this.signalRService.currentRoomSubject.value;
+    // Load available games for creation
+    this.gameDataService.loadGames().subscribe(games => {
+      this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+    });
 
-    // Only join if we aren't already in this room and have a name
-    if (guestName) {
-      if (!currentRoom || currentRoom.code !== this.roomCode) {
-        this.signalRService.joinRoom(this.roomCode, guestName).then(success => {
-          if (!success) {
-            this.toastService.showError(`Room ${this.roomCode} not found or no longer active.`);
-            this.signalRService.removeActiveRoom(this.roomCode);
-            this.router.navigate(['/games']);
-          }
-        });
+    // Check query params for pre-selected game or name
+    this.route.queryParams.pipe(take(1)).subscribe(params => {
+      if (params['gameType']) {
+        this.selectedGameType = params['gameType'];
       }
+      if (params['name']) {
+        this.promptPlayerName = params['name'];
+      }
+    });
+
+    const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
+
+    if (this.isCreating) {
+      if (guestName) this.promptPlayerName = guestName;
+      this.needsName = true; // Always show setup form when creating
+    } else if (guestName) {
+      this.autoJoin(guestName);
     } else {
-      // No name found anywhere -> show prompt
-      this.showNamePrompt = true;
+      this.needsName = true;
     }
   }
 
-  submitGuestName() {
+  private autoJoin(name: string) {
+    const currentRoom = this.signalRService.currentRoomSubject.value;
+    if (!currentRoom || currentRoom.code !== this.roomCode) {
+      this.signalRService.joinRoom(this.roomCode, name).then(success => {
+        if (!success) {
+          this.toastService.showError(`Room ${this.roomCode} not found or no longer active.`);
+          this.signalRService.removeActiveRoom(this.roomCode);
+          this.router.navigate(['/games']);
+        }
+      });
+    }
+  }
+
+  async submitEntry() {
     if (!this.promptPlayerName) return;
 
     this.authService.setGuestName(this.promptPlayerName);
-    this.showNamePrompt = false;
-    this.signalRService.joinRoom(this.roomCode, this.promptPlayerName);
-  }
+    this.needsName = false;
 
-  newPlayerName = '';
-  isRenaming = false;
-
-  startRename() {
-    const myId = this.getMyConnectionId(this.signalRService.players$.value);
-    const me = this.signalRService.players$.value.find(p => p.connectionId === myId);
-    if (me) {
-      this.newPlayerName = me.name;
-      this.isRenaming = true;
+    if (this.isCreating) {
+      try {
+        const newCode = await this.signalRService.createRoom(
+          this.promptPlayerName,
+          this.isPublic,
+          this.selectedGameType
+        );
+        this.router.navigate(['/game', newCode]);
+      } catch (err) {
+        console.error('Failed to create room', err);
+        this.toastService.showError('Failed to create room.');
+        this.needsName = true;
+      }
+    } else {
+      await this.signalRService.joinRoom(this.roomCode, this.promptPlayerName);
     }
   }
 
-  cancelRename() {
-    this.isRenaming = false;
-    this.newPlayerName = '';
-  }
 
-  submitRename() {
-    const newName = this.newPlayerName?.trim();
-    if (!newName || newName.length === 0) return;
-
-    // Optimistic Update: Update local list immediately for better UX
-    const currentPlayers = this.signalRService.players$.value;
-    const myId = this.getMyConnectionId(currentPlayers);
-    const me = currentPlayers.find(p => p.connectionId === myId);
-    if (me) {
-      me.name = newName;
-      this.signalRService.players$.next([...currentPlayers]);
-    }
-
-    this.signalRService.renamePlayer(newName);
-    this.authService.setGuestName(newName); // Persist new name
-    this.isRenaming = false;
-  }
 
   startGame(settings: GameSettings) {
     this.signalRService.startGame(settings);

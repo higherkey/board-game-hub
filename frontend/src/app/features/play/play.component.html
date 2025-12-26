@@ -10,7 +10,7 @@
                     <h2 class="h4 mb-3">Host a Game</h2>
                     <p class="text-secondary mb-4">Create a new lobby and invite your friends using a code.</p>
                     <button type="button" class="btn btn-primary btn-lg fw-bold w-100 py-3 shadow-sm"
-                        (click)="createRoom()">
+                        [routerLink]="['/game/create']">
                         <i class="bi bi-plus-circle-fill me-2"></i> CREATE NEW ROOM
                     </button>
                 </div>
@@ -27,8 +27,8 @@
                         <input [(ngModel)]="roomCode" placeholder="ADBC" maxlength="4"
                             class="form-control form-control-lg text-uppercase text-center fw-bold"
                             style="letter-spacing: 0.1em;">
-                        <button type="button" class="btn btn-outline-primary px-4 fw-bold" (click)="joinRoom(roomCode)"
-                            [disabled]="!roomCode || roomCode.length < 4">
+                        <button type="button" class="btn btn-outline-primary px-4 fw-bold"
+                            [routerLink]="['/game', roomCode]" [disabled]="!roomCode || roomCode.length < 4">
                             JOIN
                         </button>
                     </div>
@@ -80,12 +80,8 @@
                     </div>
 
                     <div class="mt-auto">
-                        <label for="playerName-{{room.code}}" class="visually-hidden">Your Name</label>
-                        <input id="playerName-{{room.code}}" [(ngModel)]="playerName"
-                            class="form-control form-control-sm mb-2" placeholder="Enter your name..."
-                            aria-label="Your name to join room" />
-                        <button type="button" class="btn btn-primary w-100 btn-sm fw-bold" (click)="joinRoom(room.code)"
-                            [disabled]="!playerName">
+                        <button type="button" class="btn btn-primary w-100 btn-sm fw-bold"
+                            [routerLink]="['/game', room.code]">
                             Join Game
                         </button>
                     </div>
@@ -94,29 +90,3 @@
         </div>
     </div>
 </div>
-
-<!-- Custom Name Input Modal -->
-<div class="modal-backdrop fade show" *ngIf="showNameModal" style="z-index: 1050;"></div>
-<dialog open class="modal fade show d-block" *ngIf="showNameModal" tabindex="-1" aria-modal="true"
-    style="z-index: 1055; background: transparent; border: none; padding: 0;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-surface shadow-lg border-primary">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title text-primary fw-bold">Enter Your Name</h5>
-                <button type="button" class="btn-close" (click)="cancelCreateRoom()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-secondary small mb-3">Please enter a display name to host this game.</p>
-                <input type="text" class="form-control form-control-lg text-center fw-bold" [(ngModel)]="tempPlayerName"
-                    (keyup.enter)="confirmCreateRoom()" placeholder="e.g. Captain Awesome" autofocus>
-            </div>
-            <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-ghost text-secondary" (click)="cancelCreateRoom()">Cancel</button>
-                <button type="button" class="btn btn-primary px-4 fw-bold" (click)="confirmCreateRoom()"
-                    [disabled]="!tempPlayerName">
-                    Start Game
-                </button>
-            </div>
-        </div>
-    </div>
-</dialog>

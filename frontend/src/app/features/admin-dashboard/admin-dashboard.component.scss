@@ -4,3 +4,13 @@
 .table th {
     vertical-align: middle;
 }
+
+.nav-link {
+    cursor: pointer;
+    font-weight: 600;
+    color: #6c757d;
+
+    &.active {
+        color: #0d6efd !important;
+    }
+}

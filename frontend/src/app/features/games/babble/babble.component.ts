@@ -9,7 +9,7 @@ import { EndRoundButtonComponent } from '../shared/components/end-round-button/e
   standalone: true,
   imports: [CommonModule, FormsModule, EndRoundButtonComponent],
   template: `
-    <div class="babble-view">
+    <div class="babble-view" [class.showing-results]="isFinished">
       <div class="babble-header">
         <h2>Babble</h2>
         

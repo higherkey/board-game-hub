@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, RoomStats, RoomSummary } from '../../services/admin.service';
+import { GameDefinition } from '../../services/game-data.service';
 import { Observable, Subscription } from 'rxjs';
 
 @Component({
@@ -18,6 +19,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     showCreateModal = false;
     showMessageModal = false;
     showSettingsModal = false;
+    showEditGameModal = false;
+
+    // Tab State
+    activeTab: 'rooms' | 'games' = 'rooms';
+
+    // Game Management
+    games: GameDefinition[] = [];
+    selectedGame: GameDefinition | null = null;
 
     // Form Data
     createHostName = 'AdminBot';
@@ -120,6 +129,38 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         if (!confirm(`Are you sure you want to terminate room ${code}?`)) return;
         this.adminService.terminateRoom(code).subscribe({
             next: () => this.refreshData(),
+            error: (err) => alert(err.message)
+        });
+    }
+
+    // --- Game Management ---
+
+    setTab(tab: 'rooms' | 'games') {
+        this.activeTab = tab;
+        if (tab === 'games') {
+            this.loadGames();
+        }
+    }
+
+    loadGames() {
+        this.adminService.getGames().subscribe(games => {
+            this.games = games;
+        });
+    }
+
+    openEditGame(game: GameDefinition) {
+        this.selectedGame = { ...game }; // Clone for editing
+        this.showEditGameModal = true;
+    }
+
+    submitEditGame() {
+        if (!this.selectedGame) return;
+        this.adminService.updateGame(this.selectedGame.id, this.selectedGame).subscribe({
+            next: () => {
+                this.showEditGameModal = false;
+                this.loadGames();
+                // Also refresh main games cache if needed, though redirecting or refreshing usually handles it
+            },
             error: (err) => alert(err.message)
         });
     }

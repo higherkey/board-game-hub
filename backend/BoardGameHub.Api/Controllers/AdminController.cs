@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Hubs;
+using BoardGameHub.Api.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BoardGameHub.Api.Controllers;
@@ -18,6 +20,7 @@ public class AdminController : ControllerBase
     private readonly IHubContext<SocialHub> _socialHub;
     private readonly IWebHostEnvironment _env;
     private readonly UserManager<User> _userManager;
+    private readonly AppDbContext _context;
 
     public AdminController(
         IRoomService roomService, 
@@ -25,7 +28,8 @@ public class AdminController : ControllerBase
         IHubContext<GameHub> gameHub,
         IHubContext<SocialHub> socialHub,
         IWebHostEnvironment env,
-        UserManager<User> userManager)
+        UserManager<User> userManager,
+        AppDbContext context)
     {
         _roomService = roomService;
         _socialService = socialService;
@@ -33,6 +37,7 @@ public class AdminController : ControllerBase
         _socialHub = socialHub;
         _env = env;
         _userManager = userManager;
+        _context = context;
     }
 
 
@@ -41,6 +46,35 @@ public class AdminController : ControllerBase
     public IActionResult GetStats()
     {
         return Ok(_roomService.GetServerStats());
+    }
+
+    // --- Game Management ---
+
+    [HttpGet("games")]
+    public async Task<IActionResult> GetGames()
+    {
+        var games = await _context.Games.OrderBy(g => g.Name).ToListAsync();
+        return Ok(games);
+    }
+
+    [HttpPut("games/{id}")]
+    public async Task<IActionResult> UpdateGame(string id, [FromBody] GameDefinition updatedGame)
+    {
+        var game = await _context.Games.FindAsync(id);
+        if (game == null) return NotFound();
+
+        game.Name = updatedGame.Name;
+        game.Description = updatedGame.Description;
+        game.Icon = updatedGame.Icon;
+        game.Status = updatedGame.Status;
+        game.MinPlayers = updatedGame.MinPlayers;
+        game.MaxPlayers = updatedGame.MaxPlayers;
+        game.Complexity = updatedGame.Complexity;
+        game.AveragePlayTime = updatedGame.AveragePlayTime;
+        game.Tags = updatedGame.Tags;
+
+        await _context.SaveChangesAsync();
+        return Ok(game);
     }
 
     // --- Actions ---

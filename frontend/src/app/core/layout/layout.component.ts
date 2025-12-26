@@ -1,10 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { LogoComponent } from '../../shared/logo/logo.component';
 import { AuthService } from '../../services/auth.service';
 
 import { ActiveGamesComponent } from '../../features/active-games/active-games.component';
+import { SignalRService } from '../../services/signalr.service';
+import { map } from 'rxjs/operators';
 
 @Component({
    selector: 'app-layout',
@@ -34,35 +36,58 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
         </nav>
         
         <div class="auth-actions">
-           <app-active-games *ngIf="!isBackendPort"></app-active-games>
+           <!-- Unified Session View -->
+           <ng-container *ngIf="session$ | async as session; else loginTemplate">
+              <!-- Active Tables (Only visible with session and active games) -->
+              <div class="active-games-wrapper" *ngIf="!isBackendPort && (activeGamesCount$ | async) as count">
+                 <app-active-games *ngIf="count > 0"></app-active-games>
+              </div>
 
-           <ng-container *ngIf="currentUser$ | async as user">
-              <div class="user-profile">
-                 <span class="username">{{ user.displayName }}</span>
-                 <button routerLink="/settings" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-gear-fill"></i> Settings
-                 </button>
-                 <button (click)="logout()" class="btn btn-sm btn-ghost" title="Logout">
-                    <i class="bi bi-box-arrow-right"></i>
-                 </button>
+              <!-- Consolidated Profile Dropdown -->
+              <div class="dropdown">
+                  <button class="d-flex align-items-center bg-transparent border-0 p-0 pointer profile-trigger gap-2"
+                      type="button" id="userMenu" (click)="toggleDropdown($event)" aria-expanded="false">
+                      
+                      <div class="avatar-container position-relative">
+                          <img *ngIf="session.avatarUrl; else guestIcon" [src]="session.avatarUrl" alt="Avatar"
+                              class="rounded-circle border border-2 border-warning shadow-sm" width="40" height="40">
+                          <ng-template #guestIcon>
+                              <div class="guest-avatar rounded-circle border border-2 border-info d-flex align-items-center justify-content-center bg-dark shadow-sm" 
+                                   style="width: 40px; height: 40px;">
+                                  <i class="bi bi-person-fill text-info fs-5"></i>
+                              </div>
+                          </ng-template>
+                          <i class="bi bi-chevron-down position-absolute" 
+                             style="bottom: -2px; right: -4px; font-size: 0.7rem; background: var(--bg-surface); border-radius: 50%; padding: 1px; color: var(--text-secondary);"></i>
+                      </div>
+
+                      <div class="d-flex flex-column align-items-start line-height-1">
+                          <span class="user-name-text fw-bold" style="font-size: 0.9rem;">{{ session.name }}</span>
+                          <span *ngIf="session.isGuest" class="badge rounded-pill bg-info text-dark" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">Guest</span>
+                      </div>
+                  </button>
+
+                  <ul class="dropdown-menu dropdown-menu-end bg-dark border-secondary shadow mt-2"
+                      [class.show]="isDropdownOpen" aria-labelledby="userMenu" style="right: 0; left: auto;">
+                      <li class="px-3 py-2 border-bottom border-secondary mb-1">
+                          <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Account</div>
+                          <div class="text-white fw-bold truncate" style="max-width: 150px;">{{ session.name }}</div>
+                      </li>
+                      <li><a class="dropdown-item text-white" routerLink="/settings" (click)="closeDropdown()"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                      <li *ngIf="!session.isGuest"><a class="dropdown-item text-white" routerLink="/profile" (click)="closeDropdown()"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                      <li><hr class="dropdown-divider border-secondary"></li>
+                      <li><button class="dropdown-item text-danger" (click)="logout()">
+                          <i class="bi bi-box-arrow-right me-2"></i>{{ session.isGuest ? 'Leave Session' : 'Sign Out' }}
+                      </button></li>
+                  </ul>
               </div>
            </ng-container>
 
-           <!-- Guest State -->
-           <ng-container *ngIf="(currentUser$ | async) === null && isGuest">
-                <div class="user-profile">
-                    <span class="username text-secondary">Guest</span>
-                    <button (click)="logout()" class="btn btn-sm btn-ghost" title="Leave Guest Session">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </button>
-                </div>
-           </ng-container>
-
            <!-- Not Logged In -->
-           <ng-container *ngIf="(currentUser$ | async) === null && !isGuest">
+           <ng-template #loginTemplate>
               <a routerLink="/login" class="btn btn-sm btn-primary">Login</a>
               <a routerLink="/register" class="btn btn-sm btn-secondary text-white">Sign Up</a>
-           </ng-container>
+           </ng-template>
         </div>
       </header>
 
@@ -114,7 +139,7 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
     }
 
     .logo-text {
-       font-family: 'Outfit', sans-serif; /* If available, or bold serif */
+       font-family: 'Outfit', sans-serif;
        font-size: 1.5rem;
        font-weight: 800;
        letter-spacing: -0.02em;
@@ -122,7 +147,7 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
        text-transform: uppercase;
     }
 
-   .mobile-toggle {
+    .mobile-toggle {
        display: none;
        background: none;
        border: none;
@@ -149,12 +174,12 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
            flex-direction: column;
            padding: var(--space-lg);
            gap: var(--space-md);
-           border-bottom: 2px solid var(--accent); /* Accent border on mobile menu */
-           box-shadow: var(--shadow-xl); /* Deeper shadow */
-           transform: translateY(-150%); /* Start further up */
+           border-bottom: 2px solid var(--accent);
+           box-shadow: var(--shadow-xl);
+           transform: translateY(-150%);
            opacity: 0;
            visibility: hidden;
-           transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); /* Smoother bezier */
+           transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
            z-index: 999;
            border-bottom-left-radius: var(--radius-md);
            border-bottom-right-radius: var(--radius-md);
@@ -167,7 +192,6 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
        }
        
        .nav-item {
-          /* ... existing styles ... */
           color: var(--text-secondary);
           text-decoration: none;
           font-weight: 600;
@@ -205,33 +229,37 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
        display: flex;
        gap: var(--space-md);
        align-items: center;
-
-       @media (max-width: 768px) {
-           /* Hide auth actions on mobile if they don't fit, 
-              OR put them in the mobile menu. 
-              For now keeping them in header but scaling down if needed. */
-       }
     }
 
-    .user-profile {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
+    /* Dropdown Styles Override */
+    .profile-trigger {
+        outline: none;
+        transition: opacity 0.2s;
+        
+        &:hover {
+            opacity: 0.9;
+        }
 
-        .username {
-            font-weight: 700;
+        .user-name-text {
             color: var(--text-primary);
         }
+    }
 
-        .btn-ghost {
-            color: var(--text-secondary);
-            padding: 0.25rem 0.5rem;
-            
-            &:hover {
-                color: var(--danger);
-                background: rgba(220, 53, 69, 0.1);
-            }
-        }
+    .dropdown-menu {
+        min-width: 200px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active {
+        color: #000 !important;
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .main-content {
@@ -244,7 +272,7 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
     }
 
     .main-footer {
-       background: var(--primary); /* Navy Footer */
+       background: var(--primary);
        color: rgba(255, 255, 255, 0.8);
        padding: var(--space-lg) var(--space-lg);
        text-align: center;
@@ -252,7 +280,6 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
        margin-top: auto;
        position: relative;
        
-       /* Geometric Top Edge */
        &:before {
           content: '';
           position: absolute;
@@ -262,34 +289,27 @@ import { ActiveGamesComponent } from '../../features/active-games/active-games.c
           height: 11px;
           background-color: var(--primary);
           clip-path: polygon(
-             0% 100%, 
-             5% 0%, 10% 100%, 
-             15% 0%, 20% 100%, 
-             25% 0%, 30% 100%, 
-             35% 0%, 40% 100%, 
-             45% 0%, 50% 100%, 
-             55% 0%, 60% 100%, 
-             65% 0%, 70% 100%, 
-             75% 0%, 80% 100%, 
-             85% 0%, 90% 100%, 
-             95% 0%, 100% 100%
+             0% 100%, 5% 0%, 10% 100%, 15% 0%, 20% 100%, 25% 0%, 30% 100%, 
+             35% 0%, 40% 100%, 45% 0%, 50% 100%, 55% 0%, 60% 100%, 65% 0%, 
+             70% 100%, 75% 0%, 80% 100%, 85% 0%, 90% 100%, 95% 0%, 100% 100%
           );
        }
     }
-  `]
+   `]
 })
 export class LayoutComponent {
    private readonly authService = inject(AuthService);
+   private readonly signalRService = inject(SignalRService);
    private readonly router = inject(Router);
 
-   currentUser$ = this.authService.currentUser$;
+   session$ = this.authService.session$;
+   activeGamesCount$ = this.signalRService.activeRooms$.pipe(
+      map(rooms => rooms.length)
+   );
 
    mobileMenuOpen = false;
+   isDropdownOpen = false;
    isBackendPort = globalThis.location.port !== '4200';
-
-   get isGuest(): boolean {
-      return this.authService.isAuthenticated();
-   }
 
    toggleMobileMenu() {
       this.mobileMenuOpen = !this.mobileMenuOpen;
@@ -303,9 +323,23 @@ export class LayoutComponent {
       this.closeMobileMenu();
    }
 
+   toggleDropdown(event: Event) {
+      event.stopPropagation();
+      this.isDropdownOpen = !this.isDropdownOpen;
+   }
+
+   closeDropdown() {
+      this.isDropdownOpen = false;
+   }
+
+   @HostListener('document:click')
+   onDocumentClick() {
+      this.closeDropdown();
+   }
+
    logout() {
       this.authService.logout();
       this.closeMobileMenu();
-      this.router.navigate(['/']);
+      this.isDropdownOpen = false;
    }
 }

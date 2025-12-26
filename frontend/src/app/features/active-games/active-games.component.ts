@@ -59,7 +59,8 @@ import { filter } from 'rxjs/operators';
         color: #fff;
         border: 2px solid rgba(255,255,255,0.1);
         border-radius: var(--radius-pill);
-        padding: 5px 16px;
+        padding: 0 16px;
+        height: 40px; /* Explicit height to match profile */
         display: flex;
         align-items: center;
         gap: 10px;
