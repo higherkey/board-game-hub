@@ -21,15 +21,9 @@ export class AppComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    // 0. Check for Backend Port (Admin Dashboard Deployment)
-    // If not on the dev port, we assume we are in "Admin Only" mode.
+    // 0. Check for Backend Port (Admin Dashboard Deployment) logic removed.
     if (globalThis.location.port !== '4200') {
       this.isBackendPort = true;
-      // Force redirect to admin dashboard if not already there
-      const currentPath = globalThis.location.pathname;
-      if (!currentPath.startsWith('/admin')) {
-        this.router.navigate(['/admin']);
-      }
     }
 
     // 2. Handle Game Room Titles (Dynamic)

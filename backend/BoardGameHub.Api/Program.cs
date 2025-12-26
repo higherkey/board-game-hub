@@ -162,11 +162,7 @@ app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
 app.MapHub<SocialHub>("/socialhub").RequireRateLimiting("HubRateLimit");
 app.MapHub<AdminHub>("/adminhub").RequireRateLimiting("HubRateLimit");
 
-app.MapGet("/", async context =>
-{
-    context.Response.Redirect("/admin");
-    await Task.CompletedTask;
-});
+
 
 app.MapFallbackToFile("index.html");
 
