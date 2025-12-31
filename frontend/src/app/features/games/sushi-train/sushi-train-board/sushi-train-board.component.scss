@@ -1,0 +1,17 @@
+.sushi-board {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card-token {
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollbar for puddings */
+.puddings::-webkit-scrollbar {
+    height: 4px;
+}
+
+.puddings::-webkit-scrollbar-thumb {
+    background: #FFB74D;
+    border-radius: 4px;
+}

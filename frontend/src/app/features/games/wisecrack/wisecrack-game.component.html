@@ -18,7 +18,7 @@
     <!-- Main Content Area -->
     <div class="flex-grow overflow-hidden relative">
         <!-- Board View (Shared Screen) -->
-        <app-wisecrack-board *ngIf="isHost" [room]="room">
+        <app-wisecrack-board *ngIf="isHost" [room]="room" [isHost]="isHost">
         </app-wisecrack-board>
 
         <!-- Player View (Controller) -->

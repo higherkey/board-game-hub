@@ -119,4 +119,9 @@
         </div>
     </div>
 
+    <div *ngIf="isHost" class="mt-4 pt-4 border-top border-secondary d-flex justify-content-center">
+        <button (click)="nextRound()" class="btn btn-primary btn-lg rounded-pill px-5">
+            Next Round <i class="bi bi-arrow-right list-inline-item ms-2"></i>
+        </button>
+    </div>
 </div>

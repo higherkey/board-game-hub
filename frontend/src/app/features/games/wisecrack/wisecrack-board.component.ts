@@ -11,6 +11,7 @@ import { Room, SignalRService } from '../../../services/signalr.service';
 })
 export class WisecrackBoardComponent {
   @Input() room!: Room;
+  @Input() isHost: boolean = false;
 
   constructor(private readonly signalRService: SignalRService) { }
 
@@ -73,6 +74,10 @@ export class WisecrackBoardComponent {
 
   nextBattle() {
     this.signalRService.nextWisecrackBattle();
+  }
+
+  nextRound() {
+    this.signalRService.nextRound();
   }
 }
 

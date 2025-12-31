@@ -148,6 +148,12 @@
                             {{ getPlayerName(state.aiConnectionId) }}
                         </span>
                     </div>
+
+                    <div *ngIf="amIHost" class="mt-4 pt-4 border-t border-gray-100 flex justify-center">
+                        <button (click)="handleNextRound()" class="primary-btn bg-blue-600 w-full">
+                            Next Round
+                        </button>
+                    </div>
                 </div>
             </div>
 

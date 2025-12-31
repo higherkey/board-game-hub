@@ -76,5 +76,10 @@
             </div>
         </div>
     </div>
-
+</div>
+<div *ngIf="isHost && isResult" class="mt-8">
+    <button (click)="nextRound()"
+        class="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full text-xl shadow-lg transition-transform transform active:scale-95">
+        Next Round &rarr;
+    </button>
 </div>

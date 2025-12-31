@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService, Room } from '../../../services/signalr.service';
@@ -11,7 +11,7 @@ import { Observable, map, timer } from 'rxjs';
     templateUrl: './scatterbrain.component.html',
     styleUrls: ['./scatterbrain.component.scss']
 })
-export class ScatterbrainComponent implements OnInit {
+export class ScatterbrainComponent implements OnInit, OnChanges {
     @Input() room!: Room;
     @Input() myConnectionId!: string;
     @Input() isHost: boolean = false;
@@ -33,6 +33,19 @@ export class ScatterbrainComponent implements OnInit {
 
     ngOnInit() {
         this.initAnswers();
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['room']) {
+            const prev = changes['room'].previousValue;
+            const curr = changes['room'].currentValue;
+
+            // Check if round changed or categories changed
+            if (curr?.roundNumber !== prev?.roundNumber ||
+                curr?.gameData?.categories?.length !== prev?.gameData?.categories?.length) {
+                this.initAnswers();
+            }
+        }
     }
 
     get phase(): 'Writing' | 'Validation' | 'Result' {

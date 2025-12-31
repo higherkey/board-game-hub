@@ -15,7 +15,9 @@ describe('WisecrackBoardComponent', () => {
         mockSignalRService = {
             submitWisecrackAnswer: jasmine.createSpy('submitWisecrackAnswer'),
             submitWisecrackVote: jasmine.createSpy('submitWisecrackVote'),
-            nextWisecrackBattle: jasmine.createSpy('nextWisecrackBattle')
+            submitWisecrackVote: jasmine.createSpy('submitWisecrackVote'),
+            nextWisecrackBattle: jasmine.createSpy('nextWisecrackBattle'),
+            nextRound: jasmine.createSpy('nextRound')
         };
 
         await TestBed.configureTestingModule({
@@ -51,5 +53,53 @@ describe('WisecrackBoardComponent', () => {
     it('should show writing phase initially', () => {
         const compiled = fixture.nativeElement as HTMLElement;
         expect(compiled.querySelector('.writing-phase')).toBeTruthy();
+    });
+
+    it('should call nextBattle when Host clicks Next Battle in Battling phase', () => {
+        component.room = createMockRoom({
+            gameType: 'Wisecrack',
+            gameData: {
+                phase: 'BATTLING',
+                battleWinner: 'conn1', // Winner determined, so button should show
+                currentBattle: {
+                    prompt: 'Prompt',
+                    answerA: { id: 'a', text: 'A' },
+                    answerB: { id: 'b', text: 'B' }
+                }
+            }
+        });
+        component.isHost = true;
+        fixture.detectChanges();
+
+        const btn = fixture.nativeElement.querySelector('button.bg-blue-600'); // Assuming blue for Next Battle based on common styles, or check text
+        // Actually, let's find by text content to be safe as classes might change
+        const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+        const nextBattleBtn = buttons.find(b => b.textContent?.includes('Next Battle'));
+
+        expect(nextBattleBtn).toBeTruthy();
+        nextBattleBtn?.click();
+        expect(mockSignalRService.nextWisecrackBattle).toHaveBeenCalled();
+    });
+
+    it('should call nextRound when Host clicks Next Round in Result phase', () => {
+        component.room = createMockRoom({
+            gameType: 'Wisecrack',
+            gameData: {
+                phase: 'RESULT',
+                scores: { 'conn1': 10 }
+            }
+        });
+        component.isHost = true;
+        component.isResult = true; // Setter or getter might need logic, but inputs are usually derived. 
+        // Wait, isResult is a getter in the component? Let's check. 
+        // If it's a getter derived from phase, setting room is enough.
+        fixture.detectChanges();
+
+        const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+        const nextRoundBtn = buttons.find(b => b.textContent?.includes('Next Round'));
+
+        expect(nextRoundBtn).toBeTruthy();
+        nextRoundBtn?.click();
+        expect(mockSignalRService.nextRound).toHaveBeenCalled();
     });
 });

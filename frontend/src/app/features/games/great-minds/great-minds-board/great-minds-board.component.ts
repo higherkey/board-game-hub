@@ -12,6 +12,7 @@ import { Subscription } from 'rxjs';
 })
 export class GreatMindsBoardComponent implements OnInit, OnDestroy, OnChanges {
   @Input() gameState: any;
+  @Input() isHost: boolean = false;
   justPlayed: boolean = false;
   isError: boolean = false;
   isSuccess: boolean = false;
@@ -95,6 +96,14 @@ export class GreatMindsBoardComponent implements OnInit, OnDestroy, OnChanges {
     if (num === 0) return 'rgba(255,255,255,0.05)';
     const hue = 200 + (num * 1.3);
     return `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${hue + 40}, 80%, 40%))`;
+  }
+
+  get isDefeat(): boolean {
+    return this.gameState?.lives === 0;
+  }
+
+  restartGame() {
+    this.signalR.startGame();
   }
 }
 

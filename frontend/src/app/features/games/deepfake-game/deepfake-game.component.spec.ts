@@ -17,6 +17,8 @@ describe('DeepfakeGameComponent', () => {
             submitDeepfakeStroke: jasmine.createSpy('submitDeepfakeStroke'),
             submitDeepfakeVote: jasmine.createSpy('submitDeepfakeVote'),
             submitDeepfakeAiGuess: jasmine.createSpy('submitDeepfakeAiGuess'),
+            submitDeepfakeAiGuess: jasmine.createSpy('submitDeepfakeAiGuess'),
+            nextRound: jasmine.createSpy('nextRound'),
             currentRoom$: { subscribe: () => { } } // Mock observable subscription
         };
 
@@ -52,4 +54,40 @@ describe('DeepfakeGameComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy();
     });
+
+    it('should submit vote when Vote button clicked in Voting phase', () => {
+        component.room = createMockRoom({
+            gameType: 'Deepfake',
+            gameData: { phase: 1, strokes: [], votes: {} }
+        });
+        fixture.detectChanges();
+
+        component.selectedVoteId = 'conn2'; // Simulate selection
+        fixture.detectChanges();
+
+        const btn = fixture.nativeElement.querySelector('button.primary-btn'); // Assuming Vote button class
+        btn.click();
+
+        expect(mockSignalRService.submitDeepfakeVote).toHaveBeenCalledWith('conn2');
+    });
+
+    it('should call nextRound when Host clicks Next Round in Result phase', () => {
+        component.room = createMockRoom({
+            gameType: 'Deepfake',
+            gameData: { phase: 2, strokes: [], votes: {} }
+        });
+        // Make sure current player is Host
+        const me = component.room.players.find((p: any) => p.connectionId === 'conn1');
+        if (me) me.isHost = true;
+
+        fixture.detectChanges();
+
+        const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+        const nextRoundBtn = buttons.find(b => b.textContent?.includes('Next Round'));
+
+        expect(nextRoundBtn).toBeTruthy();
+        nextRoundBtn?.click();
+        expect(mockSignalRService.nextRound).toHaveBeenCalled();
+    });
+});
 });

@@ -1,6 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PoppycockRulesComponent } from './poppycock-rules.component';
+import { SignalRService } from '../../../services/signalr.service';
 
 @Component({
     selector: 'app-poppycock-board',
@@ -11,6 +12,7 @@ import { PoppycockRulesComponent } from './poppycock-rules.component';
 })
 export class PoppycockBoardComponent implements OnChanges {
     @Input() room: any;
+    @Input() isHost: boolean = false;
     gameData: any;
     showRules: boolean = false;
 
@@ -20,6 +22,12 @@ export class PoppycockBoardComponent implements OnChanges {
     // Better to use a stable sort or just deterministic based on content hash.
     // Or just shuffle once when entering phase 1.
     shuffledDefinitions: any[] = [];
+
+    constructor(private signalRService: SignalRService) { }
+
+    nextRound() {
+        this.signalRService.nextRound();
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['room']) {

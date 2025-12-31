@@ -40,4 +40,15 @@
         <div class="reward-flash">✨ REWARD GRANTED ✨</div>
         <div class="reward-detail">+1 LIFE & +1 SYNC</div>
     </div>
+
+    <!-- GAME OVER / VICTORY OVERLAY -->
+    <div class="game-over-overlay" *ngIf="isDefeat || isVictory">
+        <h1 class="title">{{ isVictory ? 'TRANSCENDENCE ACHIEVED' : 'CONNECTION LOST' }}</h1>
+        <p class="subtitle">{{ isVictory ? 'You have synchronized completely.' : 'Your minds drifted apart.' }}</p>
+
+        <button *ngIf="isHost" class="restart-btn" (click)="restartGame()">
+            PLAY AGAIN
+        </button>
+        <p *ngIf="!isHost" class="waiting-text">Waiting for host...</p>
+    </div>
 </div>

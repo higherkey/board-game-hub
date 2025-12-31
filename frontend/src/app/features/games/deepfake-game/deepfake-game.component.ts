@@ -45,6 +45,10 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
     return turnPlayerId === this.myId;
   }
 
+  get amIHost(): boolean {
+    return this.room?.players?.find(p => p.connectionId === this.myId)?.isHost || false;
+  }
+
   get turnPlayerName(): string {
     if (!this.state) return '';
     const id = this.state.playerOrder[this.state.currentTurnIndex % this.state.playerOrder.length];
@@ -246,6 +250,10 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.aiGuess) {
       this.signalRService.submitDeepfakeAiGuess(this.aiGuess);
     }
+  }
+
+  handleNextRound() {
+    this.signalRService.nextRound();
   }
 
   // Voting Status

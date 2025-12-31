@@ -9,7 +9,7 @@
     </app-great-minds-rules>
 
     <ng-container *ngIf="isHost; else playerView">
-        <app-great-minds-board [gameState]="gameState"></app-great-minds-board>
+        <app-great-minds-board [gameState]="gameState" [isHost]="isHost"></app-great-minds-board>
     </ng-container>
     <ng-template #playerView>
         <app-great-minds-player [gameState]="gameState" [myConnectionId]="myConnectionId">
