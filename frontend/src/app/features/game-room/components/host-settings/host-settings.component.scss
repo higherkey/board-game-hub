@@ -3,8 +3,14 @@
     padding: 2rem;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--text-light);
+    /* was #e9ecef */
     width: 100%;
+
+    &.compact-mode {
+        padding: 0.75rem 1.25rem;
+        border-radius: 12px;
+    }
 }
 
 .settings-grid {
@@ -25,19 +31,20 @@
     gap: 0.75rem;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 2px solid var(--text-light);
+    /* was #f0f0f0 */
 }
 
 .panel-header i {
     font-size: 1.5rem;
-    color: var(--primary, #1a237e);
+    color: var(--brand-blue);
 }
 
 .panel-header h3 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary, #1a1a2e);
+    color: var(--brand-blue);
 }
 
 .setting-group {
@@ -50,14 +57,14 @@
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #333;
+    font-weight: 700;
+    color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
 .setting-group label i,
 .setting-group .group-label i {
-    color: #6c757d;
+    color: var(--text-secondary);
 }
 
 .select-wrapper {
@@ -67,11 +74,13 @@
 .select-wrapper select {
     width: 100%;
     padding: 0.875rem 2.5rem 0.875rem 1rem;
-    border: 2px solid #e9ecef;
+    border: 2px solid var(--text-light);
+    /* was #e9ecef */
     border-radius: 10px;
     background: #f8f9fa;
     font-size: 1rem;
-    color: #333;
+    color: var(--text-primary);
+    /* was #333 */
     cursor: pointer;
     appearance: none;
     transition: all 0.2s ease;
@@ -90,7 +99,8 @@
     top: 50%;
     transform: translateY(-50%);
     pointer-events: none;
-    color: #6c757d;
+    color: var(--secondary);
+    /* was #6c757d */
 }
 
 .range-wrapper {
@@ -144,7 +154,8 @@
 .list-id-input input {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 2px solid #e9ecef;
+    border: 2px solid var(--text-light);
+    /* was #e9ecef */
     border-radius: 10px;
     font-size: 1rem;
     text-align: center;
@@ -171,13 +182,15 @@
 .btn-start {
     width: 100%;
     padding: 1rem;
-    background: linear-gradient(135deg, #186618 0%, #006666 100%);
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--accent-dark) 100%);
     color: white;
     border: none;
     border-radius: 12px;
     font-size: 1.1rem;
     font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 45, 146, 0.3);
+    /* Pink drop shadow */
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
@@ -189,7 +202,8 @@
 
 .btn-start:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    box-shadow: 0 8px 25px rgba(255, 45, 146, 0.5);
+    /* Stronger pink shadow on hover */
 }
 
 .btn-start:disabled {
@@ -202,4 +216,15 @@
 
 .btn-start i {
     font-size: 1.25rem;
+}
+
+.compact-row {
+    .select-wrapper select {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .form-control-sm {
+        height: calc(1.5em + 1rem + 2px);
+    }
 }

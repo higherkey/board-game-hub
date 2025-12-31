@@ -22,7 +22,8 @@ describe('ActiveGamesComponent', () => {
         };
 
         mockRouter = {
-            navigate: jasmine.createSpy('navigate')
+            navigate: jasmine.createSpy('navigate'),
+            events: new BehaviorSubject<any>(null)
         };
 
         await TestBed.configureTestingModule({

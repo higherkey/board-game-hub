@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 
 export interface GameSettings {
   timerDurationSeconds: number;
+  totalRounds?: number;
   letterMode: number; // 0=Normal, 1=Hard, 2=TrueRandom
   boardSize?: number; // 4, 5, 6
   listId?: number;
@@ -36,6 +37,7 @@ export interface Room {
   gameData: any; // Matches backend property
 
   roundNumber: number;
+  totalRounds?: number;
 
   // Voting
   nextGameVotes: { [key: string]: number }; // Vote is GameType enum int or string
@@ -249,6 +251,11 @@ export class SignalRService {
     if (roomCode) await this.hubConnection.invoke('EndRound', roomCode);
   }
 
+  public async endGame(): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) await this.hubConnection.invoke('EndGame', roomCode);
+  }
+
   public async nextRound(): Promise<void> {
     const roomCode = this.currentRoomSubject.value?.code;
     if (roomCode) await this.hubConnection.invoke('NextRound', roomCode);
@@ -397,6 +404,30 @@ export class SignalRService {
       });
     }
     return roomCode;
+  }
+
+  public async getGameHistory(): Promise<any[]> {
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
+    const history: any[] = await this.hubConnection.invoke('GetGameHistory');
+
+    // Map backend model (GameSessionPlayer -> GameSession) to frontend model
+    return history.map(h => ({
+      id: h.gameSessionId,
+      gameType: h.gameSession?.gameType || 'Unknown',
+      timestamp: h.gameSession?.endTime ? new Date(h.gameSession.endTime) : new Date(),
+      result: this.getOrdinal(h.rank),
+      score: h.score,
+      players: h.gameSession?.players?.length || h.score ? 1 : 0, // Fallback if players not included yet
+      roomCode: h.gameSession?.roomCode
+    }));
+  }
+
+  private getOrdinal(n: number): string {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 
   public async getPublicRooms(): Promise<any[]> {

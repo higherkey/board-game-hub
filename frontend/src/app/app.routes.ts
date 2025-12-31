@@ -26,6 +26,7 @@ export const routes: Routes = [
             { path: 'play', component: PlayComponent, title: 'Play & Connect' },
             { path: 'games', component: GamesComponent, title: 'Games Library' },
             { path: 'social', component: SocialComponent, canActivate: [authGuard], title: 'Social' },
+            { path: 'history', loadComponent: () => import('./features/game-history/game-history.component').then(m => m.GameHistoryComponent), canActivate: [authGuard], title: 'Game History' },
             { path: 'about', loadComponent: () => import('./features/about/about.component').then(m => m.AboutComponent), title: 'About' },
             { path: 'login', component: AuthComponent, title: 'Login' },
             { path: 'register', loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent), title: 'Register' },

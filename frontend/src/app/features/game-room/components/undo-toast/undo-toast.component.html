@@ -1,0 +1,24 @@
+<div class="undo-toast" *ngIf="vote">
+    <div class="content">
+        <div class="header">
+            <span class="icon">⏪</span>
+            <strong>Undo Requested</strong>
+        </div>
+        <p class="mb-2">{{ vote.initiatorName }} wants to undo the last move.</p>
+
+        <div class="vote-status mb-2">
+            <small>Votes: {{ yesCount }} / {{ totalPlayers }}</small>
+            <div class="progress" style="height: 4px;">
+                <div class="progress-bar bg-success" [style.width.%]="(yesCount / totalPlayers) * 100"></div>
+            </div>
+        </div>
+
+        <div class="actions d-flex gap-2 justify-content-center" *ngIf="!hasVoted">
+            <button class="btn btn-sm btn-success flex-grow-1" (click)="castVote(true)">Yes (Allow)</button>
+            <button class="btn btn-sm btn-secondary flex-grow-1" (click)="castVote(false)">No</button>
+        </div>
+        <div class="text-center text-muted" *ngIf="hasVoted">
+            <small>You voted {{ myVote ? 'Yes' : 'No' }}</small>
+        </div>
+    </div>
+</div>

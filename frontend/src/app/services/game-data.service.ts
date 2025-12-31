@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs'; // Import tap
+import { BehaviorSubject } from 'rxjs'; // Import tap
 import { environment } from '../../environments/environment';
 
 export interface GameDefinition {
@@ -23,15 +23,19 @@ export class GameDataService {
     private readonly apiUrl = environment.apiUrl + '/games';
 
     // Cache the games list
-    private readonly gamesSubject = new BehaviorSubject<GameDefinition[]>([]);
+    private readonly gamesSubject = new BehaviorSubject<GameDefinition[] | null>(null);
     public readonly games$ = this.gamesSubject.asObservable();
 
     constructor(private readonly http: HttpClient) { }
 
-    loadGames(): Observable<GameDefinition[]> {
-        return this.http.get<GameDefinition[]>(this.apiUrl).pipe(
-            tap(games => this.gamesSubject.next(games))
-        );
+    refreshGames(): void {
+        this.http.get<GameDefinition[]>(this.apiUrl).subscribe(newGames => {
+            const currentGames = this.gamesSubject.value;
+            // Only update if data actually changed (or first load)
+            if (!currentGames || JSON.stringify(newGames) !== JSON.stringify(currentGames)) {
+                this.gamesSubject.next(newGames);
+            }
+        });
     }
 
     // Helper to get Status label if needed

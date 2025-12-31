@@ -1,0 +1,48 @@
+<div class="rules-overlay" (click)="closeRules.emit()">
+    <div class="rules-card" (click)="$event.stopPropagation()">
+        <header>
+            <h2>THE DISCIPLINE OF SYNC</h2>
+            <button class="close-btn" (click)="closeRules.emit()">&times;</button>
+        </header>
+
+        <div class="rules-content">
+            <section>
+                <h3>1. The Goal</h3>
+                <p>Work together to play all cards in the deck in <strong>ascending order</strong> (1 to 100). You win
+                    by completing all 12 levels.</p>
+            </section>
+
+            <section>
+                <h3>2. Absolute Silence</h3>
+                <p>No speaking. No gestures. No signals. The only communication is the <strong>passage of time</strong>.
+                </p>
+            </section>
+
+            <section>
+                <h3>3. The Flow</h3>
+                <p>There are no turns. When you feel the time is right, tap your card to play it. If you have a low
+                    number, you must act sooner than those with high numbers.</p>
+            </section>
+
+            <section>
+                <h3>4. The Cost of Haste</h3>
+                <p>If someone plays a card while you hold a <strong>lower number</strong>, the connection breaks. You
+                    lose a <strong>Life</strong> and all missed cards are discarded.</p>
+            </section>
+
+            <section>
+                <h3>5. Sync Tokens</h3>
+                <p>Use Sync Tokens to realign. Everyone discards their lowest card, giving the team fresh information.
+                </p>
+            </section>
+
+            <div class="reward-hint">
+                ✨ Complete Levels 3, 6, and 9 to earn extra Lives and Sync Tokens.
+            </div>
+        </div>
+
+        <footer>
+            <button class="understand-btn" (click)="closeRules.emit()">I AM READY</button>
+        </footer>
+    </div>
+</div>

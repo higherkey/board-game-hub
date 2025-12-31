@@ -1,0 +1,88 @@
+<div class="rules-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div
+        class="rules-card max-w-2xl w-full bg-gray-900 border-2 border-yellow-500 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+        <!-- Header -->
+        <div class="p-6 bg-yellow-500 text-black flex justify-between items-center">
+            <h2 class="text-3xl font-black uppercase italic tracking-tighter">How to Play: Wisecrack</h2>
+            <button (click)="dismiss.emit()" class="text-black hover:scale-110 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-8 space-y-8 overflow-y-auto max-h-[70vh] text-white">
+
+            <!-- Step 1 -->
+            <div class="flex gap-6 items-start">
+                <div
+                    class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-black shrink-0 shadow-lg">
+                    1</div>
+                <div>
+                    <h3 class="text-xl font-bold mb-2 text-blue-400 uppercase">Write Wisecracks</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Everyone gets two funny prompts (e.g., "The worst thing to say at a funeral").
+                        Type in the funniest, weirdest, or most ridiculous answer you can think of!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flex gap-6 items-start">
+                <div
+                    class="bg-red-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-black shrink-0 shadow-lg">
+                    2</div>
+                <div>
+                    <h3 class="text-xl font-bold mb-2 text-red-500 uppercase">Head-to-Head Battle</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Two answers for the same prompt go head-to-head on the big screen.
+                        Nobody knows who wrote what until after the voting!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flex gap-6 items-start">
+                <div
+                    class="bg-green-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-black shrink-0 shadow-lg">
+                    3</div>
+                <div>
+                    <h3 class="text-xl font-bold mb-2 text-green-400 uppercase">Vote & Win</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Everyone else votes for their favorite answer.
+                        Win the battle to earn points! Get 100% of the votes for a <strong>Wisecrack Bonus</strong>!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Round Info -->
+            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                <h4 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Round Breakdown</h4>
+                <ul class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <li class="p-3 bg-gray-900 rounded-xl border border-gray-700">
+                        <div class="text-xs text-gray-500 mb-1 leading-none">ROUND 1</div>
+                        <div class="font-bold">Standard</div>
+                    </li>
+                    <li class="p-3 bg-gray-900 rounded-xl border border-yellow-500/30">
+                        <div class="text-xs text-yellow-500 mb-1 leading-none">ROUND 2</div>
+                        <div class="font-bold text-yellow-500">Double Points</div>
+                    </li>
+                    <li class="p-3 bg-gray-900 rounded-xl border border-red-500/30">
+                        <div class="text-xs text-red-500 mb-1 leading-none">ROUND 3</div>
+                        <div class="font-bold text-red-500">The Final Crack</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-6 bg-gray-800 flex justify-center">
+            <button (click)="dismiss.emit()"
+                class="px-10 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-black uppercase rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-xl">
+                Got it! Let's Play
+            </button>
+        </div>
+    </div>
+</div>

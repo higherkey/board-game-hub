@@ -1,54 +1,86 @@
-<div class="container-fluid d-flex flex-column h-100">
+<div class="container-fluid d-flex flex-column h-100 pt-2">
     <!-- 1. HEADER (Top Bar) -->
     <!-- 1. HEADER (Top Bar) -->
-    <header
-        class="game-room-header px-4 py-2 mb-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between">
+    <header *ngIf="!isBigScreen"
+        class="game-room-header px-4 py-2 mb-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
+        <!-- Left: Navigation & Room Actions -->
         <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-outline-light btn-sm" (click)="leaveRoom()">
-                <i class="bi bi-box-arrow-left"></i> QUIT ROOM
+            <a routerLink="/" class="btn btn-outline-secondary btn-sm" title="Home (Keep Connected)">
+                <i class="bi bi-house-door-fill"></i>
+            </a>
+            <button class="btn btn-pink btn-sm fw-bold d-flex align-items-center" (click)="leaveRoom()"
+                title="Leave Table & Room">
+                <i class="bi bi-box-arrow-left me-1"></i>
+                <span>{{ isBigScreen ? 'QUIT ROOM' : 'QUIT' }}</span>
             </button>
 
             <!-- Video Chat Toggle -->
             <button class="btn btn-outline-light btn-sm" (click)="videoChat.joinVideo()"
-                *ngIf="!videoChat.isVideoActive">
-                <i class="bi bi-camera-video"></i> Join Video
+                *ngIf="!videoChat.isVideoActive" title="Start Video">
+                <i class="bi bi-camera-video"></i>
             </button>
 
-            <button class="btn btn-warning btn-sm"
+            <!-- Undo Button -->
+            <button class="btn btn-pink btn-sm"
                 *ngIf="(gameStarted$ | async) && (currentRoom$ | async)?.gameType !== 'Babble'" (click)="requestUndo()"
                 title="Request Undo">
                 <i class="bi bi-arrow-counterclockwise"></i>
-            </button> <!-- Warning preserved for Undo as it's an "alert" action -->
+            </button>
 
-            <div class="d-flex flex-column ms-2">
-                <span class="badge bg-white text-primary fs-6 shadow-sm" *ngIf="roomCode && roomCode !== 'create'">Room:
-                    {{ roomCode }}</span>
+            <!-- Room Info (Repositioned to Left) -->
+            <div class="d-flex align-items-center gap-3 ms-2 border-start border-secondary ps-3">
+                <div class="d-flex align-items-baseline">
+                    <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline"
+                        style="font-size: 0.65rem; color: var(--text-light);">ROOM</span>
+                    <span class="font-monospace room-code-display">{{ roomCode }}</span>
+                </div>
+                <div *ngIf="(currentRoom$ | async)?.gameType as gameType"
+                    class="text-white game-title-badge fw-bold text-uppercase">
+                    {{ gameType !== 'None' ? gameType : 'Lobby' }}
+                </div>
             </div>
+        </div>
 
-            <span class="text-white-50 small ms-2 d-flex align-items-center gap-1"
+        <!-- Round Indicator -->
+        <div *ngIf="(gameStarted$ | async)"
+            class="badge bg-dark border border-secondary text-light ms-3 px-3 py-2 d-none d-md-block">
+            ROUND {{ (currentRoom$ | async)?.roundNumber || 1 }} / {{ (currentRoom$ | async)?.totalRounds ||
+            (currentRoom$ | async)?.settings?.totalRounds || 5 }}
+        </div>
+
+        <!-- End Game Button (Host Only) -->
+        <button class="btn btn-outline-danger btn-sm ms-3 fw-bold" *ngIf="(isHost$ | async) && (gameStarted$ | async)"
+            (click)="onEndGame()" title="End Game Session">
+            <i class="bi bi-stop-circle-fill me-1"></i> END GAME
+        </button>
+
+
+
+        <!-- Right: Profile -->
+        <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center text-white-50 small d-none d-md-flex"
                 *ngIf="connectionStatus$ | async as status">
-                <i class="bi bi-circle-fill" [class.text-success]="status === 'Connected'"
-                    [class.text-danger]="status === 'Disconnected'"></i>
+                <span class="status-dot me-1" [class.connected]="status === 'Connected'"
+                    [class.disconnected]="status === 'Disconnected'"></span>
                 {{ status }}
-            </span>
+            </div>
+            <app-user-profile-dropdown [session]="session$ | async"></app-user-profile-dropdown>
         </div>
 
-        <div class="text-white" *ngIf="currentRoom$ | async as room">
-            <span *ngIf="room.gameType" class="badge bg-accent text-white fs-6 shadow-sm">{{ room.gameType }}</span>
-        </div>
+
+        <!-- UNDO TOAST OVERLAY -->
+        <app-undo-toast *ngIf="(currentRoom$ | async)?.currentVote" [vote]="(currentRoom$ | async)?.currentVote"
+            [currentUserId]="getMyConnectionId((currentRoom$ | async)?.players)"
+            [totalPlayers]="(currentRoom$ | async)?.players?.length || 0">
+        </app-undo-toast>
     </header>
-
-    <!-- UNDO TOAST OVERLAY -->
-    <app-undo-toast *ngIf="(currentRoom$ | async)?.currentVote" [vote]="(currentRoom$ | async)?.currentVote"
-        [currentUserId]="getMyConnectionId((currentRoom$ | async)?.players)"
-        [totalPlayers]="(currentRoom$ | async)?.players?.length || 0">
-    </app-undo-toast>
 
     <!-- 2. MAIN BODY (Sidebar + Content) -->
     <div class="row flex-grow-1 g-3 position-relative overflow-hidden section-container">
         <!-- PLAYER SIDEBAR -->
-        <div class="col-md-3 col-lg-2 d-none d-md-flex flex-column h-100 sidebar-panel"
-            [class.d-flex]="mobileView === 'players'" [class.d-none]="mobileView !== 'players'">
+        <div class="col-md-3 col-lg-2 d-md-flex flex-column h-100 sidebar-panel"
+            [class.is-collapsed]="isSidebarCollapsed" [class.d-flex]="mobileView === 'players'"
+            [class.d-none]="mobileView !== 'players' && mobileView !== 'host'">
 
             <!-- Video Chat (Always Visible in this panel, expands when active) -->
             <div class="video-section mb-3 flex-shrink-0"
@@ -59,9 +91,15 @@
             <!-- Player List (Shown ONLY when Video is INACTIVE) -->
             <div class="card bg-surface shadow-sm border-0 flex-grow-1 player-list-card"
                 *ngIf="!videoChat.isVideoActive">
-                <div class="card-header bg-primary text-white py-2 border-bottom-0">
+                <div class="card-header bg-primary text-white py-2 border-bottom-0 d-flex justify-content-between align-items-center"
+                    style="background-color: var(--brand-blue) !important;">
                     <small class="fw-bold text-uppercase spacing-wide">Players ({{ (players$ | async)?.length || 0
                         }})</small>
+                    <!-- Inline Collapse Toggle -->
+                    <button type="button" class="btn btn-link btn-sm text-white p-0 d-none d-md-block"
+                        (click)="toggleSidebar()" title="Collapse Sidebar">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
                 </div>
                 <ul class="list-group list-group-flush small overflow-auto h-100">
                     <li class="list-group-item d-flex justify-content-between align-items-center border-bottom-light"
@@ -70,7 +108,7 @@
                             title="{{p.name}}">
                             <span class="text-truncate fw-bold text-primary" style="max-width: 100px;">{{ p.name
                                 }}</span>
-                            <i *ngIf="p.isHost" class="bi bi-star-fill text-warning ms-1" title="Host"></i>
+                            <i *ngIf="p.isHost" class="bi bi-star-fill text-pink ms-1" title="Host"></i>
                         </div>
                         <span class="score-circle">{{ p.score || 0 }}</span>
                     </li>
@@ -79,19 +117,37 @@
         </div>
 
         <!-- MAIN GAME STAGE -->
-        <div class="col-md-9 col-lg-10 d-none d-md-flex flex-column main-stage-panel h-100"
-            [class.d-flex]="mobileView === 'game'" [class.d-none]="mobileView !== 'game'"
-            [class.has-docked-top]="videoLayout === 'docked-top'"
-            [class.has-docked-bottom]="videoLayout === 'docked-bottom'">
+        <div class="main-stage-panel d-md-flex flex-column h-100"
+            [ngClass]="isSidebarCollapsed ? 'col-md-12' : 'col-md-9 col-lg-10'" [class.d-flex]="mobileView === 'game'"
+            [class.mobile-hidden]="mobileView !== 'game'" [class.has-docked-top]="videoLayout === 'docked-top'"
+            [class.has-docked-bottom]="videoLayout === 'docked-bottom'"
+            style="transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
 
-            <div class="main-stage flex-grow-1 bg-surface-2 rounded-3 shadow-inner p-3 h-100">
+            <div class="main-stage flex-grow-1 bg-surface-2 rounded-3 shadow-inner h-100 position-relative">
+                <!-- Floating Sidebar Expand (Desktop Only, only if collapsed) -->
+                <button
+                    class="btn btn-dark btn-sm position-absolute top-0 start-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none"
+                    [class.d-md-block]="isSidebarCollapsed" (click)="toggleSidebar()"
+                    style="z-index: 1000; width: 32px; height: 32px; padding: 0;" title="Expand Sidebar">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+
+                <!-- Floating Big Screen Toggle (Desktop Only) -->
+                <button
+                    class="btn btn-dark btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none d-md-block"
+                    (click)="toggleBigScreen()" style="z-index: 1000; width: 32px; height: 32px; padding: 0;"
+                    title="{{ isBigScreen ? 'Exit Big Screen (Shift+F)' : 'Big Screen Mode (Shift+F)' }}">
+                    <i class="bi" [class.bi-fullscreen]="!isBigScreen" [class.bi-fullscreen-exit]="isBigScreen"></i>
+                </button>
                 <div class="h-100 d-flex flex-column">
 
                     <!-- ENTRY STAGE (Name / Room Creation) -->
                     <div *ngIf="needsName"
                         class="h-100 d-flex flex-column align-items-center justify-content-center text-center">
-                        <div class="card shadow-lg border-primary p-4 p-md-5 w-100" style="max-width: 600px;">
-                            <h2 class="display-6 mb-4 fw-bold text-primary">{{ isCreating ? 'Host a New Game' : 'Ready
+                        <div class="card shadow-lg border-accent p-4 p-md-5 w-100" style="max-width: 600px;">
+                            <h2 class="display-6 mb-4 fw-bold" style="color: var(--brand-blue);">{{ isCreating ? 'Host a
+                                New Game' :
+                                'Ready
                                 to Join?' }}</h2>
 
                             <div class="mb-4 text-start">
@@ -105,12 +161,14 @@
 
                             <ng-container *ngIf="isCreating">
                                 <div class="mb-4 text-start">
-                                    <label for="gameTypeSelect" class="form-label fw-bold text-secondary">Initial Game
+                                    <label for="gameTypeSelect" class="form-label fw-bold text-secondary">Initial
+                                        Game
                                         (Optional)</label>
                                     <select id="gameTypeSelect" class="form-select form-select-lg"
                                         [(ngModel)]="selectedGameType">
                                         <option value="None">Decide Later (Lobby)</option>
-                                        <option *ngFor="let game of availableGames" [value]="game.id">{{ game.name }}
+                                        <option *ngFor="let game of availableGames" [value]="game.id">{{ game.name
+                                            }}
                                         </option>
                                     </select>
                                 </div>
@@ -118,7 +176,7 @@
                                 <div class="mb-4 text-start">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" role="switch" id="publicSwitch"
-                                            [(ngModel)]="isPublic" [attr.aria-checked]="isPublic">
+                                            [(ngModel)]="isPublic" [attr.aria-checked]="isPublic ? 'true' : 'false'">
                                         <label class="form-check-label fw-bold text-secondary" for="publicSwitch">
                                             {{ isPublic ? 'Public Room' : 'Private Room' }}
                                         </label>
@@ -136,14 +194,14 @@
 
                     <!-- LOBBY STATE -->
                     <div *ngIf="!needsName && !(gameStarted$ | async)"
-                        class="h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                        class="h-100 d-flex flex-column align-items-center justify-content-start text-center pt-5">
                         <div class="w-100" style="max-width: 1000px;">
-                            <h2 class="display-6 mb-4 fw-bold text-primary">Waiting for Game</h2>
+                            <h2 class="display-6 mb-3 fw-bold" style="color: var(--brand-blue);">Waiting for Game</h2>
 
                             <!-- Host Controls -->
                             <div *ngIf="isHost$ | async; else playerWaiting">
-                                <div class="card shadow-lg p-4 border-primary">
-                                    <app-host-settings [roomCode]="roomCode"
+                                <div class="w-100">
+                                    <app-host-settings [roomCode]="roomCode" [compactMode]="true"
                                         [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                                         (gameStart)="startGame($event)">
                                     </app-host-settings>
@@ -177,6 +235,20 @@
                             <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
                             <p>Game component not found for {{ (currentRoom$ | async)?.gameType }}</p>
                         </div>
+
+                        <!-- INTERMISSION SETTINGS BAR (Host Only) -->
+                        <div *ngIf="(isIntermission$ | async) && (isHost$ | async)"
+                            class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 shadow-lg border-top border-secondary d-none d-md-block"
+                            style="background-color: var(--surface-card); box-shadow: 0 -5px 20px rgba(0,0,0,0.3) !important;">
+                            <div class="container-fluid d-flex align-items-center justify-content-center">
+                                <app-host-settings [roomCode]="roomCode" [compactMode]="true" [isIntermission]="true"
+                                    [currentGameType]="(currentRoom$ | async)?.gameType || ''"
+                                    [currentRound]="(currentRoom$ | async)?.roundNumber || 0"
+                                    [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
+                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()">
+                                </app-host-settings>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- PLAYER VIEW -->
@@ -202,42 +274,64 @@
 
 
     <!-- 3. MOBILE TAB BAR (Small Screens Only) -->
-    <div class="d-md-none mt-auto mobile-tab-bar bg-primary text-white d-flex justify-content-around py-2 flex-shrink-0 shadow-lg"
-        *ngIf="!needsName">
-        <button class="btn btn-link text-white-50 text-decoration-none d-flex flex-column align-items-center"
-            [class.text-white]="mobileView === 'game'" (click)="setMobileView('game')">
-            <i class="bi bi-controller fs-4"></i>
-            <span class="small fw-bold">Game</span>
-        </button>
-        <button class="btn btn-link text-white-50 text-decoration-none d-flex flex-column align-items-center"
-            [class.text-white]="mobileView === 'players'" (click)="setMobileView('players')">
-            <i class="bi bi-people-fill fs-4"></i>
-            <span class="small fw-bold">Players</span>
-        </button>
-    </div>
-</div>
+    <app-mobile-tab-bar *ngIf="!needsName" [activeTab]="mobileView" [isHost]="(isHost$ | async) || false"
+        (tabChange)="setMobileView($event)">
+    </app-mobile-tab-bar>
 
+    <!-- HOST TAB CONTENT (Mobile Only) -->
+    <div class="d-md-none bg-surface-2 position-absolute top-0 start-0 w-100 h-100 p-3 pt-5"
+        *ngIf="mobileView === 'host'"
+        style="z-index: 1040; margin-top: 60px; padding-bottom: 80px !important; overflow-y: auto;">
 
-<!-- Undo Confirmation Modal -->
+        <div class="container" style="max-width: 600px;">
+            <h4 class="text-pink fw-bold mb-4 text-center">
+                <i class="bi bi-star-fill me-2"></i>Host Controls
+            </h4>
 
-<dialog #undoDialog class="border-0 p-0 bg-transparent rounded-3">
-    <div class="modal-dialog modal-dialog-centered m-0">
-        <div class="modal-content bg-surface shadow-lg border-warning">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Request
-                    Undo?</h5>
-                <button type="button" class="btn-close" (click)="cancelUndo()" aria-label="Close"></button>
+            <!-- Dynamic Host Controls from Active Game -->
+            <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-4">
+                <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
             </div>
-            <div class="modal-body">
-                <p class="text-secondary mb-0">This will pause the game and ask all players to vote on the undo. Are you
-                    sure you want to proceed?</p>
-            </div>
-            <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-ghost text-secondary" (click)="cancelUndo()">Cancel</button>
-                <button type="button" class="btn btn-warning px-4 text-dark fw-bold" (click)="confirmUndo()">
-                    Yes, Request Undo
-                </button>
+
+            <div class="card shadow border-pink">
+                <!-- Reusing Host Settings Component -->
+                <div class="card-header bg-white border-bottom-0 pt-3">
+                    <h6 class="fw-bold text-secondary text-uppercase mb-0">Game Settings</h6>
+                </div>
+                <div class="card-body">
+                    <app-host-settings [roomCode]="roomCode" [compactMode]="true"
+                        [currentGameType]="(currentRoom$ | async)?.gameType || ''" (gameStart)="startGame($event)">
+                    </app-host-settings>
+                </div>
             </div>
         </div>
     </div>
-</dialog>
+
+
+
+    <!-- Undo Confirmation Modal -->
+
+    <dialog #undoDialog class="border-0 p-0 bg-transparent rounded-3">
+        <div class="modal-dialog modal-dialog-centered m-0">
+            <div class="modal-content bg-surface shadow-lg border-pink">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title text-pink fw-bold"><i
+                            class="bi bi-exclamation-triangle-fill me-2"></i>Request
+                        Undo?</h5>
+                    <button type="button" class="btn-close" (click)="cancelUndo()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary mb-0">This will pause the game and ask all players to vote on the undo.
+                        Are you
+                        sure you want to proceed?</p>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-ghost text-secondary" (click)="cancelUndo()">Cancel</button>
+                    <button type="button" class="btn btn-pink px-4 text-white fw-bold" (click)="confirmUndo()">
+                        Yes, Request Undo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </dialog>
+</div>

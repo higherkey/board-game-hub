@@ -149,6 +149,11 @@ export class SocialService {
         setTimeout(() => this.loadFriends(), 500);
     }
 
+    public async removeFriend(friendId: string): Promise<void> {
+        await this.hubConnection.invoke('RemoveFriend', friendId);
+        setTimeout(() => this.loadFriends(), 500);
+    }
+
     public async stopConnection(): Promise<void> {
         if (this.hubConnection.state === 'Connected') {
             await this.hubConnection.stop();

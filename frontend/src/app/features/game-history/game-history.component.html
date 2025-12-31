@@ -1,0 +1,49 @@
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="display-6 fw-bold text-primary mb-0"><i class="bi bi-clock-history me-2"></i>Game History</h2>
+        <a routerLink="/" class="btn btn-outline-secondary"><i class="bi bi-house-door-fill me-1"></i> Home</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Game</th>
+                            <th>Date</th>
+                            <th>Result</th>
+                            <th>Score</th>
+                            <th>Players</th>
+                            <th class="text-end pe-4">Room</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let game of history">
+                            <td class="ps-4">
+                                <span class="badge bg-secondary me-2">{{ game.gameType }}</span>
+                            </td>
+                            <td>{{ game.timestamp | date:'mediumDate' }}</td>
+                            <td>
+                                <span class="badge" [class.bg-success]="game.result === '1st'"
+                                    [class.bg-warning]="game.result === '2nd'"
+                                    [class.bg-secondary]="game.result !== '1st' && game.result !== '2nd'">
+                                    {{ game.result }}
+                                </span>
+                            </td>
+                            <td class="fw-bold">{{ game.score }}</td>
+                            <td><i class="bi bi-person me-1"></i>{{ game.players }}</td>
+                            <td class="text-end pe-4 font-monospace small text-muted">{{ game.roomCode }}</td>
+                        </tr>
+                        <tr *ngIf="history.length === 0">
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-controller fs-1 d-block mb-3"></i>
+                                No games played yet. <a routerLink="/games" class="text-primary">Play now!</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

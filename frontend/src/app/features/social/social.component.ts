@@ -7,15 +7,7 @@ import { SocialPanelComponent } from '../../shared/components/social-panel/socia
   selector: 'app-social',
   standalone: true,
   imports: [CommonModule, PageHeaderComponent, SocialPanelComponent],
-  template: `
-    <div class="social-page">
-        <app-page-header 
-            title="Social Hub" 
-            subtitle="Connect with friends, chat, and track your stats.">
-        </app-page-header>
-        
-        <app-social-panel></app-social-panel>
-    </div>
-  `
+  templateUrl: './social.component.html',
+  styleUrls: ['./social.component.scss']
 })
 export class SocialComponent { }

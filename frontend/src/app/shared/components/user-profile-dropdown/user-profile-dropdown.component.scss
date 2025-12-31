@@ -1,0 +1,33 @@
+    .profile-trigger {
+        outline: none;
+        transition: opacity 0.2s;
+
+        &:hover {
+            opacity: 0.9;
+        }
+
+        .user-name-text {
+            color: var(--text-primary);
+        }
+    }
+
+    .dropdown-menu {
+        min-width: 200px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        right: 0;
+        left: auto;
+    }
+
+    .dropdown-item:hover,
+    .dropdown-item:focus,
+    .dropdown-item:active {
+        color: #000 !important;
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }

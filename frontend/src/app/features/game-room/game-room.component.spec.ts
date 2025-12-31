@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { GameDataService } from '../../services/game-data.service';
 
 // Stub Components
 
@@ -102,7 +103,13 @@ describe('GameRoomComponent', () => {
         provideRouter([]),
         { provide: SignalRService, useValue: mockSignalRService },
         { provide: AuthService, useValue: mockAuthService },
-        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        {
+          provide: GameDataService, useValue: {
+            games$: new BehaviorSubject([]),
+            refreshGames: jasmine.createSpy('refreshGames')
+          }
+        }
       ]
     })
       .overrideComponent(GameRoomComponent, {

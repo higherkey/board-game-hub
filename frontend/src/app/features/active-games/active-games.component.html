@@ -1,0 +1,32 @@
+<div class="active-games-container" [class.open]="isOpen">
+    <button class="active-tables-btn" (click)="toggle($event)" [title]="isOpen ? 'Close' : 'View active tables'">
+        <i class="bi bi-controller fs-5"></i>
+        <span class="btn-text">Active Tables</span>
+        <span class="badge rounded-pill bg-danger" *ngIf="(count$ | async) as count">{{ count > 0 ? count : '' }}</span>
+    </button>
+
+    <div class="active-tables-dropdown shadow-lg" *ngIf="isOpen">
+        <div class="list-body">
+            <div *ngFor="let room of activeRooms$ | async" class="game-item" (click)="joinRoom(room.code)"
+                (keydown.enter)="joinRoom(room.code)" tabindex="0">
+                <div class="game-info">
+                    <span class="game-type">{{ room.gameType }}</span>
+                    <span class="room-code">#{{ room.code }}</span>
+                </div>
+                <div class="actions">
+                    <button class="join-icon-btn" title="Rejoin">
+                        <i class="bi bi-arrow-right-short fs-4"></i>
+                    </button>
+                    <button class="remove-btn" (click)="removeRoom(room.code, $event)" title="Remove from list">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div *ngIf="(activeRooms$ | async)?.length === 0" class="empty-state">
+                <i class="bi bi-ghost fs-3 mb-2 d-block text-muted"></i>
+                <small>No active tables found</small>
+            </div>
+        </div>
+    </div>
+</div>

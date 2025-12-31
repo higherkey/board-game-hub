@@ -1,0 +1,19 @@
+    .rules-card {
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    }
+
+    @keyframes zoom-in {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .animate-in {
+        animation: zoom-in 0.3s ease-out;
+    }

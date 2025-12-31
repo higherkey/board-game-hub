@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GamesComponent } from './games.component';
 import { GameDataService } from '../../services/game-data.service';
 import { of } from 'rxjs';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 describe('GamesComponent', () => {
   let component: GamesComponent;
@@ -11,10 +11,11 @@ describe('GamesComponent', () => {
 
   beforeEach(async () => {
     mockGameDataService = {
-      loadGames: jasmine.createSpy('loadGames').and.returnValue(of([
+      games$: of([
         { id: 'Scatterbrain', name: 'Scatterbrain', status: 'Deployed' },
         { id: 'Warships', name: 'Warships', status: 'Backlog' }
-      ]))
+      ]),
+      refreshGames: jasmine.createSpy('refreshGames')
     };
 
     await TestBed.configureTestingModule({
@@ -34,7 +35,7 @@ describe('GamesComponent', () => {
   });
 
   it('should load and sort games', () => {
-    expect(mockGameDataService.loadGames).toHaveBeenCalled();
+    expect(mockGameDataService.refreshGames).toHaveBeenCalled();
     expect(component.games.length).toBe(2);
     // Deployed first
     expect(component.games[0].id).toBe('Scatterbrain');

@@ -1,0 +1,11 @@
+    .popout-container {
+        height: 100vh;
+        background: #121212;
+        display: flex;
+        flex-direction: column;
+    }
+
+    :host ::ng-deep .video-chat-container {
+        height: 100%;
+        background: transparent;
+    }

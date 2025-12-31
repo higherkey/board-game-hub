@@ -1,0 +1,40 @@
+.mobile-tab-bar {
+    background: rgba(30, 30, 40, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-color);
+    padding-bottom: env(safe-area-inset-bottom, 10px) !important;
+    z-index: 1050;
+    /* Above modals if needed, but usually below */
+    height: 70px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.nav-btn {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.2s ease;
+    flex: 1;
+    border-radius: 0;
+
+    &:hover {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    &.active {
+        color: var(--contrast-pink); // Use the pink accent
+
+        .icon-wrapper {
+            transform: translateY(-2px);
+            filter: drop-shadow(0 0 8px rgba(255, 105, 180, 0.4));
+        }
+    }
+}
+
+.icon-wrapper {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+span {
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+}

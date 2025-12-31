@@ -1,0 +1,116 @@
+<div class="babble-view" [class.showing-results]="isFinished" [class.is-host]="isHost">
+    <div class="game-main">
+        <div class="babble-header">
+            <h2>Babble</h2>
+
+            <div class="header-controls d-flex align-items-center gap-3">
+                <div class="timer-card" *ngIf="isPlaying" [class.urgent]="isUrgent">
+                    <i class="bi bi-stopwatch-fill"></i>
+                    <span>{{ timerText }}</span>
+                </div>
+
+                <!-- Integrated Host Controls -->
+                <div *ngIf="isHost && isPlaying" class="host-controls-panel d-none d-md-flex align-items-center gap-2">
+                    <ng-container *ngTemplateOutlet="hostControlsTemplate"></ng-container>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid Display -->
+        <div class="grid-stage">
+            <div class="babble-grid" [class]="'size-' + boardSize">
+                <div class="letter-tile animate-pop" *ngFor="let char of gridChars; let i = index"
+                    [style.animation-delay]="(i * 0.05) + 's'" [attr.data-letter]="char === 'Q' ? 'Qu' : char">
+                    {{ char === 'Q' ? 'Qu' : char }}
+                </div>
+            </div>
+        </div>
+
+        <p *ngIf="!isPlaying && !isFinished && room?.state === 'Finished'" class="text-center text-dim mt-4">
+            Round Over! Calculating scores...
+        </p>
+    </div>
+
+    <div class="game-sidebar">
+        <!-- Player View -->
+        <div *ngIf="!isHost && isPlaying" class="controls-section">
+            <div class="word-input-wrapper mb-4">
+                <input id="babbleWord" [(ngModel)]="currentWord" (keyup.enter)="submitWord()" placeholder="Type word..."
+                    [disabled]="!isPlaying || isPaused" />
+                <button class="btn-submit" (click)="submitWord()" [disabled]="!isPlaying || isPaused">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+
+            <div class="found-words-area">
+                <h5 class="mb-3">Found Words ({{ foundWords.length }})</h5>
+                <div class="word-chips">
+                    <span class="word-chip" *ngFor="let word of foundWords">{{ word }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Host Playing View (for found words) -->
+        <div *ngIf="isHost && isPlaying" class="controls-section">
+            <div class="found-words-area">
+                <h5 class="mb-3">Host's Words ({{ foundWords.length }})</h5>
+                <div class="word-chips">
+                    <span class="word-chip" *ngFor="let word of foundWords">{{ word }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTS VIEW -->
+        <div *ngIf="isFinished" class="results-section fade-in">
+            <div class="results-header">
+                <h3>{{ isHost ? 'Results' : 'Your Results' }}</h3>
+                <div *ngIf="!isHost" class="waiting-text">
+                    <span class="spinner-border spinner-border-sm me-2"></span> Waiting...
+                </div>
+            </div>
+
+            <div class="results-list">
+                <div class="result-row" *ngFor="let res of displayResults">
+                    <div class="word-col">
+                        <div class="d-flex flex-column">
+                            <span class="word-text" [class.strike]="!res.isOnGrid || res.isDuplicate">
+                                {{ res.word }}
+                            </span>
+                            <div class="d-flex gap-1 mt-1">
+                                <span class="badge-tag bg-warning text-dark" *ngIf="!res.isOnGrid">Not on Grid</span>
+                                <span class="badge-tag bg-danger" *ngIf="!res.isInDictionary">Unknown</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="side-info d-flex flex-column align-items-end gap-1">
+                        <span class="points-val" [class.zero]="res.points === 0">+{{ res.points }}</span>
+                        <div class="players-col d-flex flex-wrap justify-content-end gap-1" *ngIf="isHost">
+                            <div class="player-mini-chip" *ngFor="let pid of res.foundBy">
+                                {{ getPlayerName(pid) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="displayResults.length === 0" class="text-center text-secondary py-4">
+                    No words found!
+                </div>
+            </div>
+        </div>
+    </div>
+    <ng-template #hostControlsTemplate>
+        <ng-container *ngIf="isPlaying">
+            <app-end-round-button (endRound)="handleEndRound()" [disabled]="isEnding" size="sm"></app-end-round-button>
+
+            <button *ngIf="!isPaused" class="btn btn-sm btn-outline-warning" (click)="handlePause()" title="Pause">
+                <i class="bi bi-pause-fill"></i>
+            </button>
+            <button *ngIf="isPaused" class="btn btn-sm btn-warning" (click)="handleResume()" title="Resume">
+                <i class="bi bi-play-fill"></i>
+            </button>
+
+            <output *ngIf="isEnding" class="spinner-border spinner-border-sm text-accent"></output>
+        </ng-container>
+    </ng-template>
+</div>

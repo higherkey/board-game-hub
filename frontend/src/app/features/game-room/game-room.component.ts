@@ -1,32 +1,20 @@
-import { Component, OnInit, Type, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, Type, ViewChild, ElementRef, inject, HostListener } from '@angular/core';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SignalRService, GameSettings, Room, Player } from '../../services/signalr.service';
 import { AuthService } from '../../services/auth.service';
+import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
+import { MobileTabBarComponent, GameRoomTab } from './components/mobile-tab-bar/mobile-tab-bar.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
 import { GameReviewComponent } from './components/game-review/game-review.component';
 import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
 import { map, Observable, take } from 'rxjs';
 import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
-import { OneAndOnlyBoardComponent } from '../games/one-and-only/one-and-only-board.component';
-import { OneAndOnlyPlayerComponent } from '../games/one-and-only/one-and-only-player.component';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
-import { BreakingNewsComponent } from '../games/breaking-news/breaking-news.component';
-import { UniversalTranslatorComponent } from '../games/universal-translator/universal-translator.component';
-import { PoppycockBoardComponent } from '../games/poppycock/poppycock-board.component';
-import { PoppycockPlayerComponent } from '../games/poppycock/poppycock-player.component';
-import { SymbologyComponent } from '../games/symbology/symbology.component';
-import { WisecrackGameComponent } from '../games/wisecrack/wisecrack-game.component';
-import { PictophoneGameComponent } from '../games/pictophone/pictophone-game.component';
-import { DeepfakeGameComponent } from '../games/deepfake-game/deepfake-game.component';
-import { BabbleComponent } from '../games/babble/babble.component';
-import { SushiTrainComponent } from '../games/sushi-train/sushi-train.component';
-import { SushiTrainPlayerComponent } from '../games/sushi-train/sushi-train-player.component';
-import { GreatMindsGameComponent } from '../games/great-minds/great-minds.component';
-import { ScatterbrainComponent } from '../games/scatterbrain/scatterbrain.component';
 import { ToastService } from '../../shared/services/toast.service';
+import { GAME_REGISTRY } from '../games/game.registry';
 
 @Component({
   selector: 'app-game-room',
@@ -39,7 +27,10 @@ import { ToastService } from '../../shared/services/toast.service';
     GameReviewComponent,
     SocialPanelComponent,
     UndoToastComponent,
-    FormsModule
+    FormsModule,
+    UserProfileDropdownComponent,
+    RouterModule,
+    MobileTabBarComponent
   ],
   templateUrl: './game-room.component.html',
   styleUrls: ['./game-room.component.scss']
@@ -52,8 +43,11 @@ export class GameRoomComponent implements OnInit {
   players$: Observable<Player[]>;
   connectionStatus$: Observable<string>;
   gameStarted$: Observable<boolean>;
+  session$: Observable<any>;
   isHost$: Observable<boolean>;
   currentRoom$: Observable<Room | null>;
+
+  private readonly authService = inject(AuthService);
 
   // Creation options
   selectedGameType = 'None';
@@ -63,13 +57,19 @@ export class GameRoomComponent implements OnInit {
   // Dynamic Loading
   gameComponent: Type<any> | null = null;
   public gameInputs: Record<string, any> = {};
+  public activeGameComponent: any = null; // Reference to the active game instance
 
-  mobileView: 'game' | 'players' = 'game';
+  // Mobile views: 'game' | 'players' | 'host'
+  mobileView: GameRoomTab = 'game';
 
-  // Video Layout Integration
-  public videoLayout: 'sidebar' | 'overlay' | 'docked-top' | 'docked-bottom' = 'sidebar';
+  // Desktop Big Screen Mode (Theatre Mode)
+  isBigScreen = false;
+  isSidebarCollapsed = false;
 
-  setMobileView(view: 'game' | 'players') {
+  // Video layout: 'sidebar' (default) | 'docked-top' | 'docked-bottom'
+  public videoLayout: 'sidebar' | 'docked-top' | 'docked-bottom' = 'sidebar';
+
+  setMobileView(view: GameRoomTab) {
     this.mobileView = view;
   }
 
@@ -77,14 +77,33 @@ export class GameRoomComponent implements OnInit {
     this.videoLayout = mode;
   }
 
+  @HostListener('window:keydown.shift.f', ['$event'])
+  toggleBigScreen(event?: KeyboardEvent) {
+    // Ignore if user is typing in an input text field
+    if (event && /INPUT|TEXTAREA|SELECT|DIALOG/i.test((event.target as HTMLElement).tagName)) {
+      return;
+    }
+
+    // Only allow if not in lobby? Or allow anytime. Roadmap said "Activates on Game Start", but toggle is fine.
+    // Also check if not on mobile?
+    if (window.innerWidth < 768) return;
+
+    this.isBigScreen = !this.isBigScreen;
+  }
+
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly signalRService: SignalRService,
     private readonly router: Router,
-    private readonly authService: AuthService,
+    // authService injected via property
     private readonly toastService: ToastService,
     private readonly gameDataService: GameDataService
   ) {
+    this.session$ = this.authService.session$;
     this.players$ = this.signalRService.players$;
     this.connectionStatus$ = this.signalRService.connectionStatus$;
     this.currentRoom$ = this.signalRService.currentRoom$;
@@ -106,6 +125,10 @@ export class GameRoomComponent implements OnInit {
     }));
   }
 
+  get isIntermission$(): Observable<boolean> {
+    return this.currentRoom$.pipe(map(r => r?.state === 'Finished'));
+  }
+
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       this.roomCode = params.get('code') || '';
@@ -120,9 +143,12 @@ export class GameRoomComponent implements OnInit {
     this.signalRService.startConnection();
 
     // Load available games for creation
-    this.gameDataService.loadGames().subscribe(games => {
-      this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+    this.gameDataService.games$.subscribe(games => {
+      if (games) {
+        this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+      }
     });
+    this.gameDataService.refreshGames();
 
     // Check query params for pre-selected game or name
     this.route.queryParams.pipe(take(1)).subscribe(params => {
@@ -187,6 +213,22 @@ export class GameRoomComponent implements OnInit {
 
   startGame(settings: GameSettings) {
     this.signalRService.startGame(settings);
+  }
+
+  async onNextRound(settings: GameSettings) {
+    try {
+      await this.signalRService.updateSettings(settings);
+      await this.signalRService.nextRound();
+    } catch (err) {
+      this.toastService.showError('Failed to start next round');
+      console.error(err);
+    }
+  }
+
+  async onEndGame() {
+    if (confirm('Are you sure you want to end the game session?')) {
+      await this.signalRService.endGame();
+    }
   }
 
   onBabbleWordsUpdated(words: string[]) {
@@ -258,73 +300,25 @@ export class GameRoomComponent implements OnInit {
       isHost: this.checkIsHost(room, this.getMyConnectionId(room.players))
     };
 
-    // Select Component
-    switch (room.gameType) {
-      case 'Babble':
-        this.gameComponent = BabbleComponent;
-        break;
-      case 'Scatterbrain':
-        this.gameComponent = ScatterbrainComponent;
-        break;
-      case 'OneAndOnly':
-        // Host vs Player logic? Or does OneAndOnlyBoardComponent handle both?
-        // The original HTML showed OneAndOnlyBoardComponent for Host and OneAndOnlyPlayerComponent for Player.
-        // This hybrid logic is tricky with a single Outlet.
-        // IF the game components themselves can't handle role-switching, we might need a Wrapper.
-        // For now, let's assume we load the BOARD if host, PLAYER if not?
-        // Wait, the original HTML used *ngIf="isHost" checks *inside* the template to pick component.
-        // That means we need logic here:
-        if (this.checkIsHost(room, this.getMyConnectionId(room.players))) {
-          this.gameComponent = OneAndOnlyBoardComponent;
-        } else {
-          this.gameComponent = OneAndOnlyPlayerComponent;
-        }
-        break;
-      case 'GreatMinds':
-        this.gameComponent = GreatMindsGameComponent; // This one handles both views internally
-        break;
-      case 'BreakingNews':
-        this.gameComponent = BreakingNewsComponent;
-        break;
-      case 'UniversalTranslator':
-        this.gameComponent = UniversalTranslatorComponent;
-        break;
-      case 'Poppycock':
-        // Similar split logic?
-        if (this.checkIsHost(room, this.getMyConnectionId(room.players)) && room.state !== 'Lobby') {
-          // Assuming Board is for Host?
-          this.gameComponent = PoppycockBoardComponent;
-        } else {
-          this.gameComponent = PoppycockPlayerComponent;
-        }
-        break;
-      case 'Symbology':
-        this.gameComponent = SymbologyComponent;
-        break;
-      case 'Wisecrack':
-        this.gameComponent = WisecrackGameComponent;
-        break;
-      case 'Pictophone':
-        this.gameComponent = PictophoneGameComponent;
-        break;
-      case 'Deepfake':
-        this.gameComponent = DeepfakeGameComponent;
-        break;
-      case 'SushiTrain':
-        // Original HTML used SushiTrainComponent (Board) and SushiTrainPlayerComponent (Player)?
-        // Or maybe SushiTrainComponent handles everything?
-        // Let's check imports: We imported both.
-        if (this.checkIsHost(room, this.getMyConnectionId(room.players))) {
-          this.gameComponent = SushiTrainComponent;
-        } else {
-          // Does PlayerComponent exist definitively? Yes.
-          this.gameComponent = SushiTrainPlayerComponent;
-        }
-        break;
-      default:
-        this.gameComponent = null;
-        break;
+    // Select Component from Registry
+    const gameConfig = GAME_REGISTRY[room.gameType];
+
+    if (gameConfig) {
+      const isHost = this.checkIsHost(room, this.getMyConnectionId(room.players));
+      // Use playerComponent if it exists and we are not the host, otherwise use hostComponent
+      if (!isHost && gameConfig.playerComponent) {
+        this.gameComponent = gameConfig.playerComponent;
+      } else {
+        this.gameComponent = gameConfig.hostComponent;
+      }
+    } else {
+      console.warn(`Game type ${room.gameType} not found in registry.`);
+      this.gameComponent = null;
     }
+  }
+
+  onGameComponentActivate(component: any) {
+    this.activeGameComponent = component;
   }
 
   private checkIsHost(room: Room, myId: string): boolean {

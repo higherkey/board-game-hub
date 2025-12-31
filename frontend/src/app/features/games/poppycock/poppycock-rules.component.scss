@@ -1,0 +1,27 @@
+    .rules-container {
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .text-accent {
+        color: #f59e0b;
+    }
+
+    .btn-accent {
+        background: #f59e0b;
+        color: #0f172a;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-accent:hover {
+        background: #fbbf24;
+        transform: translateY(-2px);
+    }
+
+    .badge {
+        width: 60px;
+    }

@@ -14,13 +14,20 @@ import { GameDataService, GameDefinition } from '../../../../services/game-data.
 export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() roomCode!: string;
   @Input() currentGameType: string | undefined = 'None';
+  @Input() compactMode = false;
+  @Input() isIntermission = false;
+  @Input() currentRound = 1;
+  @Input() totalRounds = 5;
   @Output() gameStart = new EventEmitter<GameSettings>();
+  @Output() nextRound = new EventEmitter<GameSettings>();
+  @Output() endGame = new EventEmitter<void>();
 
   selectedGameType = 'None';
   availableGames: GameDefinition[] = [];
 
   settings: GameSettings = {
     timerDurationSeconds: 60,
+    totalRounds: 5,
     letterMode: 0,
     boardSize: 4,
     listId: undefined
@@ -37,10 +44,14 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   ) { }
 
   ngOnInit() {
-    this.gameDataService.loadGames().subscribe(games => {
-      // Allow Deployed and Testing
-      this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+    this.gameDataService.games$.subscribe(games => {
+      if (games) {
+        // Allow Deployed and Testing
+        this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+      }
     });
+
+    this.gameDataService.refreshGames();
 
     const room = this.signalRService.currentRoomSubject.value;
     if (room?.undoSettings) {
@@ -77,6 +88,20 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   }
 
   startGame() {
-    this.gameStart.emit(this.settings);
+    if (this.isIntermission) {
+      // Check for Game Over condition (Soft Stop)
+      // The host can change totalRounds in the UI before clicking this.
+      if (this.currentRound >= (this.settings.totalRounds || 5)) {
+        this.endGame.emit();
+      } else {
+        this.nextRound.emit(this.settings);
+      }
+    } else {
+      this.gameStart.emit(this.settings);
+    }
+  }
+
+  emitEndGame() {
+    this.endGame.emit();
   }
 }

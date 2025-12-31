@@ -23,6 +23,24 @@ describe('ScatterbrainComponent', () => {
 
         fixture = TestBed.createComponent(ScatterbrainComponent);
         component = fixture.componentInstance;
+
+        // Mock Input
+        component.room = {
+            code: 'TEST',
+            players: [],
+            state: 'Playing',
+            settings: { timerDurationSeconds: 60, letterMode: 0 },
+            gameType: 'Scatterbrain',
+            gameState: {},
+            gameData: { phase: 0, categories: [] },
+            roundNumber: 1,
+            isPaused: false,
+            roundScores: {},
+            nextGameVotes: {},
+            currentVote: null,
+            undoSettings: { allowVoting: true, hostOnly: false }
+        };
+
         fixture.detectChanges();
     });
 

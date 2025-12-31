@@ -1,0 +1,43 @@
+<div class="board-container" [ngClass]="{'glitch-effect': isError, 'victory-state': isVictory}">
+    <!-- ZEN BACKGROUND -->
+    <div class="zen-bg"></div>
+
+    <!-- HUD -->
+    <div class="hud">
+        <div class="stat">
+            <span class="label">LEVEL</span>
+            <span class="value">{{ gameState?.currentLevel || 1 }}</span>
+        </div>
+        <div class="stat lives">
+            <span class="label">LIVES</span>
+            <div class="hearts">
+                <span *ngFor="let l of [].constructor(gameState?.lives || 0)" class="heart">❤️</span>
+            </div>
+        </div>
+        <div class="stat syncs">
+            <span class="label">SYNCS</span>
+            <div class="stars">
+                <span *ngFor="let s of [].constructor(gameState?.syncTokens || 0)" class="star">✨</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- THE STACK -->
+    <div class="stack-area">
+        <div class="card-display" [style.background]="getGradient(gameState?.topCard || 0)" [class.pulse]="justPlayed"
+            [class.success-pop]="isSuccess">
+            <span class="card-number">{{ gameState?.topCard || 0 }}</span>
+            <div class="ripple" *ngIf="justPlayed"></div>
+        </div>
+
+        <div class="message-container">
+            <div class="message" [class.show]="message">{{ message }}</div>
+        </div>
+    </div>
+
+    <!-- REWARD OVERLAY -->
+    <div class="reward-overlay" *ngIf="showReward">
+        <div class="reward-flash">✨ REWARD GRANTED ✨</div>
+        <div class="reward-detail">+1 LIFE & +1 SYNC</div>
+    </div>
+</div>

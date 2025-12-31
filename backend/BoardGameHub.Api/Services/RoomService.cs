@@ -275,6 +275,21 @@ public class RoomService : IRoomService
         return room;
     }
 
+    public Room? EndGame(string code)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        
+        // Already finished?
+        if (room.State == GameState.Finished) return room;
+
+        room.State = GameState.Finished;
+        room.IsPaused = false;
+        room.RoundEndTime = null; // Clear timer
+        
+        NotifyStatsChanged();
+        return room;
+    }
+
     public async Task<Room?> SubmitAction(string code, string connectionId, string actionType, System.Text.Json.JsonElement? payload)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;

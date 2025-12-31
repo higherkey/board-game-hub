@@ -1,0 +1,43 @@
+<div class="social-sidebar" [class.collapsed]="isCollapsed">
+    <button class="toggle-btn" (click)="toggleSidebar()">
+        {{ isCollapsed ? '◀' : '▶' }}
+    </button>
+
+    <div class="sidebar-content" *ngIf="!isCollapsed">
+        <h3>Social</h3>
+
+        <!-- Friend Requests -->
+        <div class="section" *ngIf="friendRequests.length > 0">
+            <h4>Friend Requests</h4>
+            <div *ngFor="let request of friendRequests" class="friend-request">
+                <span>{{ request.senderId }}</span>
+                <button class="btn btn-sm btn-success" (click)="acceptRequest(request.senderId)">Accept</button>
+            </div>
+        </div>
+
+        <!-- Chat -->
+        <div class="section">
+            <h4>Global Chat</h4>
+            <div class="messages">
+                <div *ngFor="let msg of messages" class="message">
+                    <strong>{{ msg.senderId }}:</strong>
+                    <span>{{ msg.message }}</span>
+                </div>
+            </div>
+
+            <div class="message-input">
+                <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()"
+                    placeholder="Type a message..." class="form-control form-control-sm" />
+                <button class="btn btn-primary btn-sm" (click)="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- Add Friend -->
+        <div class="section">
+            <h4>Add Friend</h4>
+            <input type="text" [(ngModel)]="friendUserId" placeholder="User ID"
+                class="form-control form-control-sm mb-2" />
+            <button class="btn btn-primary btn-sm w-100" (click)="addFriend()">Send Request</button>
+        </div>
+    </div>
+</div>

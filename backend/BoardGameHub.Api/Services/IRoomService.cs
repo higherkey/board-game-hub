@@ -18,6 +18,7 @@ public interface IRoomService
     Task<Room?> StartGame(string code, GameSettings? settings = null);
     Room? PauseGame(string code);
     Room? ResumeGame(string code);
+    Room? EndGame(string code);
     Task<Room?> SubmitAction(string code, string connectionId, string actionType, System.Text.Json.JsonElement? payload);
     Task<Room?> CalculateRoundScores(string code);
     

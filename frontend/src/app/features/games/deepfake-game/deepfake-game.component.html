@@ -57,7 +57,7 @@
 
             <canvas #canvas (mousedown)="startDrawing($event)" (mousemove)="draw($event)" (mouseup)="endDrawing()"
                 (mouseleave)="endDrawing()" (touchstart)="startDrawing($event)" (touchmove)="draw($event)"
-                (touchend)="endDrawing()">
+                (touchend)="endDrawing()" class="relative z-10">
             </canvas>
         </div>
 

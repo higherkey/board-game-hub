@@ -14,6 +14,14 @@ public class GameHub : Hub
     private readonly IRoomService _roomService;
     private readonly IGameHistoryService _historyService;
 
+    public async Task<List<GameSessionPlayer>> GetGameHistory()
+    {
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId)) return new List<GameSessionPlayer>();
+
+        return await _historyService.GetUserGameHistory(userId, 20);
+    }
+
     public async Task SubmitAction(string roomCode, string actionType, JsonElement payload)
     {
         var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, actionType, payload);
@@ -73,6 +81,15 @@ public class GameHub : Hub
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        }
+    }
+
+    public async Task EndGame(string roomCode)
+    {
+        var room = _roomService.EndGame(roomCode);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
     }
 

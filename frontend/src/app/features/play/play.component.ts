@@ -39,9 +39,12 @@ export class PlayComponent implements OnInit {
             }
         });
 
-        this.gameDataService.loadGames().subscribe(games => {
-            this.games = games;
+        this.gameDataService.games$.subscribe(games => {
+            if (games) {
+                this.games = games;
+            }
         });
+        this.gameDataService.refreshGames();
 
         this.loadRooms();
     }

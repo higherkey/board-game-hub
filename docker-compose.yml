@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d BoardGameHub"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d BoardGameHub" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,6 +32,29 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: boardgamehub-backend
+  #   ports:
+  #     - "5109:8080"
+  #   environment:
+  #     - ConnectionStrings__DefaultConnection=Host=postgres;Database=BoardGameHub;Username=postgres;Password=password
+  #     - Jwt__Key=YourSuperSecretKeyGoesHereForLocalDev
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: boardgamehub-frontend
+  #   ports:
+  #     - "4200:80"
+  #   depends_on:
+  #     - backend
 
 volumes:
   postgres_data:

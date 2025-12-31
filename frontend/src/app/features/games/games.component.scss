@@ -1,14 +1,40 @@
 .filter-card {
-    border: none;
     border-radius: 1.5rem;
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden;
 
-    // Fix for sticky overlap - ensure it sticks below the header (approx 80px)
+    // Fix for sticky overlap - ensure it sticks below the header
     position: sticky;
-    top: 6rem;
+    top: 2rem;
     z-index: 900;
+}
+
+.filter-header {
+    user-select: none;
+
+    &.cursor-pointer {
+        cursor: pointer;
+    }
+
+    i.bi-chevron-down,
+    i.bi-chevron-up {
+        font-size: 1rem;
+        transition: transform 0.3s ease;
+    }
+}
+
+.filter-content {
+    @media (max-width: 991.98px) {
+        display: none;
+
+        &.show {
+            display: block;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding-top: 1rem;
+        }
+    }
 }
 
 .filter-label {
@@ -49,7 +75,6 @@
 }
 
 .glass-card {
-    border: none;
     border-radius: 1.5rem;
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(8px);
@@ -57,46 +82,53 @@
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
     cursor: pointer;
 
+    // Constraint to prevent cards from getting too huge on 4K
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+
     &:hover {
-        transform: translateY(-8px);
         box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.12) !important;
         background: rgba(255, 255, 255, 0.9);
     }
 }
 
+.game-card {
+    min-height: 200px; // Shorter baseline for flat layout
+}
+
 .game-icon-bg {
-    width: 64px;
-    height: 64px;
-    background: white;
-    border-radius: 1.25rem;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 2.5rem; // Larger emoji since it has no background
+    flex-shrink: 0;
 }
 
 .status-pill {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.7rem;
-    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.65rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.05em;
     border-radius: 2rem;
 
     &[data-status="Deployed"] {
-        background: rgba(40, 167, 69, 0.1);
-        color: #28a745;
+        background: rgba(25, 135, 84, 0.15);
+        color: #0f5132;
     }
 
     &[data-status="Testing"] {
-        background: rgba(255, 193, 7, 0.1);
-        color: #856404;
+        background: rgba(255, 193, 7, 0.2);
+        color: #664d03;
     }
 
     &[data-status="Backlog"] {
-        background: rgba(108, 117, 125, 0.1);
-        color: #6c757d;
+        background: rgba(108, 117, 125, 0.15);
+        color: #212529;
     }
 }
 
@@ -104,11 +136,12 @@
     .meta-item {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
         font-weight: 500;
+        font-size: 0.85rem;
 
         i {
-            font-size: 1rem;
+            font-size: 0.9rem;
             opacity: 0.6;
         }
     }

@@ -1,0 +1,107 @@
+    .player-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 20px;
+        justify-content: space-between;
+        color: white;
+    }
+
+    .main-action {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .play-btn {
+        width: 280px;
+        height: 280px;
+        border-radius: 50%;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.1s, filter 0.2s;
+        position: relative;
+        animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+        }
+
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        }
+    }
+
+    .play-btn:active:not(:disabled) {
+        transform: scale(0.95);
+    }
+
+    .play-btn:disabled {
+        filter: grayscale(100%);
+        opacity: 0.5;
+    }
+
+    .btn-text {
+        font-size: 6rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .btn-sub {
+        font-size: 1rem;
+        opacity: 0.8;
+        letter-spacing: 2px;
+        margin-top: 10px;
+    }
+
+    .queue {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .queue-label {
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        opacity: 0.6;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .queue-list {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .mini-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+
+    .sync-btn {
+        width: 100%;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        border-radius: 10px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }

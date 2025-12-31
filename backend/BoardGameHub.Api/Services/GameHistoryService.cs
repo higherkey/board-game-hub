@@ -81,6 +81,7 @@ public class GameHistoryService : IGameHistoryService
         return await _context.GameSessionPlayers
             .Where(p => p.UserId == userId)
             .Include(p => p.GameSession)
+                .ThenInclude(gs => gs.Players)
             .OrderByDescending(p => p.GameSession!.EndTime)
             .Take(count)
             .ToListAsync();

@@ -5,14 +5,8 @@ import { CommonModule } from '@angular/common';
   selector: 'app-logo',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <img src="assets/logo.png" 
-         alt="BoardGameHub Logo" 
-         [class]="className"
-         [style.width.px]="size" 
-         [style.height.px]="size"
-         style="object-fit: contain;">
-  `
+  templateUrl: './logo.component.html',
+  styleUrls: ['./logo.component.scss']
 })
 export class LogoComponent {
   @Input() size = 40;

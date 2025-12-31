@@ -1,1 +1,60 @@
-<p>layout works!</p>
+<div class="app-shell">
+    <!-- HEADER -->
+    <header *ngIf="!(isGameRoom$ | async)" class="main-header" role="banner">
+        <div class="header-container">
+            <div class="d-flex align-items-center gap-3">
+                <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation">
+                    <i class="bi" [class.bi-list]="!mobileMenuOpen" [class.bi-x-lg]="mobileMenuOpen"></i>
+                </button>
+
+                <a class="logo-container" routerLink="/" (click)="closeMobileMenu()" aria-label="Go to Home">
+                    <app-logo [size]="40" class="text-primary"></app-logo>
+                    <div class="logo-text ms-2 d-none d-sm-block">BoardGame<span class="text-primary">Hub</span></div>
+                    <div class="logo-text ms-2 d-sm-none">BG<span class="text-primary">H</span></div>
+                </a>
+            </div>
+
+            <nav class="main-nav" [class.open]="mobileMenuOpen" role="navigation" aria-label="Main Navigation">
+                <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item"
+                    (click)="closeMobileMenu()">Home</a>
+                <a routerLink="/play" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Play</a>
+                <a routerLink="/games" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Games</a>
+                <a routerLink="/about" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">About</a>
+                <a routerLink="/social" routerLinkActive="active" class="nav-item"
+                    (click)="closeMobileMenu()">Social</a>
+            </nav>
+
+            <div class="auth-actions">
+                <!-- Unified Session View -->
+                <ng-container *ngIf="session$ | async as session; else loginTemplate">
+                    <!-- Active Tables (Only visible with session and active games) -->
+                    <div class="active-games-wrapper" *ngIf="!isBackendPort && (activeGamesCount$ | async) as count">
+                        <app-active-games *ngIf="count > 0"></app-active-games>
+                    </div>
+
+                    <!-- Consolidated Profile Dropdown -->
+                    <app-user-profile-dropdown [session]="session"></app-user-profile-dropdown>
+                </ng-container>
+
+                <!-- Not Logged In -->
+                <ng-template #loginTemplate>
+                    <a routerLink="/login" class="btn btn-sm btn-primary">Login</a>
+                    <a routerLink="/register" class="btn btn-sm btn-secondary text-white">Sign Up</a>
+                </ng-template>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="main-content" [class.game-room-content]="isGameRoom$ | async" role="main">
+        <router-outlet></router-outlet>
+    </main>
+
+    <!-- FOOTER -->
+    <footer *ngIf="!(isGameRoom$ | async)" class="main-footer" role="contentinfo">
+        <div class="footer-content d-flex justify-content-center align-items-center gap-3 opacity-75">
+            <app-logo [size]="24" class="text-secondary"></app-logo>
+            <p class="m-0">&copy; 2025 BoardGameHub. <span class="text-accent">Play Connected.</span></p>
+        </div>
+    </footer>
+</div>

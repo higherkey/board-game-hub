@@ -8,20 +8,33 @@
 
 .game-room-header {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    border-bottom: 3px solid var(--accent);
-    color: white;
+    --text-on-primary: #ffffff;
+}
 
-    // Physical lift
-    transform: translateY(0);
-    transition: all 0.2s ease;
+.room-code-display {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    line-height: 1;
+    color: var(--contrast-pink) !important;
+}
 
-    &:hover {
-        transform: translateY(-2px);
-    }
+.game-title-badge {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    white-space: nowrap;
 }
 
 .player-list-card {
-    border-top: 4px solid var(--primary);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .bg-accent {
@@ -75,7 +88,7 @@ dialog::backdrop {
 }
 
 .main-stage-panel {
-    transition: padding 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     &.has-docked-top {
         padding-top: 140px;
@@ -103,4 +116,25 @@ dialog::backdrop {
     font-weight: bold;
     font-size: 0.8rem;
     flex-shrink: 0;
+}
+
+// Responsive utilities
+@media (max-width: 767.98px) {
+    .mobile-hidden {
+        display: none !important;
+    }
+}
+
+.sidebar-panel {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: visible;
+
+    &.is-collapsed {
+        width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        opacity: 0;
+        pointer-events: none;
+    }
 }

@@ -5,33 +5,8 @@ import { CommonModule } from '@angular/common';
     selector: 'app-canvas-draw',
     standalone: true,
     imports: [CommonModule],
-    template: `
-    <div class="canvas-wrapper border rounded bg-white position-relative shadow-sm" style="touch-action: none;">
-      <canvas #canvas class="d-block w-100" [height]="height" style="cursor: crosshair"></canvas>
-      
-      <!-- TOOL OVERLAY -->
-      <div class="tools position-absolute top-0 end-0 p-2 d-flex flex-column gap-2">
-         <button class="btn btn-sm btn-light shadow-sm" (click)="undo()" [disabled]="undoStack.length <= 1" title="Undo">
-            <i class="bi bi-arrow-90deg-left"></i>
-         </button>
-         <button class="btn btn-sm btn-outline-danger shadow-sm" (click)="clear()" title="Clear All">
-            <i class="bi bi-trash"></i>
-         </button>
-      </div>
-
-      <!-- BRUSH INDICATOR (Optional/Subtle) -->
-      <div class="position-absolute bottom-0 start-0 p-2 pointer-events-none">
-          <div class="rounded-circle border bg-white shadow-sm" 
-               [style.width.px]="lineWidth * 2" 
-               [style.height.px]="lineWidth * 2"
-               [style.background-color]="color"></div>
-      </div>
-    </div>
-  `,
-    styles: [`
-    .canvas-wrapper { overflow: hidden; background: #fff; }
-    .pointer-events-none { pointer-events: none; }
-  `]
+    templateUrl: './canvas-draw.component.html',
+    styleUrls: ['./canvas-draw.component.scss']
 })
 export class CanvasDrawComponent implements AfterViewInit, OnChanges {
     @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;

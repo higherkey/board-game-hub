@@ -15,6 +15,7 @@ import { Subject, takeUntil } from 'rxjs';
 export class SocialPanelComponent implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
   friendRequests: FriendRequest[] = [];
+  friends: any[] = [];
   newMessage = '';
   friendUserId = '';
   private readonly destroy$ = new Subject<void>();
@@ -24,17 +25,21 @@ export class SocialPanelComponent implements OnInit, OnDestroy {
     private readonly authService: AuthService
   ) { }
 
-  async ngOnInit() {
+  ngOnInit(): void {
     if (this.authService.isAuthenticated()) {
-      await this.socialService.startConnection();
+      this.socialService.startConnection().then(() => {
+        this.socialService.messages$
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(messages => this.messages = messages);
 
-      this.socialService.messages$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(messages => this.messages = messages);
+        this.socialService.friendRequests$
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(requests => this.friendRequests = requests);
 
-      this.socialService.friendRequests$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(requests => this.friendRequests = requests);
+        this.socialService.friends$
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(friends => this.friends = friends);
+      });
     }
   }
 
@@ -61,5 +66,11 @@ export class SocialPanelComponent implements OnInit, OnDestroy {
   async acceptRequest(requesterId: string) {
     await this.socialService.acceptFriendRequest(requesterId);
     this.friendRequests = this.friendRequests.filter(r => r.requesterId !== requesterId);
+  }
+
+  async removeFriend(friendId: string) {
+    if (confirm('Are you sure you want to remove this friend?')) {
+      await this.socialService.removeFriend(friendId);
+    }
   }
 }

@@ -2,53 +2,77 @@
     --babble-primary: #6366f1;
     --babble-secondary: #a855f7;
     --babble-accent: #f43f5e;
-    --babble-bg: rgba(23, 23, 23, 0.5);
-    --glass-bg: rgba(255, 255, 255, 0.05);
+    --babble-bg: rgba(23, 23, 23, 0.8);
+    --glass-bg: rgba(255, 255, 255, 0.025);
     --glass-border: rgba(255, 255, 255, 0.1);
     --text-dim: #94a3b8;
 
     display: block;
     width: 100%;
     height: 100%;
+    overflow: hidden;
 }
 
 .babble-view {
-    min-height: 100%;
-    padding: 2rem;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
     background-color: var(--babble-bg);
     backdrop-filter: blur(10px);
     background-image:
         radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
         radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+    animation: fadeIn 0.5s ease-out;
+
+    @media (max-width: 900px) {
+        flex-direction: column;
+        // Don't force min-height 100vh inside the GameRoom container which is already constrained
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+    }
+}
+
+.game-main {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    animation: fadeIn 0.5s ease-out;
-    position: relative; // For absolute positioning of children
-    transition: all 0.5s ease-in-out;
+    padding: 2rem;
+    gap: 1.5rem;
+    min-height: 0;
 
-    &.showing-results {
-        justify-content: center;
+    @media (max-width: 900px) {
+        padding: 1.5rem;
 
-        .grid-stage {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            transform: scale(0.5);
-            transform-origin: top right;
-            margin: 0;
-            z-index: 10;
+        // For players (non-host), don't let the header consume all space
+        .babble-view:not(.is-host) & {
+            flex: 0 0 auto;
         }
+    }
+}
 
-        .babble-header {
-            margin-bottom: 0; // Reduce spacing when grid moves
-        }
+.game-sidebar {
+    width: 320px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1.5rem;
+    overflow-y: auto;
 
-        .results-section {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            z-index: 5;
+    @media (max-width: 900px) {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--glass-border);
+        padding: 1.5rem;
+        background: transparent;
+
+        // For players, let this take the remaining space
+        .babble-view:not(.is-host) & {
+            flex: 1;
+            overflow-y: auto;
         }
     }
 }
@@ -57,7 +81,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
 
     h2 {
         font-size: 2.5rem;
@@ -69,10 +92,20 @@
         -webkit-text-fill-color: transparent;
         letter-spacing: -1px;
     }
+
+    @media (max-width: 640px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+
+        h2 {
+            font-size: 2rem;
+        }
+    }
 }
 
 .timer-card {
-    background: rgba(0, 0, 0, 0.75); // Darker high-contrast background
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 0.75rem 1.5rem;
@@ -80,7 +113,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(244, 63, 94, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 
     i {
         color: var(--babble-accent);
@@ -89,87 +122,121 @@
 
     span {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 1.75rem; // Slightly larger
-        font-weight: 800; // Thicker
+        font-size: 1.5rem; // Slightly smaller to fit header
+        font-weight: 800;
         color: #fff;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); // Add shadow for depth
     }
 
     &.urgent {
         animation: pulse 1s infinite alternate;
-        background: rgba(244, 63, 94, 0.2); // Reddish tint
+        background: rgba(244, 63, 94, 0.2);
         border-color: var(--babble-accent);
+    }
+}
 
-        span {
-            color: #fff; // Keep text white but background tinted
-            text-shadow: 0 0 8px rgba(244, 63, 94, 0.8);
+.host-controls-panel {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+}
+
+.grid-stage {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 0;
+    padding: 1rem;
+    overflow: hidden; // Ensure grid stays within bounds
+
+    @media (max-width: 900px) {
+        .babble-view:not(.is-host) & {
+            display: none;
         }
     }
 }
 
-.grid-stage {
-    perspective: 1000px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); // Bouncy transition
-}
-
 .babble-grid {
     display: grid;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: 1.5vmin;
+    padding: 2vmin;
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);
     border-radius: 1.5rem;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 
+    // Maximized fluid scaling: prioritize height (usually limiting factor), check width
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 1 / 1;
+    margin: auto;
+
+    // Ensure the grid doesn't collapse if content is small
+    min-width: 0;
+    min-height: 0;
+
+    @media (max-width: 900px) {
+        // On mobile, allow it to be driven by width mostly, but constrained by height
+        max-height: 60vh;
+        width: auto;
+        height: auto;
+    }
+
     &.size-4 {
         grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        --tile-fs: 12vmin;
     }
 
     &.size-5 {
         grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        --tile-fs: 9vmin;
     }
 
     &.size-6 {
         grid-template-columns: repeat(6, 1fr);
-    }
-}
-
-.letter-tile {
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, #2b2d31 0%, #1e1f22 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    font-weight: 900;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: default;
-    user-select: none;
-
-    &:hover {
-        transform: translateY(-5px) scale(1.05);
-        background: linear-gradient(135deg, #3a3d42 0%, #2b2d31 100%);
-        border-color: var(--babble-primary);
-        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        grid-template-rows: repeat(6, 1fr);
+        --tile-fs: 7.5vmin;
     }
 
-    &.animate-pop {
-        animation: tilePop 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+    .letter-tile {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #2b2d31 0%, #1e1f22 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(2rem, var(--tile-fs), 6rem);
+        font-weight: 900;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: default;
+        user-select: none;
+        aspect-ratio: 1 / 1;
+
+        &:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: linear-gradient(135deg, #3a3d42 0%, #2b2d31 100%);
+            border-color: var(--babble-primary);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        &[data-letter="Qu"] {
+            font-size: clamp(1.5rem, calc(var(--tile-fs) * 0.7), 4.5rem);
+            letter-spacing: -0.05em;
+        }
     }
 }
 
 .controls-section {
-    max-width: 500px;
-    margin: 0 auto;
     width: 100%;
 }
 
@@ -221,8 +288,6 @@
 }
 
 .found-words-area {
-    margin-top: 1.5rem;
-
     h5 {
         color: var(--text-dim);
         font-size: 0.9rem;
@@ -234,56 +299,82 @@
 .word-chips {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 0.5rem;
 }
 
 .word-chip {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: #e0e7ff;
     padding: 0.25rem 0.75rem;
     border-radius: 2rem;
     font-size: 0.9rem;
     font-weight: 600;
-    animation: chipScale 0.3s ease-out;
 }
 
-.host-dashboard {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 1.5rem;
-    padding: 2rem;
-    text-align: center;
+.results-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
 
-    .status-badge {
-        display: inline-block;
-        padding: 0.5rem 1.5rem;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(34, 197, 94, 0.4);
-        color: #86efac;
-        border-radius: 2rem;
-        font-weight: 700;
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 1rem;
+
+        h3 {
+            margin: 0;
+            color: #fff;
+        }
     }
 }
 
-.btn-end-round {
-    background: linear-gradient(to right, var(--babble-accent), #e11d48);
-    border: none;
-    color: #fff;
-    padding: 1rem 2.5rem;
-    border-radius: 1rem;
-    font-weight: 800;
-    font-size: 1.1rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 10px 20px rgba(244, 63, 94, 0.3);
+.results-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
 
-    &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 30px rgba(244, 63, 94, 0.4);
-        filter: brightness(1.1);
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--glass-border);
+        border-radius: 3px;
+    }
+}
+
+.result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+
+    .word-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #fff;
+
+        &.strike {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+    }
+
+    .points-val {
+        font-weight: 700;
+        color: #bbf7d0;
+
+        &.zero {
+            color: var(--text-dim);
+        }
     }
 }
 
@@ -299,30 +390,6 @@
     }
 }
 
-@keyframes tilePop {
-    from {
-        opacity: 0;
-        transform: scale(0.5) rotate(-10deg);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1) rotate(0);
-    }
-}
-
-@keyframes chipScale {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
 @keyframes pulse {
     from {
         box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
@@ -330,152 +397,5 @@
 
     to {
         box-shadow: 0 8px 32px rgba(244, 63, 94, 0.2);
-    }
-}
-
-// Results Section
-.results-section {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-top: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    animation: slideUp 0.3s ease-out;
-
-    .results-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        border-bottom: 1px solid var(--glass-border);
-        padding-bottom: 1rem;
-
-        h3 {
-            margin: 0;
-            color: #fff;
-            font-family: var(--font-display);
-        }
-    }
-
-    .btn-next {
-        background: linear-gradient(135deg, var(--babble-primary), var(--babble-secondary));
-        color: #fff;
-        border: none;
-        padding: 0.5rem 1.25rem;
-        border-radius: 50px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: transform 0.2s;
-
-        &:hover {
-            transform: scale(1.05);
-        }
-    }
-
-    .waiting-text {
-        color: var(--text-dim);
-        font-style: italic;
-    }
-}
-
-.results-list {
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-
-    // Custom Scrollbar
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: var(--glass-border);
-        border-radius: 3px;
-    }
-}
-
-.result-row {
-    display: flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    border-radius: 8px;
-    transition: background 0.2s;
-
-    &:hover {
-        background: rgba(255, 255, 255, 0.06);
-    }
-
-    .word-col {
-        flex: 2;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-
-        .word-text {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
-
-            &.strike {
-                text-decoration: line-through;
-                opacity: 0.5;
-                color: var(--text-dim);
-            }
-        }
-    }
-
-    .players-col {
-        flex: 3;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem;
-    }
-
-    .points-col {
-        flex: 1;
-        text-align: right;
-
-        .points-val {
-            font-weight: 700;
-            color: #bbf7d0; // Lighter green for better contrast
-
-            &.zero {
-                color: var(--text-dim);
-            }
-        }
-    }
-}
-
-.badge-tag {
-    font-size: 0.7rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    text-transform: uppercase;
-    font-weight: 700;
-}
-
-.player-mini-chip {
-    font-size: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.1rem 0.5rem;
-    border-radius: 12px;
-    color: var(--text-dim);
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
     }
 }

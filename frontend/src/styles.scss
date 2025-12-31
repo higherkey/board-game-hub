@@ -104,11 +104,15 @@
 
   --secondary: #38b2ac;
   /* Teal (Formerly Accent) */
-  --neutral: #718096;
-  /* Slate Grey (Formerly Secondary) */
+  --neutral: #4a5568;
+  /* Blue-Grey (Backgrounds/Borders) */
   --success: #38a169;
   --warning: #d69e2e;
   --danger: #e53e3e;
+  --contrast-pink: #ff2d92;
+  /* Vibrant Hot Pink */
+  --brand-blue: #3b82f6;
+  /* Vibrant Light Blue */
 
   /* Backgrounds (Parchment) */
   --bg-base: #fdf5e6;
@@ -120,11 +124,13 @@
   --bg-overlay: rgba(255, 255, 255, 0.85);
   /* Glass effect */
 
-  /* Typography */
+  /* Typography (Neutral Palette) */
   --text-primary: #002244;
-  /* Dark Navy (Softer than black) */
-  --text-secondary: #4a5568;
-  --text-light: #718096;
+  /* Dark Navy (Primary) */
+  --text-secondary: #718096;
+  /* Neutral Grey (Secondary) */
+  --text-light: #a0aec0;
+  /* Light Grey (Subtext) */
   --text-on-primary: #ffffff;
 
   /* UI Elements */
@@ -207,7 +213,7 @@ h5,
 h6 {
   font-family: 'Outfit', sans-serif;
   font-weight: 500;
-  color: var(--primary);
+  color: var(--brand-blue);
   letter-spacing: -0.01em;
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
@@ -255,6 +261,26 @@ h6 {
   --bs-btn-active-border-color: var(--accent-dark);
 }
 
+.btn-pink {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: var(--contrast-pink);
+  --bs-btn-border-color: var(--contrast-pink);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #e62883;
+  --bs-btn-hover-border-color: #e62883;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #cc2475;
+  --bs-btn-active-border-color: #cc2475;
+}
+
+.text-pink {
+  color: var(--contrast-pink) !important;
+}
+
+.border-pink {
+  border-color: var(--contrast-pink) !important;
+}
+
 .btn:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
@@ -279,6 +305,11 @@ h6 {
 .form-control:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 0.25rem rgba(44, 122, 123, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--secondary);
+  border-color: var(--secondary);
 }
 
 /* Modals - Physical Cut Look */
@@ -310,10 +341,10 @@ h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
+  background: var(--brand-blue);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
+  background: var(--primary);
 }

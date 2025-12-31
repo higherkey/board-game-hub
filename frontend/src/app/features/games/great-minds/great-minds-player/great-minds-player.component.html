@@ -1,0 +1,28 @@
+<div class="player-container">
+    <!-- MAIN ACTION -->
+    <div class="main-action">
+        <button class="play-btn" (click)="playCard()" [disabled]="!canPlay || cooldown"
+            [style.background]="lowestCard ? getGradient(lowestCard) : '#333'">
+            <span class="btn-text" *ngIf="lowestCard">{{ lowestCard }}</span>
+            <span class="btn-sub" *ngIf="lowestCard">TAP TO PLAY</span>
+            <span class="btn-text" *ngIf="!lowestCard">WAITING</span>
+        </button>
+    </div>
+
+    <!-- QUEUE -->
+    <div class="queue" *ngIf="myQueue.length > 0">
+        <span class="queue-label">UP NEXT</span>
+        <div class="queue-list">
+            <div class="mini-card" *ngFor="let c of myQueue">
+                {{ c }}
+            </div>
+        </div>
+    </div>
+
+    <!-- SYNC BTN -->
+    <div class="footer-actions">
+        <button class="sync-btn" (click)="useSync()" [disabled]="!canSync">
+            ✨ SYNC ({{ gameState?.syncTokens || 0 }})
+        </button>
+    </div>
+</div>

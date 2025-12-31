@@ -24,16 +24,32 @@ export class GamesComponent implements OnInit {
 
     allTags: string[] = [];
 
+    isLoading = true;
+    isFiltersExpanded = false;
+
     constructor(
         private readonly gameDataService: GameDataService,
     ) { }
 
+    toggleFilters(event?: Event) {
+        if (event) event.preventDefault();
+        this.isFiltersExpanded = !this.isFiltersExpanded;
+    }
+
     ngOnInit() {
-        this.gameDataService.loadGames().subscribe(games => {
-            this.games = games;
-            this.extractTags();
-            this.applyFilters();
+        this.gameDataService.games$.subscribe(games => {
+            if (games) {
+                this.games = games;
+                this.isLoading = false;
+                this.extractTags();
+                this.applyFilters();
+            } else {
+                this.isLoading = true;
+            }
         });
+
+        // Trigger a background refresh
+        this.gameDataService.refreshGames();
     }
 
     extractTags() {
