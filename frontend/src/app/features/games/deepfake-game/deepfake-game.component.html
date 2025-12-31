@@ -15,6 +15,8 @@
                     <span class="icon">❓</span>
                 </button>
                 <div class="turn-indicator" *ngIf="state.phase === 0">
+                    <span class="mr-3 badge bg-gray-100 text-gray-800">Round {{ currentRound }}/{{ state.totalRounds ||
+                        2 }}</span>
                     Turn: <span class="font-bold text-blue-600">{{ turnPlayerName }}</span>
                 </div>
             </div>

@@ -4,30 +4,38 @@
 - **Host**: Selects "One and Only".
 - **Start**: Click "Start Game".
 
-## 2. Main Phase
-- **State**: `phase = Prompt`.
+## 2. Clue Giving Phase
+- **State**: `phase = ClueGiving`.
 - **View**:
-    - **Board**: Shows "Category: [Category Name]". "Submit a unique answer!".
-    - **Player**: Input form.
+    - **Guesser**: "Waiting for clues...". (Target Word Hidden).
+    - **Clue Givers**: Show Target Word (e.g. "Apple"). Input form for 1-word clue.
 - **Action**:
-    - Players submit answers.
-    - Goal: Submit an answer that no one else submits, but is valid.
+    - Givers submit clues.
+    - **Valid Clues**: Single word, not same root as target.
+    - **Transition**: When all clues submitted -> Elimination.
 
-## 3. Reveal Phase
-- **State**: `phase = Reveal`.
+## 3. Guessing Phase
+- **State**: `phase = Guessing`.
 - **View**:
-    - **Board**: Shows all answers.
-    - **Animation**: Duplicate answers get "knocked out". Unique answers score points.
+    - **Guesser**: Shows Valid Clues (Duplicates hidden/crossed out). Input for Guess.
+    - **Clue Givers**: Waiting for guess. Shows eliminated clues.
 - **Action**:
-    - **Next Round**: Host clicks **"Next Round"**.
+    - **Guesser**: Submits Guess or Pass.
+    - **Logic**: 
+        - Correct -> Success (+1 Score).
+        - Incorrect -> Failure (Lives lost / Score penalty).
+        - Pass -> Safety (Score penalty reduced).
 
-## 4. End Game
-- **Condition**: After X rounds.
-- **View**: Leaderboard.
-- **Action**: Host clicks **"End Game"**.
+## 4. Result Phase
+- **State**: `phase = Result`.
+- **View**:
+    - **All**: Result screen (Success/Failure), Total Score.
+- **Action**:
+    - **Next Card**: Host clicks **"Next Round"**.
 
 ---
 
-# Verification Notes
-- Verify duplicate detection logic (backend vs frontend display).
-- Verify Host controls.
+# Discrepancies / Notes
+1.  **Duplicate Detection**: Backend `EliminateClues` handles basic normalization (trim, lowercase, trailing 's'). It correctly eliminates duplicates.
+2.  **Scoring**: Purely cooperative session stats (Correct/Failed count). Matches "Just One" spirit.
+3.  **Variant**: Old flow doc described "Reverse Scattergories". Code is definitely "Just One".

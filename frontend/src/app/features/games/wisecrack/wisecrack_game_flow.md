@@ -3,41 +3,41 @@
 ## 1. Game Setup (Lobby)
 - **Host**: Selects "Wisecrack".
 - **Start**: Click "Start Game".
-- **Rules**: Overlay appears on first round. Logic checks `roundNumber === 1`.
+- **Rules**: Host sees overlays explaining 3 Rounds.
 
 ## 2. Writing Phase
-- **State**: `GameData.phase = Writing`.
+- **State**: `phase = Writing`.
 - **View**:
-    - **Board**: "Step 1: Be Funny". Shows answer count progress.
-    - **Player**: List of 2 assigned prompts. Text Area + Submit.
+    - **Board**: "Step 1: Be Funny". Progress Bar.
+    - **Player**: 2 Prompts.
 - **Action**:
-    - Players fill prompts. 
-    - When all answers submitted (or timer? - Timer not visible in UI), phase transitions?
-    - *Note*: Backend likely handles transition when all answers received.
+    - Players fill 2 prompts.
+    - **Head-to-Head**: Each prompt is assigned to exactly 2 players.
+    - **Transition**: When all answers submitted -> Battling.
 
 ## 3. Battling Phase
-- **State**: `GameData.phase = Battling`.
+- **State**: `phase = Battling`.
 - **View**:
-    - **Board**: Shows Current Battle (Prompt + Answer A vs B).
-    - **Player**: "Vote Left" vs "Vote Right" buttons. Disabled if "You are in this battle".
+    - **Board**: "Prompt" + Answer A vs Answer B.
+    - **Player**: Vote buttons (Disabled if your answer is shown).
 - **Action**:
-    - Players vote.
-    - **Battle End**: When voting completes (backend logic), Board shows Winner + Vote Count.
-    - **Next Battle**: Host (via Board controls) clicks **"Next Battle"**.
-        - Button only appears when `battleWinner` is determined.
+    - Players Vote.
+    - **Scoring**: Winner gets 100 + (Votes * 50). Tie = 50 each. (Simplified implementation).
+    - **Next Battle**: Host clicks "Next Battle".
 
 ## 4. Result Phase
-- **State**: `GameData.phase = Result`.
+- **State**: `phase = Result`.
 - **View**:
-    - **Board**: Results Screen / Game Over. Shows Leaderboard.
+    - **Board**: Leaderboard.
 - **Action**:
-    - **Next Round**: Host clicks **"Next Round"** (or "End Game").
-    - **Critical Missing Feature**: There is currently **NO BUTTON** for "Next Round" in the Result view.
+    - **Next Round**: Host clicks **"Next Round"**.
+        - Increments Round (Standard: 3 Rounds).
+        - **Round 3**: Should be "Last Lash" (All answer same prompt) - *Not currently implemented*.
 
 ---
 
 # Discrepancies / Notes
-1.  **Missing "Next Round" Button**: The Board component shows the leaderboard in the Result phase but provides no way for the Host to trigger the next round.
-    - **Fix**: Needs an "Next Round" button (Host Only).
-    - **Prerequisite**: `WisecrackBoard` needs to know who is Host. Currently `isHost` is not passed to it.
-2.  **Timer Visibility**: There is no visual timer in the Writing phase, though one likely exists in the backend settings.
+1.  **Round Logic Bug**: Backend `StartRound` hardcodes `RoundNumber = 1`. Host hitting "Next Round" just restarts Round 1.
+    - **Fix Required**: Update service to use `room.RoundNumber + 1`.
+2.  **Missing "Next Round" Button**: Previously noted as missing.
+3.  **Round 3**: "Last Lash" (everyone answers same prompt) logic is missing from `AssignPrompts`. It currently just repeats the Head-to-Head logic for all rounds.

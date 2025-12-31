@@ -55,6 +55,11 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.getPlayerName(id);
   }
 
+  get currentRound(): number {
+    if (!this.state || !this.state.playerOrder || this.state.playerOrder.length === 0) return 1;
+    return Math.floor(this.state.currentTurnIndex / this.state.playerOrder.length) + 1;
+  }
+
   // Voting
   selectedVoteId: string = '';
 

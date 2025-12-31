@@ -4,24 +4,44 @@
 - **Host**: Selects "Universal Translator".
 - **Start**: Click "Start Game".
 
-## 2. Translation Chain Phase
-- **Concept**: Telephone game but with Google Translate.
+## 2. Setup Phase (Roles)
+- **Action**: System assigns roles.
+    - **Main Computer** (Mayor/Magician): Knows the word. Validates guesses.
+    - **J** (Traitor/Werewolf): Knows the word. Tries to mislead without being caught.
+    - **Empath** (Seer): Knows the word. Tries to help without being identified by J.
+    - **Crew** (Villagers): Guessers.
 - **View**:
-    - **Player**: "Translate this phrase to [Language]".
-    - **Board**: Progress indicators.
-- **Action**:
-    - Player writes translation.
-    - Next player gets that translation and translates to next language.
+    - **Main Computer**: Sees word choices. Selects one.
+    - **J / Empath**: See the selected word.
+    - **Crew**: "Waiting for word selection...".
 
-## 3. Result Phase
+## 3. Day Phase (Guessing)
+- **State**: `phase = Day`.
 - **View**:
-    - **Board**: Shows the chain. Original Phrase -> Lang 1 -> ... -> Final Result.
-    - Comparison: Original vs Final.
+    - **Main Computer**: Buttons for "Yes", "No", "Maybe", "So Close", "Way Off", "Correct". Token Counts.
+    - **Others**: Chat/Voice to ask questions.
 - **Action**:
-    - **Next Round**: Host clicks **"Next Round"**.
+    - Crew asks Yes/No questions.
+    - Main Computer answers using Buttons (Tokens are limited!).
+    - **Logic**:
+        - "Correct" -> Crew Wins (unless J finds Empath).
+        - Tokens run out -> Voting Phase.
+
+## 4. Voting / J Phase
+- **Scenarios**:
+    - **Word Guessed**: `JGuessingEmpath`. J has one shot to identify the Empath to steal the win.
+    - **Time/Tokens Expired**: `VotingForJ`. All players vote for who they think is J.
+        - If J removed -> Crew Wins.
+        - If J escapes -> J Wins.
+
+## 5. Result Phase
+- **View**: "Winner: Crew" or "Winner: J". Reasoning (e.g. "J Escaped", "Empath Assassinated").
+- **Action**: **End Game**.
 
 ---
 
-# Verification Notes
-- Verify API interactions (if any real translation API is used, or if it's manual).
-- Verify Host controls.
+# Discrepancies / Notes
+1.  **Genre Divergence**: This is implemented as **Werewords** (Hidden Role 20 Questions), NOT Telephone.
+    - **Recommendation**: Rename to "Space Werewolf" or "Traitor's Dictionary" if "Universal Translator" is confusing.
+2.  **Scoring**: Binary Win/Loss logic implemented.
+3.  **Roles**: Logic handles < 4 players (Computer, J, Crew) gracefully.

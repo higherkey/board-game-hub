@@ -3,7 +3,7 @@
 ## 1. Game Setup (Lobby)
 - **Host**: Selects "Babble".
 - **Settings**:
-    - **Timer**: 60s (Default).
+    - **Timer**: 60s (Default) - (Official Rules: 3 Minutes).
     - **Board Size**: 4x4, 5x5, 6x6.
 - **Start**: Host clicks "Start Game".
 
@@ -11,29 +11,26 @@
 - **State**: `Room.state = Playing`.
 - **View**:
     - **Grid**: 4x4+ grid of letter tiles.
-    - **Host**:
-        - Grid + "Host's Words" list.
-        - Controls: **End Round** (Early), **Pause**, **Resume**.
-    - **Player**:
-        - Grid + "Found Words" list.
-        - Input: Text box to type words + Submit button.
+    - **Host**: Grid + Controls.
+    - **Player**: Grid + Found Words List.
 - **Action**:
-    - Players type words and convert to uppercase.
-    - **Validation**: Minimum 3 letters, not duplicate (local check).
-    - **Submit**: Sent to backend.
-- **End**: Timer hits 0:00 -> Host client triggers `endRound` (or backend forced). State changes to `Finished`.
+    - Players type words. Words must be 3+ letters, adjacent tiles.
+    - **Qu**: Counts as 2 letters.
+    - **Duplicates**: Words found by multiple players get 0 points.
+    - **Scoring**: 3-4 (1pt), 5 (2pts), 6 (3pts), 7 (5pts), 8+ (11pts).
+- **End**: Timer hits 0:00 -> State changes to `Finished`.
 
 ## 3. Results Phase
 - **State**: `Room.state = Finished`.
 - **View**:
-    - **Host**: Sees "Results" - List of *all* words found, points, and who found them.
-    - **Player**: Sees "Your Results" - List of *their* words with points/validation status.
-        - **Validation Status**: "Not on Grid", "Unknown" (Dictionary check), or Points.
+    - **Host**: Sees "Results" - List of *all* words found, duplicate status, and points.
+    - **Player**: Sees "Your Results" (Filtered List).
 - **Action**:
     - **Next Round**: Host clicks **"Next Round"** to generate a new grid.
 
 ---
 
 # Discrepancies / Notes
-1.  **Critical Bug**: The **"Next Round"** button is completely missing from the Host's view in the Results phase. The Host currently has no way to continue the game after the first round ends.
-2.  **Result Visibility**: Players only see *their own* words in the result list. Typical Boggle-style games usually allow players to see *all* valid words found by the group to compare. This is a design choice but noted here.
+1.  **Result Visibility**: Players only see *their own* words in the result list. Official Boggle is collaborative/competitive review. Current design prevents "cheating" if players take screenshot, but makes it less social.
+2.  **Next Round Button**: Confirmed present and working. [FIXED]
+3.  **Scoring**: Backend logic matches official Boggle rules exactly.

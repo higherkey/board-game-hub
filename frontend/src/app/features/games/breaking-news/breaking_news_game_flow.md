@@ -6,36 +6,34 @@
 
 ## 2. Assignment Phase
 - **View**:
-    - **Board**: "Assigning Roles...".
-    - **Player**: "You are a Reporter / Anchor / Witness".
+    - **Board**: "Breaking News Intro...".
+    - **Anchor**: Assigned by System (Round Robin).
+    - **Writers**: All other players.
 - **Action**:
-    - System assigns roles and headline data.
-    - Transition to Planning/Report Prep.
+    - System loads a Script Template (e.g. "Weather Report").
+    - Writers are assigned specific "Slots" (Noun, Adjective, etc.) to fill.
 
-## 3. Planning Phase
+## 3. Writing Phase
 - **View**:
-    - **Reporters**: Given facts/images. Must write script.
-    - **Anchors**: Given intro/outro.
+    - **Writers**: Input forms for their assigned slots.
+    - **Anchor**: waiting message (or preview?).
 - **Action**:
-    - Players prepare their parts.
-    - Timer likely running.
+    - Writers submit words for their slots.
+    - Slots are shared/locked once submitted.
+    - Transition when all slots filled.
 
 ## 4. Broadcast Phase
 - **View**:
-    - **Board**: "On Air". Shows the generated news overlay.
-    - **Player**: Teleprompter (Script).
+    - **Board**: Teleprompter Mode. Shows the final text with filled blanks highlighted.
+    - **Anchor**: Reads the script aloud.
 - **Action**:
-    - Players read their scripts in order.
-    - Host/Director might control slides? (TBD: Verify implementation).
-
-## 5. Result Phase
-- **View**:
-    - **Board**: "That's the news!".
-- **Action**:
-    - **End Game**: Host clicks **"End Game"**.
+    - Anchor reads the hilarious news report.
+    - **Next Round**: Host/Anchor clicks "Next Story".
 
 ---
 
-# Verification Notes
-- Identify exactly how the "Broadcast" works. Is it just text on screen, or is it intended for voice chat?
-- Verify role distribution.
+# Discrepancies / Notes
+1.  **Genre Divergence**: This is implemented as a **Mad Libs** style cooperative game, NOT the competitive "Use Your Words" captioning game.
+    - **Recommendation**: Rename if confusion arises, but "Breaking News" fits the theme.
+2.  **Scoring**: Currently no scoring implemented (Creative/Cooperative only).
+3.  **Content**: Scripts are hardcoded in Service (`GetRandomScript`). Needs expansion.

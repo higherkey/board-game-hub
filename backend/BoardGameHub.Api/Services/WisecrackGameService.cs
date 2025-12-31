@@ -33,20 +33,27 @@ public class WisecrackGameService : IGameService
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        // 1. Determine Phase based on Round Number
+        // Fix: Use room.RoundNumber directly instead of resetting to 1
+        int currentRound = room.RoundNumber;
+
         var state = new WisecrackState
         {
             Phase = WisecrackPhase.Writing,
-            RoundNumber = 1
+            RoundNumber = currentRound
         };
 
-        // Assign prompts logic
-        // Rule: Each player gets 2 prompts. Each prompt is shared by 2 players.
-        // N players -> N prompts needed (since each prompt has 2 players, total slots = 2*N. Total prompts = N).
-        // Example: 3 Players (A, B, C). Prompts needed: 3.
-        // P1: A, B.
-        // P2: B, C.
-        // P3: C, A.
-        AssignPrompts(room.Players, state);
+        // 2. Assign Prompts
+        if (currentRound < 3)
+        {
+            // Standard Rounds (1 & 2)
+            AssignPrompts(room.Players, state, currentRound);
+        }
+        else
+        {
+            // Round 3: Last Lash (Common Prompt)
+            AssignLastLash(room.Players, state);
+        }
 
         room.GameData = state;
         return Task.CompletedTask;
@@ -61,12 +68,9 @@ public class WisecrackGameService : IGameService
             // Ensure RoundScores is initialized for all players
             if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
             foreach (var p in room.Players) room.RoundScores[p.ConnectionId] = 0;
-
-            // Wisecrack scores are awarded during FinishBattle, but we can re-verify or 
-            // recalculate here if we wanted to be perfectly robust.
-            // For now, let's just ensure all players are in RoundScores.
-            // Actually, to follow the pattern, let's track battle scores in state and sum them here.
-            // For now, I'll just make sure the existing logic is safe.
+            
+            // Sync Session Score
+            // (Scores are added incrementally during battles, so just ensure synchronization if needed)
         }
         catch (Exception ex)
         {
@@ -83,11 +87,11 @@ public class WisecrackGameService : IGameService
         var player = room.Players.FirstOrDefault(p => p.ConnectionId == playerId);
         if (player == null) return Task.CompletedTask;
 
-        // Check if player is assigned to this prompt
+        // Check availability
         var assignment = state.Assignments.FirstOrDefault(a => a.PromptId == promptId);
         if (assignment == null || !assignment.AssignedPlayerIds.Contains(playerId)) return Task.CompletedTask;
 
-        // Add or Update answer
+        // Add/Update
         state.Answers.RemoveAll(a => a.PromptId == promptId && a.PlayerId == playerId);
         state.Answers.Add(new WisecrackAnswer
         {
@@ -97,9 +101,19 @@ public class WisecrackGameService : IGameService
             Text = answerText
         });
 
-        // Check if all needed answers are present
-        // Total expected answers = Players.Count * 2
-        int expectedAnswers = room.Players.Count * 2;
+        // Check Completion
+        int expectedAnswers;
+        if (state.RoundNumber < 3)
+        {
+            // Rounds 1-2: 2 prompts per player
+            expectedAnswers = room.Players.Count * 2;
+        }
+        else
+        {
+            // Round 3: 1 answer per player
+            expectedAnswers = room.Players.Count;
+        }
+
         if (state.Answers.Count >= expectedAnswers)
         {
             GenerateBattles(state);
@@ -109,6 +123,7 @@ public class WisecrackGameService : IGameService
         return Task.CompletedTask;
     }
 
+    // ... Vote ... (Unchanged logic, but included context for replace)
     public Task SubmitVote(Room room, string playerId, int choice)
     {
         if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
@@ -117,21 +132,22 @@ public class WisecrackGameService : IGameService
         var battle = state.CurrentBattle;
         if (battle == null || battle.IsFinished) return Task.CompletedTask;
 
-        // Validate voter (can't vote if it's your own answer)
+        // Validation: Cannot vote for yourself
         if (battle.AnswerA.PlayerId == playerId || battle.AnswerB.PlayerId == playerId)
         {
             return Task.CompletedTask;
         }
 
-        // Add/Update Vote
-        battle.Votes.RemoveAll(v => v.PlayerId == playerId);
-        battle.Votes.Add(new WisecrackVote { PlayerId = playerId, Choice = choice });
+        state.Battles.FirstOrDefault(b => b.Id == battle.Id)?.Votes.RemoveAll(v => v.PlayerId == playerId);
+        state.Battles.FirstOrDefault(b => b.Id == battle.Id)?.Votes.Add(new WisecrackVote { PlayerId = playerId, Choice = choice });
 
-        // Auto-finish battle if everyone (audience/others) voted?
-        int expectedVotes = room.Players.Count - 2;
-        if (expectedVotes < 0) expectedVotes = 0;
+        // Check if all audience voted
+        // voters = AllPlayers - 2 (Combatants)
+        int combatantCount = 2; 
+        int possibleVoters = room.Players.Count - combatantCount; 
+        if (possibleVoters < 0) possibleVoters = 0;
 
-        if (battle.Votes.Count >= expectedVotes)
+        if (battle.Votes.Count >= possibleVoters)
         {
             FinishBattle(room, battle);
         }
@@ -146,9 +162,13 @@ public class WisecrackGameService : IGameService
         state.CurrentBattleIndex++;
         if (state.CurrentBattleIndex >= state.Battles.Count)
         {
+            // End of Battles
             state.Phase = WisecrackPhase.Result;
             state.CurrentBattleIndex = -1;
-            _ = CalculateScores(room);
+            
+            // If Final Round, we might want to do something special, 
+            // but currently the flow is Result -> Host Next Round -> Game Over check in Hub
+             _ = CalculateScores(room);
         }
         return Task.CompletedTask;
     }
@@ -156,25 +176,28 @@ public class WisecrackGameService : IGameService
     private void FinishBattle(Room room, WisecrackBattle battle)
     {
         battle.IsFinished = true;
-
+        
         int votesA = battle.Votes.Count(v => v.Choice == 0);
         int votesB = battle.Votes.Count(v => v.Choice == 1);
+
+        // Score Multiplier for Round 3? (Usually tripled)
+        int multiplier = (room.GameData is WisecrackState s && s.RoundNumber == 3) ? 3 : 1;
 
         if (votesA > votesB)
         {
             battle.WinnerPlayerId = battle.AnswerA.PlayerId;
-            AddPoints(room, battle.AnswerA.PlayerId, 100 + (votesA * 50)); 
+            AddPoints(room, battle.AnswerA.PlayerId, (100 + (votesA * 25)) * multiplier); 
         }
         else if (votesB > votesA)
         {
             battle.WinnerPlayerId = battle.AnswerB.PlayerId;
-            AddPoints(room, battle.AnswerB.PlayerId, 100 + (votesB * 50));
+            AddPoints(room, battle.AnswerB.PlayerId, (100 + (votesB * 25)) * multiplier);
         }
         else
         {
             battle.WinnerPlayerId = "TIE";
-            AddPoints(room, battle.AnswerA.PlayerId, 50);
-            AddPoints(room, battle.AnswerB.PlayerId, 50);
+            AddPoints(room, battle.AnswerA.PlayerId, 50 * multiplier);
+            AddPoints(room, battle.AnswerB.PlayerId, 50 * multiplier);
         }
     }
 
@@ -188,28 +211,24 @@ public class WisecrackGameService : IGameService
         room.RoundScores[playerId] += points;
     }
 
-    private void AssignPrompts(List<Player> players, WisecrackState state)
+    private void AssignPrompts(List<Player> players, WisecrackState state, int roundNumber)
     {
-        // Shuffle prompts
         var rnd = new Random();
         var shuffledPrompts = _prompts.OrderBy(x => rnd.Next()).ToList();
         
         int playerCount = players.Count;
-        int promptIndex = 0;
+        // Offset prompt index by round so we don't reuse prompts immediately
+        int promptIndex = (roundNumber - 1) * playerCount; 
 
-        // Logic: P1 assigned to Player 0 and Player 1
-        // P2 assigned to Player 1 and Player 2
-        // ...
-        // P_Last assigned to Player Last and Player 0
-        
         for (int i = 0; i < playerCount; i++)
         {
             var pA = players[i];
             var pB = players[(i + 1) % playerCount];
 
             var promptText = (promptIndex < shuffledPrompts.Count) 
-                ? shuffledPrompts[promptIndex++] 
-                : $"Prompt {promptIndex++}"; // fallback
+                ? shuffledPrompts[promptIndex] 
+                : $"Prompt {promptIndex}";
+            promptIndex++;
 
             var assignment = new WisecrackPromptAssignment
             {
@@ -220,29 +239,80 @@ public class WisecrackGameService : IGameService
         }
     }
 
+    private void AssignLastLash(List<Player> players, WisecrackState state)
+    {
+        // One common prompt for everyone
+        var rnd = new Random();
+        var prompt = _prompts[rnd.Next(_prompts.Count)]; // Just pick random
+
+        var assignment = new WisecrackPromptAssignment
+        {
+            Text = $"LAST LASH: {prompt}",
+            AssignedPlayerIds = players.Select(p => p.ConnectionId).ToList()
+        };
+        state.Assignments.Add(assignment);
+    }
+
     private void GenerateBattles(WisecrackState state)
     {
         state.Battles.Clear();
-        foreach (var assignment in state.Assignments)
-        {
-            // Find answers for this prompt
-            var promptAnswers = state.Answers.Where(a => a.PromptId == assignment.PromptId).ToList();
-            
-            // Should have 2
-            if (promptAnswers.Count < 2) continue; // Should not happen if check passed
-
-            var battle = new WisecrackBattle
-            {
-                PromptText = assignment.Text,
-                AnswerA = promptAnswers[0],
-                AnswerB = promptAnswers[1]
-            };
-            state.Battles.Add(battle);
-        }
-        
-        // Shuffle battles
         var rnd = new Random();
-        state.Battles = state.Battles.OrderBy(x => rnd.Next()).ToList();
+
+        if (state.RoundNumber < 3)
+        {
+            // Standard Logic: 1 Battle per Assignment
+            foreach (var assignment in state.Assignments)
+            {
+                var promptAnswers = state.Answers.Where(a => a.PromptId == assignment.PromptId).ToList();
+                if (promptAnswers.Count < 2) continue;
+
+                state.Battles.Add(new WisecrackBattle
+                {
+                    PromptText = assignment.Text,
+                    AnswerA = promptAnswers[0],
+                    AnswerB = promptAnswers[1]
+                });
+            }
+            // Shuffle order
+            state.Battles = state.Battles.OrderBy(x => rnd.Next()).ToList();
+        }
+        else
+        {
+            // Last Lash Logic
+            // We have 1 assignment, N answers.
+            var allAnswers = state.Answers.OrderBy(x => rnd.Next()).ToList();
+            var promptText = state.Assignments.FirstOrDefault()?.Text ?? "Last Lash";
+
+            // Pair them up
+            for (int i = 0; i < allAnswers.Count; i += 2)
+            {
+                if (i + 1 < allAnswers.Count)
+                {
+                    // Pair A vs B
+                    state.Battles.Add(new WisecrackBattle
+                    {
+                        PromptText = promptText,
+                        AnswerA = allAnswers[i],
+                        AnswerB = allAnswers[i+1]
+                    });
+                }
+                else
+                {
+                    // Odd one out. Pair with the first answer again?
+                    // Or 3-way? Current UI supports 2.
+                    // Let's pair with index 0 (if exists) so index 0 fights twice.
+                    if (allAnswers.Count > 0)
+                    {
+                        state.Battles.Add(new WisecrackBattle
+                        {
+                            PromptText = promptText,
+                            AnswerA = allAnswers[i], // The odd one
+                            AnswerB = allAnswers[0]  // The first one (Repeats)
+                        });
+                    }
+                }
+            }
+        }
     }
 
     public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)

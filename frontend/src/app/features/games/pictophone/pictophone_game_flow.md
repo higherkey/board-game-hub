@@ -4,8 +4,8 @@
 - **Host**: Selects "Pictophone".
 - **Start**: Click "Start Game".
 
-## 2. Writing Phase (Round 1)
-- **State**: `phase = Writing`.
+## 2. Prompting Phase (Round 0)
+- **State**: `phase = Prompting`.
 - **View**:
     - **All Players**: Input form to write a starting prompt (sentence).
 - **Action**:
@@ -14,27 +14,27 @@
     - Books are passed to the next player.
 
 ## 3. Drawing / Guessing Loop
-- **Loop**: Depending on player count.
+- **Loop**: Rounds 1 to N (Player Count).
 - **Drawing Phase**:
     - **View**: Player sees the previous sentence. Canvas to draw.
     - **Action**: Player draws the sentence. Submits drawing.
 - **Guessing Phase**:
     - **View**: Player sees the previous drawing. Input to guess the sentence.
     - **Action**: Player writes a sentence describing the drawing. Submits.
-- **Transition**: Backend handles rotation and phase switching.
+- **Transition**: Backend alternates `Drawing` / `Guessing` phases until book returns to owner.
 
-## 4. Result Phase (Presentation)
-- **State**: `phase = Results`.
+## 4. Reveal Phase
+- **State**: `phase = Reveal`.
 - **View**:
-    - **Board (Host)**: "Presentation Mode".
-    - **Player**: "Look at the screen".
+    - **Board (Host)**: "Presentation Mode". Shows current Book/Page.
+    - **Player**: "Look at the screen". Validates stars can be given? (Backend supports `STAR_PAGE`).
 - **Action**:
-    - **Next Page**: Host clicks **"Next Page"** (or Arrow Keys) to reveal the chain of a book.
-    - **Next Book**: When a book is finished, proceed to the next book.
-    - **End Game**: When all books shown, Host clicks **"End Game"** / **"Back to Lobby"**.
+    - **Next Page/Book**: Host clicks **"Next"** to reveal the chain step-by-step.
+    - **Star**: Players can "Star" favorite pages (Friendly scoring).
 
 ---
 
-# Verification Notes
-- Verify Host controls for presentation (Next Page, Next Book).
-- Verify canvas tools (Pen, Eraser, Color).
+# Discrepancies / Notes
+1.  **Ending Phase**: Logic alternates phases. For Even player counts, the book ends on a Drawing. Physical rules suggest ending on a Guess (by passing first if odd?), but the digital implementation works fine.
+2.  **Scoring**: Purely "Stars" (Likes). No competitive scoring. Matches "Friendly" variant.
+3.  **Host Controls**: Confirmed implemented (Pause/Skip/Reveal).
