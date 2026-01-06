@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, OnChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GameSettings, SignalRService } from '../../../../services/signalr.service';
+import { GameSettings, SignalRService, Player } from '../../../../services/signalr.service';
 import { GameDataService, GameDefinition } from '../../../../services/game-data.service';
 
 @Component({
@@ -18,6 +18,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() isIntermission = false;
   @Input() currentRound = 1;
   @Input() totalRounds = 5;
+  @Input() players: Player[] = [];
   @Output() gameStart = new EventEmitter<GameSettings>();
   @Output() nextRound = new EventEmitter<GameSettings>();
   @Output() endGame = new EventEmitter<void>();
@@ -25,6 +26,8 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   selectedGameType = 'None';
   selectedGame: GameDefinition | undefined;
   availableGames: GameDefinition[] = [];
+  gameSearchQuery = '';
+  showReadyConfirmation = false;
 
   settings: GameSettings = {
     timerDurationSeconds: 60,
@@ -76,8 +79,10 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     }
   }
 
-  async changeGameType() {
+  async changeGameType(type?: string) {
+    if (type) this.selectedGameType = type;
     if (this.roomCode && this.selectedGameType) {
+      this.gameSearchQuery = this.availableGames.find(g => g.id === this.selectedGameType)?.name || '';
       await this.signalRService.setGameType(this.roomCode, this.selectedGameType);
 
       // Update local defaults based on game definition
@@ -90,6 +95,11 @@ export class HostSettingsComponent implements OnChanges, OnInit {
         }
       }
     }
+  }
+
+  get filteredGames() {
+    if (!this.gameSearchQuery) return this.availableGames;
+    return this.availableGames.filter(g => g.name.toLowerCase().includes(this.gameSearchQuery.toLowerCase()));
   }
 
   updateListId() {
@@ -108,10 +118,20 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     this.signalRService.updateUndoSettings(this.undoSettings);
   }
 
-  startGame() {
+  startGame(force = false) {
+    const playersOnly = this.players.filter(p => !p.isScreen);
+    const readyPlayers = playersOnly.filter(p => p.isReady).length;
+    const totalPlayers = playersOnly.length;
+
+    if (!force && totalPlayers > 1 && readyPlayers < totalPlayers) {
+      this.showReadyConfirmation = true;
+      return;
+    }
+
+    this.showReadyConfirmation = false;
+
     if (this.isIntermission) {
       // Check for Game Over condition (Soft Stop)
-      // The host can change totalRounds in the UI before clicking this.
       if (this.currentRound >= (this.settings.totalRounds || 5)) {
         this.endGame.emit();
       } else {

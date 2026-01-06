@@ -46,6 +46,7 @@ export class GameRoomComponent implements OnInit {
   session$: Observable<any>;
   isHost$: Observable<boolean>;
   currentRoom$: Observable<Room | null>;
+  me$: Observable<Player | null>;
 
   private readonly authService = inject(AuthService);
 
@@ -61,6 +62,9 @@ export class GameRoomComponent implements OnInit {
 
   // Mobile views: 'game' | 'players' | 'host'
   mobileView: GameRoomTab = 'game';
+
+  // Session flags
+  isScreen = false;
 
   // Desktop Big Screen Mode (Theatre Mode)
   isBigScreen = false;
@@ -107,6 +111,7 @@ export class GameRoomComponent implements OnInit {
     this.players$ = this.signalRService.players$;
     this.connectionStatus$ = this.signalRService.connectionStatus$;
     this.currentRoom$ = this.signalRService.currentRoom$;
+    this.me$ = this.signalRService.me$;
 
     // Subscribe to room updates to select component
     this.currentRoom$.subscribe(room => {
@@ -118,15 +123,35 @@ export class GameRoomComponent implements OnInit {
     // Game started if state is Playing or Finished
     this.gameStarted$ = this.currentRoom$.pipe(map(r => r?.state === 'Playing' || r?.state === 'Finished'));
 
-    this.isHost$ = this.currentRoom$.pipe(map(room => {
-      if (!room) return false;
-      const myId = this.signalRService.getConnectionId();
-      return myId ? this.checkIsHost(room, myId) : false;
-    }));
+    this.isHost$ = this.signalRService.isHost$;
   }
 
   get isIntermission$(): Observable<boolean> {
     return this.currentRoom$.pipe(map(r => r?.state === 'Finished'));
+  }
+
+  getPlayers(players: Player[] | null): Player[] {
+    return (players || []).filter(p => !p.isScreen);
+  }
+
+  getScreens(players: Player[] | null): Player[] {
+    return (players || []).filter(p => p.isScreen);
+  }
+
+  getQrCodeUrl(): string {
+    if (!this.roomCode) return '';
+    const url = window.location.origin + '/game/' + this.roomCode;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
+  }
+
+  async toggleReady() {
+    if (this.roomCode) {
+      await this.signalRService.toggleReady(this.roomCode);
+    }
+  }
+
+  goToLogin() {
+    this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
   }
 
   ngOnInit() {
@@ -196,7 +221,8 @@ export class GameRoomComponent implements OnInit {
         const newCode = await this.signalRService.createRoom(
           this.promptPlayerName,
           this.isPublic,
-          this.selectedGameType
+          this.selectedGameType,
+          this.isScreen
         );
         this.router.navigate(['/game', newCode]);
       } catch (err) {
@@ -205,7 +231,7 @@ export class GameRoomComponent implements OnInit {
         this.needsName = true;
       }
     } else {
-      await this.signalRService.joinRoom(this.roomCode, this.promptPlayerName);
+      await this.signalRService.joinRoom(this.roomCode, this.promptPlayerName, this.isScreen);
     }
   }
 
@@ -288,24 +314,17 @@ export class GameRoomComponent implements OnInit {
     this.router.navigate(['/games']);
   }
 
-  private updateActiveGame(room: Room) { // Using 'any' for Room briefly to avoid import circle if specific type needed
-    // Map GameType string to Component Class
-    // We pass inputs: { room: room, myConnectionId: ... } typically
-    // Each game component seems to take @Input() room.
-
+  private updateActiveGame(room: Room) {
     this.gameInputs = {
       room: room,
       myConnectionId: this.getMyConnectionId(room.players),
-      // Some games take specific inputs like 'isHost', handle that?
-      isHost: this.checkIsHost(room, this.getMyConnectionId(room.players))
+      isHost: this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '')
     };
 
-    // Select Component from Registry
     const gameConfig = GAME_REGISTRY[room.gameType];
 
     if (gameConfig) {
-      const isHost = this.checkIsHost(room, this.getMyConnectionId(room.players));
-      // Use playerComponent if it exists and we are not the host, otherwise use hostComponent
+      const isHost = this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '');
       if (!isHost && gameConfig.playerComponent) {
         this.gameComponent = gameConfig.playerComponent;
       } else {
@@ -321,10 +340,6 @@ export class GameRoomComponent implements OnInit {
     this.activeGameComponent = component;
   }
 
-  private checkIsHost(room: Room, myId: string): boolean {
-    const me = room.players.find(p => p.connectionId === myId);
-    return me?.isHost || myId === room.hostPlayerId || myId === room.hostScreenId;
-  }
 
   onSetHostPlayer(targetId: string) {
     if (this.roomCode) {

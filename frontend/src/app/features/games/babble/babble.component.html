@@ -17,12 +17,20 @@
         </div>
 
         <!-- Grid Display -->
-        <div class="grid-stage">
-            <div class="babble-grid" [class]="'size-' + boardSize">
+        <div class="grid-stage position-relative">
+            <div class="babble-grid" [class]="'size-' + boardSize" [class.blurred-board]="isBlurred">
                 <div class="letter-tile animate-pop" *ngFor="let char of gridChars; let i = index"
                     [style.animation-delay]="(i * 0.05) + 's'" [attr.data-letter]="char === 'Q' ? 'Qu' : char">
                     {{ char === 'Q' ? 'Qu' : char }}
                 </div>
+            </div>
+
+            <!-- Countdown Overlay -->
+            <div *ngIf="isPlaying && isBlurred && countdownSeconds > 0"
+                class="position-absolute top-50 start-50 translate-middle text-center" style="z-index: 100;">
+                <div class="display-1 fw-bold text-white countdown-text">{{ countdownSeconds }}</div>
+                <div class="h4 text-white text-uppercase ls-widest mt-2 fw-bold"
+                    style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Get Ready!</div>
             </div>
         </div>
 

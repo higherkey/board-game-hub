@@ -9,6 +9,8 @@ public class Player
     public int Score { get; set; }
     public bool IsHost { get; set; }
     public bool IsConnected { get; set; } = true;
+    public bool IsReady { get; set; } = false;
+    public bool IsScreen { get; set; } = false;
     
     // Optional Auth Info
     public string? UserId { get; set; }

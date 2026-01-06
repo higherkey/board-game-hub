@@ -2,16 +2,35 @@
     <!-- COMPACT MODE: Single Row -->
     <div *ngIf="compactMode" class="compact-row d-flex align-items-center gap-3 flex-wrap">
         <!-- Game Mode Select -->
-        <div class="compact-item flex-grow-1" style="min-width: 200px;">
-            <div class="select-wrapper">
-                <select id="gameTypeCompact" class="form-select bg-surface border-2 shadow-sm"
-                    [(ngModel)]="selectedGameType" (change)="changeGameType()">
-                    <option value="None">-- Choose Game --</option>
-                    <option *ngFor="let game of availableGames" [value]="game.id">
-                        {{ game.icon }} {{ game.name }}
-                    </option>
-                </select>
-                <i class="bi bi-chevron-down"></i>
+        <!-- Game Mode Selection (Searchable) -->
+        <div class="compact-item flex-grow-1 position-relative" style="min-width: 200px;">
+            <div class="input-group input-group-sm shadow-sm">
+                <span class="input-group-text bg-surface border-2 border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control bg-surface border-2 border-start-0 py-2"
+                    placeholder="CHOOSE GAME" [(ngModel)]="gameSearchQuery">
+            </div>
+            <!-- Dropdown Results -->
+            <div *ngIf="gameSearchQuery && filteredGames.length > 0 && selectedGameType === 'None'"
+                class="position-absolute w-100 mt-1 shadow-lg rounded-3 bg-white overflow-hidden border border-light"
+                style="z-index: 1050; max-height: 250px; overflow-y: auto;" role="listbox">
+                <div *ngFor="let game of filteredGames" (click)="changeGameType(game.id)"
+                    (keydown.enter)="changeGameType(game.id)" tabindex="0"
+                    class="d-flex align-items-center gap-2 p-2 dropdown-item cursor-pointer hover-bg-brand-light"
+                    role="option">
+                    <span class="fs-5">{{ game.icon }}</span>
+                    <span class="fw-bold text-primary">{{ game.name }}</span>
+                </div>
+            </div>
+            <!-- Selected Badge -->
+            <div *ngIf="selectedGameType !== 'None'"
+                class="position-absolute top-50 end-0 translate-middle-y me-2 d-flex align-items-center gap-1">
+                <span
+                    class="badge bg-brand-light text-brand-blue border border-brand-blue-subtle d-flex align-items-center gap-1">
+                    {{ selectedGame?.icon }} {{ selectedGame?.name }}
+                    <i class="bi bi-x-circle cursor-pointer" (click)="selectedGameType = 'None'; gameSearchQuery = ''"
+                        (keydown.enter)="selectedGameType = 'None'; gameSearchQuery = ''" tabindex="0" role="button"
+                        aria-label="Clear Selection"></i>
+                </span>
             </div>
         </div>
 
@@ -80,18 +99,49 @@
             <!-- LEFT COLUMN -->
             <div class="settings-col">
                 <!-- Game Mode -->
+                <!-- Game Mode Selection (Searchable) -->
                 <div class="setting-group">
-                    <label for="gameType" class="form-label small text-uppercase fw-bold"
-                        style="color: var(--text-secondary);">Game Mode</label>
-                    <div class="select-wrapper">
-                        <select id="gameType" class="form-select bg-surface border-2 shadow-sm"
-                            [(ngModel)]="selectedGameType" (change)="changeGameType()">
-                            <option value="None">-- Choose Game --</option>
-                            <option *ngFor="let game of availableGames" [value]="game.id">
-                                {{ game.icon }} {{ game.name }}
-                            </option>
-                        </select>
-                        <i class="bi bi-chevron-down"></i>
+                    <label for="gameSearchInputFull" class="form-label small text-uppercase fw-bold"
+                        style="color: var(--text-secondary);">CHOOSE
+                        GAME</label>
+                    <div class="position-relative">
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-surface border-2 border-end-0"><i
+                                    class="bi bi-search"></i></span>
+                            <input id="gameSearchInputFull" type="text"
+                                class="form-control form-control-lg bg-surface border-2 border-start-0 fw-bold"
+                                placeholder="Search for a game..." [(ngModel)]="gameSearchQuery">
+                        </div>
+
+                        <!-- Dropdown Results -->
+                        <div *ngIf="gameSearchQuery && filteredGames.length > 0"
+                            class="position-absolute w-100 mt-2 shadow-lg rounded-3 bg-white overflow-hidden border border-light"
+                            style="z-index: 1050; max-height: 300px; overflow-y: auto;" role="listbox">
+                            <div *ngFor="let game of filteredGames" (click)="changeGameType(game.id)"
+                                (keydown.enter)="changeGameType(game.id)" tabindex="0"
+                                class="d-flex align-items-center gap-3 p-3 dropdown-item cursor-pointer border-bottom-light"
+                                [class.bg-brand-light]="selectedGameType === game.id" role="option"
+                                [attr.aria-selected]="selectedGameType === game.id">
+                                <span class="fs-4">{{ game.icon }}</span>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-primary">{{ game.name }}</div>
+                                    <div class="small text-muted">{{ game.description }}</div>
+                                </div>
+                                <i *ngIf="selectedGameType === game.id"
+                                    class="bi bi-check-circle-fill text-brand-blue"></i>
+                            </div>
+                        </div>
+
+                        <!-- Selected Game Info -->
+                        <div *ngIf="selectedGameType !== 'None' && !gameSearchQuery"
+                            class="mt-2 p-2 rounded-2 bg-brand-blue-subtle text-brand-blue d-flex align-items-center gap-2">
+                            <span class="fs-5">{{ selectedGame?.icon }}</span>
+                            <span class="fw-bold">{{ selectedGame?.name }}</span>
+                            <button class="btn btn-sm btn-link text-brand-blue ms-auto p-0"
+                                (click)="selectedGameType = 'None'; gameSearchQuery = ''">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -179,11 +229,25 @@
         </div>
 
         <!-- Start Button (Full Width footer) -->
-        <div class="mt-4 pt-3 border-top">
+        <div class="mt-4 pt-3 border-top position-relative">
             <button type="button" class="btn-start" (click)="startGame()" [disabled]="selectedGameType === 'None'">
                 <i class="bi" [class.bi-play-fill]="!isIntermission" [class.bi-fast-forward-fill]="isIntermission"></i>
                 {{ isIntermission ? 'START NEXT ROUND' : 'START GAME' }}
             </button>
+
+            <!-- Confirmation Prompt for Not Ready -->
+            <div *ngIf="showReadyConfirmation"
+                class="ready-confirmation-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 rounded-2 shadow"
+                style="background: rgba(255,255,255,0.95); z-index: 10;">
+                <div class="text-center">
+                    <div class="fw-bold text-danger mb-2">Not all players are ready!</div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-secondary flex-grow-1"
+                            (click)="showReadyConfirmation = false">NO</button>
+                        <button class="btn btn-sm btn-primary flex-grow-1" (click)="startGame(true)">YES, START</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </ng-container>
 </div>

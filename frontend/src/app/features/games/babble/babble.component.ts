@@ -18,6 +18,9 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   @Input() myConnectionId: string = '';
   @Input() isHost: boolean = false;
 
+  isBlurred = true;
+  countdownSeconds = 0;
+
   get isPlaying(): boolean {
     return this.room?.state === 'Playing';
   }
@@ -78,6 +81,31 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     }
 
     this.isPlaying ? this.startTimer() : this.stopTimer();
+
+    // Blur Logic
+    if (this.isFinished || this.isPaused) {
+      this.isBlurred = false;
+    } else if (this.isPlaying && this.isBlurred && this.room?.roundNumber === this.lastHandledRound) {
+      // Already handling this round
+    } else if (this.isPlaying && this.room?.roundNumber !== this.lastHandledRound) {
+      // New Round Started
+      this.lastHandledRound = this.room?.roundNumber || 0;
+      this.startCountdown();
+    }
+  }
+
+  private lastHandledRound = 0;
+
+  private startCountdown() {
+    this.isBlurred = true;
+    this.countdownSeconds = 3;
+    const interval = setInterval(() => {
+      this.countdownSeconds--;
+      if (this.countdownSeconds <= 0) {
+        this.isBlurred = false;
+        clearInterval(interval);
+      }
+    }, 1000);
   }
 
   private processGridUpdate(grid: any) {

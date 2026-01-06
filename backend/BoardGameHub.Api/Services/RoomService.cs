@@ -50,7 +50,7 @@ public class RoomService : IRoomService
         return room;
     }
 
-    public Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null)
+    public Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null, bool isScreen = false)
     {
         var code = GenerateRoomCode();
         var room = new Room
@@ -64,7 +64,8 @@ public class RoomService : IRoomService
                     Name = hostName, 
                     IsHost = true,
                     UserId = userId,
-                    AvatarUrl = avatarUrl
+                    AvatarUrl = avatarUrl,
+                    IsScreen = isScreen
                 }
             },
             IsPublic = isPublic,
@@ -87,7 +88,7 @@ public class RoomService : IRoomService
             .ToList();
     }
 
-    public Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null)
+    public Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room))
         {
@@ -113,6 +114,7 @@ public class RoomService : IRoomService
             
             if (userId != null) existingPlayer.UserId = userId;
             if (avatarUrl != null) existingPlayer.AvatarUrl = avatarUrl;
+            existingPlayer.IsScreen = isScreen;
 
             _connectionRoomMap.TryAdd(connectionId, code);
             NotifyStatsChanged();
@@ -138,7 +140,8 @@ public class RoomService : IRoomService
             IsHost = assignHost,
             IsConnected = true,
             UserId = userId,
-            AvatarUrl = avatarUrl
+            AvatarUrl = avatarUrl,
+            IsScreen = isScreen
         };
 
         room.Players.Add(newPlayer);
@@ -231,6 +234,17 @@ public class RoomService : IRoomService
         _ = _gameHubContext.Clients.Group(code.ToUpper()).SendAsync("RoomTerminated", "Room terminated by administrator");
         _ = _gameHubContext.Clients.All.SendAsync("RoomDeleted", code.ToUpper());
         NotifyStatsChanged();
+    }
+
+    public Room? ToggleReady(string code, string connectionId, bool? forcedState = null)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (player == null) return null;
+
+        player.IsReady = forcedState ?? !player.IsReady;
+        return room;
     }
 
     public async Task<Room?> StartGame(string code, GameSettings? settings = null)

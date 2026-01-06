@@ -210,6 +210,15 @@
         --tile-fs: 7.5vmin;
     }
 
+    &.blurred-board {
+        .letter-tile {
+            filter: blur(25px);
+            opacity: 0.8;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+    }
+
     .letter-tile {
         width: 100%;
         height: 100%;

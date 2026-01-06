@@ -42,7 +42,7 @@ public class GameHub : Hub
         return Task.FromResult(_roomService.ValidateRooms(codes));
     }
 
-    public async Task<Room> CreateRoom(string playerName, bool isPublic, string gameType = "OneAndOnly", string? guestId = null)
+    public async Task<Room> CreateRoom(string playerName, bool isPublic, string gameType = "OneAndOnly", string? guestId = null, bool isScreen = false)
     {
         Enum.TryParse<GameType>(gameType, true, out var type);
         var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
@@ -50,7 +50,7 @@ public class GameHub : Hub
         // For now, let's prioritize the submitted name, but link the userId.
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
-        var room = _roomService.CreateRoom(Context.ConnectionId, playerName, isPublic, type, userId, avatarUrl);
+        var room = _roomService.CreateRoom(Context.ConnectionId, playerName, isPublic, type, userId, avatarUrl, isScreen);
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
         // Broadcast to the creator (and anyone else in the group, though it's just them)
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
@@ -197,12 +197,12 @@ public class GameHub : Hub
         return await Task.FromResult(_roomService.GetPublicRooms());
     }
 
-    public async Task<Room?> JoinRoom(string roomCode, string playerName, string? guestId = null)
+    public async Task<Room?> JoinRoom(string roomCode, string playerName, string? guestId = null, bool isScreen = false)
     {
         var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
-        var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, playerName, userId, avatarUrl);
+        var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, playerName, userId, avatarUrl, isScreen);
         if (room == null) return null;
 
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
@@ -211,6 +211,15 @@ public class GameHub : Hub
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
         
         return room;
+    }
+
+    public async Task ToggleReady(string roomCode, bool? forcedState = null)
+    {
+        var room = _roomService.ToggleReady(roomCode, Context.ConnectionId, forcedState);
+        if (room != null)
+        {
+            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
+        }
     }
 
     public async Task RenamePlayer(string newName)

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { ToastService } from '../shared/services/toast.service';
 import { AuthService } from './auth.service';
 
@@ -19,6 +19,8 @@ export interface Player {
   name: string;
   score: number;
   isHost: boolean;
+  isReady: boolean;
+  isScreen: boolean;
   avatarUrl?: string;
   userId?: string;
 }
@@ -68,6 +70,16 @@ export class SignalRService {
   public connectionStatus$ = new BehaviorSubject<string>('Disconnected');
   public currentRoomSubject = new BehaviorSubject<Room | null>(null);
   public currentRoom$ = this.currentRoomSubject.asObservable();
+  public connectionId$ = new BehaviorSubject<string | null>(null);
+  public me$: Observable<Player | null> = combineLatest([this.players$, this.connectionId$]).pipe(
+    map(([players, myId]) => players.find(p => p.connectionId === myId) || null)
+  );
+
+  /**
+   * Reactive observable to determine if the current player is the host.
+   * Compines currentRoom and connectionId to ensures we react immediately when both are available.
+   */
+  public isHost$ = new BehaviorSubject<boolean>(false);
 
   // Generic Game Events (for custom game logic events)
   public gameEvents$ = new BehaviorSubject<{ type: string, payload: any } | null>(null);
@@ -89,6 +101,10 @@ export class SignalRService {
       })
       .withAutomaticReconnect()
       .build();
+
+    // Watch room and connection changes to update isHost status
+    this.currentRoom$.subscribe(room => this.updateIsHostStatus());
+    this.connectionId$.subscribe(() => this.updateIsHostStatus());
 
     this.loadActiveRooms();
 
@@ -207,8 +223,9 @@ export class SignalRService {
       this.updateActiveRoomGameType(code, gameType);
     });
 
-    this.hubConnection.onreconnected(() => {
-      console.log('SignalR Reconnected');
+    this.hubConnection.onreconnected(connectionId => {
+      console.log('SignalR Reconnected', connectionId);
+      this.connectionId$.next(connectionId || this.hubConnection.connectionId);
       this.validateActiveRooms();
     });
   }
@@ -304,8 +321,10 @@ export class SignalRService {
       this.connectionStatus$.next('Connecting');
       try {
         await this.hubConnection.start();
+        const connectionId = this.hubConnection.connectionId;
+        this.connectionId$.next(connectionId);
         this.connectionStatus$.next('Connected');
-        console.log('SignalR Connection started');
+        console.log('SignalR Connection started', connectionId);
 
         // Proactively validate active rooms on startup to catch any that closed while offline
         this.validateActiveRooms();
@@ -380,9 +399,9 @@ export class SignalRService {
     }
   }
 
-  public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None'): Promise<string> {
+  public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None', isScreen = false): Promise<string> {
     const guestId = this.authService.getGuestId();
-    const room: Room = await this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId);
+    const room: Room = await this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId, isScreen);
 
     // Update state immediately with the real room data
     this.currentRoomSubject.next(room);
@@ -422,12 +441,12 @@ export class SignalRService {
     return await this.hubConnection.invoke('GetPublicRooms');
   }
 
-  public async joinRoom(roomCode: string, playerName: string): Promise<boolean> {
+  public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
     if (this.hubConnection.state !== HubConnectionState.Connected) {
       await this.startConnection();
     }
     const guestId = this.authService.getGuestId();
-    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName, guestId);
+    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName, guestId, isScreen);
     if (room) {
       this.currentRoomSubject.next(room);
       this.players$.next(room.players); // Sync players immediately
@@ -450,6 +469,7 @@ export class SignalRService {
     this.players$.next([]);
     this.gameState$.next(null);
     this.gameEvents$.next(null);
+    this.isHost$.next(false);
   }
 
   public async renamePlayer(newName: string): Promise<void> {
@@ -457,6 +477,10 @@ export class SignalRService {
       await this.startConnection();
     }
     await this.hubConnection.invoke('RenamePlayer', newName);
+  }
+
+  public async toggleReady(roomCode: string, forcedState?: boolean): Promise<void> {
+    await this.hubConnection.invoke('ToggleReady', roomCode, forcedState);
   }
   // ... rest of file
 
@@ -502,7 +526,30 @@ export class SignalRService {
   }
 
   public getConnectionId(): string | null {
-    return this.hubConnection.connectionId;
+    return this.connectionId$.value || this.hubConnection.connectionId;
+  }
+
+  private updateIsHostStatus() {
+    const room = this.currentRoomSubject.value;
+    const myId = this.getConnectionId();
+    if (!room || !myId) {
+      this.isHost$.next(false);
+      return;
+    }
+
+    const isHost = this.checkIsHost(room, myId);
+    if (isHost !== this.isHost$.value) {
+      this.isHost$.next(isHost);
+    }
+  }
+
+  public checkIsHost(room: Room, myId: string): boolean {
+    const me = room.players?.find(p => p.connectionId === myId);
+    return (
+      me?.isHost === true ||
+      room.hostPlayerId === myId ||
+      room.hostScreenId === myId
+    );
   }
 
   // --- Universal Translator Methods ---
