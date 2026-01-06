@@ -11,6 +11,20 @@ public enum ScatterbrainPhase
     Result
 }
 
+public class ChallengeRequest
+{
+    public string TargetPlayerId { get; set; } = string.Empty;
+    public int CategoryIndex { get; set; }
+}
+
+public class ChallengeState
+{
+    public string TargetPlayerId { get; set; } = string.Empty;
+    public int CategoryIndex { get; set; }
+    public string ChallengerId { get; set; } = string.Empty;
+    public Dictionary<string, bool> Votes { get; set; } = new(); // PlayerId -> Approve (True = Keep, False = Reject)
+}
+
 public class ScatterbrainState
 {
     public ScatterbrainPhase Phase { get; set; } = ScatterbrainPhase.Writing;
@@ -19,38 +33,30 @@ public class ScatterbrainState
     
     // PlayerId -> List of indices (matching Categories) that are flagged/vetoed
     public Dictionary<string, List<int>> Vetoes { get; set; } = new();
+
+    public ChallengeState? ActiveChallenge { get; set; }
 }
 
 public class ScatterbrainGameService : IGameService
 {
     public GameType GameType => GameType.Scatterbrain;
 
-    public Task StartRound(Room room, GameSettings settings)
+    public async Task StartRound(Room room, GameSettings settings)
     {
-        var state = new ScatterbrainState
+        // Pick random letter based on mode
+        room.GameData = new ScatterbrainState
         {
-            Phase = ScatterbrainPhase.Writing
+            CurrentLetter = ScatterbrainData.GetLetter(room.Settings.LetterMode),
+            Categories = room.Settings.IsGenerative && !string.IsNullOrEmpty(room.Settings.GenerativeSeed)
+                ? ScatterbrainData.GenerateList(room.Settings.GenerativeSeed).Take(12).ToList()
+                : room.Settings.ListId.HasValue 
+                    ? ScatterbrainData.GetList(room.Settings.ListId.Value).Take(12).ToList()
+                    : ScatterbrainData.GetRandomList().Take(12).ToList()
         };
 
-        // Roll Letter
-        state.CurrentLetter = ScatterbrainData.GetLetter(settings.LetterMode);
-        
-        // Pick List
-        if (settings.CustomCategories != null && settings.CustomCategories.Any())
-        {
-            state.Categories = settings.CustomCategories;
-        }
-        else if (settings.ListId.HasValue)
-        {
-            state.Categories = ScatterbrainData.GetList(settings.ListId.Value);
-        }
-        else
-        {
-            state.Categories = ScatterbrainData.GetRandomList();
-        }
-
-        room.GameData = state;
-        return Task.CompletedTask;
+        room.State = GameState.Playing;
+        room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
+        room.RoundNumber++;
     }
 
     public Task CalculateScores(Room room)
@@ -160,27 +166,94 @@ public class ScatterbrainGameService : IGameService
                 }
                 break;
 
-            case "VETO":
-                if (action.Payload.HasValue && action.Payload.Value.ValueKind == JsonValueKind.Number)
+            case "TOGGLE_VETO":
+                if (action.Payload.HasValue)
                 {
-                    int index = action.Payload.Value.GetInt32();
-                    if (!state.Vetoes.ContainsKey(connectionId))
+                    try
                     {
-                        state.Vetoes[connectionId] = new List<int>();
-                    }
+                        var data = action.Payload.Value.Deserialize<ChallengeRequest>(); // Reuse same model
+                        if (data != null)
+                        {
+                            if (!state.Vetoes.ContainsKey(data.TargetPlayerId))
+                            {
+                                state.Vetoes[data.TargetPlayerId] = new List<int>();
+                            }
 
-                    var list = state.Vetoes[connectionId];
-                    if (list.Contains(index))
-                    {
-                        list.Remove(index);
+                            var list = state.Vetoes[data.TargetPlayerId];
+                            if (list.Contains(data.CategoryIndex))
+                            {
+                                list.Remove(data.CategoryIndex);
+                            }
+                            else
+                            {
+                                list.Add(data.CategoryIndex);
+                            }
+                            return Task.FromResult(true);
+                        }
                     }
-                    else
+                    catch { }
+                }
+                break;
+            case "CHALLENGE_WORD":
+                if (action.Payload.HasValue && state.Phase == ScatterbrainPhase.Validation)
+                {
+                    try
                     {
-                        list.Add(index);
+                        var data = action.Payload.Value.Deserialize<ChallengeRequest>();
+                        if (data != null)
+                        {
+                            state.ActiveChallenge = new ChallengeState
+                            {
+                                TargetPlayerId = data.TargetPlayerId,
+                                CategoryIndex = data.CategoryIndex,
+                                ChallengerId = connectionId
+                            };
+                            return Task.FromResult(true);
+                        }
+                    }
+                    catch { }
+                }
+                break;
+
+            case "VOTE_WORD":
+                if (action.Payload.HasValue && state.ActiveChallenge != null)
+                {
+                    bool approve = action.Payload.Value.GetProperty("approve").GetBoolean();
+                    state.ActiveChallenge.Votes[connectionId] = approve;
+
+                    // If everyone has voted (except maybe the target if we want to exclude them, 
+                    // but usually everyone can vote)
+                    var playersToVote = room.Players.Count;
+                    if (state.ActiveChallenge.Votes.Count >= playersToVote)
+                    {
+                        // Resolve Challenge
+                        int yesCount = state.ActiveChallenge.Votes.Values.Count(v => v);
+                        int noCount = state.ActiveChallenge.Votes.Values.Count(v => !v);
+
+                        // Official rule tie-break: challenged player's vote doesn't count if tie? 
+                        // Let's just do simple majority. Tie = Approved (Keep).
+                        if (noCount > yesCount)
+                        {
+                            // REJECTED
+                            if (!state.Vetoes.ContainsKey(state.ActiveChallenge.TargetPlayerId))
+                                state.Vetoes[state.ActiveChallenge.TargetPlayerId] = new List<int>();
+                            
+                            if (!state.Vetoes[state.ActiveChallenge.TargetPlayerId].Contains(state.ActiveChallenge.CategoryIndex))
+                                state.Vetoes[state.ActiveChallenge.TargetPlayerId].Add(state.ActiveChallenge.CategoryIndex);
+                        }
+                        else
+                        {
+                            // ACCEPTED (or Tie) -> Ensure it's not vetoed
+                            if (state.Vetoes.ContainsKey(state.ActiveChallenge.TargetPlayerId))
+                                state.Vetoes[state.ActiveChallenge.TargetPlayerId].Remove(state.ActiveChallenge.CategoryIndex);
+                        }
+
+                        state.ActiveChallenge = null;
                     }
                     return Task.FromResult(true);
                 }
                 break;
+
             case "NEXT_PHASE":
                 if (state.Phase == ScatterbrainPhase.Writing)
                 {

@@ -1,27 +1,24 @@
 import { Type } from '@angular/core';
 
 // Game Imports
-import { BabbleComponent } from './babble/babble.component';
-import { ScatterbrainComponent } from './scatterbrain/scatterbrain.component';
-import { OneAndOnlyBoardComponent } from './one-and-only/one-and-only-board.component';
-import { OneAndOnlyPlayerComponent } from './one-and-only/one-and-only-player.component';
-import { GreatMindsGameComponent } from './great-minds/great-minds.component';
-import { BreakingNewsComponent } from './breaking-news/breaking-news.component';
-import { UniversalTranslatorComponent } from './universal-translator/universal-translator.component';
-import { PoppycockBoardComponent } from './poppycock/poppycock-board.component';
-import { PoppycockPlayerComponent } from './poppycock/poppycock-player.component';
-import { SymbologyComponent } from './symbology/symbology.component';
-import { WisecrackGameComponent } from './wisecrack/wisecrack-game.component';
-import { PictophoneGameComponent } from './pictophone/pictophone-game.component';
-import { DeepfakeGameComponent } from './deepfake-game/deepfake-game.component';
-import { SushiTrainComponent } from './sushi-train/sushi-train.component';
-import { SushiTrainPlayerComponent } from './sushi-train/sushi-train-player.component';
+import { BabbleComponent } from './babble/babble-game/babble.component';
+import { ScatterbrainComponent } from './scatterbrain/scatterbrain-game/scatterbrain.component';
+import { OneAndOnlyGameComponent } from './one-and-only/one-and-only-game/one-and-only-game.component';
+import { GreatMindsGameComponent } from './great-minds/great-minds-game/great-minds.component';
+import { BreakingNewsComponent } from './breaking-news/breaking-news-game/breaking-news.component';
+import { UniversalTranslatorComponent } from './universal-translator/universal-translator-game/universal-translator.component';
+import { SymbologyComponent } from './symbology/symbology-game/symbology.component';
+import { PoppycockGameComponent } from './poppycock/poppycock-game/poppycock-game.component';
+import { WisecrackGameComponent } from './wisecrack/wisecrack-game/wisecrack-game.component';
+import { PictophoneGameComponent } from './pictophone/pictophone-game/pictophone-game.component';
+import { DeepfakeGameComponent } from './deepfake-game/deepfake-game/deepfake-game.component';
+import { SushiTrainComponent } from './sushi-train/sushi-train-game/sushi-train.component';
 
 // Backlog Stubs
-import { NomDeCodeGameComponent } from './nom-de-code/nom-de-code-game.component';
-import { WarshipsGameComponent } from './warships/warships-game.component';
-import { FourInARowGameComponent } from './four-in-a-row/four-in-a-row-game.component';
-import { CheckersGameComponent } from './checkers/checkers-game.component';
+import { NomDeCodeGameComponent } from './nom-de-code/nom-de-code-game/nom-de-code-game.component';
+import { WarshipsGameComponent } from './warships/warships-game/warships-game.component';
+import { FourInARowGameComponent } from './four-in-a-row/four-in-a-row-game/four-in-a-row-game.component';
+import { CheckersGameComponent } from './checkers/checkers-game/checkers-game.component';
 
 export interface GameConfig {
     hostComponent: Type<any>;
@@ -36,8 +33,7 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
         hostComponent: ScatterbrainComponent
     },
     'OneAndOnly': {
-        hostComponent: OneAndOnlyBoardComponent,
-        playerComponent: OneAndOnlyPlayerComponent
+        hostComponent: OneAndOnlyGameComponent
     },
     'GreatMinds': {
         hostComponent: GreatMindsGameComponent
@@ -49,8 +45,7 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
         hostComponent: UniversalTranslatorComponent
     },
     'Poppycock': {
-        hostComponent: PoppycockBoardComponent,
-        playerComponent: PoppycockPlayerComponent
+        hostComponent: PoppycockGameComponent
     },
     'Symbology': {
         hostComponent: SymbologyComponent
@@ -65,8 +60,7 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
         hostComponent: DeepfakeGameComponent
     },
     'SushiTrain': {
-        hostComponent: SushiTrainComponent,
-        playerComponent: SushiTrainPlayerComponent
+        hostComponent: SushiTrainComponent
     },
     'NomDeCode': {
         hostComponent: NomDeCodeGameComponent

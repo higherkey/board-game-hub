@@ -1,0 +1,74 @@
+<div class="w-100 text-center position-relative">
+
+    <h2 class="mb-4 display-4 text-primary">One & Only</h2>
+
+    <h2 class="mb-4 display-4 text-primary">One & Only</h2>
+
+    <!-- Phase: Clue Giving -->
+    <div *ngIf="gameData?.phase === 0" class="card bg-surface shadow-md border-0 p-4 mb-4">
+        <h3 class="mb-3 text-primary">Round {{ room?.roundNumber }}</h3>
+        <p class="lead text-secondary">Target Word is defined! (Hidden from Guesser)</p>
+        <div class="alert alert-info border-0 bg-info bg-opacity-10 text-primary fw-bold">
+            Waiting for players to write their clues...
+        </div>
+        <div class="clue-counts mt-3">
+            <h5 class="text-secondary">Clues Submitted: {{ getClueCount() }} / {{ getNonGuesserCount() }}</h5>
+        </div>
+        <!-- Show who is the guesser -->
+        <div class="mt-4">
+            <span class="badge bg-accent fs-5">Guesser: {{ getGuesserName() }}</span>
+        </div>
+    </div>
+
+    <!-- Phase: Guessing / Elimination -->
+    <div *ngIf="gameData?.phase === 1" class="card bg-surface shadow-md border-0 p-4 mb-4">
+        <h3 class="mb-3 text-primary">Compare Clues</h3>
+        <p class="text-secondary">Duplicate clues have been eliminated!</p>
+
+        <div class="row justify-content-center gap-3 mt-4">
+            <!-- Valid Clues -->
+            <div *ngFor="let clue of getValidClues()" class="col-auto">
+                <div class="card bg-base border-0 shadow-sm p-3 clue-card">
+                    <!-- If clue is an image (Base64), show it, else text -->
+                    <ng-container *ngIf="isBase64(clue.value); else textClue">
+                        <img [src]="clue.value" [alt]="'Visual clue by ' + clue.player" class="img-fluid clue-image">
+                    </ng-container>
+                    <ng-template #textClue>
+                        <h4 class="m-0 text-primary fw-bold">{{ clue.value }}</h4>
+                    </ng-template>
+                    <small class="text-secondary mt-2 d-block">{{ clue.player }}</small>
+                </div>
+            </div>
+
+            <!-- Invalid Clues (Visual feedback they were removed) -->
+            <div *ngFor="let clue of getInvalidClues()" class="col-auto opacity-50">
+                <div class="card bg-secondary text-white p-3 position-relative clue-card">
+                    <ng-container *ngIf="isBase64(clue); else textInvalid">
+                        <img [src]="clue" alt="Invalid visual clue" class="img-fluid clue-image-invalid">
+                    </ng-container>
+                    <ng-template #textInvalid>
+                        <h4 class="m-0 text-decoration-line-through">{{ clue }}</h4>
+                    </ng-template>
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <i class="bi bi-x-circle-fill text-danger fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <h4 class="text-secondary">Waiting for <span class="text-accent fw-bold">{{ getGuesserName() }}</span> to
+                guess...</h4>
+        </div>
+    </div>
+
+    <!-- Phase: Result -->
+    <div *ngIf="gameData?.phase === 2" class="card bg-surface shadow-md border-0 p-4 mb-4">
+        <h1 class="display-3 mb-3 fw-bold" [class.text-success]="gameData?.result === 'Success'"
+            [class.text-danger]="gameData?.result === 'Failure'" [class.text-info]="gameData?.result === 'Passed'">
+            {{ gameData?.result }}!
+        </h1>
+        <h3 class="mb-4 text-primary">Target Word: <span class="text-accent">{{ gameData?.targetWord }}</span></h3>
+        <h4 class="text-secondary">Guesser answered: {{ gameData?.guesserResponse }}</h4>
+    </div>
+</div>

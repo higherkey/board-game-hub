@@ -1,0 +1,83 @@
+.hero-section {
+    background-size: cover;
+    background-position: center;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 20% 50%, rgba(var(--primary-rgb, 13, 110, 253), 0.2), transparent);
+    }
+}
+
+.game-hero-icon {
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+    animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.mt-n5 {
+    margin-top: -5rem !important;
+}
+
+.z-1 {
+    z-index: 1;
+}
+
+.fw-black {
+    font-weight: 900;
+}
+
+.tracking-tighter {
+    letter-spacing: -0.05em;
+}
+
+.smaller {
+    font-size: 0.7rem;
+}
+
+.bg-gradient-brand {
+    background: linear-gradient(135deg, var(--primary, #0d6efd) 0%, var(--accent, #6610f2) 100%);
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+}
+
+.rules-content {
+    transition: all 0.3s ease;
+}
+
+.card {
+    transition: transform 0.2s ease;
+}
+
+.news-item {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+    &:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+}

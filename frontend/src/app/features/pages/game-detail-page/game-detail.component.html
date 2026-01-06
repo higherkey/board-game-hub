@@ -1,0 +1,179 @@
+<div class="game-detail-container pb-5">
+    <div class="hero-section" [style.background-image]="'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8))'">
+        <div class="container position-relative py-5 mt-5">
+            <div class="row align-items-center">
+                <div class="col-md-auto text-center mb-4 mb-md-0">
+                    <div class="display-1 game-hero-icon">{{ game?.icon }}</div>
+                </div>
+                <div class="col-md text-center text-md-start">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-2 small opacity-75">
+                            <li class="breadcrumb-item"><a routerLink="/games"
+                                    class="text-white text-decoration-none">Library</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">{{ game?.name }}</li>
+                        </ol>
+                    </nav>
+                    <h1 class="display-3 fw-black text-white text-uppercase tracking-tighter mb-3">{{ game?.name }}</h1>
+                    <p class="lead text-white-50 mb-4">{{ game?.description }}</p>
+
+                    <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-3">
+                        <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-lg"
+                            [routerLink]="['/game/create']" [queryParams]="{gameType: game?.id}">
+                            <i class="bi bi-play-fill me-2"></i> PLAY NOW
+                        </button>
+                        <a class="btn btn-outline-light btn-lg rounded-pill px-4 fw-bold"
+                            [routerLink]="['/social', game?.id]">
+                            <i class="bi bi-people-fill me-2"></i> COMMUNITY HUB
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-n5 position-relative z-1">
+        <div class="row g-4">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Rules Section -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                    <button
+                        class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center w-100"
+                        (click)="toggleRules()">
+                        <h3 class="m-0 fw-bold d-flex align-items-center">
+                            <i class="bi bi-journal-text text-primary me-3"></i> How to Play
+                        </h3>
+                        <i class="bi h4 m-0" [class.bi-plus-lg]="!isRulesExpanded"
+                            [class.bi-dash-lg]="isRulesExpanded"></i>
+                    </button>
+                    <div class="rules-content collapse" [class.show]="isRulesExpanded">
+                        <div class="card-body p-4 pt-0 border-top">
+                            <p class="text-secondary">Get ready for an exciting game of {{ game?.name }}! Here are the
+                                basic rules to get you started:</p>
+                            <ul class="list-group list-group-flush opacity-90">
+                                <li class="list-group-item px-0 py-3 border-0">
+                                    <div class="d-flex gap-3">
+                                        <span
+                                            class="badge bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center"
+                                            style="width: 28px; height: 28px;">1</span>
+                                        <div><strong>Join a Lobby:</strong> Create a new room and share the code with
+                                            your friends.</div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item px-0 py-3 border-0">
+                                    <div class="d-flex gap-3">
+                                        <span
+                                            class="badge bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center"
+                                            style="width: 28px; height: 28px;">2</span>
+                                        <div><strong>Use Your Phone:</strong> Everyone joins using their mobile devices
+                                            as controllers.</div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item px-0 py-3 border-0">
+                                    <div class="d-flex gap-3">
+                                        <span
+                                            class="badge bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center"
+                                            style="width: 28px; height: 28px;">3</span>
+                                        <div><strong>Have Fun:</strong> Follow the on-screen prompts and compete for the
+                                            highest score!</div>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div class="mt-3 p-3 bg-light rounded-3 small text-secondary">
+                                <i class="bi bi-info-circle me-2"></i> Detailed rules are available inside the game
+                                room.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News Section -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h3 class="fw-bold mb-4 d-flex align-items-center">
+                            <i class="bi bi-megaphone text-primary me-3"></i> Latest Updates
+                        </h3>
+                        <div class="news-item mb-4">
+                            <span class="badge bg-info-subtle text-info mb-2">New Feature</span>
+                            <h5 class="fw-bold">Enhanced Social Features Coming Soon!</h5>
+                            <p class="text-secondary small">We're working on making the community hub even better for {{
+                                game?.name }} fans. Stay tuned for custom content sharing!</p>
+                            <span class="text-muted smaller">January 7, 2026</span>
+                        </div>
+                        <div class="news-item">
+                            <span class="badge bg-success-subtle text-success mb-2">Stability</span>
+                            <h5 class="fw-bold">Version 1.2 Performance Boost</h5>
+                            <p class="text-secondary small">Fixed several minor issues with the scoring logic and
+                                improved the real-time syncing between devices.</p>
+                            <span class="text-muted smaller">December 28, 2025</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Stats Section -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-surface">
+                    <div class="card-body p-4 text-center">
+                        <h3 class="fw-bold mb-4 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-graph-up-arrow text-primary me-3"></i> Your Stats
+                        </h3>
+
+                        <div *ngIf="!isLoggedIn" class="py-4">
+                            <div class="display-6 mb-3">🔒</div>
+                            <h5 class="fw-bold">Registration Required</h5>
+                            <p class="text-secondary small mb-4">Register or Login to track your progress, save high
+                                scores, and earn achievements!</p>
+                            <a routerLink="/register" class="btn btn-outline-primary rounded-pill px-4">Create
+                                Account</a>
+                        </div>
+
+                        <div *ngIf="isLoggedIn" class="py-2">
+                            <output *ngIf="isLoadingHistory" class="spinner-border text-primary my-4">
+                                <span class="visually-hidden">Loading...</span>
+                            </output>
+
+                            <div *ngIf="!isLoadingHistory && gameHistory.length === 0" class="text-center py-4">
+                                <p class="text-secondary mb-4">You haven't played {{ game?.name }} yet.</p>
+                                <button class="btn btn-primary rounded-pill px-4" [routerLink]="['/game/create']"
+                                    [queryParams]="{gameType: game?.id}">
+                                    PLAY YOUR FIRST GAME
+                                </button>
+                            </div>
+
+                            <div *ngIf="!isLoadingHistory && gameHistory.length > 0" class="text-start">
+                                <!-- Actual stats would go here -->
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-secondary">Games Played</span>
+                                    <span class="fw-bold">{{ gameHistory.length }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-secondary">Best Score</span>
+                                    <span class="fw-bold">120</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-secondary">Win Rate</span>
+                                    <span class="fw-bold">45%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ad/Teaser -->
+                <div class="card border-0 shadow-sm rounded-4 bg-gradient-brand text-white overflow-hidden">
+                    <div class="card-body p-4 position-relative">
+                        <h4 class="fw-bold mb-3">Want more?</h4>
+                        <p class="small opacity-75 mb-4">Discover more games like {{ game?.name }} in our extensive
+                            library.</p>
+                        <a routerLink="/games" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">Explore All
+                            Games</a>
+                        <i class="bi bi-controller position-absolute bottom-0 end-0 m-2 opacity-25"
+                            style="font-size: 5rem; transform: rotate(15deg) translate(10px, 20px);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

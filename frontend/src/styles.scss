@@ -1,3 +1,9 @@
+/* 
+ * BUILD NOTE: You may see a warning during build: ".form-floating>~label -> Did not expect successive traversals."
+ * This is a known, harmless issue between Angular's CSS optimizer and Bootstrap 5's internal CSS structure.
+ * It does not affect the site's functionality and can be safely ignored.
+ */
+
 /* Fonts */
 @font-face {
   font-family: 'Outfit';

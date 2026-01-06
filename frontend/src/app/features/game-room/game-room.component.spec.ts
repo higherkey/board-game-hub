@@ -1,14 +1,13 @@
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { GameRoomComponent } from './game-room.component';
-import { SignalRService } from '../../services/signalr.service';
-import { AuthService } from '../../services/auth.service';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 import { GameDataService } from '../../services/game-data.service';
+import { SignalRService } from '../../services/signalr.service';
+import { GameRoomComponent } from './game-room.component';
 
 // Stub Components
-
 
 @Component({ selector: 'app-host-settings', template: '', standalone: true, imports: [] })
 class HostSettingsStubComponent {
@@ -51,13 +50,13 @@ class OneAndOnlyPlayerStubComponent {
 
 // Import real components to override
 
+import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
+import { BabbleComponent } from '../games/babble/babble-game/babble.component';
+import { OneAndOnlyBoardComponent } from '../games/one-and-only/one-and-only-board/one-and-only-board.component';
+import { OneAndOnlyPlayerComponent } from '../games/one-and-only/one-and-only-player/one-and-only-player.component';
+import { GameReviewComponent } from './components/game-review/game-review.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
-import { BabbleComponent } from '../games/babble/babble.component';
-import { GameReviewComponent } from './components/game-review/game-review.component';
-import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
-import { OneAndOnlyBoardComponent } from '../games/one-and-only/one-and-only-board.component';
-import { OneAndOnlyPlayerComponent } from '../games/one-and-only/one-and-only-player.component';
 
 describe('GameRoomComponent', () => {
   let component: GameRoomComponent;

@@ -1,21 +1,18 @@
-<div class="player-container">
-    <!-- MAIN ACTION -->
-    <div class="main-action">
-        <button class="play-btn" (click)="playCard()" [disabled]="!canPlay || cooldown"
-            [style.background]="lowestCard ? getGradient(lowestCard) : '#333'">
-            <span class="btn-text" *ngIf="lowestCard">{{ lowestCard }}</span>
-            <span class="btn-sub" *ngIf="lowestCard">TAP TO PLAY</span>
-            <span class="btn-text" *ngIf="!lowestCard">WAITING</span>
-        </button>
-    </div>
+<div class="player-container" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd()" (touchcancel)="onTouchEnd()">
 
-    <!-- QUEUE -->
-    <div class="queue" *ngIf="myQueue.length > 0">
-        <span class="queue-label">UP NEXT</span>
-        <div class="queue-list">
-            <div class="mini-card" *ngFor="let c of myQueue">
-                {{ c }}
+    <!-- HAND OF CARDS -->
+    <div class="hand-area">
+        <div class="card-hand">
+            <div *ngFor="let card of myHand" class="player-card" [class.lowest]="card === lowestCard"
+                [style.background]="getGradient(card)" [ngStyle]="getCardStyle(card)"
+                (touchstart)="onTouchStart($event, card)">
+                <span class="card-num">{{ card }}</span>
+                <div class="swipe-hint" *ngIf="card === lowestCard && !isSwiping">SWIPE UP</div>
             </div>
+        </div>
+
+        <div class="empty-hand" *ngIf="myHand.length === 0">
+            <span class="zen-text">CONCENTRATE</span>
         </div>
     </div>
 

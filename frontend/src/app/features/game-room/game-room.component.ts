@@ -1,20 +1,20 @@
-import { Component, OnInit, Type, ViewChild, ElementRef, inject, HostListener } from '@angular/core';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
+import { Component, ElementRef, HostListener, inject, OnInit, Type, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { SignalRService, GameSettings, Room, Player } from '../../services/signalr.service';
-import { AuthService } from '../../services/auth.service';
-import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
-import { MobileTabBarComponent, GameRoomTab } from './components/mobile-tab-bar/mobile-tab-bar.component';
-import { HostSettingsComponent } from './components/host-settings/host-settings.component';
-import { VideoChatComponent } from './components/video-chat/video-chat.component';
-import { GameReviewComponent } from './components/game-review/game-review.component';
-import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
 import { map, Observable, take } from 'rxjs';
-import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
+import { AuthService } from '../../services/auth.service';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
+import { GameSettings, Player, Room, SignalRService } from '../../services/signalr.service';
+import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
+import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { GAME_REGISTRY } from '../games/game.registry';
+import { GameReviewComponent } from './components/game-review/game-review.component';
+import { HostSettingsComponent } from './components/host-settings/host-settings.component';
+import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
+import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
+import { VideoChatComponent } from './components/video-chat/video-chat.component';
 
 @Component({
   selector: 'app-game-room',
@@ -54,8 +54,6 @@ export class GameRoomComponent implements OnInit {
   selectedGameType = 'None';
   isPublic = true;
   availableGames: GameDefinition[] = [];
-
-  // Dynamic Loading
   gameComponent: Type<any> | null = null;
   public gameInputs: Record<string, any> = {};
   public activeGameComponent: any = null; // Reference to the active game instance
@@ -72,6 +70,11 @@ export class GameRoomComponent implements OnInit {
 
   // Video layout: 'sidebar' (default) | 'docked-top' | 'docked-bottom'
   public videoLayout: 'sidebar' | 'docked-top' | 'docked-bottom' = 'sidebar';
+
+  get selectedGame(): GameDefinition | undefined {
+    const type = this.selectedGameType.toLowerCase();
+    return this.availableGames.find(g => g.id.toLowerCase() === type || g.name.toLowerCase() === type);
+  }
 
   setMobileView(view: GameRoomTab) {
     this.mobileView = view;
@@ -117,6 +120,15 @@ export class GameRoomComponent implements OnInit {
     this.currentRoom$.subscribe(room => {
       if (room) {
         this.updateActiveGame(room);
+
+        // If host joins a fresh lobby with a pre-selected game type from query params, apply it
+        if (room.gameType === 'None' && this.selectedGameType !== 'None') {
+          const isHost = this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '');
+          if (isHost) {
+            this.signalRService.setGameType(room.code, this.selectedGameType);
+            this.selectedGameType = 'None'; // Clear once applied
+          }
+        }
       }
     });
 
@@ -134,17 +146,18 @@ export class GameRoomComponent implements OnInit {
     return (players || []).filter(p => !p.isScreen);
   }
 
-  getScreens(players: Player[] | null): Player[] {
+  getTables(players: Player[] | null): Player[] {
     return (players || []).filter(p => p.isScreen);
   }
 
   getQrCodeUrl(): string {
     if (!this.roomCode) return '';
-    const url = window.location.origin + '/game/' + this.roomCode;
+    const url = globalThis.location.origin + '/game/' + this.roomCode;
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
   }
 
   async toggleReady() {
+    console.log('toggleReady called', this.roomCode);
     if (this.roomCode) {
       await this.signalRService.toggleReady(this.roomCode);
     }
@@ -165,16 +178,6 @@ export class GameRoomComponent implements OnInit {
       }
     });
 
-    this.signalRService.startConnection();
-
-    // Load available games for creation
-    this.gameDataService.games$.subscribe(games => {
-      if (games) {
-        this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
-      }
-    });
-    this.gameDataService.refreshGames();
-
     // Check query params for pre-selected game or name
     this.route.queryParams.pipe(take(1)).subscribe(params => {
       if (params['gameType']) {
@@ -184,6 +187,33 @@ export class GameRoomComponent implements OnInit {
         this.promptPlayerName = params['name'];
       }
     });
+
+    this.signalRService.startConnection();
+
+    // Load available games for creation
+    this.gameDataService.games$.subscribe(games => {
+      if (games) {
+        this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+
+        // If we have a selectedGameType from query params, ensure it's valid
+        if (this.selectedGameType !== 'None' && !this.availableGames.some(g => g.id === this.selectedGameType)) {
+          // Check if input was a name instead of ID
+          const found = this.availableGames.find(g => g.name.toLowerCase() === this.selectedGameType.toLowerCase());
+          if (found) {
+            this.selectedGameType = found.id;
+          }
+        }
+
+        if (this.selectedGame) {
+          // No-op, label is handled in HostSettingsComponent
+        }
+      }
+    });
+    this.gameDataService.refreshGames();
+
+    // Auto-detect table mode for desktop
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    this.isScreen = !isMobile;
 
     const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
 

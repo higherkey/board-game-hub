@@ -1,0 +1,71 @@
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { PlayComponent } from './play.component';
+import { SignalRService } from '../../../services/signalr.service';
+import { AuthService } from '../../../services/auth.service';
+import { ToastService } from '../../../shared/services/toast.service';
+import { GameDataService } from '../../../services/game-data.service';
+import { Router } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
+
+describe('PlayComponent', () => {
+    let component: PlayComponent;
+    let fixture: ComponentFixture<PlayComponent>;
+    let mockSignalRService: any;
+    let mockAuthService: any;
+    let mockToastService: any;
+    let mockGameDataService: any;
+    let mockRouter: any;
+
+    beforeEach(async () => {
+        mockSignalRService = {
+            connectionStatus$: new BehaviorSubject('Connected'),
+            startConnection: jasmine.createSpy('startConnection').and.returnValue(Promise.resolve()),
+            getPublicRooms: jasmine.createSpy('getPublicRooms').and.returnValue(Promise.resolve([]))
+        };
+
+        mockAuthService = {
+            currentUser$: of({ displayName: 'Test User' }),
+            getGuestName: jasmine.createSpy('getGuestName').and.returnValue('Guest')
+        };
+
+        mockToastService = {
+            show: jasmine.createSpy('show')
+        };
+
+        mockGameDataService = {
+            games$: of([]),
+            refreshGames: jasmine.createSpy('refreshGames')
+        };
+
+        mockRouter = {
+            navigate: jasmine.createSpy('navigate')
+        };
+
+        await TestBed.configureTestingModule({
+            imports: [PlayComponent],
+            providers: [
+                { provide: SignalRService, useValue: mockSignalRService },
+                { provide: AuthService, useValue: mockAuthService },
+                { provide: ToastService, useValue: mockToastService },
+                { provide: GameDataService, useValue: mockGameDataService },
+                { provide: Router, useValue: mockRouter }
+            ]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(PlayComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
+
+    it('should create', () => {
+        expect(component).toBeTruthy();
+    });
+
+    it('should load rooms on init', fakeAsync(() => {
+        expect(mockSignalRService.getPublicRooms).toHaveBeenCalled();
+    }));
+
+    it('should refresh games on init', () => {
+        expect(mockGameDataService.refreshGames).toHaveBeenCalled();
+    });
+});

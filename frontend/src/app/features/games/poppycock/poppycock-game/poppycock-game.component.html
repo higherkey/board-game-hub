@@ -1,0 +1,30 @@
+<div class="poppycock-container w-full h-full flex flex-col relative">
+    <!-- Rules Overlay -->
+    <app-poppycock-rules *ngIf="showRules" (closeRules)="showRules = false">
+    </app-poppycock-rules>
+
+    <!-- Header / Status Bar -->
+    <div class="p-2 bg-gray-800 text-white flex justify-between items-center shrink-0"
+        style="background-color: #34495e;">
+        <div class="flex items-center gap-4">
+            <span class="font-bold text-lg text-amber-500">POPPYCOCK</span>
+            <button (click)="showRules = true"
+                class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded border border-gray-600 transition-colors">
+                Help/Rules
+            </button>
+        </div>
+        <span class="text-sm">Round {{room.roundNumber}}</span>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow overflow-hidden relative">
+        <!-- Board View (Shared Screen) -->
+        <app-poppycock-board *ngIf="isHost" [room]="room" [isHost]="isHost">
+        </app-poppycock-board>
+
+        <!-- Player View (Controller) -->
+        <app-poppycock-player *ngIf="!isHost" [room]="room" [myConnectionId]="myConnectionId"
+            (definitionSubmitted)="onDefinitionSubmitted($event)" (voteSubmitted)="onVoteSubmitted($event)">
+        </app-poppycock-player>
+    </div>
+</div>

@@ -11,6 +11,8 @@ export interface GameSettings {
   boardSize?: number; // 4, 5, 6
   listId?: number;
   customCategories?: string[];
+  isGenerative?: boolean;
+  generativeSeed?: string;
   [key: string]: any;
 }
 
@@ -143,6 +145,7 @@ export class SignalRService {
 
     this.hubConnection.on('RoomUpdated', (room: Room) => {
       this.currentRoomSubject.next(room);
+      this.players$.next(room.players);
     });
 
     this.hubConnection.on('SettingsUpdated', (settings: GameSettings) => {
@@ -605,6 +608,11 @@ export class SignalRService {
   public async getPictophoneSuggestions(): Promise<string[]> {
     return await this.hubConnection.invoke('GetPictophoneSuggestions');
   }
+
+  public async getScatterbrainLists(): Promise<any[]> {
+    return await this.hubConnection.invoke('GetScatterbrainLists');
+  }
+
   // --- Symbology Methods ---
   public symbologyPlaceMarker(icon: string, type: string, color: string) {
     this.hubConnection.invoke('SymbologyPlaceMarker', this.currentRoomSubject.value!.code, icon, type, color)

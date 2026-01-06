@@ -19,12 +19,15 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() currentRound = 1;
   @Input() totalRounds = 5;
   @Input() players: Player[] = [];
+  @Input() meReady = false;
+  @Input() isHost = false;
+  @Input() isScreen = false;
   @Output() gameStart = new EventEmitter<GameSettings>();
   @Output() nextRound = new EventEmitter<GameSettings>();
   @Output() endGame = new EventEmitter<void>();
+  @Output() toggleReady = new EventEmitter<void>();
 
   selectedGameType = 'None';
-  selectedGame: GameDefinition | undefined;
   availableGames: GameDefinition[] = [];
   gameSearchQuery = '';
   showReadyConfirmation = false;
@@ -37,8 +40,10 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     listId: undefined
   };
 
-  listSelectionMode: 'random' | 'manual' = 'random';
+  listSelectionMode: 'manual' | 'random' | 'generative' = 'manual';
   selectedListId: number = 1;
+  scatterbrainLists: any[] = [];
+  previewedList: any = null;
 
   undoSettings = { allowVoting: true, hostOnly: false };
 
@@ -52,6 +57,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       if (games) {
         // Allow Deployed and Testing
         this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+        this.syncSelectedGame();
       }
     });
 
@@ -69,31 +75,94 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       if (this.settings.listId) {
         this.selectedListId = this.settings.listId;
         this.listSelectionMode = 'manual';
+      } else if (this.settings.isGenerative) {
+        this.listSelectionMode = 'generative';
       }
+    }
+
+    // Fetch lists if Scatterbrain
+    if (this.currentGameType === 'Scatterbrain' || this.selectedGameType === 'Scatterbrain') {
+      this.signalRService.getScatterbrainLists().then(lists => {
+        this.scatterbrainLists = lists;
+        if (this.selectedListId) {
+          this.previewList(this.selectedListId);
+        }
+      });
     }
   }
 
   ngOnChanges() {
-    if (this.currentGameType) {
-      this.selectedGameType = this.currentGameType;
+    const type = this.currentGameType || 'None';
+    if (type !== this.selectedGameType) {
+      this.selectedGameType = type;
+      this.syncSelectedGame();
+      this.showReadyConfirmation = false;
     }
   }
 
-  async changeGameType(type?: string) {
-    if (type) this.selectedGameType = type;
-    if (this.roomCode && this.selectedGameType) {
-      this.gameSearchQuery = this.availableGames.find(g => g.id === this.selectedGameType)?.name || '';
-      await this.signalRService.setGameType(this.roomCode, this.selectedGameType);
+  syncSelectedGame() {
+    if (!this.selectedGameType || this.selectedGameType === 'None' || !this.availableGames.length) return;
 
-      // Update local defaults based on game definition
-      this.selectedGame = this.availableGames.find(g => g.id === this.selectedGameType);
-      if (this.selectedGame) {
-        if (this.selectedGame.defaultRoundLengthSeconds > 0) {
-          this.settings.timerDurationSeconds = this.selectedGame.defaultRoundLengthSeconds;
-        } else if (this.selectedGame.timerType === 0) { // NotApplicable
-          this.settings.timerDurationSeconds = 0;
+    // Robust matching: Try ID (case-insensitive) then Name (case-insensitive)
+    const query = this.selectedGameType.toLowerCase();
+    const game = this.availableGames.find(g =>
+      g.id.toLowerCase() === query ||
+      g.name.toLowerCase() === query
+    );
+
+    if (game) {
+      // Synchronize search query label if it's currently empty or generic
+      if (!this.gameSearchQuery || this.gameSearchQuery === '...' || this.gameSearchQuery === 'None') {
+        this.gameSearchQuery = game.name;
+      }
+
+      // Important: Only apply defaults if we don't already have specialized settings from the room
+      // or if we are currently at standard defaults and switching games.
+      if (game.defaultRoundLengthSeconds > 0) {
+        this.settings.timerDurationSeconds = game.defaultRoundLengthSeconds;
+      } else if (game.timerType === 0) {
+        this.settings.timerDurationSeconds = 0;
+      }
+
+      // Apply other defaults if needed
+      if (game.id === 'Babble' && (!this.settings.boardSize || this.settings.boardSize === 4)) {
+        this.settings.boardSize = 4;
+      }
+
+      // Pre-fetch Scatterbrain lists if needed
+      if (game.id === 'Scatterbrain') {
+        if (!this.scatterbrainLists.length) {
+          this.signalRService.getScatterbrainLists().then(lists => {
+            this.scatterbrainLists = lists;
+            if (this.selectedListId) this.previewList(this.selectedListId);
+            // Ensure first list is selected if none is
+            if (!this.settings.listId) {
+              this.settings.listId = lists[0]?.id || 1;
+              this.selectedListId = this.settings.listId as number;
+            }
+          });
         }
       }
+    }
+  }
+
+  async changeGameType(typeOrName?: string) {
+    if (typeOrName) {
+      const found = this.availableGames.find(g =>
+        g.id.toLowerCase() === typeOrName.toLowerCase() ||
+        g.name.toLowerCase() === typeOrName.toLowerCase()
+      );
+      this.selectedGameType = found ? found.id : 'None';
+    } else {
+      this.selectedGameType = 'None';
+    }
+
+    if (this.roomCode && this.selectedGameType !== 'None') {
+      if (this.isIntermission) return;
+
+      this.gameSearchQuery = this.availableGames.find(g => g.id === this.selectedGameType)?.name || '';
+      await this.signalRService.setGameType(this.roomCode, this.selectedGameType);
+      this.syncSelectedGame();
     }
   }
 
@@ -102,12 +171,24 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     return this.availableGames.filter(g => g.name.toLowerCase().includes(this.gameSearchQuery.toLowerCase()));
   }
 
+  get selectedGame(): GameDefinition | undefined {
+    const type = this.selectedGameType.toLowerCase();
+    return this.availableGames.find(g => g.id.toLowerCase() === type || g.name.toLowerCase() === type);
+  }
+
   updateListId() {
-    if (this.listSelectionMode === 'random') {
-      this.settings.listId = undefined;
-    } else {
+    this.settings.listId = undefined;
+    this.settings.isGenerative = false;
+
+    if (this.listSelectionMode === 'manual') {
       this.settings.listId = this.selectedListId;
+    } else if (this.listSelectionMode === 'generative') {
+      this.settings.isGenerative = true;
     }
+  }
+
+  previewList(listId: number) {
+    this.previewedList = this.scatterbrainLists.find(l => l.id === listId);
   }
 
   updateBoardSize(size: string) {
@@ -144,5 +225,14 @@ export class HostSettingsComponent implements OnChanges, OnInit {
 
   emitEndGame() {
     this.endGame.emit();
+  }
+
+  getQrCodeUrl(): string {
+    const url = globalThis.location.origin + '/join/' + this.roomCode;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&bgcolor=ffffff`;
+  }
+
+  onToggleReady() {
+    this.toggleReady.emit();
   }
 }

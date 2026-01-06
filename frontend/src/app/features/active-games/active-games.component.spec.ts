@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActiveGamesComponent } from './active-games.component';
-import { SignalRService } from '../../services/signalr.service';
 import { Router } from '@angular/router';
-import { of, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { By } from '@angular/platform-browser';
+import { SignalRService } from '../../services/signalr.service';
 
 describe('ActiveGamesComponent', () => {
     let component: ActiveGamesComponent;

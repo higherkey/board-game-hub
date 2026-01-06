@@ -82,22 +82,22 @@
             [class.is-collapsed]="isSidebarCollapsed" [class.d-flex]="mobileView === 'players'"
             [class.d-none]="mobileView !== 'players' && mobileView !== 'host'">
 
-            <!-- SCREENS SECTION -->
+            <!-- TABLES SECTION -->
             <div class="card bg-surface shadow-sm border-0 mb-3 flex-shrink-0 overflow-hidden" style="max-height: 40%;">
                 <div class="card-header bg-primary text-white py-2 border-bottom-0 d-flex justify-content-between align-items-center"
                     style="background-color: var(--brand-blue) !important;">
-                    <small class="fw-bold text-uppercase spacing-wide">Screens ({{ getScreens(players$ | async).length
+                    <small class="fw-bold text-uppercase spacing-wide">Tables ({{ getTables(players$ | async).length
                         }})</small>
                 </div>
                 <ul class="list-group list-group-flush small overflow-auto">
                     <li class="list-group-item d-flex align-items-center gap-2 border-bottom-light"
-                        *ngFor="let s of getScreens(players$ | async)">
+                        *ngFor="let s of getTables(players$ | async)">
                         <i class="bi bi-display text-accent"></i>
-                        <span class="text-truncate fw-bold text-primary">{{ s.name || 'Screen' }}</span>
-                        <i *ngIf="s.isHost" class="bi bi-shield-fill text-accent ms-auto" title="Host Screen"></i>
+                        <span class="text-truncate fw-bold text-primary">{{ s.name || 'Table' }}</span>
+                        <i *ngIf="s.isHost" class="bi bi-shield-fill text-accent ms-auto" title="Host Table"></i>
                     </li>
-                    <li *ngIf="getScreens(players$ | async).length === 0" class="list-group-item text-muted x-small">No
-                        screens</li>
+                    <li *ngIf="getTables(players$ | async).length === 0" class="list-group-item text-muted x-small">No
+                        tables</li>
                 </ul>
             </div>
 
@@ -204,17 +204,22 @@
                                 <p class="text-muted small mt-1">This is how other players will see you.</p>
                             </div>
 
+
+
                             <div class="mb-4 text-start d-flex align-items-center">
                                 <div class="form-check form-switch me-4">
                                     <input class="form-check-input" type="checkbox" role="switch" id="isScreenSwitch"
-                                        [(ngModel)]="isScreen" [checked]="isScreen" [attr.aria-checked]="isScreen">
-                                    <label class="form-check-label fw-bold text-secondary" for="isScreenSwitch">
-                                        Join as Screen
+                                        [(ngModel)]="isScreen" [checked]="isScreen" [attr.aria-checked]="isScreen"
+                                        aria-checked="true">
+                                    <label class="form-check-label fw-bold text-secondary" for="isScreenSwitch"
+                                        title="Use this mode if this device is a TV or shared monitor for everyone to see.">
+                                        Join as Table (Shared Screen)
                                     </label>
                                 </div>
                                 <div *ngIf="isCreating" class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" role="switch" id="publicSwitch"
-                                        [(ngModel)]="isPublic" [checked]="isPublic" [attr.aria-checked]="isPublic">
+                                        [(ngModel)]="isPublic" [checked]="isPublic" [attr.aria-checked]="isPublic"
+                                        aria-checked="true">
                                     <label class="form-check-label fw-bold text-secondary" for="publicSwitch">
                                         Public Room
                                     </label>
@@ -243,43 +248,25 @@
                     <div *ngIf="!needsName && !(gameStarted$ | async)"
                         class="h-100 d-flex flex-column align-items-center justify-content-start text-center pt-5">
                         <div class="w-100" style="max-width: 1000px;">
-                            <div class="d-flex align-items-center justify-content-center gap-4 mb-4">
-                                <div class="qr-container bg-white p-2 rounded shadow-sm">
-                                    <img [src]="getQrCodeUrl()" alt="Room QR Code" style="width: 120px; height: 120px;">
-                                    <div class="small fw-bold text-muted mt-1">Join Room</div>
-                                </div>
-                                <div class="text-start">
-                                    <h2 class="display-5 fw-bold mb-0" style="color: var(--brand-blue);">{{ roomCode }}
-                                    </h2>
-                                    <p class="text-secondary mb-2">Room Code</p>
-                                    <button class="btn btn-sm btn-outline-secondary" (click)="toggleReady()">
-                                        <i class="bi" [class.bi-check-circle-fill]="(me$ | async)?.isReady"
-                                            [class.bi-circle]="!(me$ | async)?.isReady"></i>
-                                        {{ (me$ | async)?.isReady ? 'READY!' : 'NOT READY' }}
-                                    </button>
-                                </div>
+                            <!-- Room info is now inside app-host-settings -->
+
+                            <!-- Host / Player Controls -->
+                            <div class="w-100">
+                                <app-host-settings [roomCode]="roomCode"
+                                    [currentGameType]="(currentRoom$ | async)?.gameType || ''"
+                                    [players]="(players$ | async) || []" [isHost]="(isHost$ | async) || false"
+                                    [meReady]="(me$ | async)?.isReady || false"
+                                    [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
+                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()"
+                                    (toggleReady)="toggleReady()">
+                                </app-host-settings>
                             </div>
 
-                            <!-- Host Controls -->
-                            <div *ngIf="isHost$ | async; else playerWaiting">
-                                <div class="w-100">
-                                    <app-host-settings [roomCode]="roomCode"
-                                        [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                                        [players]="(players$ | async) || []" (gameStart)="startGame($event)">
-                                    </app-host-settings>
-                                </div>
+                            <!-- Waiting Message for non-Hosts (if we want to emphasize it outside the settings card) -->
+                            <div *ngIf="!(isHost$ | async)" class="mt-4">
+                                <p class="text-secondary opacity-50 small italic">The host is preparing the session...
+                                </p>
                             </div>
-
-                            <ng-template #playerWaiting>
-                                <div class="alert alert-surface border-accent shadow-sm py-5">
-                                    <div class="alert-heading text-accent mb-3">
-                                        <i class="bi bi-hourglass-split fs-1" aria-hidden="true"></i>
-                                    </div>
-                                    <h2 class="text-primary fw-bold">Waiting for Game</h2>
-                                    <p class="mb-0 text-secondary fs-5">Sit tight! The host is picking the next
-                                        challenge.</p>
-                                </div>
-                            </ng-template>
                         </div>
                     </div>
 
@@ -362,7 +349,10 @@
                 </div>
                 <div class="card-body">
                     <app-host-settings [roomCode]="roomCode" [compactMode]="true"
-                        [currentGameType]="(currentRoom$ | async)?.gameType || ''" (gameStart)="startGame($event)">
+                        [currentGameType]="(currentRoom$ | async)?.gameType || ''"
+                        [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
+                        [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
+                        (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (toggleReady)="toggleReady()">
                     </app-host-settings>
                 </div>
             </div>

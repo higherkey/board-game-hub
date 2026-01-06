@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { LayoutComponent } from './layout.component';
-import { AuthService } from '../../services/auth.service';
 import { of } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
+import { LayoutComponent } from './layout.component';
 
 describe('LayoutComponent', () => {
   let component: LayoutComponent;

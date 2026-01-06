@@ -1,0 +1,30 @@
+<div class="one-and-only-container w-full h-full flex flex-col relative">
+    <!-- Rules Overlay -->
+    <app-one-and-only-rules *ngIf="showRules" (dismiss)="showRules = false">
+    </app-one-and-only-rules>
+
+    <!-- Header / Status Bar -->
+    <div class="p-2 bg-gray-800 text-white flex justify-between items-center shrink-0"
+        style="background-color: #2c3e50;">
+        <div class="flex items-center gap-4">
+            <span class="font-bold text-lg">One and Only</span>
+            <button (click)="showRules = true"
+                class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded border border-gray-600 transition-colors">
+                Help/Rules
+            </button>
+        </div>
+        <span class="text-sm">Round {{room.roundNumber}}</span>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow overflow-hidden relative">
+        <!-- Board View (Shared Screen) -->
+        <app-one-and-only-board *ngIf="isHost" [room]="room">
+        </app-one-and-only-board>
+
+        <!-- Player View (Controller) -->
+        <app-one-and-only-player *ngIf="!isHost" [room]="room" [myConnectionId]="myConnectionId"
+            (clueSubmitted)="onClueSubmitted($event)" (guessSubmitted)="onGuessSubmitted($event)">
+        </app-one-and-only-player>
+    </div>
+</div>

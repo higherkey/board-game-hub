@@ -1,0 +1,38 @@
+<div class="social-page container-fluid p-0">
+    <app-page-header title="Social Hub" subtitle="Connect with friends, chat, and track your stats.">
+    </app-page-header>
+
+    <div class="container py-4">
+        <div class="row g-4">
+            <!-- Sidebar: Game Communities -->
+            <aside class="col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden sticky-top" style="top: 2rem;">
+                    <div class="card-header bg-white border-0 py-3 px-4">
+                        <h5 class="fw-bold m-0"><i class="bi bi-grid-3x3-gap text-primary me-2"></i> Game Communities
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <ng-container *ngFor="let game of (games$ | async)">
+                                <a *ngIf="game.status !== 'Backlog'" [routerLink]="['/social', game.id]"
+                                    class="list-group-item list-group-item-action border-0 py-3 px-4 d-flex align-items-center gap-3">
+                                    <span class="fs-4">{{ game.icon }}</span>
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="fw-bold text-truncate">{{ game.name }}</div>
+                                        <div class="small text-secondary text-truncate">Discuss & Share</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right small opacity-50"></i>
+                                </a>
+                            </ng-container>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Panel -->
+            <main class="col-lg-9">
+                <app-social-panel></app-social-panel>
+            </main>
+        </div>
+    </div>
+</div>

@@ -41,6 +41,17 @@
         <div class="reward-detail">+1 LIFE & +1 SYNC</div>
     </div>
 
+    <!-- PRESENCE INDICATORS -->
+    <div class="presence-area">
+        <div *ngFor="let p of players" class="presence-puck-container">
+            <div class="presence-puck" [ngStyle]="getPuckStyle(p.connectionId)">
+                <div class="puck-glow"></div>
+                <span class="puck-initials">{{ p.name | slice:0:2 }}</span>
+            </div>
+            <span class="puck-name">{{ p.name }}</span>
+        </div>
+    </div>
+
     <!-- GAME OVER / VICTORY OVERLAY -->
     <div class="game-over-overlay" *ngIf="isDefeat || isVictory">
         <h1 class="title">{{ isVictory ? 'TRANSCENDENCE ACHIEVED' : 'CONNECTION LOST' }}</h1>

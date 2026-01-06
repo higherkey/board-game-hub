@@ -1,0 +1,146 @@
+.not-found-container {
+    min-height: calc(100vh - var(--header-height));
+    padding: var(--space-xl);
+    background: transparent;
+}
+
+.not-found-card {
+    background: var(--bg-surface);
+    border: 4px solid var(--primary);
+    border-radius: var(--radius-md);
+    box-shadow: 20px 20px 0px var(--primary-dark);
+    max-width: 600px;
+    width: 100%;
+    position: relative;
+
+    /* Physical "cut" look matching modals */
+    clip-path: polygon(30px 0, 100% 0,
+            100% calc(100% - 30px), calc(100% - 30px) 100%,
+            0 100%, 0 30px);
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image:
+            radial-gradient(circle at 2px 2px, rgba(0, 0, 0, 0.05) 1px, transparent 0);
+        background-size: 24px 24px;
+        pointer-events: none;
+        z-index: -1;
+    }
+}
+
+.error-code-wrapper {
+    position: relative;
+    display: inline-block;
+
+    h1 {
+        font-size: 10rem;
+        margin: 0;
+        background: linear-gradient(135deg, var(--brand-blue) 0%, var(--primary) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: glitch 1.5s infinite;
+        filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.1));
+    }
+}
+
+.broken-pawn {
+    position: absolute;
+    top: 50%;
+    right: -40px;
+    transform: translateY(-50%) rotate(15deg);
+    font-size: 4rem;
+    color: var(--contrast-pink);
+    animation: wobble 4s ease-in-out infinite;
+
+}
+
+.decoration i {
+    color: var(--primary);
+    display: inline-block;
+    animation: float 6s infinite ease-in-out;
+
+    &:nth-child(2) {
+        animation-delay: 1s;
+    }
+
+    &:nth-child(3) {
+        animation-delay: 2s;
+    }
+}
+
+@keyframes glitch {
+    0% {
+        transform: translate(0);
+    }
+
+    10% {
+        transform: translate(-2px, 2px);
+    }
+
+    20% {
+        transform: translate(-2px, -2px);
+    }
+
+    30% {
+        transform: translate(2px, 2px);
+    }
+
+    40% {
+        transform: translate(2px, -2px);
+    }
+
+    50% {
+        transform: translate(-2px, 2px);
+    }
+
+    60% {
+        transform: translate(0);
+    }
+
+    100% {
+        transform: translate(0);
+    }
+}
+
+@keyframes wobble {
+
+    0%,
+    100% {
+        transform: translateY(-50%) rotate(15deg);
+    }
+
+    50% {
+        transform: translateY(-45%) rotate(10deg);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+
+    50% {
+        transform: translateY(-20px) rotate(10deg);
+    }
+}
+
+@media (max-width: 576px) {
+    .error-code-wrapper h1 {
+        font-size: 6rem;
+    }
+
+    .not-found-card {
+        padding: var(--space-lg) !important;
+        clip-path: polygon(15px 0, 100% 0,
+                100% calc(100% - 15px), calc(100% - 15px) 100%,
+                0 100%, 0 15px);
+    }
+}

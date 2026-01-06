@@ -11,6 +11,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
         public int SyncTokens { get; set; }
         public List<int> Deck { get; set; } = new List<int>();
         public Dictionary<string, List<int>> PlayerHands { get; set; } = new Dictionary<string, List<int>>();
+        public Dictionary<string, double> PlayerPresence { get; set; } = new Dictionary<string, double>(); // 0.0 to 1.0
         public int TopCard { get; set; } = 0;
         
         // Game Over / Level Complete States

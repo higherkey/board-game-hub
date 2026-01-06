@@ -1,0 +1,70 @@
+.letter-huge {
+    font-size: 6rem;
+}
+
+.letter-spacing-1 {
+    letter-spacing: 1px;
+}
+
+.letter-spacing-2 {
+    letter-spacing: 2px;
+}
+
+.z-index-10 {
+    z-index: 10;
+}
+
+.z-index-5 {
+    z-index: 5;
+}
+
+.bg-surface-3 {
+    background-color: var(--surface-3, #f8f9fa);
+}
+
+.fw-black {
+    font-weight: 900;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.bg-gradient-brand {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+}
+
+.transition-all {
+    transition: all 0.2s ease;
+}
+
+.answer-box:hover {
+    transform: scale(1.02);
+}
+
+.opacity-hover {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.answer-cell:hover .opacity-hover {
+    opacity: 1;
+}
+
+.challenge-btn {
+    z-index: 5;
+}
+
+.vote-overlay {
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

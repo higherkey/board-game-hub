@@ -27,9 +27,14 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             // 2. Initialize Players (Lives = 2 for 2-3p, 1 for >3p usually in The Mind)
             // Rule book: 2p -> Level 1-12, 2 lives. 3p -> Level 1-10, 2 lives. 4p -> L1-8, 2 lives.
             // Simplified: Everyone starts with lives? No, Team Lives.
-            state.Lives = room.Players.Count; // One life per player roughly? Or fixed 3? Let's say PlayerCount.
-            state.SyncTokens = 1; // Start with 1 shuriken (renamed to SyncTokens)
+            state.Lives = room.Players.Count;
+            state.SyncTokens = 1;
             state.CurrentLevel = 1;
+
+            foreach (var p in room.Players)
+            {
+                state.PlayerPresence[p.ConnectionId] = 0.0;
+            }
 
             room.GameData = state;
 
@@ -226,7 +231,8 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                     SyncTokens = state.SyncTokens,
                     TopCard = state.TopCard,
                     MyHand = myHand,
-                    OtherHandCounts = state.PlayerHands.Where(p => p.Key != player.ConnectionId).ToDictionary(p => p.Key, p => p.Value.Count)
+                    OtherHandCounts = state.PlayerHands.Where(p => p.Key != player.ConnectionId).ToDictionary(p => p.Key, p => p.Value.Count),
+                    PlayerPresence = state.PlayerPresence // Share all presence info
                 };
 
                 await _hubContext.Clients.Client(player.ConnectionId).SendAsync("GameState", sanitizedState);
@@ -264,6 +270,19 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             else if (action.Type == "SYNC_TOKEN")
             {
                 return await SubmitSync(room, connectionId);
+            }
+            else if (action.Type == "PRESENCE_UPDATE")
+            {
+                if (action.Payload.HasValue && action.Payload.Value.TryGetProperty("value", out var presenceProp))
+                {
+                    var state = GetState(room);
+                    if (state != null)
+                    {
+                        state.PlayerPresence[connectionId] = presenceProp.GetDouble();
+                        await BroadcastState(room);
+                        return true;
+                    }
+                }
             }
             return false;
         }

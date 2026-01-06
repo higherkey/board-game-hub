@@ -13,6 +13,7 @@ import { Subscription } from 'rxjs';
 export class GreatMindsBoardComponent implements OnInit, OnDestroy, OnChanges {
   @Input() gameState: any;
   @Input() isHost: boolean = false;
+  @Input() players: any[] = [];
   justPlayed: boolean = false;
   isError: boolean = false;
   isSuccess: boolean = false;
@@ -104,6 +105,23 @@ export class GreatMindsBoardComponent implements OnInit, OnDestroy, OnChanges {
 
   restartGame() {
     this.signalR.startGame();
+  }
+
+  getPresence(connectionId: string): number {
+    return this.gameState?.playerPresence?.[connectionId] || 0;
+  }
+
+  getPuckStyle(connectionId: string) {
+    const p = this.getPresence(connectionId);
+    const lift = p * 100; // Lift up by 100px max
+    const opacity = 0.3 + (p * 0.7);
+    const scale = 1 + (p * 0.5);
+
+    return {
+      transform: `translateY(-${lift}px) scale(${scale})`,
+      opacity: opacity,
+      boxShadow: `0 0 ${20 + p * 40}px ${p * 20}px rgba(255,255,255,${0.2 + p * 0.3})`
+    };
   }
 }
 

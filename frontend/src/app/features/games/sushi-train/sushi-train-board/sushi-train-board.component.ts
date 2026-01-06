@@ -1,12 +1,12 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../../services/signalr.service';
-import { SushiRulesComponent } from '../sushi-rules.component';
+import { SushiTrainRulesComponent } from '../sushi-train-rules/sushi-train-rules.component';
 
 @Component({
     selector: 'app-sushi-train-board',
     standalone: true,
-    imports: [CommonModule, SushiRulesComponent],
+    imports: [CommonModule, SushiTrainRulesComponent],
     templateUrl: './sushi-train-board.component.html',
     styleUrls: ['./sushi-train-board.component.scss']
 })

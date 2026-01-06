@@ -1,13 +1,12 @@
-import { Component, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, NavigationEnd } from '@angular/router';
-import { LogoComponent } from '../../shared/logo/logo.component';
-import { AuthService } from '../../services/auth.service';
-import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
-
+import { Component, HostListener, inject } from '@angular/core';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter, map, startWith } from 'rxjs/operators';
 import { ActiveGamesComponent } from '../../features/active-games/active-games.component';
+import { AuthService } from '../../services/auth.service';
 import { SignalRService } from '../../services/signalr.service';
-import { map, filter, startWith } from 'rxjs/operators';
+import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
+import { LogoComponent } from '../../shared/logo/logo.component';
 
 @Component({
    selector: 'app-layout',

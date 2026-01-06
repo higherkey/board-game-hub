@@ -1,107 +1,121 @@
     .player-container {
         display: flex;
         flex-direction: column;
-        height: 100%;
+        height: 100vh;
+        /* Full mobile screen */
         padding: 20px;
         justify-content: space-between;
         color: white;
+        background: #0f172a;
+        overflow: hidden;
+        touch-action: none;
+        /* Prevent scroll/refresh while swiping */
     }
 
-    .main-action {
+    .hand-area {
         flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
     }
 
-    .play-btn {
-        width: 280px;
-        height: 280px;
-        border-radius: 50%;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    .card-hand {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        justify-content: center;
+        width: 100%;
+        perspective: 1000px;
+    }
+
+    .player-card {
+        width: 100px;
+        height: 160px;
+        border-radius: 12px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        transition: transform 0.1s, filter 0.2s;
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        transition: transform 0.1s ease-out;
+        /* Snap for non-lowest */
         position: relative;
-        animation: pulse 2s infinite ease-in-out;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        user-select: none;
     }
 
-    @keyframes pulse {
-        0% {
+    .player-card.lowest {
+        width: 140px;
+        height: 220px;
+        font-size: 4rem;
+        z-index: 10;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .swipe-hint {
+        position: absolute;
+        bottom: -40px;
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        opacity: 0.5;
+        animation: pulseText 2s infinite;
+        white-space: nowrap;
+    }
+
+    @keyframes pulseText {
+
+        0%,
+        100% {
+            opacity: 0.3;
             transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
         }
 
         50% {
+            opacity: 0.8;
             transform: scale(1.05);
-            box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0);
-        }
-
-        100% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
         }
     }
 
-    .play-btn:active:not(:disabled) {
-        transform: scale(0.95);
-    }
-
-    .play-btn:disabled {
-        filter: grayscale(100%);
+    .empty-hand {
+        text-align: center;
         opacity: 0.5;
     }
 
-    .btn-text {
-        font-size: 6rem;
-        font-weight: 900;
-        line-height: 1;
+    .zen-text {
+        font-size: 1.5rem;
+        letter-spacing: 0.5em;
+        font-weight: 200;
     }
 
-    .btn-sub {
-        font-size: 1rem;
-        opacity: 0.8;
-        letter-spacing: 2px;
-        margin-top: 10px;
-    }
-
-    .queue {
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .queue-label {
-        font-size: 0.8rem;
-        letter-spacing: 2px;
-        opacity: 0.6;
-        display: block;
-        margin-bottom: 10px;
-    }
-
-    .queue-list {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .mini-card {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-weight: bold;
+    .footer-actions {
+        padding-bottom: 20px;
+        background: #0f172a;
     }
 
     .sync-btn {
         width: 100%;
         padding: 15px;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        border-radius: 10px;
-        font-weight: bold;
+        color: #fff;
+        border-radius: 12px;
+        font-weight: 700;
         letter-spacing: 1px;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .sync-btn:not(:disabled):active {
+        background: rgba(255, 255, 255, 0.1);
+        transform: scale(0.98);
+    }
+
+    .sync-btn:disabled {
+        opacity: 0.3;
     }

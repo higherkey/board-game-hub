@@ -24,9 +24,13 @@
 - **State**: `phase = Validation` (1).
 - **View**:
     - **Grid**: Rows = Categories, Columns = Players.
-    - **Validation**: Host reviews answers.
+    - **Actions**:
+        - **Host Veto**: Host can click an answer to toggle "Vetoed" (Red) for quick cleanup of invalid entries.
+        - **Player Challenge**: Any player can "Flag" an answer to initiate a **Group Vote**.
 - **Action**:
-    - **Veto**: Host clicks on an answer to toggle "Vetoed" (Red).
+    - **Group Vote (Challenge)**:
+        - All players (including the challenged) vote "Accept" or "Reject".
+        - Majority vote decides. Ties result in "Accept".
     - **Criteria**: Wrong letter, duplicate word (if unrelated), or nonsensical.
     - **Transition**: Host clicks **"Finalize Scores"**.
 
@@ -35,6 +39,10 @@
 - **View**:
     - **Leaderboard**: Shows Round Score and Total Game Score.
 - **Action**:
+    - **Scoring Details**:
+        - **Base**: 1 Point for a unique, valid answer.
+        - **Duplicates**: 0 Points if multiple players have the same answer.
+        - **Alliteration Bonus**: +1 Point for *each word* in the answer that starts with the key letter (e.g., "Big Bear" with letter B = 2 points).
     - **Next Round**: Host clicks **"Next Round"**.
         - Increments Round Counter.
         - New Letter, New List.
@@ -44,5 +52,6 @@
 
 # Discrepancies / Notes
 1.  **Round Limit**: Official rules specify 3 Rounds. Current implementation allows infinite rounds. Host must manually "End Game".
-2.  **Validation**: Official rules use Group Vote. Implementation uses Host Veto for speed.
-3.  **Initialization**: `ngOnChanges` correctly re-initializes answers on round change. [FIXED]
+2.  **Validation**: Both Host Veto and Group Challenge are supported.
+3.  **Initialization**: `ngOnChanges` correctly re-initializes frontend answer buffers on round change.
+4.  **Alliteration**: Correctly awarded per-word in the backend logic.

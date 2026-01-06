@@ -1,0 +1,8 @@
+<div class="nom-de-code-board p-4 text-center">
+    <h2 class="display-4 text-primary">Nom De Code Board</h2>
+    <p class="lead">Waiting for game implementation...</p>
+    <div *ngIf="room?.gameData as state" class="mt-4">
+        <p>Current Team: <span class="badge bg-primary">{{ state.currentTeam }}</span></p>
+        <p>Phase: <span class="badge bg-secondary">{{ state.phase }}</span></p>
+    </div>
+</div>

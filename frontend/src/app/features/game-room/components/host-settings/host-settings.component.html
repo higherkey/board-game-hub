@@ -1,36 +1,17 @@
 <div class="settings-panel" [class.compact-mode]="compactMode">
-    <!-- COMPACT MODE: Single Row -->
+    <!-- COMPACT MODE: Single Row (Used in Intermission or mobile host tab) -->
     <div *ngIf="compactMode" class="compact-row d-flex align-items-center gap-3 flex-wrap">
-        <!-- Game Mode Select -->
-        <!-- Game Mode Selection (Searchable) -->
+        <!-- Game Selection (Searchable) -->
         <div class="compact-item flex-grow-1 position-relative" style="min-width: 200px;">
             <div class="input-group input-group-sm shadow-sm">
                 <span class="input-group-text bg-surface border-2 border-end-0"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control bg-surface border-2 border-start-0 py-2"
-                    placeholder="CHOOSE GAME" [(ngModel)]="gameSearchQuery">
-            </div>
-            <!-- Dropdown Results -->
-            <div *ngIf="gameSearchQuery && filteredGames.length > 0 && selectedGameType === 'None'"
-                class="position-absolute w-100 mt-1 shadow-lg rounded-3 bg-white overflow-hidden border border-light"
-                style="z-index: 1050; max-height: 250px; overflow-y: auto;" role="listbox">
-                <div *ngFor="let game of filteredGames" (click)="changeGameType(game.id)"
-                    (keydown.enter)="changeGameType(game.id)" tabindex="0"
-                    class="d-flex align-items-center gap-2 p-2 dropdown-item cursor-pointer hover-bg-brand-light"
-                    role="option">
-                    <span class="fs-5">{{ game.icon }}</span>
-                    <span class="fw-bold text-primary">{{ game.name }}</span>
-                </div>
-            </div>
-            <!-- Selected Badge -->
-            <div *ngIf="selectedGameType !== 'None'"
-                class="position-absolute top-50 end-0 translate-middle-y me-2 d-flex align-items-center gap-1">
-                <span
-                    class="badge bg-brand-light text-brand-blue border border-brand-blue-subtle d-flex align-items-center gap-1">
-                    {{ selectedGame?.icon }} {{ selectedGame?.name }}
-                    <i class="bi bi-x-circle cursor-pointer" (click)="selectedGameType = 'None'; gameSearchQuery = ''"
-                        (keydown.enter)="selectedGameType = 'None'; gameSearchQuery = ''" tabindex="0" role="button"
-                        aria-label="Clear Selection"></i>
-                </span>
+                <input type="text" list="compactGameOptions" [disabled]="isIntermission"
+                    class="form-control bg-surface border-2 border-start-0 py-2"
+                    [placeholder]="isIntermission ? 'GAME LOCKED' : 'CHOOSE GAME'" [(ngModel)]="gameSearchQuery"
+                    (ngModelChange)="changeGameType(gameSearchQuery)">
+                <datalist id="compactGameOptions">
+                    <option *ngFor="let game of availableGames" [value]="game.name">{{ game.name }}</option>
+                </datalist>
             </div>
         </div>
 
@@ -38,14 +19,14 @@
         <div class="compact-item d-flex align-items-center gap-2">
             <i class="bi bi-clock text-secondary"></i>
             <input type="number" [(ngModel)]="settings.timerDurationSeconds"
-                class="form-control form-control-sm text-center" style="width: 60px;" title="Seconds">
+                class="form-control form-control-sm text-center" style="width: 50px;" title="Seconds">
         </div>
 
         <!-- Rounds Setting (Compact) -->
         <div class="compact-item d-flex align-items-center gap-2">
             <i class="bi bi-hash text-secondary"></i>
             <input type="number" [(ngModel)]="settings.totalRounds" min="1" max="50"
-                class="form-control form-control-sm text-center" style="width: 60px;" title="Total Rounds">
+                class="form-control form-control-sm text-center" style="width: 50px;" title="Total Rounds">
         </div>
 
         <!-- Start Button -->
@@ -67,77 +48,64 @@
         </div>
     </div>
 
-    <!-- COMPACT MODE: Dynamic Game Settings -->
-    <div *ngIf="compactMode && selectedGame?.parsedMetadata?.length"
-        class="compact-game-settings pt-2 mt-2 border-top border-secondary border-opacity-10 d-flex gap-3 align-items-center flex-wrap">
-
-        <div *ngFor="let meta of selectedGame?.parsedMetadata" class="compact-setting d-flex align-items-center gap-2">
-            <i class="bi" [class.bi-gear]="meta.type !== 'select'" [class.bi-list-ul]="meta.type === 'select'"></i>
-
-            <select *ngIf="meta.type === 'select'" class="form-select form-select-sm" [(ngModel)]="settings[meta.id]"
-                style="width: auto;">
-                <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}</option>
-            </select>
-
-            <input *ngIf="meta.type === 'number'" type="number" class="form-control form-control-sm text-center"
-                [(ngModel)]="settings[meta.id]" style="width: 60px;">
-
-            <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" [(ngModel)]="settings[meta.id]">
-            </div>
-        </div>
-    </div>
-
-    <!-- FULL MODE: Large Grid (Original) -->
+    <!-- FULL MODE: Large 3-Column Grid -->
     <ng-container *ngIf="!compactMode">
-        <div class="panel-header">
-            <i class="bi bi-gear-fill"></i>
-            <h3>Game Settings</h3>
-        </div>
-
         <div class="settings-grid">
-            <!-- LEFT COLUMN -->
+
+            <!-- COLUMN 1: Room Identification -->
+            <div class="settings-col room-info-col text-center">
+                <div class="group-label justify-content-center mb-3">
+                    <i class="bi bi-qr-code"></i> ROOM INFO
+                </div>
+
+                <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
+                    <div class="qr-box bg-white p-2 rounded shadow-sm">
+                        <img [src]="getQrCodeUrl()" alt="Room QR Code" style="width: 100px; height: 100px;">
+                    </div>
+                    <div class="room-code-badge flex-grow-1 h-100 d-flex flex-column justify-content-center">
+                        <div class="x-small text-muted text-uppercase fw-bold ls-wide">Room Code</div>
+                        <div class="h4 fw-bold text-primary font-monospace mb-0">{{ roomCode }}</div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-lg w-100 py-3 mb-2 fw-bold shadow-sm ready-button"
+                        [class.btn-success]="meReady" [class.btn-outline-primary]="!meReady" (click)="onToggleReady()">
+                        <i class="bi" [class.bi-check-circle-fill]="meReady" [class.bi-circle]="!meReady"></i>
+                        {{ meReady ? 'READY!' : (isScreen ? 'ROOM READY' : 'I\'M READY') }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: Game Selection & Undo -->
             <div class="settings-col">
-                <!-- Game Mode -->
-                <!-- Game Mode Selection (Searchable) -->
+                <div class="group-label">
+                    <i class="bi bi-controller"></i> GAME SELECTION
+                </div>
+
                 <div class="setting-group">
-                    <label for="gameSearchInputFull" class="form-label small text-uppercase fw-bold"
-                        style="color: var(--text-secondary);">CHOOSE
-                        GAME</label>
+                    <label for="gameSearchInputFull" class="x-small text-uppercase fw-bold opacity-75">Search
+                        Gallery</label>
                     <div class="position-relative">
-                        <div class="input-group shadow-sm">
+                        <div class="input-group input-group-sm shadow-sm">
                             <span class="input-group-text bg-surface border-2 border-end-0"><i
                                     class="bi bi-search"></i></span>
-                            <input id="gameSearchInputFull" type="text"
-                                class="form-control form-control-lg bg-surface border-2 border-start-0 fw-bold"
-                                placeholder="Search for a game..." [(ngModel)]="gameSearchQuery">
+                            <input id="gameSearchInputFull" type="text" list="fullGameOptions"
+                                [disabled]="isIntermission"
+                                class="form-control bg-surface border-2 border-start-0 fw-bold"
+                                [placeholder]="isIntermission ? 'GAME LOCKED' : '...'" [(ngModel)]="gameSearchQuery"
+                                (ngModelChange)="changeGameType(gameSearchQuery)">
+                            <datalist id="fullGameOptions">
+                                <option *ngFor="let game of availableGames" [value]="game.name">{{ game.name }}</option>
+                            </datalist>
                         </div>
 
-                        <!-- Dropdown Results -->
-                        <div *ngIf="gameSearchQuery && filteredGames.length > 0"
-                            class="position-absolute w-100 mt-2 shadow-lg rounded-3 bg-white overflow-hidden border border-light"
-                            style="z-index: 1050; max-height: 300px; overflow-y: auto;" role="listbox">
-                            <div *ngFor="let game of filteredGames" (click)="changeGameType(game.id)"
-                                (keydown.enter)="changeGameType(game.id)" tabindex="0"
-                                class="d-flex align-items-center gap-3 p-3 dropdown-item cursor-pointer border-bottom-light"
-                                [class.bg-brand-light]="selectedGameType === game.id" role="option"
-                                [attr.aria-selected]="selectedGameType === game.id">
-                                <span class="fs-4">{{ game.icon }}</span>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-primary">{{ game.name }}</div>
-                                    <div class="small text-muted">{{ game.description }}</div>
-                                </div>
-                                <i *ngIf="selectedGameType === game.id"
-                                    class="bi bi-check-circle-fill text-brand-blue"></i>
-                            </div>
-                        </div>
-
-                        <!-- Selected Game Info -->
-                        <div *ngIf="selectedGameType !== 'None' && !gameSearchQuery"
-                            class="mt-2 p-2 rounded-2 bg-brand-blue-subtle text-brand-blue d-flex align-items-center gap-2">
+                        <!-- Selected Game Info Badge -->
+                        <div *ngIf="selectedGameType !== 'None'"
+                            class="mt-2 p-2 rounded-2 bg-brand-blue-subtle text-brand-blue d-flex align-items-center gap-2 border border-brand-blue border-opacity-10">
                             <span class="fs-5">{{ selectedGame?.icon }}</span>
-                            <span class="fw-bold">{{ selectedGame?.name }}</span>
-                            <button class="btn btn-sm btn-link text-brand-blue ms-auto p-0"
+                            <span class="fw-bold text-truncate">{{ selectedGame?.name }}</span>
+                            <button *ngIf="!isIntermission" class="btn btn-sm btn-link text-brand-blue ms-auto p-0"
                                 (click)="selectedGameType = 'None'; gameSearchQuery = ''">
                                 <i class="bi bi-x-circle-fill"></i>
                             </button>
@@ -146,83 +114,112 @@
                 </div>
 
                 <!-- Undo Settings -->
-                <div class="setting-group">
-                    <div class="group-label">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                        Undo Policy (feature is in beta)
+                <div class="setting-group pt-2">
+                    <div class="group-label x-small">
+                        <i class="bi bi-arrow-counterclockwise"></i> Undo Policy
                     </div>
-                    <div class="form-check form-switch mb-2">
+                    <div class="form-check form-switch small">
                         <input class="form-check-input" type="checkbox" id="allowVoting"
                             [(ngModel)]="undoSettings.allowVoting" (change)="saveUndoSettings()">
-                        <label class="form-check-label" for="allowVoting">Allow Undo (Voting)</label>
+                        <label class="form-check-label" for="allowVoting">Allow Voting (Beta)</label>
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN -->
+            <!-- COLUMN 3: Game Parameters -->
             <div class="settings-col">
-                <!-- Timer Duration -->
-                <div class="setting-group">
-                    <label for="timerDuration">
-                        <i class="bi bi-clock"></i>
-                        Timer Duration (Seconds)
-                    </label>
-
-                    <div class="d-flex gap-2 mb-2">
-                        <input id="timerDuration" type="number" min="10" max="600" class="form-control"
-                            [(ngModel)]="settings.timerDurationSeconds">
-                    </div>
-
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                            (click)="settings.timerDurationSeconds = 30">30s</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                            (click)="settings.timerDurationSeconds = 60">60s</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                            (click)="settings.timerDurationSeconds = 90">90s</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                            (click)="settings.timerDurationSeconds = 120">2m</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                            (click)="settings.timerDurationSeconds = 300">5m</button>
-                    </div>
+                <div class="group-label">
+                    <i class="bi bi-sliders"></i> PARAMETERS
                 </div>
 
-                <!-- Rounds Setting (Full) -->
-                <div class="setting-group">
-                    <label for="totalRounds">
-                        <i class="bi bi-hash"></i>
-                        Total Rounds
-                    </label>
-                    <div class="d-flex gap-2">
-                        <input id="totalRounds" type="number" min="1" max="50" class="form-control"
-                            [(ngModel)]="settings.totalRounds">
+                <div class="d-flex gap-3">
+                    <div class="setting-group flex-grow-1">
+                        <label for="timerDuration" class="x-small fw-bold"><i class="bi bi-clock"></i> TIMER</label>
+                        <input id="timerDuration" type="number" min="0" max="600"
+                            class="form-control form-control-sm text-center" [(ngModel)]="settings.timerDurationSeconds"
+                            style="max-width: 80px;">
+                    </div>
+                    <div class="setting-group flex-grow-1">
+                        <label for="totalRounds" class="x-small fw-bold"><i class="bi bi-hash"></i> ROUNDS</label>
+                        <input id="totalRounds" type="number" min="1" max="50"
+                            class="form-control form-control-sm text-center" [(ngModel)]="settings.totalRounds"
+                            style="max-width: 80px;">
                     </div>
                 </div>
 
                 <!-- Dynamic Game Settings (Full) -->
-                <div *ngIf="selectedGame?.parsedMetadata?.length" class="game-specific-settings fade-in">
-                    <div *ngFor="let meta of selectedGame?.parsedMetadata" class="setting-group">
-                        <label [for]="'host-' + meta.id">
-                            <i class="bi" [class.bi-gear]="meta.type !== 'select'"
-                                [class.bi-list-ul]="meta.type === 'select'"></i>
+                <div *ngIf="selectedGame?.parsedMetadata?.length"
+                    class="game-specific-settings fade-in mt-1 border-top pt-2">
+                    <div *ngFor="let meta of selectedGame?.parsedMetadata" class="setting-group mb-2">
+                        <label [for]="'host-' + meta.id" class="x-small fw-bold text-uppercase">
                             {{ meta.label }}
                         </label>
 
                         <div *ngIf="meta.type === 'select'" class="select-wrapper">
-                            <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]">
+                            <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]"
+                                class="form-select form-select-sm">
                                 <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}</option>
                             </select>
-                            <i class="bi bi-chevron-down"></i>
                         </div>
 
                         <input *ngIf="meta.type === 'number'" [id]="'host-' + meta.id" type="number"
-                            class="form-control" [(ngModel)]="settings[meta.id]">
+                            class="form-control form-control-sm" [(ngModel)]="settings[meta.id]">
 
-                        <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch mt-2">
+                        <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch m-0">
                             <input class="form-check-input" type="checkbox" [id]="'host-' + meta.id"
                                 [(ngModel)]="settings[meta.id]">
-                            <label class="form-check-label" [for]="'host-' + meta.id">Enabled</label>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Scatterbrain Specific List UI -->
+                <div *ngIf="selectedGameType === 'Scatterbrain'" class="game-specific-settings mt-1 border-top pt-2">
+                    <div class="setting-group">
+                        <span class="x-small fw-bold text-uppercase mb-1 d-block">List Options</span>
+                        <div class="btn-group btn-group-xs w-100 shadow-sm rounded-2 overflow-hidden border">
+                            <button class="btn p-1 x-small" [class.btn-primary]="listSelectionMode === 'manual'"
+                                [class.btn-light]="listSelectionMode !== 'manual'"
+                                (click)="listSelectionMode = 'manual'; updateListId()">CHOOSE</button>
+                            <button class="btn p-1 x-small" [class.btn-primary]="listSelectionMode === 'random'"
+                                [class.btn-light]="listSelectionMode !== 'random'"
+                                (click)="listSelectionMode = 'random'; updateListId()">RANDOM</button>
+                            <button class="btn p-1 x-small" [class.btn-primary]="listSelectionMode === 'generative'"
+                                [class.btn-light]="listSelectionMode !== 'generative'"
+                                (click)="listSelectionMode = 'generative'; updateListId()">GEN</button>
+                        </div>
+                    </div>
+
+                    <!-- Manual List Selection -->
+                    <div *ngIf="listSelectionMode === 'manual'" class="setting-group mt-2 animate-fade-in">
+                        <div class="d-flex gap-1">
+                            <select id="preset-list-select" class="form-select form-select-sm"
+                                [(ngModel)]="selectedListId" (change)="updateListId(); previewList(selectedListId)">
+                                <option *ngFor="let list of scatterbrainLists" [value]="list.id">List {{ list.id }}
+                                </option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-secondary" (click)="previewList(selectedListId)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+
+                        <!-- List Preview Area -->
+                        <div *ngIf="previewedList" class="mt-2 p-2 bg-surface-2 border rounded-2 x-small">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-uppercase">Preview: List {{ previewedList.id }}</span>
+                                <button class="btn btn-sm p-0 text-secondary" (click)="previewedList = null"><i
+                                        class="bi bi-x"></i></button>
+                            </div>
+                            <div class="d-flex flex-wrap gap-1 badge-list">
+                                <span *ngFor="let cat of previewedList.categories" class="category-pill">{{ cat
+                                    }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generative Seed -->
+                    <div *ngIf="listSelectionMode === 'generative'" class="setting-group mt-2 animate-fade-in">
+                        <input id="generative-seed-input" type="text" class="form-control form-control-sm"
+                            [(ngModel)]="settings.generativeSeed" placeholder="Theme...">
                     </div>
                 </div>
             </div>
@@ -230,17 +227,26 @@
 
         <!-- Start Button (Full Width footer) -->
         <div class="mt-4 pt-3 border-top position-relative">
-            <button type="button" class="btn-start" (click)="startGame()" [disabled]="selectedGameType === 'None'">
+            <button *ngIf="isHost" type="button" class="btn-start shadow-pink mb-2" (click)="startGame()"
+                [disabled]="selectedGameType === 'None'">
                 <i class="bi" [class.bi-play-fill]="!isIntermission" [class.bi-fast-forward-fill]="isIntermission"></i>
                 {{ isIntermission ? 'START NEXT ROUND' : 'START GAME' }}
             </button>
+            <button *ngIf="isHost && isIntermission" type="button" class="btn btn-outline-danger w-100 fw-bold py-2"
+                (click)="emitEndGame()">
+                <i class="bi bi-stop-circle-fill me-1"></i> END SESSION
+            </button>
+            <div *ngIf="!isHost"
+                class="alert alert-surface border border-secondary border-opacity-10 text-center py-2 mb-0 italic">
+                Waiting for the host to start...
+            </div>
 
             <!-- Confirmation Prompt for Not Ready -->
             <div *ngIf="showReadyConfirmation"
                 class="ready-confirmation-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 rounded-2 shadow"
                 style="background: rgba(255,255,255,0.95); z-index: 10;">
                 <div class="text-center">
-                    <div class="fw-bold text-danger mb-2">Not all players are ready!</div>
+                    <div class="fw-bold text-danger mb-2 small">Not all players are ready!</div>
                     <div class="d-flex gap-2">
                         <button class="btn btn-sm btn-secondary flex-grow-1"
                             (click)="showReadyConfirmation = false">NO</button>

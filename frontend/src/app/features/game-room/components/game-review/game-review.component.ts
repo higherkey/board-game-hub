@@ -37,15 +37,19 @@ export class GameReviewComponent implements OnInit, OnChanges {
     ngOnChanges() {
         if (this.room) {
             this.processReview();
-            this.sortedPlayers = [...this.room.players].sort((a, b) => b.score - a.score);
+            this.sortedPlayers = [...this.room.players]
+                .filter(p => !p.isScreen)
+                .sort((a, b) => b.score - a.score);
         }
     }
 
     processReview() {
         if (!this.room?.gameState?.categories) return;
 
+        const activePlayers = this.room.players.filter(p => !p.isScreen);
+
         this.reviews = this.room.gameState.categories.map((cat: string, index: number) => {
-            const answers = this.room.players.map(p => {
+            const answers = activePlayers.map(p => {
                 // Usually answers are keyed by something or just an array?
                 // The backend stores `PlayerAnswers` as Dict<ConnectionId, List<string>>.
                 // We need to fetch that? Wait, `Room` interface in frontend doesn't have `playerAnswers`.

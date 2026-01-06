@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService, Session } from '../../../services/auth.service';
 import { Observable } from 'rxjs';
-import { ActiveGamesComponent } from '../../../features/active-games/active-games.component';
+import { ActiveGamesComponent } from '../../../features/pages/active-games/active-games.component';
 
 @Component({
   selector: 'app-navbar',

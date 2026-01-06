@@ -1,0 +1,17 @@
+<div class="rules-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75"
+    (click)="closeRules.emit()">
+    <div class="rules-card shadow-lg" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()"
+        tabindex="0">
+        <div class="rules-header">
+            <h2 class="mb-0">Checkers Rules</h2>
+            <button class="btn-close btn-close-white" (click)="closeRules.emit()" aria-label="Close"></button>
+        </div>
+        <div class="rules-body custom-scrollbar" (keydown.enter)="$event.stopPropagation()" tabindex="0">
+            <p>Capture all your opponent's pieces or block them from moving!</p>
+        </div>
+        <button (click)="closeRules.emit()"
+            class="mt-6 w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors">
+            Got it!
+        </button>
+    </div>
+</div>

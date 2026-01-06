@@ -79,11 +79,13 @@ public class UndoVote
 
 public class GameSettings
 {
-    public int TimerDurationSeconds { get; set; } = 60;
+    public int TimerDurationSeconds { get; set; } = 180;
     public int BoardSize { get; set; } = 4;
     public ScatterbrainData.LetterMode LetterMode { get; set; } = ScatterbrainData.LetterMode.Normal;
     public int? ListId { get; set; } // Null = Random
     public List<string> CustomCategories { get; set; } = new(); // If populated, use this
+    public bool IsGenerative { get; set; } = false;
+    public string GenerativeSeed { get; set; } = string.Empty;
 }
 
 public enum GameState

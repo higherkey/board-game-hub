@@ -325,6 +325,11 @@ public class GameHub : Hub
         return service?.GetPromptSuggestions() ?? new List<string>();
     }
 
+    public List<ScatterbrainData.ListMetadata> GetScatterbrainLists()
+    {
+        return ScatterbrainData.GetListsMetadata();
+    }
+
     public async Task DeepfakeStroke(string roomCode, string pathData, string color)
     {
         var payload = JsonSerializer.SerializeToElement(new { pathData, color });

@@ -9,8 +9,8 @@ public static class ScatterbrainData
         TrueRandom  // All letters
     }
 
-    private static readonly char[] NormalLetters = "ABCDEFGHIJKLMNOPRSTUVW".ToCharArray();
-    private static readonly char[] HardLetters = "QXYZ".ToCharArray();
+    private static readonly char[] NormalLetters = "ABCDEFGHIJKLMNPRSTW".ToCharArray(); // Official Scattergories Die (roughly)
+    private static readonly char[] HardLetters = "QUVXYZ".ToCharArray();
     private static readonly char[] AllLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
 
     public static char GetLetter(LetterMode mode)
@@ -34,12 +34,61 @@ public static class ScatterbrainData
         return GlobalLists[1];
     }
     
+    public class ListMetadata
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public List<string> PreviewCategories { get; set; } = new();
+    }
+
+    public static List<ListMetadata> GetListsMetadata()
+    {
+        return GlobalLists.Select(kvp => new ListMetadata
+        {
+            Id = kvp.Key,
+            Name = $"List {kvp.Key}", // We could add better names later
+            PreviewCategories = kvp.Value.Take(5).ToList()
+        }).ToList();
+    }
+
     public static List<string> GetRandomList()
     {
         var rng = new Random();
         var keys = GlobalLists.Keys.ToList();
         var randomKey = keys[rng.Next(keys.Count)];
         return GlobalLists[randomKey];
+    }
+
+    public static List<string> GenerateList(string seed)
+    {
+        // For now, this is a mock "AI" generator. 
+        // It picks categories that might feel related to the seed keyword.
+        var rng = new Random();
+        var allCats = GlobalLists.Values.SelectMany(x => x).Distinct().ToList();
+        
+        // Very simple "keyword" mock:
+        // If the seed is long, just use random but focused.
+        // If we were real pros, we'd use an LLM here.
+        
+        // Let's create some "Generative" pools based on manual categories
+        var pools = new Dictionary<string, List<string>>
+        {
+            { "nature", new List<string> { "Trees", "Birds", "Flowers", "Insects", "Reptiles/Amphibians", "Things in a garden", "Things in a park", "Things that are green", "Things found in the ocean" } },
+            { "home", new List<string> { "Furniture", "Appliances", "Electronic gadgets", "Items in a refrigerator", "Things in a bathroom", "Items in a purse/wallet", "Things you plug in", "Things with wheels" } },
+            { "school", new List<string> { "School subjects", "School supplies", "College majors", "Colleges/Universities", "Authors", "Historical figures", "Boy bands", "Colors" } },
+            { "food", new List<string> { "Breakfast foods", "Vegetables", "Fruits", "Desserts", "Types of drink", "Pizza toppings", "Kinds of candy", "Types of cheese", "Types of bread" } }
+        };
+
+        var seedLower = seed.ToLowerInvariant();
+        var selectedPool = pools.FirstOrDefault(p => seedLower.Contains(p.Key)).Value;
+
+        if (selectedPool != null && selectedPool.Count >= 12)
+        {
+            return selectedPool.OrderBy(x => rng.Next()).Take(12).ToList();
+        }
+
+        // Fallback: Mix of random categories
+        return allCats.OrderBy(x => rng.Next()).Take(15).ToList();
     }
 
     public static readonly Dictionary<int, List<string>> GlobalLists = new()
