@@ -3,41 +3,45 @@
 ## 1. Game Setup (Lobby)
 - **Host**: Selects "Wisecrack".
 - **Start**: Click "Start Game".
-- **Rules**: Host sees overlays explaining 3 Rounds.
 
-## 2. Writing Phase
+## 2. Writing Phase (Rounds 1 & 2)
 - **State**: `phase = Writing`.
 - **View**:
-    - **Board**: "Step 1: Be Funny". Progress Bar.
-    - **Player**: 2 Prompts.
+    - **Player**: Shows 2 prompts sequentially.
+    - **Board**: "Waiting for writers...".
 - **Action**:
     - Players fill 2 prompts.
-    - **Head-to-Head**: Each prompt is assigned to exactly 2 players.
-    - **Transition**: When all answers submitted -> Battling.
+    - **Prompt Assignment**:
+        - Each prompt shared by 2 players.
+        - Offset by Round Number to vary matchups.
 
-## 3. Battling Phase
+## 3. Battling Phase (Rounds 1 & 2)
 - **State**: `phase = Battling`.
 - **View**:
-    - **Board**: "Prompt" + Answer A vs Answer B.
-    - **Player**: Vote buttons (Disabled if your answer is shown).
+    - **Board**: Shows "Prompt", "Answer A", "Answer B".
+    - **Player**: Voting buttons (A / B).
 - **Action**:
-    - Players Vote.
-    - **Scoring**: Winner gets 100 + (Votes * 50). Tie = 50 each. (Simplified implementation).
-    - **Next Battle**: Host clicks "Next Battle".
+    - Audience votes.
+    - **Winner**: Determined by majority. Points awarded.
 
-## 4. Result Phase
+## 4. The Final Crack (Round 3)
+- **State**: `phase = Writing / Battling`.
+- **Mechanic**:
+    - **One Prompt** for ALL players.
+    - **Battles**: Players paired up randomly (Head-to-Head).
+    - **Odd Player Logic**: Paired with the first answer (Bonus Battle).
+    - **Scoring**: Points Tripled (x3).
+
+## 5. Result Phase
 - **State**: `phase = Result`.
 - **View**:
-    - **Board**: Leaderboard.
+    - **Board**: Scores, Winner.
 - **Action**:
-    - **Next Round**: Host clicks **"Next Round"**.
-        - Increments Round (Standard: 3 Rounds).
-        - **Round 3**: Should be "Last Lash" (All answer same prompt) - *Not currently implemented*.
+    - **Host**: "Next Round" (if Round < 3) or "End Game".
 
 ---
 
-# Discrepancies / Notes
-1.  **Round Logic Bug**: Backend `StartRound` hardcodes `RoundNumber = 1`. Host hitting "Next Round" just restarts Round 1.
-    - **Fix Required**: Update service to use `room.RoundNumber + 1`.
-2.  **Missing "Next Round" Button**: Previously noted as missing.
-3.  **Round 3**: "Last Lash" (everyone answers same prompt) logic is missing from `AssignPrompts`. It currently just repeats the Head-to-Head logic for all rounds.
+# Verification Notes
+- **Fixed**: Round Loop Bug (Round now increments).
+- **Fixed**: Round 3 Logic ("The Final Crack" implemented).
+- **Verify**: Odd player count handling in Final Crack.

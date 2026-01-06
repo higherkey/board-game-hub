@@ -30,10 +30,13 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     return this.room?.isPaused || false;
   }
 
+  showOnlyMyWords = false;
+
   get displayResults(): any[] {
-    if (this.isHost) return this.lastRoundResults;
-    // For players, only show words they found
-    return this.lastRoundResults.filter(r => r.foundBy.includes(this.myConnectionId));
+    if (this.showOnlyMyWords && !this.isHost) {
+      return this.lastRoundResults.filter(r => r.foundBy.includes(this.myConnectionId));
+    }
+    return this.lastRoundResults;
   }
 
   // Timer Logic
@@ -52,6 +55,7 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
   // Results
   lastRoundResults: any[] = [];
+  selectedWord: any = null;
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['room'] && this.room) {
@@ -183,5 +187,34 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
   getPlayerName(connectionId: string): string {
     return this.room?.players.find(p => p.connectionId === connectionId)?.name || 'Unknown';
+  }
+
+  isMyWord(res: any): boolean {
+    return res.foundBy.includes(this.myConnectionId);
+  }
+
+  toggleResultsFilter() {
+    this.showOnlyMyWords = !this.showOnlyMyWords;
+  }
+
+  showDefinition(res: any) {
+    if (this.selectedWord === res) {
+      this.selectedWord = null;
+    } else {
+      this.selectedWord = res;
+    }
+  }
+
+  toggleValidation(res: any, forceState?: boolean) {
+    if (!this.isHost || !this.room) return;
+
+    // If forceState provided, use it. Otherwise toggle based on current "effective" validity.
+    const isCurrentlyValid = res.isHostValidated || (res.isInDictionary && !res.isHostRejected);
+    const targetState = forceState ?? !isCurrentlyValid;
+
+    this.signalRService.sendGameAction('VALIDATE_WORD', {
+      word: res.word,
+      isValid: targetState
+    });
   }
 }

@@ -9,6 +9,13 @@ public enum GameStatus
     Backlog
 }
 
+public enum TimerType
+{
+    NotApplicable,
+    Optional,
+    Required
+}
+
 public class GameDefinition
 {
     [Key]
@@ -24,6 +31,14 @@ public class GameDefinition
     public int Complexity { get; set; } = 1; // 1-5
     public int AveragePlayTime { get; set; } = 30; // minutes
     public string Tags { get; set; } = string.Empty; // e.g. "Word,Party,Social"
+    
+    // Timer Settings
+    public TimerType TimerType { get; set; } = TimerType.NotApplicable;
+    public int DefaultRoundLengthSeconds { get; set; } = 0;
+    
+    // Dynamic Settings Metadata (JSON string)
+    // This defines what settings are available for this game, their types, and options.
+    public string? SettingsMetadataJson { get; set; }
     
     // This maps to the GameType enum used in Room logic, but stored as string or int? 
     // For simplicity, let's keep it as string ID matching the Room GameType, 

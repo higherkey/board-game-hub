@@ -17,6 +17,12 @@ import { DeepfakeGameComponent } from './deepfake-game/deepfake-game.component';
 import { SushiTrainComponent } from './sushi-train/sushi-train.component';
 import { SushiTrainPlayerComponent } from './sushi-train/sushi-train-player.component';
 
+// Backlog Stubs
+import { NomDeCodeGameComponent } from './nom-de-code/nom-de-code-game.component';
+import { WarshipsGameComponent } from './warships/warships-game.component';
+import { FourInARowGameComponent } from './four-in-a-row/four-in-a-row-game.component';
+import { CheckersGameComponent } from './checkers/checkers-game.component';
+
 export interface GameConfig {
     hostComponent: Type<any>;
     playerComponent?: Type<any>; // If undefined, uses hostComponent for both
@@ -61,5 +67,17 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
     'SushiTrain': {
         hostComponent: SushiTrainComponent,
         playerComponent: SushiTrainPlayerComponent
+    },
+    'NomDeCode': {
+        hostComponent: NomDeCodeGameComponent
+    },
+    'Warships': {
+        hostComponent: WarshipsGameComponent
+    },
+    'FourInARow': {
+        hostComponent: FourInARowGameComponent
+    },
+    'Checkers': {
+        hostComponent: CheckersGameComponent
     }
 };

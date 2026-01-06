@@ -63,42 +63,100 @@
         <!-- RESULTS VIEW -->
         <div *ngIf="isFinished" class="results-section fade-in">
             <div class="results-header">
-                <h3>{{ isHost ? 'Results' : 'Your Results' }}</h3>
-                <div *ngIf="!isHost" class="waiting-text">
-                    <span class="spinner-border spinner-border-sm me-2"></span> Waiting...
+                <div class="d-flex align-items-center justify-content-between w-100 mb-2">
+                    <h3 class="mb-0">{{ isHost ? 'Results' : 'Words Found' }}</h3>
+
+                    <!-- Player Filter Toggle -->
+                    <div *ngIf="!isHost" class="toggle-group shadow-sm">
+                        <button class="btn btn-xs" [class.active]="!showOnlyMyWords" (click)="showOnlyMyWords = false">
+                            ALL
+                        </button>
+                        <button class="btn btn-xs" [class.active]="showOnlyMyWords" (click)="showOnlyMyWords = true">
+                            MINE
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="!isHost && !showOnlyMyWords" class="waiting-text mt-1">
+                    <span class="spinner-border spinner-border-sm me-2"></span> Waiting for host...
                 </div>
             </div>
 
-            <div class="results-list">
-                <div class="result-row" *ngFor="let res of displayResults">
-                    <div class="word-col">
-                        <div class="d-flex flex-column">
-                            <span class="word-text" [class.strike]="!res.isOnGrid || res.isDuplicate">
-                                {{ res.word }}
-                            </span>
-                            <div class="d-flex gap-1 mt-1">
-                                <span class="badge-tag bg-warning text-dark" *ngIf="!res.isOnGrid">Not on Grid</span>
-                                <span class="badge-tag bg-danger" *ngIf="!res.isInDictionary">Unknown</span>
+            <div class="results-list" [class.filtered]="showOnlyMyWords">
+                <div class="result-row-container" *ngFor="let res of displayResults">
+                    <button type="button" class="result-row" (click)="showDefinition(res)"
+                        [class.active]="selectedWord === res" [class.is-mine]="isMyWord(res)"
+                        [attr.aria-label]="'View definition for ' + res.word">
+                        <div class="word-col">
+                            <div class="d-flex flex-column text-start">
+                                <span class="word-text"
+                                    [class.strike]="!res.isOnGrid || res.isDuplicate || res.isHostRejected"
+                                    [class.text-success]="res.isHostValidated && !res.isDuplicate">
+                                    {{ res.word }}
+                                </span>
+                                <div class="d-flex gap-1 mt-1">
+                                    <span class="badge-tag bg-warning text-dark" *ngIf="!res.isOnGrid">Not on
+                                        Grid</span>
+                                    <span class="badge-tag bg-danger"
+                                        *ngIf="!res.isInDictionary && !res.isHostValidated">Unknown</span>
+                                    <span class="badge-tag bg-success" *ngIf="res.isHostValidated">Host Accepted</span>
+                                    <span class="badge-tag bg-danger" *ngIf="res.isHostRejected">Host Rejected</span>
+                                    <span class="badge-tag bg-secondary"
+                                        *ngIf="res.isDuplicate && !res.isHostRejected && !res.isHostValidated">Duplicate</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="side-info d-flex flex-column align-items-end gap-1">
-                        <span class="points-val" [class.zero]="res.points === 0">+{{ res.points }}</span>
-                        <div class="players-col d-flex flex-wrap justify-content-end gap-1" *ngIf="isHost">
-                            <div class="player-mini-chip" *ngFor="let pid of res.foundBy">
-                                {{ getPlayerName(pid) }}
+                        <div class="side-info d-flex flex-column align-items-end gap-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <!-- Host Three-Dot Menu -->
+                                <div *ngIf="isHost" class="host-dropdown">
+                                    <button type="button" class="btn btn-icon-sm"
+                                        (click)="$event.stopPropagation(); res.showMenu = !res.showMenu">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <div class="custom-dropdown-menu shadow animate-pop" *ngIf="res.showMenu">
+                                        <button class="dropdown-item"
+                                            (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, true)">
+                                            <i class="bi bi-check-circle text-success me-2"></i> Accept
+                                        </button>
+                                        <button class="dropdown-item"
+                                            (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, false)">
+                                            <i class="bi bi-x-circle text-danger me-2"></i> Reject
+                                        </button>
+                                    </div>
+                                    <!-- Backdrop to close menu -->
+                                    <button class="dropdown-backdrop" *ngIf="res.showMenu"
+                                        (click)="$event.stopPropagation(); res.showMenu = false"
+                                        (keydown.escape)="res.showMenu = false"></button>
+                                </div>
+
+                                <span class="points-val" [class.zero]="res.points === 0">+{{ res.points }}</span>
                             </div>
+                            <div class="players-col d-flex flex-wrap justify-content-end gap-1">
+                                <div class="player-mini-chip" [class.is-me]="pid === myConnectionId"
+                                    *ngFor="let pid of res.foundBy" [title]="getPlayerName(pid)">
+                                    {{ getPlayerName(pid) }}
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Definition Dropdown -->
+                    <div class="definition-box animate-slide-down" *ngIf="selectedWord === res">
+                        <div class="definition-content">
+                            <i class="bi bi-info-circle me-2"></i>
+                            {{ res.definition || 'No definition found in library.' }}
                         </div>
                     </div>
                 </div>
 
                 <div *ngIf="displayResults.length === 0" class="text-center text-secondary py-4">
-                    No words found!
+                    {{ showOnlyMyWords ? "You didn't find any words!" : "No words found!" }}
                 </div>
             </div>
 
-            <div class="results-footer d-flex justify-content-center pt-4" *ngIf="isHost">
+            <div class="results-footer d-flex justify-content-center pt-3" *ngIf="isHost">
                 <button class="btn btn-primary fw-bold shadow-sm px-4 py-2" (click)="handleNextRound()">
                     Next Round <i class="bi bi-arrow-right-circle ms-2"></i>
                 </button>

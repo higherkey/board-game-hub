@@ -109,8 +109,16 @@
                             <span class="text-truncate fw-bold text-primary" style="max-width: 100px;">{{ p.name
                                 }}</span>
                             <i *ngIf="p.isHost" class="bi bi-star-fill text-pink ms-1" title="Host"></i>
+
+                            <!-- Assign Host Control Button (Only visible to Screen Host) -->
+                            <button
+                                *ngIf="(currentRoom$ | async)?.hostScreenId === getMyConnectionId((currentRoom$ | async)?.players) && p.connectionId !== (currentRoom$ | async)?.hostPlayerId"
+                                class="btn btn-outline-pink btn-xs ms-auto" style="font-size: 0.6rem; padding: 1px 4px;"
+                                (click)="onSetHostPlayer(p.connectionId)">
+                                GIVE HOST
+                            </button>
                         </div>
-                        <span class="score-circle">{{ p.score || 0 }}</span>
+                        <span class="score-circle ms-2">{{ p.score || 0 }}</span>
                     </li>
                 </ul>
             </div>
@@ -201,7 +209,7 @@
                             <!-- Host Controls -->
                             <div *ngIf="isHost$ | async; else playerWaiting">
                                 <div class="w-100">
-                                    <app-host-settings [roomCode]="roomCode" [compactMode]="true"
+                                    <app-host-settings [roomCode]="roomCode"
                                         [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                                         (gameStart)="startGame($event)">
                                     </app-host-settings>

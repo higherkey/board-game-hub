@@ -10,7 +10,7 @@ public interface IRoomService
     void RemovePlayer(string connectionId);
     Room? GetRoom(string code);
     List<Room> GetPublicRooms();
-    Room? PromoteToHost(string code, string connectionId);
+    Room? SetHostPlayer(string code, string connectionId);
     Room? RenamePlayer(string connectionId, string newName);
     void TerminateRoom(string code);
 
@@ -35,5 +35,6 @@ public interface IRoomService
     // Stats & Helpers
     List<string> ValidateRooms(List<string> codes);
     ServerStats GetServerStats();
+    void NotifyStatsChanged();
     T? GetGameService<T>(GameType type) where T : class;
 }

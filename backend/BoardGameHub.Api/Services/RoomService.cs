@@ -35,7 +35,7 @@ public class RoomService : IRoomService
 
     private OneAndOnlyService? GetOneAndOnlyService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.OneAndOnly) as OneAndOnlyService;
 
-    public Room? PromoteToHost(string code, string connectionId)
+    public Room? SetHostPlayer(string code, string connectionId)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
 
@@ -44,7 +44,9 @@ public class RoomService : IRoomService
 
         foreach (var p in room.Players) p.IsHost = false;
         newHost.IsHost = true;
-
+        
+        room.HostPlayerId = connectionId;
+        NotifyStatsChanged();
         return room;
     }
 
@@ -65,7 +67,9 @@ public class RoomService : IRoomService
                     AvatarUrl = avatarUrl
                 }
             },
-            IsPublic = isPublic
+            IsPublic = isPublic,
+            HostScreenId = hostConnectionId,
+            HostPlayerId = hostConnectionId
         };
 
         if (_rooms.TryAdd(code, room))
@@ -96,7 +100,11 @@ public class RoomService : IRoomService
         {
             if (existingPlayer.ConnectionId != connectionId)
             {
-               _connectionRoomMap.TryRemove(existingPlayer.ConnectionId, out _);
+                // If this player was the host, update the room's host pointers to the new connection ID
+                if (room.HostPlayerId == existingPlayer.ConnectionId) room.HostPlayerId = connectionId;
+                if (room.HostScreenId == existingPlayer.ConnectionId) room.HostScreenId = connectionId;
+
+                _connectionRoomMap.TryRemove(existingPlayer.ConnectionId, out _);
             }
             
             existingPlayer.ConnectionId = connectionId;
@@ -112,11 +120,16 @@ public class RoomService : IRoomService
         }
 
         // 2. NEW PLAYER LOGIC
-        // If room has no host (or all hosts disconnected?), this player becomes host
-        // Logic: If no *Active* host, claim it? Or just if no Host flag exists?
-        // Let's stick to "If no one has IsHost=true", claim it. 
-        // If Host is disconnected, they still have IsHost=true. So we don't steal it yet.
+        // If no Host Player or Screen Player, this player might fill the gap?
+        // Actually, if a room exists, it already had a creator (HostScreen/Player).
+        // But if they disconnected and the room is still alive, maybe we need to reassign?
+        // Let's stick to the core requirement: creator starts as both.
         bool assignHost = !room.Players.Any(p => p.IsHost);
+        
+        if (assignHost && string.IsNullOrEmpty(room.HostPlayerId))
+        {
+            room.HostPlayerId = connectionId;
+        }
 
         var newPlayer = new Player
         {
@@ -151,6 +164,7 @@ public class RoomService : IRoomService
                 if (player != null)
                 {
                     player.Name = newName;
+                    NotifyStatsChanged();
                     return room;
                 }
             }
@@ -261,6 +275,7 @@ public class RoomService : IRoomService
 
         room.IsPaused = true;
         room.TimeRemainingWhenPaused = room.RoundEndTime.Value - DateTime.UtcNow;
+        NotifyStatsChanged();
         return room;
     }
 
@@ -272,6 +287,7 @@ public class RoomService : IRoomService
         room.IsPaused = false;
         room.RoundEndTime = DateTime.UtcNow.Add(room.TimeRemainingWhenPaused.Value);
         room.TimeRemainingWhenPaused = null;
+        NotifyStatsChanged();
         return room;
     }
 
@@ -304,7 +320,11 @@ public class RoomService : IRoomService
         {
             var action = new GameAction(actionType, payload);
             bool success = await service.HandleAction(room, action, connectionId);
-            if (success) return room;
+            if (success) 
+            {
+                NotifyStatsChanged();
+                return room;
+            }
         }
         return null;
     }
@@ -341,6 +361,7 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         room.Settings = settings;
+        NotifyStatsChanged();
         return room;
     }
 
@@ -348,6 +369,7 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         room.UndoSettings = settings;
+        NotifyStatsChanged();
         return room;
     }
 
@@ -356,14 +378,7 @@ public class RoomService : IRoomService
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         
         room.NextGameVotes[playerId] = vote;
-        
-        // Check if everyone voted? Or just let them vote and host decides? 
-        // For now, logic: if everyone voted and majority wins, OR just store votes.
-        // User request: "vote on which game to play next".
-        // Let's just store it for now. The Frontend can show the tally. 
-        // The host or the system can trigger the switch.
-        
-        // Auto-switch if unanimous? Maybe later.
+        NotifyStatsChanged();
         return room;
     }
 
@@ -393,6 +408,7 @@ public class RoomService : IRoomService
                 HostName = r.Players.FirstOrDefault(p => p.IsHost)?.Name ?? "Unknown",
                 RoundNumber = r.RoundNumber,
                 SettingsTimer = r.Settings?.TimerDurationSeconds ?? 0,
+                Settings = r.Settings,
                 Players = r.Players.Select(p => new PlayerSummary 
                 {
                     Name = p.Name,
@@ -407,7 +423,7 @@ public class RoomService : IRoomService
         return stats;
     }
 
-    private void NotifyStatsChanged()
+    public void NotifyStatsChanged()
     {
         _ = _adminHubContext.Clients.All.SendAsync("StatsUpdated", GetServerStats());
     }
@@ -492,6 +508,7 @@ public class RoomService : IRoomService
             // Implicit "Yes" from initiator
             room.CurrentVote.Votes[connectionId] = true;
             
+            NotifyStatsChanged();
             return room; // Caller will broadcast "UndoVoteStarted"
         }
 
@@ -523,9 +540,9 @@ public class RoomService : IRoomService
         {
             // Vote Finished, failed
             room.CurrentVote = null;
-            // Return room to update UI (remove vote modal)
         }
 
+        NotifyStatsChanged();
         return room;
     }
 
@@ -576,6 +593,7 @@ public class RoomService : IRoomService
                  }
             }
 
+            NotifyStatsChanged();
             return currentRoom;
         }
         catch (Exception ex)

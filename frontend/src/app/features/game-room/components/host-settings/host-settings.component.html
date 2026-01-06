@@ -48,45 +48,25 @@
         </div>
     </div>
 
-    <!-- COMPACT MODE: Game-specific settings row -->
-    <div *ngIf="compactMode && (selectedGameType === 'Scatterbrain' || selectedGameType === 'Babble')"
-        class="compact-game-settings pt-2 mt-2 border-top border-secondary border-opacity-10 d-flex gap-3 align-items-center">
+    <!-- COMPACT MODE: Dynamic Game Settings -->
+    <div *ngIf="compactMode && selectedGame?.parsedMetadata?.length"
+        class="compact-game-settings pt-2 mt-2 border-top border-secondary border-opacity-10 d-flex gap-3 align-items-center flex-wrap">
 
-        <!-- Scatterbrain Settings -->
-        <ng-container *ngIf="selectedGameType === 'Scatterbrain'">
-            <div class="compact-setting d-flex align-items-center gap-2">
-                <i class="bi bi-alphabet text-secondary"></i>
-                <select class="form-select form-select-sm" [(ngModel)]="settings.letterMode" style="width: auto;">
-                    <option [ngValue]="0">Normal</option>
-                    <option [ngValue]="1">Hard</option>
-                    <option [ngValue]="2">Random</option>
-                </select>
-            </div>
-            <div class="compact-setting d-flex align-items-center gap-2">
-                <i class="bi bi-list-ul text-secondary"></i>
-                <select class="form-select form-select-sm" [(ngModel)]="listSelectionMode" (change)="updateListId()"
-                    style="width: auto;">
-                    <option value="random">Random List</option>
-                    <option value="manual">List #</option>
-                </select>
-                <input *ngIf="listSelectionMode === 'manual'" type="number" min="1" max="15"
-                    [(ngModel)]="selectedListId" (change)="updateListId()"
-                    class="form-control form-control-sm text-center" style="width: 50px;">
-            </div>
-        </ng-container>
+        <div *ngFor="let meta of selectedGame?.parsedMetadata" class="compact-setting d-flex align-items-center gap-2">
+            <i class="bi" [class.bi-gear]="meta.type !== 'select'" [class.bi-list-ul]="meta.type === 'select'"></i>
 
-        <!-- Babble Settings -->
-        <ng-container *ngIf="selectedGameType === 'Babble'">
-            <div class="compact-setting d-flex align-items-center gap-2">
-                <i class="bi bi-grid-3x3 text-secondary"></i>
-                <select class="form-select form-select-sm" [(ngModel)]="settings.boardSize"
-                    (change)="updateBoardSize(settings.boardSize + '')" style="width: auto;">
-                    <option [ngValue]="4">4x4</option>
-                    <option [ngValue]="5">5x5</option>
-                    <option [ngValue]="6">6x6</option>
-                </select>
+            <select *ngIf="meta.type === 'select'" class="form-select form-select-sm" [(ngModel)]="settings[meta.id]"
+                style="width: auto;">
+                <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}</option>
+            </select>
+
+            <input *ngIf="meta.type === 'number'" type="number" class="form-control form-control-sm text-center"
+                [(ngModel)]="settings[meta.id]" style="width: 60px;">
+
+            <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="settings[meta.id]">
             </div>
-        </ng-container>
+        </div>
     </div>
 
     <!-- FULL MODE: Large Grid (Original) -->
@@ -169,59 +149,29 @@
                     </div>
                 </div>
 
-                <!-- Scatterbrain Settings (Conditional) -->
-                <div *ngIf="selectedGameType === 'Scatterbrain'" class="game-specific-settings fade-in">
-                    <div class="setting-group">
-                        <label for="letterMode">
-                            <i class="bi bi-alphabet"></i>
-                            Letter Difficulty
+                <!-- Dynamic Game Settings (Full) -->
+                <div *ngIf="selectedGame?.parsedMetadata?.length" class="game-specific-settings fade-in">
+                    <div *ngFor="let meta of selectedGame?.parsedMetadata" class="setting-group">
+                        <label [for]="'host-' + meta.id">
+                            <i class="bi" [class.bi-gear]="meta.type !== 'select'"
+                                [class.bi-list-ul]="meta.type === 'select'"></i>
+                            {{ meta.label }}
                         </label>
-                        <div class="select-wrapper">
-                            <select id="letterMode" [(ngModel)]="settings.letterMode">
-                                <option [ngValue]="0">🟢 Normal (No Q, V, X, Z)</option>
-                                <option [ngValue]="1">🔴 Hard (Only Q, V, X, Z...)</option>
-                                <option [ngValue]="2">🎲 True Random</option>
-                            </select>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                    </div>
 
-                    <div class="setting-group">
-                        <label for="categoryList">
-                            <i class="bi bi-list-ul"></i>
-                            Categories List
-                        </label>
-                        <div class="select-wrapper">
-                            <select id="categoryList" [(ngModel)]="listSelectionMode" (change)="updateListId()">
-                                <option value="random">🎲 Random List</option>
-                                <option value="manual">📋 Select List #</option>
+                        <div *ngIf="meta.type === 'select'" class="select-wrapper">
+                            <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]">
+                                <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}</option>
                             </select>
                             <i class="bi bi-chevron-down"></i>
                         </div>
 
-                        <div *ngIf="listSelectionMode === 'manual'" class="list-id-input">
-                            <label for="listId" class="sr-only">List ID</label>
-                            <input id="listId" type="number" min="1" max="15" [(ngModel)]="selectedListId"
-                                (change)="updateListId()" placeholder="1-15">
-                        </div>
-                    </div>
-                </div>
+                        <input *ngIf="meta.type === 'number'" [id]="'host-' + meta.id" type="number"
+                            class="form-control" [(ngModel)]="settings[meta.id]">
 
-                <!-- Babble Settings (Conditional) -->
-                <div *ngIf="selectedGameType === 'Babble'" class="game-specific-settings fade-in">
-                    <div class="setting-group">
-                        <label for="boardSize">
-                            <i class="bi bi-grid-3x3"></i>
-                            Board Size
-                        </label>
-                        <div class="select-wrapper">
-                            <select id="boardSize" [(ngModel)]="settings.boardSize"
-                                (change)="updateBoardSize(settings.boardSize + '')">
-                                <option [ngValue]="4">4x4 (Classic)</option>
-                                <option [ngValue]="5">5x5 (Big Babble)</option>
-                                <option [ngValue]="6">6x6 (Super Babble)</option>
-                            </select>
-                            <i class="bi bi-chevron-down"></i>
+                        <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" [id]="'host-' + meta.id"
+                                [(ngModel)]="settings[meta.id]">
+                            <label class="form-check-label" [for]="'host-' + meta.id">Enabled</label>
                         </div>
                     </div>
                 </div>

@@ -79,5 +79,8 @@ export class WisecrackBoardComponent {
   nextRound() {
     this.signalRService.nextRound();
   }
-}
 
+  endGame() {
+    this.signalRService.endGame();
+  }
+}

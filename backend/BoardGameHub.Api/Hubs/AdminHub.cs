@@ -32,9 +32,9 @@ public class AdminHub : Hub
         await Clients.Client(connectionId).SendAsync("Kicked");
     }
 
-    public async Task PromoteToHost(string roomCode, string connectionId)
+    public async Task SetHostPlayer(string roomCode, string connectionId)
     {
-        var room = _roomService.PromoteToHost(roomCode, connectionId);
+        var room = _roomService.SetHostPlayer(roomCode, connectionId);
         if (room != null)
         {
              await Clients.Group(roomCode).SendAsync("RoomUpdated", room);

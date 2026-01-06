@@ -11,6 +11,7 @@ export interface GameSettings {
   boardSize?: number; // 4, 5, 6
   listId?: number;
   customCategories?: string[];
+  [key: string]: any;
 }
 
 export interface Player {
@@ -38,6 +39,8 @@ export interface Room {
 
   roundNumber: number;
   totalRounds?: number;
+  hostScreenId?: string;
+  hostPlayerId?: string;
 
   // Voting
   nextGameVotes: { [key: string]: number }; // Vote is GameType enum int or string
@@ -379,31 +382,16 @@ export class SignalRService {
 
   public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None'): Promise<string> {
     const guestId = this.authService.getGuestId();
-    const roomCode = await this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId);
+    const room: Room = await this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId);
+
+    // Update state immediately with the real room data
+    this.currentRoomSubject.next(room);
+    this.players$.next(room.players);
 
     // Save to active rooms
-    this.saveActiveRoom(roomCode, gameType);
+    this.saveActiveRoom(room.code, room.gameType);
 
-    // Initialize currentRoomSubject only if not already set by an event
-    const current = this.currentRoomSubject.value;
-    if (!current || current.code !== roomCode) {
-      this.currentRoomSubject.next({
-        code: roomCode,
-        players: [],
-        state: 'Lobby',
-        settings: { timerDurationSeconds: 60, letterMode: 0 },
-        gameType: gameType,
-        gameState: null,
-        gameData: null,
-        roundNumber: 0,
-        isPaused: false,
-        roundScores: {},
-        nextGameVotes: {},
-        currentVote: null,
-        undoSettings: { allowVoting: true, hostOnly: false }
-      });
-    }
-    return roomCode;
+    return room.code;
   }
 
   public async getGameHistory(): Promise<any[]> {
@@ -471,6 +459,10 @@ export class SignalRService {
     await this.hubConnection.invoke('RenamePlayer', newName);
   }
   // ... rest of file
+
+  public async setHostPlayer(roomCode: string, targetId: string): Promise<void> {
+    await this.hubConnection.invoke('SetHostPlayer', roomCode, targetId);
+  }
 
   public async setGameType(roomCode: string, gameType: string): Promise<void> {
     await this.hubConnection.invoke('SetGameType', roomCode, gameType);

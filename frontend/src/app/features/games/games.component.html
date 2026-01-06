@@ -139,14 +139,12 @@
                                 <!-- Actions -->
                                 <div class="mt-3 mt-auto">
                                     <button *ngIf="game.status === 'Deployed' || game.status === 'Testing'"
-                                        class="btn btn-primary w-100 py-2 fw-bold"
+                                        class="btn w-100 py-2 fw-bold"
+                                        [ngClass]="game.status === 'Testing' ? 'btn-info text-dark' : 'btn-primary'"
                                         style="font-size: 0.75rem; letter-spacing: 0.02em;"
                                         [routerLink]="['/game/create']" [queryParams]="{gameType: game.id}">
                                         CREATE ROOM
                                     </button>
-                                    <span *ngIf="game.status === 'Testing'"
-                                        class="badge bg-info text-dark w-100 py-2 mt-2" style="font-size: 0.7rem;">In
-                                        Testing</span>
                                     <span *ngIf="game.status === 'Backlog'" class="badge bg-secondary w-100 py-2"
                                         style="font-size: 0.7rem;">{{
                                         game.status

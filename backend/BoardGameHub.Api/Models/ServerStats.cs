@@ -19,6 +19,7 @@ public class RoomSummary
     // Details
     public int RoundNumber { get; set; }
     public int SettingsTimer { get; set; }
+    public GameSettings Settings { get; set; } = new();
     public List<PlayerSummary> Players { get; set; } = new();
 }
 

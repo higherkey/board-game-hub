@@ -118,10 +118,10 @@ export class GameRoomComponent implements OnInit {
     // Game started if state is Playing or Finished
     this.gameStarted$ = this.currentRoom$.pipe(map(r => r?.state === 'Playing' || r?.state === 'Finished'));
 
-    this.isHost$ = this.players$.pipe(map((all: Player[]) => {
-      const myName = this.authService.getGuestName() || this.authService.currentUserValue?.displayName;
-      const me = all.find(p => p.name === myName);
-      return me?.isHost || false;
+    this.isHost$ = this.currentRoom$.pipe(map(room => {
+      if (!room) return false;
+      const myId = this.signalRService.getConnectionId();
+      return myId ? this.checkIsHost(room, myId) : false;
     }));
   }
 
@@ -322,6 +322,13 @@ export class GameRoomComponent implements OnInit {
   }
 
   private checkIsHost(room: Room, myId: string): boolean {
-    return room.players.find((p) => p.connectionId === myId)?.isHost || false;
+    const me = room.players.find(p => p.connectionId === myId);
+    return me?.isHost || myId === room.hostPlayerId || myId === room.hostScreenId;
+  }
+
+  onSetHostPlayer(targetId: string) {
+    if (this.roomCode) {
+      this.signalRService.setHostPlayer(this.roomCode, targetId);
+    }
   }
 }

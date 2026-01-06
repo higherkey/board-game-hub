@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 
 export interface RoomStats {
     activeRooms: number;
@@ -18,6 +18,7 @@ export interface RoomSummary {
     globalState: string;
     isPublic: boolean;
     settingsTimer: number;
+    settings: any;
     players: PlayerSummary[];
     roundNumber: number;
 }
@@ -39,10 +40,15 @@ export class AdminService {
     private readonly statsSubject = new BehaviorSubject<RoomStats | null>(null);
     public stats$ = this.statsSubject.asObservable();
 
+    private readonly connectionStatusSubject = new BehaviorSubject<'Connected' | 'Disconnected' | 'Connecting'>('Disconnected');
+    public connectionStatus$ = this.connectionStatusSubject.asObservable();
+
     constructor(private readonly http: HttpClient) { }
 
     public async startConnection() {
-        if (this.hubConnection) return;
+        if (this.hubConnection && (this.hubConnection.state === HubConnectionState.Connected || this.hubConnection.state === HubConnectionState.Connecting)) return;
+
+        this.connectionStatusSubject.next('Connecting');
 
         this.hubConnection = new HubConnectionBuilder()
             .withUrl('/adminhub', {
@@ -52,23 +58,40 @@ export class AdminService {
             .build();
 
         this.hubConnection.on('StatsUpdated', (stats: RoomStats) => {
+            console.log('Real-time update received');
             this.statsSubject.next(stats);
+        });
+
+        // Lifecycle hooks
+        this.hubConnection.onclose(() => this.connectionStatusSubject.next('Disconnected'));
+        this.hubConnection.onreconnecting(() => this.connectionStatusSubject.next('Connecting'));
+        this.hubConnection.onreconnected(() => {
+            this.connectionStatusSubject.next('Connected');
+            this.refreshStats();
         });
 
         try {
             await this.hubConnection.start();
+            this.connectionStatusSubject.next('Connected');
             console.log('AdminHub connection started');
-            // Fetch initial stats
-            this.getStats().subscribe(stats => this.statsSubject.next(stats));
+            this.refreshStats();
         } catch (err) {
+            this.connectionStatusSubject.next('Disconnected');
             console.error('Error while starting AdminHub connection: ' + err);
         }
+    }
+
+    public refreshStats() {
+        this.getStats().subscribe(stats => {
+            this.statsSubject.next(stats);
+        });
     }
 
     public async stopConnection() {
         if (this.hubConnection) {
             await this.hubConnection.stop();
             this.hubConnection = null;
+            this.connectionStatusSubject.next('Disconnected');
         }
     }
 
@@ -95,8 +118,8 @@ export class AdminService {
         return this.http.post<void>(`${this.baseUrl}/rooms/${code}/terminate`, {});
     }
 
-    updateSettings(code: string, timerDurationSeconds: number): Observable<void> {
-        return this.http.post<void>(`${this.baseUrl}/rooms/${code}/settings`, { timerDurationSeconds });
+    updateSettings(code: string, settings: any): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/rooms/${code}/settings`, settings);
     }
 
     getGames(): Observable<any[]> {

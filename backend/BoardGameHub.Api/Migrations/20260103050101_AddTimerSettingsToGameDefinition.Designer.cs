@@ -3,6 +3,7 @@ using System;
 using BoardGameHub.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BoardGameHub.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260103050101_AddTimerSettingsToGameDefinition")]
+    partial class AddTimerSettingsToGameDefinition
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,9 +128,6 @@ namespace BoardGameHub.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("SettingsMetadataJson")
-                        .HasColumnType("text");
-
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -154,7 +154,6 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 10,
                             MinPlayers = 2,
                             Name = "Scatterbrain",
-                            SettingsMetadataJson = "[{\"id\":\"letterMode\",\"label\":\"Letter Difficulty\",\"type\":\"select\",\"options\":[{\"label\":\"Normal (No Q, V,X, Z)\",\"value\":0},{\"label\":\"Hard (Only Q, V, X, Z...)\",\"value\":1},{\"label\":\"True Random\",\"value\":2}]}]",
                             Status = 1,
                             Tags = "Word,Party,Timed",
                             TimerType = 2
@@ -170,7 +169,6 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 1,
                             Name = "Babble",
-                            SettingsMetadataJson = "[{\"id\":\"boardSize\",\"label\":\"Board Size\",\"type\":\"select\",\"options\":[{\"label\":\"4x4 (Classic)\",\"value\":4},{\"label\":\"5x5 (Big Babble)\",\"value\":5},{\"label\":\"6x6 (Super Babble)\",\"value\":6}]}]",
                             Status = 1,
                             Tags = "Word,Puzzle,Timed",
                             TimerType = 2

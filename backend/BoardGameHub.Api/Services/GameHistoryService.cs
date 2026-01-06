@@ -82,7 +82,7 @@ public class GameHistoryService : IGameHistoryService
             .Where(p => p.UserId == userId)
             .Include(p => p.GameSession)
                 .ThenInclude(gs => gs.Players)
-            .OrderByDescending(p => p.GameSession!.EndTime)
+            .OrderByDescending(p => p.GameSession != null ? p.GameSession.EndTime : DateTime.MinValue)
             .Take(count)
             .ToListAsync();
     }

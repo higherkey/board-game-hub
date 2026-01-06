@@ -51,8 +51,8 @@ public class WisecrackGameService : IGameService
         }
         else
         {
-            // Round 3: Last Lash (Common Prompt)
-            AssignLastLash(room.Players, state);
+            // Round 3: The Final Crack (Common Prompt)
+            AssignFinalCrack(room.Players, state);
         }
 
         room.GameData = state;
@@ -123,7 +123,6 @@ public class WisecrackGameService : IGameService
         return Task.CompletedTask;
     }
 
-    // ... Vote ... (Unchanged logic, but included context for replace)
     public Task SubmitVote(Room room, string playerId, int choice)
     {
         if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
@@ -165,9 +164,6 @@ public class WisecrackGameService : IGameService
             // End of Battles
             state.Phase = WisecrackPhase.Result;
             state.CurrentBattleIndex = -1;
-            
-            // If Final Round, we might want to do something special, 
-            // but currently the flow is Result -> Host Next Round -> Game Over check in Hub
              _ = CalculateScores(room);
         }
         return Task.CompletedTask;
@@ -239,15 +235,15 @@ public class WisecrackGameService : IGameService
         }
     }
 
-    private void AssignLastLash(List<Player> players, WisecrackState state)
+    private void AssignFinalCrack(List<Player> players, WisecrackState state)
     {
         // One common prompt for everyone
         var rnd = new Random();
-        var prompt = _prompts[rnd.Next(_prompts.Count)]; // Just pick random
+        var prompt = _prompts[rnd.Next(_prompts.Count)]; 
 
         var assignment = new WisecrackPromptAssignment
         {
-            Text = $"LAST LASH: {prompt}",
+            Text = $"THE FINAL CRACK: {prompt}",
             AssignedPlayerIds = players.Select(p => p.ConnectionId).ToList()
         };
         state.Assignments.Add(assignment);
@@ -278,10 +274,10 @@ public class WisecrackGameService : IGameService
         }
         else
         {
-            // Last Lash Logic
+            // Final Crack Logic
             // We have 1 assignment, N answers.
             var allAnswers = state.Answers.OrderBy(x => rnd.Next()).ToList();
-            var promptText = state.Assignments.FirstOrDefault()?.Text ?? "Last Lash";
+            var promptText = state.Assignments.FirstOrDefault()?.Text ?? "The Final Crack";
 
             // Pair them up
             for (int i = 0; i < allAnswers.Count; i += 2)
@@ -298,9 +294,8 @@ public class WisecrackGameService : IGameService
                 }
                 else
                 {
-                    // Odd one out. Pair with the first answer again?
-                    // Or 3-way? Current UI supports 2.
-                    // Let's pair with index 0 (if exists) so index 0 fights twice.
+                    // Odd one out. Pair with the first answer again.
+                    // This ensures everyone battles at least once.
                     if (allAnswers.Count > 0)
                     {
                         state.Battles.Add(new WisecrackBattle
@@ -342,7 +337,6 @@ public class WisecrackGameService : IGameService
 
         return false;
     }
-
 
     public async Task EndRound(Room room)
     {

@@ -2,8 +2,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, RoomStats, RoomSummary } from '../../services/admin.service';
-import { GameDefinition } from '../../services/game-data.service';
-import { Observable, Subscription } from 'rxjs';
+import { GameDataService, GameDefinition } from '../../services/game-data.service';
+import { interval, Observable, Subscription, tap } from 'rxjs';
+import { startWith } from 'rxjs/operators';
+import { GameSettings } from '../../services/signalr.service';
 
 @Component({
     selector: 'app-admin-dashboard',
@@ -14,6 +16,7 @@ import { Observable, Subscription } from 'rxjs';
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
     stats$: Observable<RoomStats | null>;
+    connectionStatus$: Observable<string>;
 
     // Modal States
     showCreateModal = false;
@@ -27,6 +30,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     // Game Management
     games: GameDefinition[] = [];
     selectedGame: GameDefinition | null = null;
+    roomGameDef: GameDefinition | null = null; // For settings modal
 
     // Form Data
     createHostName = 'AdminBot';
@@ -35,27 +39,41 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     globalMessageContent = '';
 
     settingsRoomCode = '';
-    settingsDuration = 60;
+    settings: GameSettings = { timerDurationSeconds: 60, letterMode: 0 };
 
     // UI State
     expandedRows = new Set<string>();
 
-    private readonly refreshSub?: Subscription;
+    private refreshSub?: Subscription;
 
-    constructor(private readonly adminService: AdminService) {
-        this.stats$ = this.adminService.stats$;
+    constructor(
+        private readonly adminService: AdminService,
+        private readonly gameDataService: GameDataService
+    ) {
+        this.stats$ = this.adminService.stats$.pipe(
+            tap((stats: RoomStats | null) => stats && console.log('Admin Dashboard stats updated:', stats))
+        );
+        this.connectionStatus$ = this.adminService.connectionStatus$;
     }
 
     ngOnInit(): void {
         this.adminService.startConnection();
+        this.loadGames();
+
+        // Initial load + Polling fallback (every 30 seconds)
+        this.refreshSub = interval(30000).pipe(
+            startWith(0)
+        ).subscribe(() => this.refreshData());
     }
 
     ngOnDestroy(): void {
         this.adminService.stopConnection();
+        this.refreshSub?.unsubscribe();
     }
 
     refreshData() {
-        this.adminService.getStats().subscribe(); // Service updates the subject
+        this.adminService.refreshStats();
+        this.loadGames();
     }
 
     toggleDetails(code: string) {
@@ -78,7 +96,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     openSettings(room: RoomSummary) {
         this.settingsRoomCode = room.code;
-        this.settingsDuration = room.settingsTimer;
+        this.settings = { ...(room.settings || { timerDurationSeconds: 60 }) };
+
+        // Find matching game definition for metadata
+        if (this.games.length === 0) {
+            this.loadGames(); // Ensure games are loaded
+        }
+        this.roomGameDef = this.games.find(g => g.id === room.gameType) || null;
+
         this.showSettingsModal = true;
     }
 
@@ -91,7 +116,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 this.showCreateModal = false;
                 this.refreshData();
             },
-            error: (err) => alert(err.message)
+            error: (err: any) => alert(err.message)
         });
     }
 
@@ -102,18 +127,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 this.showMessageModal = false;
                 this.globalMessageContent = '';
             },
-            error: (err) => alert(err.message)
+            error: (err: any) => alert(err.message)
         });
     }
 
     submitSettings() {
         if (!this.settingsRoomCode) return;
-        this.adminService.updateSettings(this.settingsRoomCode, this.settingsDuration).subscribe({
+        this.adminService.updateSettings(this.settingsRoomCode, this.settings).subscribe({
             next: () => {
                 this.showSettingsModal = false;
                 this.refreshData();
             },
-            error: (err) => alert(err.message)
+            error: (err: any) => alert(err.message)
         });
     }
 
@@ -121,7 +146,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         if (!confirm(`Start game for room ${code}?`)) return;
         this.adminService.startGame(code).subscribe({
             next: () => this.refreshData(),
-            error: (err) => alert(err.message)
+            error: (err: any) => alert(err.message)
         });
     }
 
@@ -129,7 +154,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         if (!confirm(`Are you sure you want to terminate room ${code}?`)) return;
         this.adminService.terminateRoom(code).subscribe({
             next: () => this.refreshData(),
-            error: (err) => alert(err.message)
+            error: (err: any) => alert(err.message)
         });
     }
 
@@ -144,6 +169,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     loadGames() {
         this.adminService.getGames().subscribe(games => {
+            games.forEach(g => {
+                if (g.settingsMetadataJson) {
+                    try {
+                        g.parsedMetadata = JSON.parse(g.settingsMetadataJson);
+                    } catch (e) {
+                        console.error('Failed to parse metadata for ' + g.id, e);
+                    }
+                }
+            });
             this.games = games;
         });
     }
@@ -161,7 +195,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 this.loadGames();
                 // Also refresh main games cache if needed, though redirecting or refreshing usually handles it
             },
-            error: (err) => alert(err.message)
+            error: (err: any) => alert(err.message)
         });
     }
 }

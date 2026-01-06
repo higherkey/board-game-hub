@@ -13,7 +13,7 @@ import { RouterModule } from '@angular/router';
 export class GameHistoryComponent implements OnInit {
   history: any[] = [];
 
-  constructor(private signalRService: SignalRService) { }
+  constructor(private readonly signalRService: SignalRService) { }
 
   ngOnInit(): void {
     this.signalRService.getGameHistory().then(history => this.history = history);

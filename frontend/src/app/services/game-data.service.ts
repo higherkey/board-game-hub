@@ -14,6 +14,19 @@ export interface GameDefinition {
     complexity: number;
     averagePlayTime: number;
     tags: string;
+    // Timer Settings
+    timerType: TimerType;
+    defaultRoundLengthSeconds: number;
+
+    // Dynamic Settings
+    settingsMetadataJson?: string;
+    parsedMetadata?: any[]; // Typed helper if needed
+}
+
+export enum TimerType {
+    NotApplicable = 0,
+    Optional = 1,
+    Required = 2
 }
 
 @Injectable({
@@ -30,6 +43,17 @@ export class GameDataService {
 
     refreshGames(): void {
         this.http.get<GameDefinition[]>(this.apiUrl).subscribe(newGames => {
+            // Apply parsing
+            newGames.forEach(g => {
+                if (g.settingsMetadataJson) {
+                    try {
+                        g.parsedMetadata = JSON.parse(g.settingsMetadataJson);
+                    } catch (e) {
+                        console.error('Failed to parse settings metadata for game ' + g.id, e);
+                    }
+                }
+            });
+
             const currentGames = this.gamesSubject.value;
             // Only update if data actually changed (or first load)
             if (!currentGames || JSON.stringify(newGames) !== JSON.stringify(currentGames)) {

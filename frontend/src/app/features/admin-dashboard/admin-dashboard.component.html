@@ -1,7 +1,15 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Backend Admin Dashboard</h1>
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="mb-0">Backend Admin Dashboard</h1>
+            <span class="badge" [class.bg-success]="(connectionStatus$ | async) === 'Connected'"
+                [class.bg-warning]="(connectionStatus$ | async) === 'Connecting'"
+                [class.bg-danger]="(connectionStatus$ | async) === 'Disconnected'">
+                {{ connectionStatus$ | async }}
+            </span>
+        </div>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" (click)="refreshData()">Refresh</button>
             <button class="btn btn-primary" (click)="openCreateModal()">+ Create Room</button>
             <button class="btn btn-info text-white" (click)="openMessageModal()">Global Msg</button>
         </div>
@@ -201,45 +209,67 @@
             <div class="modal-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" [(ngModel)]="selectedGame.name">
+                        <label for="editName" class="form-label">Name</label>
+                        <input id="editName" type="text" class="form-control" [(ngModel)]="selectedGame.name">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Icon (Emoji or URL)</label>
-                        <input type="text" class="form-control" [(ngModel)]="selectedGame.icon">
+                        <label for="editIcon" class="form-label">Icon (Emoji or URL)</label>
+                        <input id="editIcon" type="text" class="form-control" [(ngModel)]="selectedGame.icon">
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" rows="2" [(ngModel)]="selectedGame.description"></textarea>
+                        <label for="editDesc" class="form-label">Description</label>
+                        <textarea id="editDesc" class="form-control" rows="2"
+                            [(ngModel)]="selectedGame.description"></textarea>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" [(ngModel)]="selectedGame.status">
+                        <label for="editStatus" class="form-label">Status</label>
+                        <select id="editStatus" class="form-select" [(ngModel)]="selectedGame.status">
                             <option value="Deployed">Deployed</option>
                             <option value="Testing">Testing</option>
                             <option value="Backlog">Backlog</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Min Players</label>
-                        <input type="number" class="form-control" [(ngModel)]="selectedGame.minPlayers">
+                        <label for="editMin" class="form-label">Min Players</label>
+                        <input id="editMin" type="number" class="form-control" [(ngModel)]="selectedGame.minPlayers">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Max Players</label>
-                        <input type="number" class="form-control" [(ngModel)]="selectedGame.maxPlayers">
+                        <label for="editMax" class="form-label">Max Players</label>
+                        <input id="editMax" type="number" class="form-control" [(ngModel)]="selectedGame.maxPlayers">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Complexity (1-5)</label>
-                        <input type="number" class="form-control" min="1" max="5" [(ngModel)]="selectedGame.complexity">
+                        <label for="editComplexity" class="form-label">Complexity (1-5)</label>
+                        <input id="editComplexity" type="number" class="form-control" min="1" max="5"
+                            [(ngModel)]="selectedGame.complexity">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Avg. Time (min)</label>
-                        <input type="number" class="form-control" [(ngModel)]="selectedGame.averagePlayTime">
+                        <label for="editTime" class="form-label">Avg. Time (min)</label>
+                        <input id="editTime" type="number" class="form-control"
+                            [(ngModel)]="selectedGame.averagePlayTime">
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Tags (comma separated)</label>
-                        <input type="text" class="form-control" [(ngModel)]="selectedGame.tags"
+                        <label for="editTags" class="form-label">Tags (comma separated)</label>
+                        <input id="editTags" type="text" class="form-control" [(ngModel)]="selectedGame.tags"
                             placeholder="Word,Party,Strategy...">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="editTimerType" class="form-label">Timer Type</label>
+                        <select id="editTimerType" class="form-select" [(ngModel)]="selectedGame.timerType">
+                            <option [ngValue]="0">Not Applicable</option>
+                            <option [ngValue]="1">Optional</option>
+                            <option [ngValue]="2">Required</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="editDefaultRound" class="form-label">Default Round (sec)</label>
+                        <input id="editDefaultRound" type="number" class="form-control"
+                            [(ngModel)]="selectedGame.defaultRoundLengthSeconds">
+                    </div>
+                    <div class="col-12">
+                        <label for="editMetadata" class="form-label">Settings Metadata JSON</label>
+                        <textarea id="editMetadata" class="form-control" rows="4"
+                            [(ngModel)]="selectedGame.settingsMetadataJson"
+                            placeholder='[{"id":"example","label":"Example","type":"select","options":[...]}]'></textarea>
                     </div>
                 </div>
             </div>
@@ -322,7 +352,37 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label for="settingsDuration" class="form-label">Timer Duration (Seconds)</label>
-                    <input id="settingsDuration" type="number" class="form-control" [(ngModel)]="settingsDuration">
+                    <input id="settingsDuration" type="number" class="form-control"
+                        [(ngModel)]="settings.timerDurationSeconds">
+                </div>
+                <div class="mb-3">
+                    <label for="settingsRounds" class="form-label">Total Rounds</label>
+                    <input id="settingsRounds" type="number" class="form-control" [(ngModel)]="settings.totalRounds">
+                </div>
+
+                <!-- Dynamic Game Settings -->
+                <div *ngIf="roomGameDef?.parsedMetadata?.length" class="mt-4 border-top pt-3">
+                    <h6 class="fw-bold mb-3">Game Specific Settings</h6>
+                    <div *ngFor="let meta of roomGameDef?.parsedMetadata" class="mb-3">
+                        <label [for]="'setting-' + meta.id" class="form-label">{{ meta.label }}</label>
+
+                        <!-- Select Type -->
+                        <select *ngIf="meta.type === 'select'" [id]="'setting-' + meta.id" class="form-select"
+                            [(ngModel)]="settings[meta.id]">
+                            <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}</option>
+                        </select>
+
+                        <!-- Number Type -->
+                        <input *ngIf="meta.type === 'number'" [id]="'setting-' + meta.id" type="number"
+                            class="form-control" [(ngModel)]="settings[meta.id]">
+
+                        <!-- Checkbox Type -->
+                        <div *ngIf="meta.type === 'checkbox'" class="form-check">
+                            <input class="form-check-input" type="checkbox" [id]="'setting-' + meta.id"
+                                [(ngModel)]="settings[meta.id]">
+                            <label class="form-check-label" [for]="'setting-' + meta.id">Enable</label>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">

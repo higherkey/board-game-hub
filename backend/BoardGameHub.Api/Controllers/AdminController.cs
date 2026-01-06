@@ -72,8 +72,12 @@ public class AdminController : ControllerBase
         game.Complexity = updatedGame.Complexity;
         game.AveragePlayTime = updatedGame.AveragePlayTime;
         game.Tags = updatedGame.Tags;
+        game.TimerType = updatedGame.TimerType;
+        game.DefaultRoundLengthSeconds = updatedGame.DefaultRoundLengthSeconds;
+        game.SettingsMetadataJson = updatedGame.SettingsMetadataJson;
 
         await _context.SaveChangesAsync();
+        _roomService.NotifyStatsChanged();
         return Ok(game);
     }
 
@@ -93,7 +97,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> StartGame(string code)
     {
         
-        var room = _roomService.StartGame(code);
+        var room = await _roomService.StartGame(code);
         if (room == null) return NotFound();
 
         await _gameHub.Clients.Group(code.ToUpper()).SendAsync("GameStarted", room);
@@ -111,14 +115,12 @@ public class AdminController : ControllerBase
         return Ok();
     }
 
-    public record UpdateSettingsReq(int TimerDurationSeconds);
     [HttpPost("rooms/{code}/settings")]
-    public async Task<IActionResult> UpdateSettings(string code, [FromBody] UpdateSettingsReq req)
+    public async Task<IActionResult> UpdateSettings(string code, [FromBody] GameSettings settings)
     {
         var room = _roomService.GetRoom(code);
         if (room == null) return NotFound();
 
-        var settings = new GameSettings { TimerDurationSeconds = req.TimerDurationSeconds }; // Simplified override
         _roomService.UpdateSettings(code, settings);
 
         await _gameHub.Clients.Group(code.ToUpper()).SendAsync("SettingsUpdated", settings);

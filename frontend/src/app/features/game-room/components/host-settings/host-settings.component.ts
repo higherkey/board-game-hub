@@ -23,6 +23,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Output() endGame = new EventEmitter<void>();
 
   selectedGameType = 'None';
+  selectedGame: GameDefinition | undefined;
   availableGames: GameDefinition[] = [];
 
   settings: GameSettings = {
@@ -57,6 +58,16 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     if (room?.undoSettings) {
       this.undoSettings = { ...room.undoSettings };
     }
+
+    // Initialize settings from room if available (persists between rounds)
+    if (room?.settings) {
+      this.settings = { ...this.settings, ...room.settings };
+      // Handle special mapping if needed
+      if (this.settings.listId) {
+        this.selectedListId = this.settings.listId;
+        this.listSelectionMode = 'manual';
+      }
+    }
   }
 
   ngOnChanges() {
@@ -68,6 +79,16 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   async changeGameType() {
     if (this.roomCode && this.selectedGameType) {
       await this.signalRService.setGameType(this.roomCode, this.selectedGameType);
+
+      // Update local defaults based on game definition
+      this.selectedGame = this.availableGames.find(g => g.id === this.selectedGameType);
+      if (this.selectedGame) {
+        if (this.selectedGame.defaultRoundLengthSeconds > 0) {
+          this.settings.timerDurationSeconds = this.selectedGame.defaultRoundLengthSeconds;
+        } else if (this.selectedGame.timerType === 0) { // NotApplicable
+          this.settings.timerDurationSeconds = 0;
+        }
+      }
     }
   }
 

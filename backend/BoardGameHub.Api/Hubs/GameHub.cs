@@ -42,7 +42,7 @@ public class GameHub : Hub
         return Task.FromResult(_roomService.ValidateRooms(codes));
     }
 
-    public async Task<string> CreateRoom(string playerName, bool isPublic, string gameType = "OneAndOnly", string? guestId = null)
+    public async Task<Room> CreateRoom(string playerName, bool isPublic, string gameType = "OneAndOnly", string? guestId = null)
     {
         Enum.TryParse<GameType>(gameType, true, out var type);
         var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
@@ -54,7 +54,7 @@ public class GameHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
         // Broadcast to the creator (and anyone else in the group, though it's just them)
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
-        return room.Code;
+        return room;
     }
 
     public async Task StartGame(string roomCode, GameSettings settings)
@@ -105,6 +105,15 @@ public class GameHub : Hub
                 await Clients.All.SendAsync("RoomGameTypeChanged", roomCode, type.ToString());
                 await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
             }
+        }
+    }
+
+    public async Task SetHostPlayer(string roomCode, string targetConnectionId)
+    {
+        var room = _roomService.SetHostPlayer(roomCode, targetConnectionId);
+        if (room != null)
+        {
+            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
         }
     }
 

@@ -26,6 +26,9 @@ public class Room
     public GameType GameType { get; set; } = GameType.None; 
     public bool IsPublic { get; set; } = false;
 
+    public string? HostScreenId { get; set; }
+    public string? HostPlayerId { get; set; }
+
     // Generic Game State
     public object? GameData { get; set; }
     public int RoundNumber { get; set; } = 0;
@@ -102,5 +105,9 @@ public enum GameType
     Symbology = 9,
     Wisecrack = 10,
     SushiTrain = 11,
-    GreatMinds = 12
+    GreatMinds = 12,
+    NomDeCode = 13,
+    Warships = 14,
+    FourInARow = 15,
+    Checkers = 16
 }
