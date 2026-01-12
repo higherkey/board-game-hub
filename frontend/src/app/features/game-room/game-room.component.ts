@@ -177,7 +177,7 @@ export class GameRoomComponent implements OnInit {
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
-      this.roomCode = params.get('code') || '';
+      this.roomCode = (params.get('code') || '').toUpperCase();
       this.isCreating = this.roomCode === 'create';
 
       if (this.isCreating) {

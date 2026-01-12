@@ -382,6 +382,7 @@ public class RoomService : IRoomService
         // if (room.State != GameState.Lobby && room.State != GameState.Finished) return null;
 
         room.GameType = gameType;
+        room.State = GameState.Lobby; // Reset to Lobby so clients switch view
         // Clear votes if game type is manually force set? 
         room.NextGameVotes.Clear();
         

@@ -47,8 +47,19 @@ public class DictionaryService : IDictionaryService
         if (string.IsNullOrWhiteSpace(word)) return false;
         try 
         {
-            var result = global::gnuciDictionary.EnglishDictionary.Define(word.Trim());
-            return result != null && result.Any();
+            var cleanWord = word.Trim();
+            var result = global::gnuciDictionary.EnglishDictionary.Define(cleanWord);
+            if (result != null && result.Any()) return true;
+
+            // Plural fallback: If word ends in 's', try singular
+            if (cleanWord.EndsWith("s", StringComparison.OrdinalIgnoreCase) && cleanWord.Length > 2) // >2 to avoid 'is', 'as' issues if not in dict
+            {
+                var singular = cleanWord.Substring(0, cleanWord.Length - 1);
+                var singularResult = global::gnuciDictionary.EnglishDictionary.Define(singular);
+                return singularResult != null && singularResult.Any();
+            }
+            
+            return false;
         }
         catch 
         {

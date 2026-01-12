@@ -230,7 +230,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   }
 
   getQrCodeUrl(): string {
-    const url = globalThis.location.origin + '/join/' + this.roomCode;
+    const url = globalThis.location.origin + '/game/' + this.roomCode;
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&bgcolor=ffffff`;
   }
 

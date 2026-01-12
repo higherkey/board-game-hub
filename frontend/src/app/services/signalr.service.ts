@@ -121,18 +121,22 @@ export class SignalRService {
 
     this.hubConnection.on('GameStarted', (room: Room) => {
       this.currentRoomSubject.next(room);
+      this.players$.next(room.players);
     });
 
     this.hubConnection.on('GamePaused', (room: Room) => {
       this.currentRoomSubject.next(room);
+      this.players$.next(room.players);
     });
 
     this.hubConnection.on('GameResumed', (room: Room) => {
       this.currentRoomSubject.next(room);
+      this.players$.next(room.players);
     });
 
     this.hubConnection.on('RoundEnded', (room: Room) => {
       this.currentRoomSubject.next(room);
+      this.players$.next(room.players);
     });
 
     this.hubConnection.on('GameTypeChanged', (gameType: string) => {
