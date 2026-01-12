@@ -151,6 +151,24 @@ public class RoomService : IRoomService
         return room;
     }
 
+    public Room? ChangeRole(string connectionId, bool isScreen)
+    {
+        if (_connectionRoomMap.TryGetValue(connectionId, out var roomCode))
+        {
+            if (_rooms.TryGetValue(roomCode, out var room))
+            {
+                var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+                if (player != null)
+                {
+                    player.IsScreen = isScreen;
+                    NotifyStatsChanged();
+                    return room;
+                }
+            }
+        }
+        return null;
+    }
+
     public Room? GetRoom(string code)
     {
         _rooms.TryGetValue(code.ToUpper(), out var room);

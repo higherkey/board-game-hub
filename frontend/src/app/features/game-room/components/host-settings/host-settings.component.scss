@@ -13,7 +13,7 @@
 
 .settings-grid {
     display: grid;
-    grid-template-columns: 180px 1fr 1fr;
+    grid-template-columns: 220px 1fr 1fr;
     gap: 1.5rem;
     text-align: left;
 
@@ -121,6 +121,7 @@
 
 .qr-box {
     border: 1px solid #eee;
+    flex-shrink: 0;
 
     img {
         display: block;

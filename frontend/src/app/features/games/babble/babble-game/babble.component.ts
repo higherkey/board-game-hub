@@ -60,6 +60,9 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   lastRoundResults: any[] = [];
   selectedWord: any = null;
 
+  ngOnInit() {
+  }
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['room'] && this.room) {
       this.updateStateFromRoom();
@@ -76,17 +79,24 @@ export class BabbleComponent implements OnChanges, OnDestroy {
       this.lastRoundResults = data.lastRoundResults;
     }
 
-    if (data?.grid) {
-      this.processGridUpdate(data.grid);
+    const grid = data?.grid || data?.Grid;
+    if (grid) {
+      this.processGridUpdate(grid);
     }
 
     this.isPlaying ? this.startTimer() : this.stopTimer();
 
     // Blur Logic
-    if (this.isFinished || this.isPaused) {
+    if (this.isFinished) {
       this.isBlurred = false;
+    } else if (this.isPaused) {
+      this.isBlurred = true;
     } else if (this.isPlaying && this.isBlurred && this.room?.roundNumber === this.lastHandledRound) {
-      // Already handling this round
+      // If we are playing, blurred, and it's not a new round:
+      // Check if we should un-blur (e.g. came back from pause or countdown finished)
+      if (this.countdownSeconds <= 0 && !this.isPaused) {
+        this.isBlurred = false;
+      }
     } else if (this.isPlaying && this.room?.roundNumber !== this.lastHandledRound) {
       // New Round Started
       this.lastHandledRound = this.room?.roundNumber || 0;
@@ -102,7 +112,9 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     const interval = setInterval(() => {
       this.countdownSeconds--;
       if (this.countdownSeconds <= 0) {
-        this.isBlurred = false;
+        if (!this.isPaused) {
+          this.isBlurred = false;
+        }
         clearInterval(interval);
       }
     }, 1000);
@@ -127,6 +139,12 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
     this.timerInterval = setInterval(() => {
       if (!this.room?.roundEndTime) {
+        this.timerText = '--:--';
+        return;
+      }
+
+      // Don't show timer during countdown
+      if (this.countdownSeconds > 0) {
         this.timerText = '--:--';
         return;
       }

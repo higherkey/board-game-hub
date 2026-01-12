@@ -25,12 +25,12 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Output() gameStart = new EventEmitter<GameSettings>();
   @Output() nextRound = new EventEmitter<GameSettings>();
   @Output() endGame = new EventEmitter<void>();
+  @Output() exitGame = new EventEmitter<void>();
   @Output() toggleReady = new EventEmitter<void>();
 
   selectedGameType = 'None';
   availableGames: GameDefinition[] = [];
   gameSearchQuery = '';
-  showReadyConfirmation = false;
 
   settings: GameSettings = {
     timerDurationSeconds: 60,
@@ -96,7 +96,6 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     if (type !== this.selectedGameType) {
       this.selectedGameType = type;
       this.syncSelectedGame();
-      this.showReadyConfirmation = false;
     }
   }
 
@@ -199,17 +198,20 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     this.signalRService.updateUndoSettings(this.undoSettings);
   }
 
-  startGame(force = false) {
+  startGame() {
     const playersOnly = this.players.filter(p => !p.isScreen);
     const readyPlayers = playersOnly.filter(p => p.isReady).length;
     const totalPlayers = playersOnly.length;
 
-    if (!force && totalPlayers > 1 && readyPlayers < totalPlayers) {
-      this.showReadyConfirmation = true;
+    if (totalPlayers === 0) {
+      alert('Cannot start the game! No players in the room.');
       return;
     }
 
-    this.showReadyConfirmation = false;
+    if (readyPlayers < totalPlayers) {
+      alert(`Cannot start the game! ${totalPlayers - readyPlayers} player(s) are not ready.`);
+      return;
+    }
 
     if (this.isIntermission) {
       // Check for Game Over condition (Soft Stop)
@@ -223,8 +225,8 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     }
   }
 
-  emitEndGame() {
-    this.endGame.emit();
+  emitExitGame() {
+    this.exitGame.emit();
   }
 
   getQrCodeUrl(): string {
@@ -233,6 +235,10 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   }
 
   onToggleReady() {
+    if (this.selectedGameType === 'None') {
+      alert('Please select a game first!');
+      return;
+    }
     this.toggleReady.emit();
   }
 }

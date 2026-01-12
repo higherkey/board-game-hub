@@ -210,7 +210,7 @@ describe('SignalRService', () => {
       const callback = getCallback('PlayerJoined');
       expect(callback).toBeDefined();
 
-      const players = [{ connectionId: '1', name: 'P1', score: 0, isHost: true }];
+      const players = [{ connectionId: '1', name: 'P1', score: 0, isHost: true, isReady: true, isScreen: false }];
       callback(players);
       expect(service.players$.value).toEqual(players);
     });

@@ -50,7 +50,7 @@
 
         <!-- End Game Button (Host Only) -->
         <button class="btn btn-outline-danger btn-sm ms-3 fw-bold" *ngIf="(isHost$ | async) && (gameStarted$ | async)"
-            (click)="onEndGame()" title="End Game Session">
+            (click)="onExitGame()" title="End Game Session">
             <i class="bi bi-stop-circle-fill me-1"></i> END GAME
         </button>
 
@@ -94,7 +94,15 @@
                         *ngFor="let s of getTables(players$ | async)">
                         <i class="bi bi-display text-accent"></i>
                         <span class="text-truncate fw-bold text-primary">{{ s.name || 'Table' }}</span>
-                        <i *ngIf="s.isHost" class="bi bi-shield-fill text-accent ms-auto" title="Host Table"></i>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                            <span *ngIf="s.isHost" class="badge bg-warning text-dark x-small fw-bold">HOST</span>
+                            <i *ngIf="s.isHost" class="bi bi-patch-check-fill text-warning" title="Room Host"></i>
+                            <button *ngIf="s.connectionId === (connectionId$ | async)"
+                                class="btn btn-xs btn-outline-secondary rounded-circle p-1 text-white border-white-50"
+                                (click)="changeRole(false)" title="Switch to Player Role">
+                                <i class="bi bi-person-fill"></i>
+                            </button>
+                        </div>
                     </li>
                     <li *ngIf="getTables(players$ | async).length === 0" class="list-group-item text-muted x-small">No
                         tables</li>
@@ -126,14 +134,25 @@
                                     style="width: 8px; height: 8px;"></div>
                             </div>
                             <div class="flex-grow-1 text-truncate">
-                                <span class="fw-bold text-primary">{{ p.name }}</span>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="fw-bold text-primary">{{ p.name }}</span>
+                                    <span *ngIf="p.isHost" class="badge bg-warning text-dark x-small fw-bold p-1"
+                                        style="font-size: 0.5rem;">HOST</span>
+                                </div>
                                 <div class="x-small text-muted text-uppercase ls-wide" style="font-size: 0.6rem;">
                                     {{ p.userId ? 'User' : 'Guest' }}
                                 </div>
                             </div>
-                            <i *ngIf="p.isHost" class="bi bi-shield-fill text-accent small ms-1" title="Host"></i>
-                            <span class="badge rounded-pill bg-brand-light text-brand-blue ms-2">{{ p.score || 0
-                                }}</span>
+                            <div class="ms-auto d-flex align-items-center gap-2">
+                                <i *ngIf="p.isHost" class="bi bi-patch-check-fill text-warning small" title="Host"></i>
+                                <button *ngIf="p.connectionId === (connectionId$ | async)"
+                                    class="btn btn-xs btn-outline-secondary rounded-circle p-1"
+                                    (click)="changeRole(true)" title="Switch to Table Role">
+                                    <i class="bi bi-display"></i>
+                                </button>
+                                <span class="badge rounded-pill bg-brand-light text-brand-blue">{{ p.score || 0
+                                    }}</span>
+                            </div>
                         </li>
                     </ul>
 
@@ -206,20 +225,39 @@
 
 
 
-                            <div class="mb-4 text-start d-flex align-items-center">
-                                <div class="form-check form-switch me-4">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="isScreenSwitch"
-                                        [(ngModel)]="isScreen" [checked]="isScreen" [attr.aria-checked]="isScreen"
-                                        aria-checked="true">
-                                    <label class="form-check-label fw-bold text-secondary" for="isScreenSwitch"
-                                        title="Use this mode if this device is a TV or shared monitor for everyone to see.">
-                                        Join as Table (Shared Screen)
-                                    </label>
+                            <div class="mb-4 text-start">
+                                <label for="joinPlayer" id="joinAsLabel"
+                                    class="form-label fw-bold text-secondary mb-3">Join As:</label>
+                                <div class="d-flex gap-3" role="radiogroup" aria-labelledby="joinAsLabel">
+                                    <div class="flex-grow-1">
+                                        <input type="radio" class="btn-check" name="joinType" id="joinPlayer"
+                                            value="player" [(ngModel)]="joinType">
+                                        <label
+                                            class="btn btn-outline-secondary w-100 py-3 d-flex flex-column align-items-center gap-2"
+                                            for="joinPlayer">
+                                            <i class="bi bi-phone-fill fs-3"></i>
+                                            <span class="fw-bold">PLAYER</span>
+                                            <small class="opacity-75">Use your mobile phone</small>
+                                        </label>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <input type="radio" class="btn-check" name="joinType" id="joinTable"
+                                            value="table" [(ngModel)]="joinType">
+                                        <label
+                                            class="btn btn-outline-secondary w-100 py-3 d-flex flex-column align-items-center gap-2"
+                                            for="joinTable">
+                                            <i class="bi bi-display-fill fs-3"></i>
+                                            <span class="fw-bold">TABLE</span>
+                                            <small class="opacity-75">Shared screen / TV</small>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div *ngIf="isCreating" class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="publicSwitch"
-                                        [(ngModel)]="isPublic" [checked]="isPublic" [attr.aria-checked]="isPublic"
-                                        aria-checked="true">
+                            </div>
+
+                            <div *ngIf="isCreating" class="mb-4 text-start">
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" id="publicSwitch"
+                                        [(ngModel)]="isPublic">
                                     <label class="form-check-label fw-bold text-secondary" for="publicSwitch">
                                         Public Room
                                     </label>
@@ -257,22 +295,21 @@
                                     [players]="(players$ | async) || []" [isHost]="(isHost$ | async) || false"
                                     [meReady]="(me$ | async)?.isReady || false"
                                     [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
-                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()"
+                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()"
                                     (toggleReady)="toggleReady()">
                                 </app-host-settings>
-                            </div>
 
-                            <!-- Waiting Message for non-Hosts (if we want to emphasize it outside the settings card) -->
-                            <div *ngIf="!(isHost$ | async)" class="mt-4">
-                                <p class="text-secondary opacity-50 small italic">The host is preparing the session...
-                                </p>
                             </div>
                         </div>
+
+                        <!-- Waiting Message for non-Hosts (if we want to emphasize it outside the settings card) -->
+                        <div *ngIf="!(isHost$ | async)" class="mt-4">
+                            <p class="text-secondary opacity-50 small italic">The host is preparing the session...
+                            </p>
+                        </div>
                     </div>
-
                     <!-- ACTIVE GAME STATE -->
-                    <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in">
-
+                    <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in position-relative">
 
                         <ng-container *ngIf="gameComponent">
                             <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
@@ -294,96 +331,96 @@
                                     [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                                     [currentRound]="(currentRoom$ | async)?.roundNumber || 0"
                                     [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
-                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()">
+                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()">
                                 </app-host-settings>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- PLAYER VIEW -->
-                    <ng-template #playerView>
-                        <div class="d-flex flex-column justify-content-center h-100">
-                            <!-- Dynamic Game Component -->
-                            <ng-container *ngIf="gameComponent">
-                                <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
-                            </ng-container>
+                <!-- PLAYER VIEW -->
+                <ng-template #playerView>
+                    <div class="d-flex flex-column justify-content-center h-100">
+                        <!-- Dynamic Game Component -->
+                        <ng-container *ngIf="gameComponent">
+                            <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
+                        </ng-container>
 
-                            <div *ngIf="!gameComponent"
-                                class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
-                                <p>Game component not found.</p>
-                            </div>
+                        <div *ngIf="!gameComponent"
+                            class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
+                            <p>Game component not found.</p>
                         </div>
-                    </ng-template>
-
-                </div>
+                    </div>
+                </ng-template>
 
             </div>
+
         </div>
     </div>
-
-
-    <!-- 3. MOBILE TAB BAR (Small Screens Only) -->
-    <app-mobile-tab-bar *ngIf="!needsName" [activeTab]="mobileView" [isHost]="(isHost$ | async) || false"
-        (tabChange)="setMobileView($event)">
-    </app-mobile-tab-bar>
-
-    <!-- HOST TAB CONTENT (Mobile Only) -->
-    <div class="d-md-none bg-surface-2 position-absolute top-0 start-0 w-100 h-100 p-3 pt-5"
-        *ngIf="mobileView === 'host'"
-        style="z-index: 1040; margin-top: 60px; padding-bottom: 80px !important; overflow-y: auto;">
-
-        <div class="container" style="max-width: 600px;">
-            <h4 class="text-pink fw-bold mb-4 text-center">
-                <i class="bi bi-star-fill me-2"></i>Host Controls
-            </h4>
-
-            <!-- Dynamic Host Controls from Active Game -->
-            <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-4">
-                <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
-            </div>
-
-            <div class="card shadow border-pink">
-                <!-- Reusing Host Settings Component -->
-                <div class="card-header bg-white border-bottom-0 pt-3">
-                    <h6 class="fw-bold text-secondary text-uppercase mb-0">Game Settings</h6>
-                </div>
-                <div class="card-body">
-                    <app-host-settings [roomCode]="roomCode" [compactMode]="true"
-                        [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                        [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
-                        [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
-                        (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (toggleReady)="toggleReady()">
-                    </app-host-settings>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-    <!-- Undo Confirmation Modal -->
-
-    <dialog #undoDialog class="border-0 p-0 bg-transparent rounded-3">
-        <div class="modal-dialog modal-dialog-centered m-0">
-            <div class="modal-content bg-surface shadow-lg border-pink">
-                <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title text-pink fw-bold"><i
-                            class="bi bi-exclamation-triangle-fill me-2"></i>Request
-                        Undo?</h5>
-                    <button type="button" class="btn-close" (click)="cancelUndo()" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-secondary mb-0">This will pause the game and ask all players to vote on the undo.
-                        Are you
-                        sure you want to proceed?</p>
-                </div>
-                <div class="modal-footer border-top-0 pt-0">
-                    <button type="button" class="btn btn-ghost text-secondary" (click)="cancelUndo()">Cancel</button>
-                    <button type="button" class="btn btn-pink px-4 text-white fw-bold" (click)="confirmUndo()">
-                        Yes, Request Undo
-                    </button>
-                </div>
-            </div>
-        </div>
-    </dialog>
 </div>
+
+
+<!-- 3. MOBILE TAB BAR (Small Screens Only) -->
+<app-mobile-tab-bar *ngIf="!needsName" [activeTab]="mobileView" [isHost]="(isHost$ | async) || false"
+    (tabChange)="setMobileView($event)">
+</app-mobile-tab-bar>
+
+<!-- HOST TAB CONTENT (Mobile Only) -->
+<div class="d-md-none bg-surface-2 position-absolute top-0 start-0 w-100 h-100 p-3 pt-5"
+    *ngIf="mobileView === 'host' && (isHost$ | async)"
+    style="z-index: 1040; margin-top: 60px; padding-bottom: 80px !important; overflow-y: auto;">
+
+    <div class="container" style="max-width: 600px;">
+        <h4 class="text-pink fw-bold mb-4 text-center">
+            <i class="bi bi-star-fill me-2"></i>Host Controls
+        </h4>
+
+        <!-- Dynamic Host Controls from Active Game -->
+        <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-4">
+            <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
+        </div>
+
+        <div class="card shadow border-pink">
+            <!-- Reusing Host Settings Component -->
+            <div class="card-header bg-white border-bottom-0 pt-3">
+                <h6 class="fw-bold text-secondary text-uppercase mb-0">Game Settings</h6>
+            </div>
+            <div class="card-body">
+                <app-host-settings [roomCode]="roomCode" [compactMode]="true"
+                    [currentGameType]="(currentRoom$ | async)?.gameType || ''"
+                    [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
+                    [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
+                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()"
+                    (toggleReady)="toggleReady()">
+                </app-host-settings>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Undo Confirmation Modal -->
+
+<dialog #undoDialog class="border-0 p-0 bg-transparent rounded-3">
+    <div class="modal-dialog modal-dialog-centered m-0">
+        <div class="modal-content bg-surface shadow-lg border-pink">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title text-pink fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Request
+                    Undo?</h5>
+                <button type="button" class="btn-close" (click)="cancelUndo()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary mb-0">This will pause the game and ask all players to vote on the undo.
+                    Are you
+                    sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-ghost text-secondary" (click)="cancelUndo()">Cancel</button>
+                <button type="button" class="btn btn-pink px-4 text-white fw-bold" (click)="confirmUndo()">
+                    Yes, Request Undo
+                </button>
+            </div>
+        </div>
+    </div>
+</dialog>

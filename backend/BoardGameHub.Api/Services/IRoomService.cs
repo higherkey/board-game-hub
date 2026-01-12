@@ -13,6 +13,7 @@ public interface IRoomService
     List<Room> GetPublicRooms();
     Room? SetHostPlayer(string code, string connectionId);
     Room? RenamePlayer(string connectionId, string newName);
+    Room? ChangeRole(string connectionId, bool isScreen);
     void TerminateRoom(string code);
 
     // Game Flow

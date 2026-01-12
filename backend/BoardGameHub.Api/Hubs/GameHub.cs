@@ -100,10 +100,10 @@ public class GameHub : Hub
             var room = _roomService.SetGameType(roomCode, type);
             if (room != null)
             {
-                await Clients.Group(roomCode).SendAsync("GameTypeChanged", type.ToString());
+                await Clients.Group(roomCode.ToUpper()).SendAsync("GameTypeChanged", type.ToString());
                 // Global broadcast for Active Tables list
-                await Clients.All.SendAsync("RoomGameTypeChanged", roomCode, type.ToString());
-                await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+                await Clients.All.SendAsync("RoomGameTypeChanged", roomCode.ToUpper(), type.ToString());
+                await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
             }
         }
     }
@@ -113,7 +113,7 @@ public class GameHub : Hub
         var room = _roomService.SetHostPlayer(roomCode, targetConnectionId);
         if (room != null)
         {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
         }
     }
 
@@ -124,7 +124,7 @@ public class GameHub : Hub
             var room = _roomService.VoteNextGame(roomCode, Context.ConnectionId, type);
             if (room != null)
             {
-               await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+               await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
             }
         }
     }
@@ -134,8 +134,8 @@ public class GameHub : Hub
         var room = _roomService.UpdateSettings(roomCode, settings);
         if (room != null)
         {
-            await Clients.Group(roomCode).SendAsync("SettingsUpdated", settings);
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+            await Clients.Group(roomCode.ToUpper()).SendAsync("SettingsUpdated", settings);
+            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
         }
     }
 
@@ -144,7 +144,7 @@ public class GameHub : Hub
         var room = _roomService.UpdateUndoSettings(roomCode, settings);
         if (room != null)
         {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
         }
     }
 
@@ -156,12 +156,12 @@ public class GameHub : Hub
             // If room returned, check if Vote started or Undo happened
             if (room.CurrentVote != null)
             {
-                await Clients.Group(roomCode).SendAsync("UndoVoteStarted", room.CurrentVote);
+                await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteStarted", room.CurrentVote);
             }
             else
             {
                 // Immediate undo happened
-                await Clients.Group(roomCode).SendAsync("GameRestored", room);
+                await Clients.Group(roomCode.ToUpper()).SendAsync("GameRestored", room);
             }
         }
     }
@@ -181,13 +181,13 @@ public class GameHub : Hub
                 // Client gets "RoomUpdated" or "GameRestored".
                 // Let's send "GameRestored" if it worked (checking history stack change? No.)
                 // Let's just send "RoomUpdated" and an explicit "UndoVoteFinished" message?
-                await Clients.Group(roomCode).SendAsync("UndoVoteFinished", "Vote Completed"); // Generic
-                await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+                await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteFinished", "Vote Completed"); // Generic
+                await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
             }
             else
             {
                  // Vote updated but still ongoing
-                 await Clients.Group(roomCode).SendAsync("UndoVoteUpdate", room.CurrentVote);
+                 await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteUpdate", room.CurrentVote);
             }
         }
     }
@@ -230,6 +230,15 @@ public class GameHub : Hub
             // Broadcast generic PlayerJoined to update the list, or we could make a specific PlayerRenamed event
             // Re-using PlayerJoined is easiest for now as the frontend likely just refreshes the list.
             await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
+        }
+    }
+
+    public async Task ChangeRole(bool isScreen)
+    {
+        var room = _roomService.ChangeRole(Context.ConnectionId, isScreen);
+        if (room != null)
+        {
+            await Clients.Group(room.Code).SendAsync("RoomUpdated", room);
         }
     }
 

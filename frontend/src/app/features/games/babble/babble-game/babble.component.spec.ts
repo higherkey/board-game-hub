@@ -1,5 +1,5 @@
-
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from '@angular/core/testing';
+import { SimpleChanges } from '@angular/core';
 import { BabbleComponent } from './babble.component';
 import { SignalRService } from '../../../../services/signalr.service';
 import { FormsModule } from '@angular/forms';
@@ -44,4 +44,61 @@ describe('BabbleComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy();
     });
+
+    it('should be blurred when paused', () => {
+        component.isBlurred = false;
+        component.room = createMockRoom({
+            gameType: 'Babble',
+            isPaused: true,
+            state: 'Playing'
+        });
+
+        // Trigger ngOnChanges logic manually if needed, or rely on updateStateFromRoom if called
+        // Since updateStateFromRoom is private, we can simulate the effect by calling ngOnChanges or exposing it.
+        // However, looking at the code, ngOnChanges calls updateStateFromRoom.
+
+        // Trigger ngOnChanges logic manually
+        const changes: any = {
+            room: {
+                previousValue: null,
+                currentValue: component.room,
+                firstChange: true,
+                isFirstChange: () => true
+            }
+        };
+
+        component.ngOnChanges(changes);
+
+        expect(component.isBlurred).toBeTrue();
+    });
+
+    it('should not show timer text during countdown', fakeAsync(() => {
+        component.countdownSeconds = 3;
+        component.room = createMockRoom({
+            gameType: 'Babble',
+            state: 'Playing',
+            roundEndTime: new Date(Date.now() + 10000).toISOString()
+        });
+
+        // We need to access private startTimer or trigger it via ngOnChanges
+        component.ngOnChanges({
+            room: {
+                previousValue: null,
+                currentValue: component.room,
+                firstChange: true,
+                isFirstChange: () => true
+            }
+        });
+
+        tick(500); // Advance timer interval
+
+        expect(component.timerText).toBe('--:--');
+
+        component.countdownSeconds = 0;
+        tick(500);
+
+        expect(component.timerText).not.toBe('--:--');
+
+        discardPeriodicTasks();
+    }));
 });

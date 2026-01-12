@@ -17,7 +17,7 @@ describe('DeepfakeGameComponent', () => {
             submitDeepfakeStroke: jasmine.createSpy('submitDeepfakeStroke'),
             submitDeepfakeVote: jasmine.createSpy('submitDeepfakeVote'),
             submitDeepfakeAiGuess: jasmine.createSpy('submitDeepfakeAiGuess'),
-            submitDeepfakeAiGuess: jasmine.createSpy('submitDeepfakeAiGuess'),
+
             nextRound: jasmine.createSpy('nextRound'),
             currentRoom$: { subscribe: () => { } } // Mock observable subscription
         };
@@ -90,4 +90,4 @@ describe('DeepfakeGameComponent', () => {
         expect(mockSignalRService.nextRound).toHaveBeenCalled();
     });
 });
-});
+

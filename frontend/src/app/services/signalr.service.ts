@@ -485,6 +485,10 @@ export class SignalRService {
   public async toggleReady(roomCode: string, forcedState?: boolean): Promise<void> {
     await this.hubConnection.invoke('ToggleReady', roomCode, forcedState);
   }
+
+  public async changeRole(isScreen: boolean): Promise<void> {
+    await this.hubConnection.invoke('ChangeRole', isScreen);
+  }
   // ... rest of file
 
   public async setHostPlayer(roomCode: string, targetId: string): Promise<void> {

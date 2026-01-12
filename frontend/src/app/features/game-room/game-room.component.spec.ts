@@ -75,11 +75,15 @@ describe('GameRoomComponent', () => {
       currentRoom$: roomSubject.asObservable(),
       connectionStatus$: connectionSubject.asObservable(),
       currentRoomSubject: currentRoomSubject, // Added missing subject
+      me$: new BehaviorSubject(null),
+      connectionId$: new BehaviorSubject('conn1'),
+      isHost$: new BehaviorSubject(false),
       startConnection: jasmine.createSpy('startConnection').and.returnValue(Promise.resolve()),
       joinRoom: jasmine.createSpy('joinRoom').and.returnValue(Promise.resolve(true)),
       removeActiveRoom: jasmine.createSpy('removeActiveRoom'),
       startGame: jasmine.createSpy('startGame'),
-      getConnectionId: jasmine.createSpy('getConnectionId').and.returnValue('conn1')
+      getConnectionId: jasmine.createSpy('getConnectionId').and.returnValue('conn1'),
+      setGameType: jasmine.createSpy('setGameType')
     };
 
     mockActivatedRoute = {
@@ -171,5 +175,12 @@ describe('GameRoomComponent', () => {
     const settings: any = { timerDurationSeconds: 60 };
     component.startGame(settings);
     expect(mockSignalRService.startGame).toHaveBeenCalledWith(settings);
+  });
+
+  it('should call setGameType None on exitGame', async () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    component.roomCode = 'TEST';
+    await component.onExitGame();
+    expect(mockSignalRService.setGameType).toHaveBeenCalledWith('TEST', 'None');
   });
 });

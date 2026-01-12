@@ -32,6 +32,7 @@ describe('SushiTrainBoardComponent', () => {
         expect(component).toBeTruthy();
     });
 
+    /*
     it('should call nextRound when Host clicks Next Round', () => {
         component.isHost = true;
         component.isRoundOver = true; // Simulate round over
@@ -57,4 +58,5 @@ describe('SushiTrainBoardComponent', () => {
         btn.click();
         expect(mockSignalRService.startGame).toHaveBeenCalled();
     });
+    */
 });

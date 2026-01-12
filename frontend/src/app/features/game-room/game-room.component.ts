@@ -42,6 +42,7 @@ export class GameRoomComponent implements OnInit {
   promptPlayerName = '';
   players$: Observable<Player[]>;
   connectionStatus$: Observable<string>;
+  connectionId$: Observable<string | null>;
   gameStarted$: Observable<boolean>;
   session$: Observable<any>;
   isHost$: Observable<boolean>;
@@ -63,6 +64,7 @@ export class GameRoomComponent implements OnInit {
 
   // Session flags
   isScreen = false;
+  joinType: 'player' | 'table' | null = null;
 
   // Desktop Big Screen Mode (Theatre Mode)
   isBigScreen = false;
@@ -104,7 +106,7 @@ export class GameRoomComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly signalRService: SignalRService,
+    public readonly signalRService: SignalRService,
     private readonly router: Router,
     // authService injected via property
     private readonly toastService: ToastService,
@@ -115,10 +117,16 @@ export class GameRoomComponent implements OnInit {
     this.connectionStatus$ = this.signalRService.connectionStatus$;
     this.currentRoom$ = this.signalRService.currentRoom$;
     this.me$ = this.signalRService.me$;
+    this.connectionId$ = this.signalRService.connectionId$;
 
     // Subscribe to room updates to select component
     this.currentRoom$.subscribe(room => {
       if (room) {
+        // Sync local isScreen state with the server-side player state
+        const me = room.players.find(p => p.connectionId === this.signalRService.getConnectionId());
+        if (me) {
+          this.isScreen = me.isScreen;
+        }
         this.updateActiveGame(room);
 
         // If host joins a fresh lobby with a pre-selected game type from query params, apply it
@@ -211,9 +219,15 @@ export class GameRoomComponent implements OnInit {
     });
     this.gameDataService.refreshGames();
 
-    // Auto-detect table mode for desktop
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    this.isScreen = !isMobile;
+    // Restore role from localStorage if available
+    const savedRole = localStorage.getItem('bgh_preferred_role');
+    if (savedRole) {
+      this.joinType = savedRole as 'player' | 'table';
+      this.isScreen = this.joinType === 'table';
+    } else {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      this.isScreen = !isMobile;
+    }
 
     const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
 
@@ -221,16 +235,16 @@ export class GameRoomComponent implements OnInit {
       if (guestName) this.promptPlayerName = guestName;
       this.needsName = true; // Always show setup form when creating
     } else if (guestName) {
-      this.autoJoin(guestName);
+      this.autoJoin(guestName, this.isScreen);
     } else {
       this.needsName = true;
     }
   }
 
-  private autoJoin(name: string) {
+  private autoJoin(name: string, isScreen: boolean = false) {
     const currentRoom = this.signalRService.currentRoomSubject.value;
     if (!currentRoom || currentRoom.code !== this.roomCode) {
-      this.signalRService.joinRoom(this.roomCode, name).then(success => {
+      this.signalRService.joinRoom(this.roomCode, name, isScreen).then(success => {
         if (!success) {
           this.toastService.showError(`Room ${this.roomCode} not found or no longer active.`);
           this.signalRService.removeActiveRoom(this.roomCode);
@@ -242,6 +256,10 @@ export class GameRoomComponent implements OnInit {
 
   async submitEntry() {
     if (!this.promptPlayerName) return;
+    if (!this.joinType) {
+      this.toastService.showError('Please select whether you are joining as a Player or a Table.');
+      return;
+    }
 
     this.authService.setGuestName(this.promptPlayerName);
     this.needsName = false;
@@ -252,7 +270,7 @@ export class GameRoomComponent implements OnInit {
           this.promptPlayerName,
           this.isPublic,
           this.selectedGameType,
-          this.isScreen
+          this.joinType === 'table'
         );
         this.router.navigate(['/game', newCode]);
       } catch (err) {
@@ -263,6 +281,13 @@ export class GameRoomComponent implements OnInit {
     } else {
       await this.signalRService.joinRoom(this.roomCode, this.promptPlayerName, this.isScreen);
     }
+  }
+
+  async changeRole(isScreen: boolean) {
+    this.isScreen = isScreen;
+    this.joinType = isScreen ? 'table' : 'player';
+    localStorage.setItem('bgh_preferred_role', this.joinType);
+    await this.signalRService.changeRole(isScreen);
   }
 
 
@@ -282,8 +307,18 @@ export class GameRoomComponent implements OnInit {
   }
 
   async onEndGame() {
-    if (confirm('Are you sure you want to end the game session?')) {
+    // This is for "Finish Game" (Results), usually called when max rounds reached
+    if (confirm('Are you sure you want to finish the game and see results?')) {
       await this.signalRService.endGame();
+    }
+  }
+
+  async onExitGame() {
+    // This is for "End Session" (Return to Lobby)
+    if (confirm('Are you sure you want to end the session and return to the lobby?')) {
+      if (this.roomCode) {
+        await this.signalRService.setGameType(this.roomCode, 'None');
+      }
     }
   }
 
@@ -351,7 +386,13 @@ export class GameRoomComponent implements OnInit {
       isHost: this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '')
     };
 
-    const gameConfig = GAME_REGISTRY[room.gameType];
+    let gameConfig = GAME_REGISTRY[room.gameType];
+
+    // Fallback for case mismatches (e.g., "BABBLE" vs "Babble")
+    if (!gameConfig && room.gameType) {
+      const pascalCase = room.gameType.charAt(0).toUpperCase() + room.gameType.slice(1).toLowerCase();
+      gameConfig = GAME_REGISTRY[pascalCase];
+    }
 
     if (gameConfig) {
       const isHost = this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '');
