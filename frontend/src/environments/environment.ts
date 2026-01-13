@@ -1,5 +1,6 @@
 export const environment = {
     production: false,
     apiUrl: '/api',
-    hubUrl: ''
+    hubUrl: '',
+    logLevel: 0 // LogLevel.DEBUG
 };

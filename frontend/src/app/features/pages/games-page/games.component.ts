@@ -61,7 +61,9 @@ export class GamesComponent implements OnInit {
     }
 
     applyFilters() {
-        let result = [...this.games];
+        // Only show Deployed, Testing, or InDevelopment in the main library
+        const visibleStatuses = new Set(['Deployed', 'Testing', 'InDevelopment']);
+        let result = this.games.filter(g => visibleStatuses.has(g.status));
 
         // Search
         if (this.searchQuery) {

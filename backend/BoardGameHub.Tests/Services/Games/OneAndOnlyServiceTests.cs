@@ -68,4 +68,43 @@ public class OneAndOnlyServiceTests
         state.Phase.Should().Be(OneAndOnlyPhase.Guessing);
         state.InvalidClues.Should().Contain(new[] { "CAR", "CARS" });
     }
+    [Fact]
+    public void SubmitGuess_Correct_ShouldIncrementSuccess()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "g" } } };
+        var state = new OneAndOnlyState { Phase = OneAndOnlyPhase.Guessing, GuesserId = "g", TargetWord = "Apple" };
+        room.GameData = state;
+
+        _sut.SubmitGuess(room, "Apple");
+
+        state.Phase.Should().Be(OneAndOnlyPhase.Result);
+        state.Result.Should().Be("Success");
+        state.CorrectRounds.Should().Be(1);
+    }
+
+    [Fact]
+    public void SubmitGuess_Incorrect_ShouldIncrementFailure()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "g" } } };
+        var state = new OneAndOnlyState { Phase = OneAndOnlyPhase.Guessing, GuesserId = "g", TargetWord = "Apple" };
+        room.GameData = state;
+
+        _sut.SubmitGuess(room, "Banana");
+
+        state.Result.Should().Be("Failure");
+        state.FailedRounds.Should().Be(1);
+    }
+
+    [Fact]
+    public void SubmitGuess_Pass_ShouldSetPassed()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "g" } } };
+        var state = new OneAndOnlyState { Phase = OneAndOnlyPhase.Guessing, GuesserId = "g", TargetWord = "Apple" };
+        room.GameData = state;
+
+        _sut.SubmitGuess(room, null, isPass: true);
+
+        state.Result.Should().Be("Passed");
+        state.GuesserResponse.Should().Be("[PASSED]");
+    }
 }

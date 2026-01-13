@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
@@ -31,17 +32,20 @@ public class BabbleGameService : IGameService
 {
     private readonly IBabbleService _babbleService;
     private readonly IDictionaryService _dictionaryService;
+    private readonly ILogger<BabbleGameService> _logger;
 
-    public BabbleGameService(IBabbleService babbleService, IDictionaryService dictionaryService)
+    public BabbleGameService(IBabbleService babbleService, IDictionaryService dictionaryService, ILogger<BabbleGameService> logger)
     {
         _babbleService = babbleService;
         _dictionaryService = dictionaryService;
+        _logger = logger;
     }
 
     public GameType GameType => GameType.Babble;
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Babble round in room {Code}", room.Code);
         var state = new BabbleState
         {
             IsPlaying = true,

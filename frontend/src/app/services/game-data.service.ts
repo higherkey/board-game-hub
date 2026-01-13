@@ -8,7 +8,7 @@ export interface GameDefinition {
     name: string;
     icon: string;
     description: string;
-    status: 'Deployed' | 'Testing' | 'Backlog';
+    status: 'Deployed' | 'Testing' | 'InDevelopment' | 'Backlog';
     minPlayers: number;
     maxPlayers: number;
     complexity: number;
@@ -67,7 +67,8 @@ export class GameDataService {
         switch (status) {
             case 0: return 'Deployed';
             case 1: return 'Testing';
-            case 2: return 'Backlog';
+            case 2: return 'InDevelopment';
+            case 3: return 'Backlog';
             default: return 'Unknown';
         }
     }

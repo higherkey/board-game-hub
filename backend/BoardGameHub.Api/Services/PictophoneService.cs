@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -6,10 +7,17 @@ namespace BoardGameHub.Api.Services;
 
 public class PictophoneService : IGameService
 {
+    private readonly ILogger<PictophoneService> _logger;
     public GameType GameType => GameType.Pictophone;
+
+    public PictophoneService(ILogger<PictophoneService> logger)
+    {
+        _logger = logger;
+    }
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Pictophone round in room {Code}", room.Code);
         // Initialize State
         var state = new PictophoneState();
         

@@ -1,11 +1,18 @@
 using BoardGameHub.Api.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
 public class WisecrackGameService : IGameService
 {
+    private readonly ILogger<WisecrackGameService> _logger;
     public GameType GameType => GameType.Wisecrack;
+
+    public WisecrackGameService(ILogger<WisecrackGameService> logger)
+    {
+        _logger = logger;
+    }
 
     private readonly List<string> _prompts = new()
     {
@@ -33,6 +40,7 @@ public class WisecrackGameService : IGameService
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Wisecrack round in room {Code}", room.Code);
         // 1. Determine Phase based on Round Number
         // Fix: Use room.RoundNumber directly instead of resetting to 1
         int currentRound = room.RoundNumber;

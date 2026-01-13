@@ -5,10 +5,17 @@ namespace BoardGameHub.Api.Services;
 
 public class UniversalTranslatorService : IGameService
 {
+    private readonly ILogger<UniversalTranslatorService> _logger;
     public GameType GameType => GameType.UniversalTranslator;
+
+    public UniversalTranslatorService(ILogger<UniversalTranslatorService> logger)
+    {
+        _logger = logger;
+    }
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Universal Translator round in room {Code}", room.Code);
         var state = new UniversalTranslatorState();
         
         // 1. Assign Roles

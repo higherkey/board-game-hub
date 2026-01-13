@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace BoardGameHub.Api.Services;
 
@@ -17,15 +18,18 @@ public class RoomService : IRoomService
     private readonly IEnumerable<IGameService> _gameServices;
     private readonly Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub> _adminHubContext;
     private readonly Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> _gameHubContext;
+    private readonly ILogger<RoomService> _logger;
 
     public RoomService(
         IEnumerable<IGameService> gameServices,
         Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub> adminHubContext,
-        Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> gameHubContext)
+        Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> gameHubContext,
+        ILogger<RoomService> logger)
     {
         _gameServices = gameServices;
         _adminHubContext = adminHubContext;
         _gameHubContext = gameHubContext;
+        _logger = logger;
     }
 
     public T? GetGameService<T>(GameType type) where T : class
@@ -75,6 +79,7 @@ public class RoomService : IRoomService
 
         if (_rooms.TryAdd(code, room))
         {
+            _logger.LogInformation("Room created: {Code} by {Host} (Type: {GameType})", code, hostName, gameType);
             _connectionRoomMap.TryAdd(hostConnectionId, code);
             NotifyStatsChanged();
         }
@@ -92,6 +97,7 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room))
         {
+            _logger.LogWarning("Player {Player} failed to join room {Code}: Room not found", playerName, code);
             return null;
         }
 
@@ -146,6 +152,7 @@ public class RoomService : IRoomService
 
         room.Players.Add(newPlayer);
         _connectionRoomMap.TryAdd(connectionId, code);
+        _logger.LogInformation("New player {Player} joined room {Code} (Host: {IsHost})", playerName, code, assignHost);
         
         NotifyStatsChanged();
         return room;

@@ -1,14 +1,22 @@
 using BoardGameHub.Api.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
 public class OneAndOnlyService : IGameService
 {
+    private readonly ILogger<OneAndOnlyService> _logger;
     public GameType GameType => GameType.OneAndOnly;
+
+    public OneAndOnlyService(ILogger<OneAndOnlyService> logger)
+    {
+        _logger = logger;
+    }
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting One and Only round in room {Code}", room.Code);
         // Initialize OneAndOnly State if needed
         var state = new OneAndOnlyState
         {

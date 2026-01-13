@@ -3,6 +3,7 @@ import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@micros
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { ToastService } from '../shared/services/toast.service';
 import { AuthService } from './auth.service';
+import { LoggerService } from '../core/services/logger.service';
 
 export interface GameSettings {
   timerDurationSeconds: number;
@@ -95,7 +96,8 @@ export class SignalRService {
 
   constructor(
     private readonly toastService: ToastService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly logger: LoggerService
   ) {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl('/gamehub', {
@@ -110,7 +112,24 @@ export class SignalRService {
 
     this.loadActiveRooms();
 
+    this.hubConnection.onclose((err) => {
+      this.logger.warn('SignalR Connection Closed', err);
+      this.connectionStatus$.next('Disconnected');
+    });
+
+    this.hubConnection.onreconnecting((err) => {
+      this.logger.info('SignalR Reconnecting...', err);
+      this.connectionStatus$.next('Reconnecting');
+    });
+
+    this.hubConnection.onreconnected((id) => {
+      this.logger.info('SignalR Reconnected', id);
+      this.connectionStatus$.next('Connected');
+      this.connectionId$.next(id || null);
+    });
+
     this.hubConnection.on('PlayerJoined', (players: Player[]) => {
+      this.logger.debug('SignalR Event: PlayerJoined', players);
       this.players$.next(players);
       const current = this.currentRoomSubject.value;
       if (current) {
@@ -193,6 +212,7 @@ export class SignalRService {
     });
 
     this.hubConnection.on('GameEvent', (type: string, payload: any) => {
+      this.logger.debug(`SignalR GameEvent: ${type}`, payload);
       this.gameEvents$.next({ type, payload });
     });
 

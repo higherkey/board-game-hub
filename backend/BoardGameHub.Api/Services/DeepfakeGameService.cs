@@ -42,7 +42,13 @@ public enum DeepfakePhase
 
 public class DeepfakeGameService : IGameService
 {
+    private readonly ILogger<DeepfakeGameService> _logger;
     public GameType GameType => GameType.Deepfake;
+
+    public DeepfakeGameService(ILogger<DeepfakeGameService> logger)
+    {
+        _logger = logger;
+    }
 
     private readonly Random _random = new();
 
@@ -80,6 +86,7 @@ public class DeepfakeGameService : IGameService
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Deepfake round in room {Code}", room.Code);
         var state = new DeepfakeState();
         
         // 1. Assign "Faker"

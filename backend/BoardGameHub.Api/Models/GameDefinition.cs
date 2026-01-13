@@ -6,6 +6,7 @@ public enum GameStatus
 {
     Deployed,
     Testing,
+    InDevelopment,
     Backlog
 }
 

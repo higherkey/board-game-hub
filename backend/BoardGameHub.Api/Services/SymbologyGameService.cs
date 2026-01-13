@@ -1,5 +1,7 @@
 using BoardGameHub.Api.Models;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace BoardGameHub.Api.Services;
 
@@ -25,7 +27,13 @@ public class SymbologyMarker
 
 public class SymbologyGameService : IGameService
 {
+    private readonly ILogger<SymbologyGameService> _logger;
     public GameType GameType => GameType.Symbology;
+
+    public SymbologyGameService(ILogger<SymbologyGameService> logger)
+    {
+        _logger = logger;
+    }
 
     private readonly Random _random = new();
     
@@ -41,6 +49,7 @@ public class SymbologyGameService : IGameService
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Symbology round in room {Code}", room.Code);
         // 1. Setup State
         var state = new SymbologyState();
         

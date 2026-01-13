@@ -1,14 +1,22 @@
 using BoardGameHub.Api.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
 public class SushiTrainGameService : IGameService
 {
+    private readonly ILogger<SushiTrainGameService> _logger;
     public GameType GameType => GameType.SushiTrain;
+
+    public SushiTrainGameService(ILogger<SushiTrainGameService> logger)
+    {
+        _logger = logger;
+    }
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Sushi Train round in room {Code}", room.Code);
         var state = new SushiTrainState();
         
         // Initialize Deck

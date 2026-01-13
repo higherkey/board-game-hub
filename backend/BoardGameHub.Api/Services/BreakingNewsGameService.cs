@@ -29,10 +29,17 @@ public class ScriptSlot
 
 public class BreakingNewsGameService : IGameService
 {
+    private readonly ILogger<BreakingNewsGameService> _logger;
     public GameType GameType => GameType.BreakingNews;
+
+    public BreakingNewsGameService(ILogger<BreakingNewsGameService> logger)
+    {
+        _logger = logger;
+    }
 
     public Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Breaking News round in room {Code}", room.Code);
         var state = new BreakingNewsState();
 
         // 1. Assign Anchor (Round Robin or Random)

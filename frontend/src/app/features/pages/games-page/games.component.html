@@ -101,7 +101,9 @@
                 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4 g-4">
                     <div class="col" *ngFor="let game of filteredGames">
                         <div class="card h-100 game-card glass-card " [class.deployed]="game.status === 'Deployed'"
-                            [class.testing]="game.status === 'Testing'" [class.backlog]="game.status === 'Backlog'">
+                            [class.testing]="game.status === 'Testing'"
+                            [class.in-development]="game.status === 'InDevelopment'"
+                            [class.backlog]="game.status === 'Backlog'">
 
                             <div class="card-body p-3 d-flex flex-column">
                                 <a [routerLink]="['/games', game.id]"
@@ -112,7 +114,8 @@
                                         </h5>
                                         <span *ngIf="game.status !== 'Deployed'" class="badge status-pill mt-1"
                                             [attr.data-status]="game.status">
-                                            {{ game.status === 'Testing' ? 'In Testing' : game.status }}
+                                            {{ game.status === 'Testing' ? 'In Testing' : (game.status ===
+                                            'InDevelopment' ? 'In Dev' : game.status) }}
                                         </span>
                                     </div>
                                 </a>
@@ -139,12 +142,18 @@
 
                                 <!-- Actions -->
                                 <div class="mt-3 mt-auto">
-                                    <button *ngIf="game.status === 'Deployed' || game.status === 'Testing'"
+                                    <div *ngIf="game.status === 'InDevelopment'" class="mb-2 text-center">
+                                        <span class="badge bg-warning text-dark border border-dark small">🚧 UNDER
+                                            CONSTRUCTION</span>
+                                    </div>
+
+                                    <button
+                                        *ngIf="game.status === 'Deployed' || game.status === 'Testing' || game.status === 'InDevelopment'"
                                         class="btn w-100 py-2 fw-bold"
-                                        [ngClass]="game.status === 'Testing' ? 'btn-info text-dark' : 'btn-primary'"
+                                        [ngClass]="{'btn-primary': game.status === 'Deployed', 'btn-info text-dark': game.status === 'Testing', 'btn-outline-warning text-dark': game.status === 'InDevelopment'}"
                                         style="font-size: 0.75rem; letter-spacing: 0.02em;"
                                         [routerLink]="['/game/create']" [queryParams]="{gameType: game.id}">
-                                        CREATE ROOM
+                                        {{ game.status === 'InDevelopment' ? 'LAUNCH (UNSTABLE)' : 'CREATE ROOM' }}
                                     </button>
                                     <span *ngIf="game.status === 'Backlog'" class="badge bg-secondary w-100 py-2"
                                         style="font-size: 0.7rem;">{{

@@ -11,16 +11,19 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
     public class GreatMindsGameService : IGameService
     {
         private readonly IHubContext<GameHub> _hubContext;
+        private readonly ILogger<GreatMindsGameService> _logger;
 
         public GameType GameType => GameType.GreatMinds;
 
-        public GreatMindsGameService(IHubContext<GameHub> hubContext)
+        public GreatMindsGameService(IHubContext<GameHub> hubContext, ILogger<GreatMindsGameService> logger)
         {
             _hubContext = hubContext;
+            _logger = logger;
         }
 
         public async Task StartRound(Room room, GameSettings settings)
         {
+            _logger.LogInformation("Starting Great Minds round in room {Code}", room.Code);
             // 1. Setup State
             var state = new GreatMindsGameState();
             

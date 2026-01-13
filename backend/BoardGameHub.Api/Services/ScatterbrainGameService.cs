@@ -1,4 +1,5 @@
 using BoardGameHub.Api.Models; // For Room, Player, GameSettings
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 // Assuming ScatterbrainData is available in root or Models namespace based on previous usage
 
@@ -39,10 +40,17 @@ public class ScatterbrainState
 
 public class ScatterbrainGameService : IGameService
 {
+    private readonly ILogger<ScatterbrainGameService> _logger;
     public GameType GameType => GameType.Scatterbrain;
+
+    public ScatterbrainGameService(ILogger<ScatterbrainGameService> logger)
+    {
+        _logger = logger;
+    }
 
     public async Task StartRound(Room room, GameSettings settings)
     {
+        _logger.LogInformation("Starting Scatterbrain round in room {Code}", room.Code);
         // Pick random letter based on mode
         room.GameData = new ScatterbrainState
         {
