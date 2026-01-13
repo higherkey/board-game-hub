@@ -11,7 +11,11 @@ describe('GreatMindsGameComponent', () => {
     beforeEach(async () => {
         mockSignalRService = {
             getConnectionId: jasmine.createSpy('getConnectionId').and.returnValue('mock-connection-id'),
-            gameState$: of(null)
+            gameState$: of(null),
+            players$: of([]),
+            on: jasmine.createSpy('on'),
+            off: jasmine.createSpy('off'),
+            invoke: jasmine.createSpy('invoke')
         };
 
         await TestBed.configureTestingModule({

@@ -41,8 +41,8 @@ public class OneAndOnlyServiceTests
 
         // Assert
         state.Phase.Should().Be(OneAndOnlyPhase.Guessing); // Should transition
-        state.InvalidClues.Should().Contain(new[] { "Apple", "apple" });
-        // Valid clues are not explicitly stored in a "ValidClues" list in State, but UI filters based on InvalidClues.
+        state.InvalidClues.Should().Contain(new[] { "APPLE" });
+        state.InvalidClues.Count.Should().Be(2);
     }
 
     [Fact]
@@ -66,6 +66,6 @@ public class OneAndOnlyServiceTests
 
         // Assert
         state.Phase.Should().Be(OneAndOnlyPhase.Guessing);
-        state.InvalidClues.Should().Contain(new[] { "Car", "Cars" });
+        state.InvalidClues.Should().Contain(new[] { "CAR", "CARS" });
     }
 }

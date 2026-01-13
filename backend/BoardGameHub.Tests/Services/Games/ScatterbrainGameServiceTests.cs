@@ -71,7 +71,7 @@ public class ScatterbrainGameServiceTests
 
         room.RoundScores["p1"].Should().Be(1); // Apple (1)
         room.RoundScores["p2"].Should().Be(1); // Apricot (1)
-        room.State.Should().Be(GameState.Finished); // Since EndRound wasn't called, phase should be Result actually
+
         // Wait, CalculateScores sets Phase = Result. Room State set in EndRound.
         state.Phase.Should().Be(ScatterbrainPhase.Result);
     }

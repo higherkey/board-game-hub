@@ -33,7 +33,7 @@ describe('WisecrackBoardComponent', () => {
         component.room = createMockRoom({
             gameType: 'Wisecrack',
             gameData: {
-                phase: 'WRITING',
+                phase: 'Writing',
                 prompts: { 'p1': 'Why did the chicken cross?' },
                 answers: {},
                 battles: [],
@@ -58,13 +58,16 @@ describe('WisecrackBoardComponent', () => {
         component.room = createMockRoom({
             gameType: 'Wisecrack',
             gameData: {
-                phase: 'BATTLING',
-                battleWinner: 'conn1', // Winner determined, so button should show
-                currentBattle: {
+                phase: 'Battling',
+                currentBattleIndex: 0,
+                battles: [{
                     prompt: 'Prompt',
-                    answerA: { id: 'a', text: 'A' },
-                    answerB: { id: 'b', text: 'B' }
-                }
+                    answerA: { id: 'a', text: 'A', playerId: 'a' },
+                    answerB: { id: 'b', text: 'B', playerId: 'b' },
+                    isFinished: true,
+                    winnerPlayerId: 'a',
+                    votes: []
+                }]
             }
         });
         component.isHost = true;
@@ -82,7 +85,7 @@ describe('WisecrackBoardComponent', () => {
         component.room = createMockRoom({
             gameType: 'Wisecrack',
             gameData: {
-                phase: 'RESULT',
+                phase: 'Result',
                 scores: { 'conn1': 10 }
             }
         });

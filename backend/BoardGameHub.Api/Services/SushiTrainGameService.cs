@@ -266,7 +266,7 @@ public class SushiTrainGameService : IGameService
 
         foreach (var p in state.PlayerStates.Values)
         {
-            int score = 0;
+            int score = p.RoundScore; // Start with existing (Maki) score
             
             // Standard Items
             // Tempura: Sets of 2 = 5pts

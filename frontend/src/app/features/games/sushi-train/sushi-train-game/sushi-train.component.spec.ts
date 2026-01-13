@@ -1,9 +1,9 @@
-
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SushiTrainComponent } from './sushi-train.component';
 import { SignalRService } from '../../../../services/signalr.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { of } from 'rxjs';
 
 describe('SushiTrainComponent', () => {
     let component: SushiTrainComponent;
@@ -12,7 +12,12 @@ describe('SushiTrainComponent', () => {
 
     beforeEach(async () => {
         mockSignalRService = {
-            // Add methods
+            getConnectionId: jasmine.createSpy('getConnectionId').and.returnValue('mock-connection-id'),
+            gameState$: of(null),
+            players$: of([]),
+            on: jasmine.createSpy('on'),
+            off: jasmine.createSpy('off'),
+            invoke: jasmine.createSpy('invoke')
         };
 
         await TestBed.configureTestingModule({
