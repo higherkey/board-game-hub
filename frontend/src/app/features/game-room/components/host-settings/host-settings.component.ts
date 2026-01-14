@@ -22,7 +22,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() meReady = false;
   @Input() isHost = false;
   @Input() isScreen = false;
-  @Output() gameStart = new EventEmitter<GameSettings>();
+  @Output() gameStart = new EventEmitter<any>();
   @Output() nextRound = new EventEmitter<GameSettings>();
   @Output() endGame = new EventEmitter<void>();
   @Output() exitGame = new EventEmitter<void>();

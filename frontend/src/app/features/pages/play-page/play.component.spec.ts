@@ -1,11 +1,12 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync } from '@angular/core/testing';
 import { PlayComponent } from './play.component';
 import { SignalRService } from '../../../services/signalr.service';
 import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { GameDataService } from '../../../services/game-data.service';
-import { Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
+import { LoggerService } from '../../../core/services/logger.service';
 
 describe('PlayComponent', () => {
     let component: PlayComponent;
@@ -14,7 +15,6 @@ describe('PlayComponent', () => {
     let mockAuthService: any;
     let mockToastService: any;
     let mockGameDataService: any;
-    let mockRouter: any;
 
     beforeEach(async () => {
         mockSignalRService = {
@@ -37,10 +37,6 @@ describe('PlayComponent', () => {
             refreshGames: jasmine.createSpy('refreshGames')
         };
 
-        mockRouter = {
-            navigate: jasmine.createSpy('navigate')
-        };
-
         await TestBed.configureTestingModule({
             imports: [PlayComponent],
             providers: [
@@ -48,7 +44,15 @@ describe('PlayComponent', () => {
                 { provide: AuthService, useValue: mockAuthService },
                 { provide: ToastService, useValue: mockToastService },
                 { provide: GameDataService, useValue: mockGameDataService },
-                { provide: Router, useValue: mockRouter }
+                provideRouter([]),
+                {
+                    provide: LoggerService, useValue: {
+                        debug: jasmine.createSpy('debug'),
+                        info: jasmine.createSpy('info'),
+                        warn: jasmine.createSpy('warn'),
+                        error: jasmine.createSpy('error')
+                    }
+                }
             ]
         }).compileComponents();
 

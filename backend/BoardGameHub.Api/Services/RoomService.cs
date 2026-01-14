@@ -37,7 +37,7 @@ public class RoomService : IRoomService
         return _gameServices.FirstOrDefault(s => s.GameType == type) as T;
     }
 
-    private OneAndOnlyService? GetOneAndOnlyService() => _gameServices.FirstOrDefault(s => s.GameType == GameType.OneAndOnly) as OneAndOnlyService;
+
 
     public Room? SetHostPlayer(string code, string connectionId)
     {

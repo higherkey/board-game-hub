@@ -27,7 +27,14 @@ describe('PoppycockBoardComponent', () => {
             gameType: 'Poppycock',
             gameData: {
                 phase: 0,
-                currentPrompt: { word: 'Test Word', category: 'Test Cat' }
+            }
+        });
+        component.ngOnChanges({
+            room: {
+                currentValue: component.room,
+                previousValue: null,
+                firstChange: true,
+                isFirstChange: () => true
             }
         });
         fixture.detectChanges();

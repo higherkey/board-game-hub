@@ -236,6 +236,7 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getPlayerColor(id: string): string {
+    if (!id) return '#CCCCCC';
     // Generate consistent color from ID
     let hash = 0;
     for (let i = 0; i < id.length; i++) {

@@ -7,6 +7,7 @@ import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { LoggerService } from '../../../core/services/logger.service';
 
 @Component({
     selector: 'app-play',
@@ -27,7 +28,8 @@ export class PlayComponent implements OnInit {
         private readonly router: Router,
         private readonly authService: AuthService,
         private readonly toastService: ToastService,
-        private readonly gameDataService: GameDataService
+        private readonly gameDataService: GameDataService,
+        private readonly logger: LoggerService
     ) { }
 
     ngOnInit() {
@@ -56,8 +58,9 @@ export class PlayComponent implements OnInit {
                 await this.signalRService.startConnection();
             }
             this.rooms = await this.signalRService.getPublicRooms();
+            this.logger.debug(`Loaded ${this.rooms.length} public rooms`);
         } catch (e) {
-            console.error('Failed to load rooms', e);
+            this.logger.error('Failed to load rooms', e);
         } finally {
             this.loading = false;
         }

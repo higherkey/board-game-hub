@@ -60,9 +60,6 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   lastRoundResults: any[] = [];
   selectedWord: any = null;
 
-  ngOnInit() {
-  }
-
   ngOnChanges(changes: SimpleChanges) {
     if (changes['room'] && this.room) {
       this.updateStateFromRoom();

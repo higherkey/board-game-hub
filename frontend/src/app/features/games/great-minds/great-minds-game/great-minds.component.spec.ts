@@ -13,6 +13,7 @@ describe('GreatMindsGameComponent', () => {
             getConnectionId: jasmine.createSpy('getConnectionId').and.returnValue('mock-connection-id'),
             gameState$: of(null),
             players$: of([]),
+            currentRoom$: of(null),
             on: jasmine.createSpy('on'),
             off: jasmine.createSpy('off'),
             invoke: jasmine.createSpy('invoke')

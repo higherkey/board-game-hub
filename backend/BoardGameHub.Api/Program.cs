@@ -10,8 +10,19 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("../logs/backend.log", rollingInterval: RollingInterval.Day)
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(evt => evt.Properties.ContainsKey("SourceContext") && evt.Properties["SourceContext"].ToString().Contains("ClientLogging"))
+        .WriteTo.File("../logs/frontend.log", rollingInterval: RollingInterval.Day))
+);
 
 // Add services to the container.
 // Database Context

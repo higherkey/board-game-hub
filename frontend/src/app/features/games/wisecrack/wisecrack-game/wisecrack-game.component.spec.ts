@@ -21,6 +21,7 @@ class WisecrackBoardStubComponent {
 class WisecrackPlayerStubComponent {
     @Input() room: any;
     @Input() myConnectionId: any;
+    @Input() playerId: any;
 }
 
 @Component({ selector: 'app-wisecrack-rules', template: '', standalone: true, imports: [] })

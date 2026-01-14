@@ -3,6 +3,7 @@ import { SignalRService } from './signalr.service';
 import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { AuthService } from './auth.service';
 import { ToastService } from '../shared/services/toast.service';
+import { LoggerService } from '../core/services/logger.service';
 
 describe('SignalRService', () => {
   let service: SignalRService;
@@ -56,7 +57,15 @@ describe('SignalRService', () => {
       providers: [
         SignalRService,
         { provide: AuthService, useValue: mockAuthService },
-        { provide: ToastService, useValue: mockToastService }
+        { provide: ToastService, useValue: mockToastService },
+        {
+          provide: LoggerService, useValue: {
+            debug: jasmine.createSpy('debug'),
+            info: jasmine.createSpy('info'),
+            warn: jasmine.createSpy('warn'),
+            error: jasmine.createSpy('error')
+          }
+        }
       ]
     });
     service = TestBed.inject(SignalRService);
@@ -96,20 +105,25 @@ describe('SignalRService', () => {
 
   describe('Room Interactions', () => {
     it('createRoom should invoke CreateRoom and update currentRoomSubject', async () => {
-      mockHubConnection.invoke.withArgs('CreateRoom', 'Host', true, 'Scatterbrain', 'guest-uuid').and.returnValue(Promise.resolve('ABCD'));
+      mockHubConnection.invoke.withArgs('CreateRoom', 'Host', true, 'Scatterbrain', 'guest-uuid', false).and.returnValue(Promise.resolve({
+        code: 'ABCD',
+        players: [],
+        gameType: 'Scatterbrain',
+        settings: { timerDurationSeconds: 60, letterMode: 0 }
+      }));
       // Also mock ValidateRooms which might be called?
       mockHubConnection.invoke.withArgs('ValidateRooms', jasmine.any(Array)).and.returnValue(Promise.resolve([]));
 
       const code = await service.createRoom('Host', true, 'Scatterbrain');
 
-      expect(mockHubConnection.invoke).toHaveBeenCalledWith('CreateRoom', 'Host', true, 'Scatterbrain', 'guest-uuid');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('CreateRoom', 'Host', true, 'Scatterbrain', 'guest-uuid', false);
       expect(code).toBe('ABCD');
       expect(service.currentRoomSubject.value?.code).toBe('ABCD');
       expect(service.currentRoomSubject.value?.gameType).toBe('Scatterbrain');
     });
 
     it('joinRoom should invoke JoinRoom and update currentRoomSubject on success', async () => {
-      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid').and.returnValue(Promise.resolve({
+      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false).and.returnValue(Promise.resolve({
         code: 'ABCD',
         players: [],
         gameType: 'Scatterbrain',
@@ -118,16 +132,17 @@ describe('SignalRService', () => {
 
       const result = await service.joinRoom('ABCD', 'Player');
 
-      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false);
       expect(result).toBeTrue();
       expect(service.currentRoomSubject.value?.code).toBe('ABCD');
     });
 
     it('joinRoom should NOT update currentRoomSubject on failure', async () => {
-      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid').and.returnValue(Promise.resolve(null));
+      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false).and.returnValue(Promise.resolve(null));
 
       const result = await service.joinRoom('ABCD', 'Player');
 
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false);
       expect(result).toBeFalse();
       expect(service.currentRoomSubject.value).toBeNull();
     });

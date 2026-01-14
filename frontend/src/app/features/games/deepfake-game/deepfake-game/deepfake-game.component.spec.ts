@@ -77,9 +77,7 @@ describe('DeepfakeGameComponent', () => {
             gameData: { phase: 2, strokes: [], votes: {} }
         });
         // Make sure current player is Host
-        const me = component.room.players.find((p: any) => p.connectionId === 'conn1');
-        if (me) me.isHost = true;
-
+        component.room.players = [{ connectionId: 'conn1', name: 'Host', isHost: true, score: 0, isReady: true, isScreen: false }];
         fixture.detectChanges();
 
         const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];

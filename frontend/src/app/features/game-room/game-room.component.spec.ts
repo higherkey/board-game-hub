@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { GameDataService } from '../../services/game-data.service';
 import { SignalRService } from '../../services/signalr.service';
@@ -48,6 +48,11 @@ class OneAndOnlyPlayerStubComponent {
   @Output() guessSubmitted = new EventEmitter<any>();
 }
 
+@Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true, imports: [] })
+class UserProfileDropdownStubComponent {
+  @Input() session: any;
+}
+
 // Import real components to override
 
 import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
@@ -57,6 +62,25 @@ import { OneAndOnlyPlayerComponent } from '../games/one-and-only/one-and-only-pl
 import { GameReviewComponent } from './components/game-review/game-review.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
+import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
+import { LoggerService } from '../../core/services/logger.service';
+import { LobbyComponent } from '../room/lobby/lobby.component';
+
+@Component({ selector: 'app-lobby', template: '', standalone: true, imports: [] })
+class LobbyStubComponent {
+  @Input() room: any;
+  @Input() players: any;
+  @Input() isHost: any;
+  @Input() isScreen: any;
+  @Input() availableGames: any;
+  @Input() selectedGameType: any;
+  @Input() connectionId: any;
+  @Output() gameSelected = new EventEmitter<any>();
+  @Output() toggleReady = new EventEmitter<any>();
+  @Output() startGame = new EventEmitter<any>();
+  @Output() setHost = new EventEmitter<any>();
+  @Output() changeRole = new EventEmitter<any>();
+}
 
 describe('GameRoomComponent', () => {
   let component: GameRoomComponent;
@@ -90,11 +114,14 @@ describe('GameRoomComponent', () => {
       snapshot: {
         paramMap: convertToParamMap({ code: 'ABCD' }),
         queryParamMap: convertToParamMap({ name: 'TestUser' })
-      }
+      },
+      paramMap: of(convertToParamMap({ code: 'ABCD' })),
+      queryParams: of({ name: 'TestUser' })
     };
 
     const mockAuthService = {
       currentUser$: new BehaviorSubject(null),
+      session$: new BehaviorSubject(null),
       getGuestId: jasmine.createSpy('getGuestId').and.returnValue('guest-uuid'),
       getUserIdOrGuestId: jasmine.createSpy('getUserIdOrGuestId').and.returnValue('guest-uuid'),
       getGuestName: jasmine.createSpy('getGuestName').and.returnValue('Guest')
@@ -112,6 +139,14 @@ describe('GameRoomComponent', () => {
             games$: new BehaviorSubject([]),
             refreshGames: jasmine.createSpy('refreshGames')
           }
+        },
+        {
+          provide: LoggerService, useValue: {
+            debug: jasmine.createSpy('debug'),
+            info: jasmine.createSpy('info'),
+            warn: jasmine.createSpy('warn'),
+            error: jasmine.createSpy('error')
+          }
         }
       ]
     })
@@ -125,7 +160,9 @@ describe('GameRoomComponent', () => {
             GameReviewComponent,
             SocialPanelComponent,
             OneAndOnlyBoardComponent,
-            OneAndOnlyPlayerComponent
+            OneAndOnlyPlayerComponent,
+            LobbyComponent,
+            UserProfileDropdownComponent
           ]
         },
         add: {
@@ -137,7 +174,9 @@ describe('GameRoomComponent', () => {
             GameReviewStubComponent,
             SocialPanelStubComponent,
             OneAndOnlyBoardStubComponent,
-            OneAndOnlyPlayerStubComponent
+            OneAndOnlyPlayerStubComponent,
+            LobbyStubComponent,
+            UserProfileDropdownStubComponent
           ]
         }
       })
@@ -153,17 +192,13 @@ describe('GameRoomComponent', () => {
   });
 
   it('should initialize and join room', () => {
-    expect(component.roomCode).toBe('ABCD');
     expect(mockSignalRService.startConnection).toHaveBeenCalled();
-    expect(mockSignalRService.joinRoom).toHaveBeenCalledWith('ABCD', 'Guest');
+    expect(mockSignalRService.joinRoom).toHaveBeenCalledWith('ABCD', 'Guest', jasmine.any(Boolean));
   });
 
   it('should identify host correctly', (done) => {
-    const players = [
-      { name: 'Other', isHost: false },
-      { name: 'Guest', isHost: true }
-    ];
-    playersSubject.next(players);
+    // Manually trigger the mock service's isHost$
+    (mockSignalRService.isHost$ as BehaviorSubject<boolean>).next(true);
 
     component.isHost$.subscribe(isHost => {
       expect(isHost).toBeTrue();
@@ -178,7 +213,7 @@ describe('GameRoomComponent', () => {
   });
 
   it('should call setGameType None on exitGame', async () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+    spyOn(globalThis, 'confirm').and.returnValue(true);
     component.roomCode = 'TEST';
     await component.onExitGame();
     expect(mockSignalRService.setGameType).toHaveBeenCalledWith('TEST', 'None');

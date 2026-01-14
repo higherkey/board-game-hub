@@ -1,7 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { VideoPopoutComponent } from './video-popout.component';
 import { ActivatedRoute } from '@angular/router';
+import { Component } from '@angular/core';
+import { VideoChatComponent } from '../video-chat.component';
 import { of } from 'rxjs';
+
+@Component({ selector: 'app-video-chat', template: '', standalone: true, imports: [] })
+class VideoChatStubComponent { }
 
 describe('VideoPopoutComponent', () => {
     let component: VideoPopoutComponent;
@@ -18,7 +23,12 @@ describe('VideoPopoutComponent', () => {
             providers: [
                 { provide: ActivatedRoute, useValue: mockActivatedRoute }
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(VideoPopoutComponent, {
+                remove: { imports: [VideoChatComponent] },
+                add: { imports: [VideoChatStubComponent] }
+            })
+            .compileComponents();
 
         fixture = TestBed.createComponent(VideoPopoutComponent);
         component = fixture.componentInstance;

@@ -11,10 +11,12 @@ import { UserProfileDropdownComponent } from '../../shared/components/user-profi
 import { ToastService } from '../../shared/services/toast.service';
 import { GAME_REGISTRY } from '../games/game.registry';
 import { GameReviewComponent } from './components/game-review/game-review.component';
-import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
+import { HostSettingsComponent } from './components/host-settings/host-settings.component';
+import { LobbyComponent } from '../room/lobby/lobby.component';
 import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
+import { LoggerService } from '../../core/services/logger.service';
 
 @Component({
   selector: 'app-game-room',
@@ -22,9 +24,10 @@ import { VideoChatComponent } from './components/video-chat/video-chat.component
   imports: [
     CommonModule,
     NgComponentOutlet,
-    HostSettingsComponent,
+    LobbyComponent,
     VideoChatComponent,
     GameReviewComponent,
+    HostSettingsComponent,
     SocialPanelComponent,
     UndoToastComponent,
     FormsModule,
@@ -78,12 +81,15 @@ export class GameRoomComponent implements OnInit {
     return this.availableGames.find(g => g.id.toLowerCase() === type || g.name.toLowerCase() === type);
   }
 
-  setMobileView(view: GameRoomTab) {
-    this.mobileView = view;
-  }
-
   onVideoLayoutChange(mode: any) {
     this.videoLayout = mode;
+  }
+
+  onGameSelected(gameType: string) {
+    this.selectedGameType = gameType;
+    if (this.roomCode) {
+      this.signalRService.setGameType(this.roomCode, gameType);
+    }
   }
 
   @HostListener('window:keydown.shift.f', ['$event'])
@@ -100,8 +106,13 @@ export class GameRoomComponent implements OnInit {
     this.isBigScreen = !this.isBigScreen;
   }
 
+
   toggleSidebar() {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
+
+  setMobileView(tab: GameRoomTab) {
+    this.mobileView = tab;
   }
 
   constructor(
@@ -110,7 +121,8 @@ export class GameRoomComponent implements OnInit {
     private readonly router: Router,
     // authService injected via property
     private readonly toastService: ToastService,
-    private readonly gameDataService: GameDataService
+    private readonly gameDataService: GameDataService,
+    private readonly logger: LoggerService
   ) {
     this.session$ = this.authService.session$;
     this.players$ = this.signalRService.players$;
@@ -133,8 +145,7 @@ export class GameRoomComponent implements OnInit {
         if (room.gameType === 'None' && this.selectedGameType !== 'None') {
           const isHost = this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '');
           if (isHost) {
-            this.signalRService.setGameType(room.code, this.selectedGameType);
-            this.selectedGameType = 'None'; // Clear once applied
+            this.setGameType(this.selectedGameType);
           }
         }
       }
@@ -171,6 +182,11 @@ export class GameRoomComponent implements OnInit {
     }
   }
 
+  setGameType(gameType: string) {
+    this.signalRService.setGameType(this.roomCode, gameType);
+    this.selectedGameType = 'None';
+  }
+
   goToLogin() {
     this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
   }
@@ -181,8 +197,11 @@ export class GameRoomComponent implements OnInit {
       this.isCreating = this.roomCode === 'create';
 
       if (this.isCreating) {
+        this.logger.info('User initiated room creation');
         this.signalRService.clearState();
         this.needsName = true;
+      } else {
+        this.logger.info(`User navigated to room: ${this.roomCode}`);
       }
     });
 
@@ -272,13 +291,15 @@ export class GameRoomComponent implements OnInit {
           this.selectedGameType,
           this.joinType === 'table'
         );
+        this.logger.info(`Room created successfully: ${newCode}`);
         this.router.navigate(['/game', newCode]);
       } catch (err) {
-        console.error('Failed to create room', err);
+        this.logger.error('Failed to create room', err);
         this.toastService.showError('Failed to create room.');
         this.needsName = true;
       }
     } else {
+      this.logger.info(`User submitting entry to join room: ${this.roomCode}`);
       await this.signalRService.joinRoom(this.roomCode, this.promptPlayerName, this.isScreen);
     }
   }
@@ -293,6 +314,7 @@ export class GameRoomComponent implements OnInit {
 
 
   startGame(settings: GameSettings) {
+    this.logger.info(`Starting game: ${this.selectedGameType}`, settings);
     this.signalRService.startGame(settings);
   }
 

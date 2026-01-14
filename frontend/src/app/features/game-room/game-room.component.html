@@ -283,81 +283,71 @@
                     </div>
 
                     <!-- LOBBY STATE -->
-                    <div *ngIf="!needsName && !(gameStarted$ | async)"
-                        class="h-100 d-flex flex-column align-items-center justify-content-start text-center pt-5">
-                        <div class="w-100" style="max-width: 1000px;">
-                            <!-- Room info is now inside app-host-settings -->
+                    <app-lobby *ngIf="!(gameStarted$ | async) && !needsName" [room]="currentRoom$ | async"
+                        [players]="players$ | async" [isHost]="(isHost$ | async) || false"
+                        [isScreen]="(me$ | async)?.isScreen || false" [availableGames]="availableGames"
+                        [selectedGameType]="(currentRoom$ | async)?.gameType || 'None'"
+                        [connectionId]="connectionId$ | async" (gameSelected)="onGameSelected($event)"
+                        (toggleReady)="toggleReady()" (startGame)="startGame($event)"
+                        (setHost)="onSetHostPlayer($event)" (changeRole)="changeRole($event)">
+                    </app-lobby>
 
-                            <!-- Host / Player Controls -->
-                            <div class="w-100">
-                                <app-host-settings [roomCode]="roomCode"
-                                    [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                                    [players]="(players$ | async) || []" [isHost]="(isHost$ | async) || false"
-                                    [meReady]="(me$ | async)?.isReady || false"
-                                    [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
-                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()"
-                                    (toggleReady)="toggleReady()">
-                                </app-host-settings>
-
-                            </div>
-                        </div>
-
-                        <!-- Waiting Message for non-Hosts (if we want to emphasize it outside the settings card) -->
-                        <div *ngIf="!(isHost$ | async)" class="mt-4">
-                            <p class="text-secondary opacity-50 small italic">The host is preparing the session...
-                            </p>
-                        </div>
-                    </div>
-                    <!-- ACTIVE GAME STATE -->
-                    <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in position-relative">
-
-                        <ng-container *ngIf="gameComponent">
-                            <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
-                        </ng-container>
-
-                        <!-- Fallback removed: All games should have explicit components now -->
-                        <div *ngIf="!gameComponent"
-                            class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
-                            <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
-                            <p>Game component not found for {{ (currentRoom$ | async)?.gameType }}</p>
-                        </div>
-
-                        <!-- INTERMISSION SETTINGS BAR (Host Only) -->
-                        <div *ngIf="(isIntermission$ | async) && (isHost$ | async)"
-                            class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 shadow-lg border-top border-secondary d-none d-md-block"
-                            style="background-color: var(--surface-card); box-shadow: 0 -5px 20px rgba(0,0,0,0.3) !important;">
-                            <div class="container-fluid d-flex align-items-center justify-content-center">
-                                <app-host-settings [roomCode]="roomCode" [compactMode]="true" [isIntermission]="true"
-                                    [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                                    [currentRound]="(currentRoom$ | async)?.roundNumber || 0"
-                                    [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
-                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()">
-                                </app-host-settings>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-
-                <!-- PLAYER VIEW -->
-                <ng-template #playerView>
-                    <div class="d-flex flex-column justify-content-center h-100">
-                        <!-- Dynamic Game Component -->
-                        <ng-container *ngIf="gameComponent">
-                            <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
-                        </ng-container>
-
-                        <div *ngIf="!gameComponent"
-                            class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
-                            <p>Game component not found.</p>
-                        </div>
-                    </div>
-                </ng-template>
-
             </div>
 
+            <!-- Waiting Message for non-Hosts (if we want to emphasize it outside the settings card) -->
+            <div *ngIf="!(isHost$ | async)" class="mt-4">
+                <p class="text-secondary opacity-50 small italic">The host is preparing the session...
+                </p>
+            </div>
+        </div>
+        <!-- ACTIVE GAME STATE -->
+        <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in position-relative">
+
+            <ng-container *ngIf="gameComponent">
+                <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
+            </ng-container>
+
+            <!-- Fallback removed: All games should have explicit components now -->
+            <div *ngIf="!gameComponent"
+                class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
+                <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+                <p>Game component not found for {{ (currentRoom$ | async)?.gameType }}</p>
+            </div>
+
+            <!-- INTERMISSION SETTINGS BAR (Host Only) -->
+            <div *ngIf="(isIntermission$ | async) && (isHost$ | async)"
+                class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 shadow-lg border-top border-secondary d-none d-md-block"
+                style="background-color: var(--surface-card); box-shadow: 0 -5px 20px rgba(0,0,0,0.3) !important;">
+                <div class="container-fluid d-flex align-items-center justify-content-center">
+                    <app-host-settings [roomCode]="roomCode" [compactMode]="true" [isIntermission]="true"
+                        [currentGameType]="(currentRoom$ | async)?.gameType || ''"
+                        [currentRound]="(currentRoom$ | async)?.roundNumber || 0"
+                        [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
+                        (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()">
+                    </app-host-settings>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- PLAYER VIEW -->
+    <ng-template #playerView>
+        <div class="d-flex flex-column justify-content-center h-100">
+            <!-- Dynamic Game Component -->
+            <ng-container *ngIf="gameComponent">
+                <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
+            </ng-container>
+
+            <div *ngIf="!gameComponent"
+                class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
+                <p>Game component not found.</p>
+            </div>
+        </div>
+    </ng-template>
+
 </div>
+
 
 
 <!-- 3. MOBILE TAB BAR (Small Screens Only) -->

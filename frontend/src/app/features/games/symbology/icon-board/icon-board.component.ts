@@ -29,7 +29,7 @@ export class IconBoardComponent {
     ];
 
     getMarkersForIcon(iconChar: string) {
-        return this.markers.filter(m => m.icon === iconChar);
+        return (this.markers || []).filter(m => m.icon === iconChar);
     }
 
     onIconClick(icon: any) {
