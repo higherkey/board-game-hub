@@ -4,7 +4,6 @@
     CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
 );
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -233,9 +232,7 @@ BEGIN
     VALUES ('20251210151009_InitialSocial', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -298,9 +295,7 @@ BEGIN
     VALUES ('20251211050352_AddGameHistory', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -360,9 +355,7 @@ BEGIN
     VALUES ('20251212040424_AddGamesTable', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -454,9 +447,7 @@ BEGIN
     VALUES ('20251213070646_RemoveBrandedGames', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -532,9 +523,7 @@ BEGIN
     VALUES ('20251213162834_RenameBoggleToWordHunt', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -574,9 +563,7 @@ BEGIN
     VALUES ('20251214010911_RenameBattleshipToWarships', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -602,9 +589,7 @@ BEGIN
     VALUES ('20251214011022_RenameConnect4ToFourInARow', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -630,9 +615,7 @@ BEGIN
     VALUES ('20251214011111_RenameCodenamesToNomDeCode', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -658,9 +641,7 @@ BEGIN
     VALUES ('20251214011645_RenameJustOneToOneAndOnly', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -670,9 +651,7 @@ BEGIN
     VALUES ('20251214074751_RenameWordHuntToBabble', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -852,9 +831,7 @@ BEGIN
     VALUES ('20251226002557_AddGameAttributes', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -1006,9 +983,7 @@ BEGIN
     VALUES ('20260103050101_AddTimerSettingsToGameDefinition', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
-START TRANSACTION;
 
 
 DO $EF$
@@ -1153,5 +1128,4 @@ BEGIN
     VALUES ('20260103222036_AddSettingsMetadataToGameDefinition', '8.0.0');
     END IF;
 END $EF$;
-COMMIT;
 
