@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
     "MigrationId" character varying(150) NOT NULL,
     "ProductVersion" character varying(32) NOT NULL,
     CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
@@ -316,35 +316,35 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251212040424_AddGamesTable') THEN
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Battleship', 'Sink your opponent''s fleet before they sink yours.', '🚢', 'Battleship', 2);
+    VALUES ('Battleship', 'Sink your opponent''s fleet before they sink yours.', '??', 'Battleship', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Boggle', 'Find as many words as you can in the grid of letters before time runs out!', '🔤', 'Boggle', 0);
+    VALUES ('Boggle', 'Find as many words as you can in the grid of letters before time runs out!', '??', 'Boggle', 0);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Catan', 'Trade, build, and settle the island of Catan.', '🏰', 'Settlers of Catan', 2);
+    VALUES ('Catan', 'Trade, build, and settle the island of Catan.', '??', 'Settlers of Catan', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Checkers', 'Jump over opponent pieces to capture them.', '🏁', 'Checkers', 2);
+    VALUES ('Checkers', 'Jump over opponent pieces to capture them.', '??', 'Checkers', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Chess', 'Strategic board game played on a checkered board.', '♟️', 'Chess', 2);
+    VALUES ('Chess', 'Strategic board game played on a checkered board.', '??', 'Chess', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Codenames', 'Give one-word clues to help your team guess their agents.', '🕵️‍♀️', 'Codenames', 2);
+    VALUES ('Codenames', 'Give one-word clues to help your team guess their agents.', '??????', 'Codenames', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Connect4', 'Connect four of your checkers in a row.', '🔴', 'Connect 4', 2);
+    VALUES ('Connect4', 'Connect four of your checkers in a row.', '??', 'Connect 4', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('JustOne', 'Work together to guess the mystery word by writing unique one-word clues.', '🃏', 'Just One', 0);
+    VALUES ('JustOne', 'Work together to guess the mystery word by writing unique one-word clues.', '??', 'Just One', 0);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Monopoly', 'Buy, sell, and trade properties to win.', '🎩', 'Monopoly', 2);
+    VALUES ('Monopoly', 'Buy, sell, and trade properties to win.', '??', 'Monopoly', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Pictionary', 'Draw and guess words with your friends.', '🎨', 'Pictionary', 2);
+    VALUES ('Pictionary', 'Draw and guess words with your friends.', '??', 'Pictionary', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Scatterbrain', 'The classic party game. Come up with unique answers for categories for a chosen letter.', '🧠', 'Scatterbrain', 0);
+    VALUES ('Scatterbrain', 'The classic party game. Come up with unique answers for categories for a chosen letter.', '??', 'Scatterbrain', 0);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Scrabble', 'Create words on the board using letter tiles.', '📝', 'Scrabble', 2);
+    VALUES ('Scrabble', 'Create words on the board using letter tiles.', '??', 'Scrabble', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Spyfall', 'Find the spy among you before they figure out the location.', '🕵️', 'Spyfall', 2);
+    VALUES ('Spyfall', 'Find the spy among you before they figure out the location.', '???', 'Spyfall', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('TicketToRide', 'Build train routes across the country.', '🚂', 'Ticket to Ride', 2);
+    VALUES ('TicketToRide', 'Build train routes across the country.', '??', 'Ticket to Ride', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Uno', 'The classic card game of matching colors and numbers.', '🃏', 'Uno', 2);
+    VALUES ('Uno', 'The classic card game of matching colors and numbers.', '??', 'Uno', 2);
     END IF;
 END $EF$;
 
@@ -426,17 +426,17 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251213070646_RemoveBrandedGames') THEN
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('BreakingNews', 'Frantic teleprompter fun where writers sabotage the anchor.', '📰', 'Breaking News', 2);
+    VALUES ('BreakingNews', 'Frantic teleprompter fun where writers sabotage the anchor.', '??', 'Breaking News', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Pictophone', 'Draw, guess, and laugh as the message gets distorted.', '🖍️', 'Pictophone', 2);
+    VALUES ('Pictophone', 'Draw, guess, and laugh as the message gets distorted.', '???', 'Pictophone', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Poppycock', 'Bluff your friends with fake definitions.', '🤥', 'Poppycock', 2);
+    VALUES ('Poppycock', 'Bluff your friends with fake definitions.', '??', 'Poppycock', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Symbology', 'Communicate ideas using universal icons.', '💡', 'Symbology', 2);
+    VALUES ('Symbology', 'Communicate ideas using universal icons.', '??', 'Symbology', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('UniversalTranslator', 'Decipher the alien message before ''J'' jams the signal.', '👽', 'Universal Translator', 2);
+    VALUES ('UniversalTranslator', 'Decipher the alien message before ''J'' jams the signal.', '??', 'Universal Translator', 2);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Wisecrack', 'Answer simple prompts with witty answers.', '💬', 'Wisecrack', 2);
+    VALUES ('Wisecrack', 'Answer simple prompts with witty answers.', '??', 'Wisecrack', 2);
     END IF;
 END $EF$;
 
@@ -469,7 +469,7 @@ END $EF$;
 DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251213162834_RenameBoggleToWordHunt') THEN
-    UPDATE "Games" SET "Description" = 'Telephone with drawings.', "Icon" = '🎨', "Status" = 0
+    UPDATE "Games" SET "Description" = 'Telephone with drawings.', "Icon" = '??', "Status" = 0
     WHERE "Id" = 'Pictophone';
     END IF;
 END $EF$;
@@ -510,9 +510,9 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251213162834_RenameBoggleToWordHunt') THEN
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Deepfake', 'A generative AI tries to blend in with human artists.', '🤖', 'Deepfake', 0);
+    VALUES ('Deepfake', 'A generative AI tries to blend in with human artists.', '??', 'Deepfake', 0);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('WordHunt', 'Find as many words as you can in the grid of letters before time runs out!', '🔤', 'Word Hunt', 0);
+    VALUES ('WordHunt', 'Find as many words as you can in the grid of letters before time runs out!', '??', 'Word Hunt', 0);
     END IF;
 END $EF$;
 
@@ -546,13 +546,13 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251214010911_RenameBattleshipToWarships') THEN
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Babble', 'Find as many words as you can in the grid of letters before time runs out!', '🔤', 'Babble', 0);
+    VALUES ('Babble', 'Find as many words as you can in the grid of letters before time runs out!', '??', 'Babble', 0);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('GreatMinds', 'Synchronize your minds and play cards in ascending order without speaking!', '🧠', 'Great Minds', 0);
+    VALUES ('GreatMinds', 'Synchronize your minds and play cards in ascending order without speaking!', '??', 'Great Minds', 0);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('SushiTrain', 'Draft the best meal from the passing conveyor belt!', '🍣', 'Sushi Train!', 0);
+    VALUES ('SushiTrain', 'Draft the best meal from the passing conveyor belt!', '??', 'Sushi Train!', 0);
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('Warships', 'Sink your opponent''s fleet before they sink yours.', '🚢', 'Warships', 2);
+    VALUES ('Warships', 'Sink your opponent''s fleet before they sink yours.', '??', 'Warships', 2);
     END IF;
 END $EF$;
 
@@ -578,7 +578,7 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251214011022_RenameConnect4ToFourInARow') THEN
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('FourInARow', 'Connect four of your checkers in a row.', '🔴', 'Four in a Row', 2);
+    VALUES ('FourInARow', 'Connect four of your checkers in a row.', '??', 'Four in a Row', 2);
     END IF;
 END $EF$;
 
@@ -604,7 +604,7 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251214011111_RenameCodenamesToNomDeCode') THEN
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('NomDeCode', 'Give one-word clues to help your team guess their agents.', '🕵️‍♀️', 'Nom de Code', 2);
+    VALUES ('NomDeCode', 'Give one-word clues to help your team guess their agents.', '??????', 'Nom de Code', 2);
     END IF;
 END $EF$;
 
@@ -630,7 +630,7 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251214011645_RenameJustOneToOneAndOnly') THEN
     INSERT INTO "Games" ("Id", "Description", "Icon", "Name", "Status")
-    VALUES ('OneAndOnly', 'Work together to guess the mystery word by writing unique one-word clues.', '🃏', 'One & Only', 0);
+    VALUES ('OneAndOnly', 'Work together to guess the mystery word by writing unique one-word clues.', '??', 'One & Only', 0);
     END IF;
 END $EF$;
 
@@ -739,7 +739,7 @@ END $EF$;
 DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20251226002557_AddGameAttributes') THEN
-    UPDATE "Games" SET "AveragePlayTime" = 20, "CodeKey" = NULL, "Complexity" = 2, "Icon" = '🌟', "MaxPlayers" = 4, "MinPlayers" = 2, "Tags" = 'Cooperative,Card Game,Social'
+    UPDATE "Games" SET "AveragePlayTime" = 20, "CodeKey" = NULL, "Complexity" = 2, "Icon" = '??', "MaxPlayers" = 4, "MinPlayers" = 2, "Tags" = 'Cooperative,Card Game,Social'
     WHERE "Id" = 'GreatMinds';
     END IF;
 END $EF$;
@@ -1128,4 +1128,5 @@ BEGIN
     VALUES ('20260103222036_AddSettingsMetadataToGameDefinition', '8.0.0');
     END IF;
 END $EF$;
+
 
