@@ -8,8 +8,8 @@
     "deploy": "ng build && powershell -Command \"Remove-Item -Path '../backend/BoardGameHub.Api/wwwroot/*' -Exclude 'Untitled.xcf','assets' -Recurse -Force; Copy-Item -Path './dist/frontend/browser/*' -Destination '../backend/BoardGameHub.Api/wwwroot' -Recurse -Force\"",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:babble": "playwright test",
+    "test:babble:ui": "playwright test --ui"
   },
   "private": true,
   "dependencies": {
