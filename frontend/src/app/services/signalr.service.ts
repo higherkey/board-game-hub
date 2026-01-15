@@ -428,16 +428,17 @@ export class SignalRService {
 
   public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None', isScreen = false): Promise<string> {
     const guestId = this.authService.getGuestId();
-    const room: Room = await this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId, isScreen);
-
-    // Update state immediately with the real room data
-    this.currentRoomSubject.next(room);
-    this.players$.next(room.players);
-
-    // Save to active rooms
-    this.saveActiveRoom(room.code, room.gameType);
-
-    return room.code;
+    return this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId, isScreen)
+      .then((room: Room) => {
+        this.logger.info(`[SignalR] Room created: ${room.code}, Game: ${room.gameType}`);
+        this.currentRoomSubject.next(room);
+        this.players$.next(room.players);
+        // Ensure we are host
+        this.isHost$.next(true);
+        // Save to active rooms
+        this.saveActiveRoom(room.code, room.gameType);
+        return room.code;
+      });
   }
 
   public async getGameHistory(): Promise<any[]> {
@@ -560,7 +561,7 @@ export class SignalRService {
     return this.connectionId$.value || this.hubConnection.connectionId;
   }
 
-  private updateIsHostStatus() {
+  public updateIsHostStatus() {
     const room = this.currentRoomSubject.value;
     const myId = this.getConnectionId();
     if (!room || !myId) {

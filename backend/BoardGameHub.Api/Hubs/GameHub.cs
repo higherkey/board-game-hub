@@ -51,9 +51,13 @@ public class GameHub : Hub
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
         var room = _roomService.CreateRoom(Context.ConnectionId, playerName, isPublic, type, userId, avatarUrl, isScreen);
-        await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
+        
+        // Log creation
+        Console.WriteLine($"[GameHub] Room Created: {room.Code}, GameType: {room.GameType}, Host: {playerName}");
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, room.Code.ToUpper());
         // Broadcast to the creator (and anyone else in the group, though it's just them)
-        await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
+        await Clients.Group(room.Code.ToUpper()).SendAsync("PlayerJoined", room.Players);
         return room;
     }
 

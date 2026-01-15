@@ -194,7 +194,7 @@ export class GameRoomComponent implements OnInit {
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       this.roomCode = (params.get('code') || '').toUpperCase();
-      this.isCreating = this.roomCode === 'create';
+      this.isCreating = this.roomCode === 'CREATE';
 
       if (this.isCreating) {
         this.logger.info('User initiated room creation');
@@ -292,6 +292,8 @@ export class GameRoomComponent implements OnInit {
           this.joinType === 'table'
         );
         this.logger.info(`Room created successfully: ${newCode}`);
+        // Force update host status locally to ensure UI reflects it immediately
+        this.signalRService.updateIsHostStatus();
         this.router.navigate(['/game', newCode]);
       } catch (err) {
         this.logger.error('Failed to create room', err);

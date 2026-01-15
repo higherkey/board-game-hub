@@ -28,7 +28,7 @@
             </button>
 
             <!-- Room Info (Repositioned to Left) -->
-            <div class="d-flex align-items-center gap-3 ms-2 border-start border-secondary ps-3">
+            <div *ngIf="!isCreating" class="d-flex align-items-center gap-3 ms-2 border-start border-secondary ps-3">
                 <div class="d-flex align-items-baseline">
                     <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline"
                         style="font-size: 0.65rem; color: var(--text-light);">ROOM</span>
