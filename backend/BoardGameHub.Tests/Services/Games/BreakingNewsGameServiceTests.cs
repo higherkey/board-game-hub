@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -15,7 +17,7 @@ public class BreakingNewsGameServiceTests
 
     public BreakingNewsGameServiceTests()
     {
-        _service = new BreakingNewsGameService();
+        _service = new BreakingNewsGameService(new Mock<ILogger<BreakingNewsGameService>>().Object);
     }
 
     private Room CreateMockRoom(int playerCount)

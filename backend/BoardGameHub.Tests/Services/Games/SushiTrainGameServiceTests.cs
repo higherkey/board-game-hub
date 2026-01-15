@@ -1,6 +1,8 @@
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace BoardGameHub.Tests.Services.Games;
@@ -11,7 +13,7 @@ public class SushiTrainGameServiceTests
 
     public SushiTrainGameServiceTests()
     {
-        _sut = new SushiTrainGameService();
+        _sut = new SushiTrainGameService(new Mock<ILogger<SushiTrainGameService>>().Object);
     }
 
     [Fact]

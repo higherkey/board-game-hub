@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -31,7 +32,7 @@ public class GreatMindsGameServiceTests
         _mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockGroupProxy.Object);
         _mockClients.Setup(c => c.Client(It.IsAny<string>())).Returns(_mockSingleProxy.Object);
 
-        _service = new GreatMindsGameService(_mockHub.Object);
+        _service = new GreatMindsGameService(_mockHub.Object, new Mock<ILogger<GreatMindsGameService>>().Object);
     }
 
     private Room CreateMockRoom(int playerCount)

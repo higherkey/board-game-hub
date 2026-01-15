@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -15,7 +17,7 @@ public class SymbologyGameServiceTests
 
     public SymbologyGameServiceTests()
     {
-        _service = new SymbologyGameService();
+        _service = new SymbologyGameService(new Mock<ILogger<SymbologyGameService>>().Object);
     }
 
     private Room CreateMockRoom(int playerCount)

@@ -1,6 +1,7 @@
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
 using Xunit;
@@ -17,7 +18,7 @@ public class BabbleGameServiceTests
     {
         _babbleMock = new Mock<IBabbleService>();
         _dictMock = new Mock<IDictionaryService>();
-        _sut = new BabbleGameService(_babbleMock.Object, _dictMock.Object);
+        _sut = new BabbleGameService(_babbleMock.Object, _dictMock.Object, new Mock<ILogger<BabbleGameService>>().Object);
     }
 
     [Fact]

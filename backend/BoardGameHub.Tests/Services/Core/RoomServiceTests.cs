@@ -3,6 +3,7 @@ using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Hubs;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -32,7 +33,7 @@ public class RoomServiceTests
 
         _gameServices = new List<IGameService>();
         
-        _sut = new RoomService(_gameServices, _mockAdminHub.Object, _mockGameHub.Object);
+        _sut = new RoomService(_gameServices, _mockAdminHub.Object, _mockGameHub.Object, new Mock<ILogger<RoomService>>().Object);
     }
 
     [Fact]
@@ -109,5 +110,106 @@ public class RoomServiceTests
         // Assert
         room.State.Should().Be(GameState.Playing);
         mockService.Verify(s => s.StartRound(room, It.IsAny<GameSettings>()), Times.Once);
+    }
+
+    [Fact]
+    public void RemovePlayer_ShouldMarkPlayerDisconnected()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        
+        // Act
+        _sut.RemovePlayer("conn1");
+
+        // Assert
+        room.Players.First().IsConnected.Should().BeFalse();
+    }
+
+    [Fact]
+    public void TerminateRoom_ShouldRemoveRoom()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        
+        // Act
+        _sut.TerminateRoom(room.Code);
+
+        // Assert
+        _sut.GetRoom(room.Code).Should().BeNull();
+    }
+
+    [Fact]
+    public void ToggleReady_ShouldTogglePlayerReady()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        
+        // Act
+        _sut.ToggleReady(room.Code, "conn1");
+
+        // Assert
+        room.Players.First().IsReady.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetGameType_ShouldChangeGameTypeAndResetState()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        room.State = GameState.Finished;
+
+        // Act
+        _sut.SetGameType(room.Code, GameType.Babble);
+
+        // Assert
+        room.GameType.Should().Be(GameType.Babble);
+        room.State.Should().Be(GameState.Lobby);
+    }
+
+    [Fact]
+    public void UpdateSettings_ShouldApplyNewSettings()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        var newSettings = new GameSettings { TimerDurationSeconds = 120 };
+
+        // Act
+        _sut.UpdateSettings(room.Code, newSettings);
+
+        // Assert
+        room.Settings.TimerDurationSeconds.Should().Be(120);
+    }
+
+    [Fact]
+    public void ValidateRooms_ShouldReturnValidCodes()
+    {
+        // Arrange
+        var room1 = _sut.CreateRoom("c1", "H1", true);
+        var room2 = _sut.CreateRoom("c2", "H2", true);
+        var inputCodes = new List<string> { room1.Code, room2.Code, "INVALID" };
+
+        // Act
+        var validCodes = _sut.ValidateRooms(inputCodes);
+
+        // Assert
+        validCodes.Should().HaveCount(2);
+        validCodes.Should().Contain(room1.Code);
+        validCodes.Should().Contain(room2.Code);
+    }
+
+    [Fact]
+    public void GetServerStats_ShouldReturnCorrectStats()
+    {
+        // Arrange
+        _sut.CreateRoom("c1", "H1", true);
+        _sut.CreateRoom("c2", "H2", true);
+
+        // Act
+        var stats = _sut.GetServerStats();
+
+        // Assert
+        stats.ActiveRooms.Should().Be(2);
+        stats.TotalOnlinePlayers.Should().Be(2);
+        stats.Rooms.Should().HaveCount(2);
     }
 }

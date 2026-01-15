@@ -1,6 +1,8 @@
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace BoardGameHub.Tests.Services.Games;
@@ -11,7 +13,7 @@ public class DeepfakeGameServiceTests
 
     public DeepfakeGameServiceTests()
     {
-        _sut = new DeepfakeGameService();
+        _sut = new DeepfakeGameService(new Mock<ILogger<DeepfakeGameService>>().Object);
     }
 
     [Fact]

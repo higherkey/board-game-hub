@@ -1,6 +1,8 @@
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System.Text.Json;
 using Xunit;
 
@@ -12,7 +14,7 @@ public class ScatterbrainGameServiceTests
 
     public ScatterbrainGameServiceTests()
     {
-        _sut = new ScatterbrainGameService();
+        _sut = new ScatterbrainGameService(new Mock<ILogger<ScatterbrainGameService>>().Object);
     }
 
     [Fact]

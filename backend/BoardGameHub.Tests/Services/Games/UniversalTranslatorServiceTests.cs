@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -15,7 +17,7 @@ public class UniversalTranslatorServiceTests
 
     public UniversalTranslatorServiceTests()
     {
-        _service = new UniversalTranslatorService();
+        _service = new UniversalTranslatorService(new Mock<ILogger<UniversalTranslatorService>>().Object);
     }
 
     private Room CreateMockRoom(int playerCount)

@@ -1,6 +1,8 @@
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace BoardGameHub.Tests.Services.Games;
@@ -11,7 +13,7 @@ public class WisecrackGameServiceTests
 
     public WisecrackGameServiceTests()
     {
-        _sut = new WisecrackGameService();
+        _sut = new WisecrackGameService(new Mock<ILogger<WisecrackGameService>>().Object);
     }
 
     [Fact]
