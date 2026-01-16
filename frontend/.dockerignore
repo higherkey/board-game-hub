@@ -1,0 +1,27 @@
+# Build artifacts
+dist/
+.angular/
+node_modules/
+npm-debug.log
+
+# IDE files
+.vscode/
+.editorconfig
+.prettierrc
+.prettierignore
+
+# Sensitive files
+.env
+proxy.conf.json
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Git files
+.git/
+.gitignore
+
+# OS files
+Thumbs.db
+.DS_Store

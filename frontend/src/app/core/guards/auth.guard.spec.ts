@@ -48,11 +48,11 @@ describe('authGuard', () => {
         // If the port is NOT 4200, it returns true.
 
         const result = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
-        if (globalThis.location.port !== '4200') {
-            expect(result).toBeTrue();
-        } else {
+        if (globalThis.location.port === '4200') {
             // If we ARE on 4200 (unlikely in test), it checks auth.
             expect(mockAuthService.isAuthenticated).toHaveBeenCalled();
+        } else {
+            expect(result).toBeTrue();
         }
     });
 });

@@ -111,13 +111,15 @@
 }
 
 .btn-accept {
-    background: #10b981;
+    background: #064e3b;
+    /* Darker green for pass */
     color: white;
 }
 
 .btn-decline {
     background: #f3f4f6;
-    color: #6b7280;
+    color: #1f2937;
+    /* Darker gray for pass */
 }
 
 .btn-accept:hover {
@@ -155,7 +157,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
+    /* Much darker gradient */
     color: white;
     display: flex;
     align-items: center;
@@ -300,7 +303,8 @@
 .btn-add {
     width: 100%;
     padding: 0.875rem;
-    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+    /* Much darker gradient */
     color: white;
     border: none;
     border-radius: 12px;
