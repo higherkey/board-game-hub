@@ -1,0 +1,50 @@
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend-azure.yml'
+  workflow_dispatch:
+
+env:
+  ACR_NAME: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+  REGISTRY: ${{ secrets.AZURE_REGISTRY_URL }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.REGISTRY }}
+          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          TAG=${{ github.ref_name }}
+          IMAGE_NAME=${{ env.REGISTRY }}/board-game-hub-api:$TAG
+          docker build -t $IMAGE_NAME -f backend/Dockerfile backend/
+          docker push $IMAGE_NAME
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: ${{ env.ACR_NAME }}
+          containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-api-prod' || 'board-game-hub-api-dev' }}
+          resourceGroup: board-game-hub-rg
+          imageToDeploy: ${{ env.IMAGE_NAME }}
