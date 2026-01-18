@@ -1,0 +1,62 @@
+.player-settings-panel {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #ffffff;
+}
+
+.group-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.qr-box {
+    border: 1px solid var(--border-color);
+}
+
+.ready-button {
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    &:hover {
+        transform: translateY(-2px);
+    }
+}
+
+.info-card {
+    background: var(--bg-surface-2);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.category-pill {
+    padding: 0.2rem 0.6rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.65rem;
+    color: var(--text-dark);
+}
+
+.italic {
+    font-style: italic;
+}
+
+.ls-wide {
+    letter-spacing: 1px;
+}
+
+.x-small {
+    font-size: 0.7rem;
+}
+
+@media (max-width: 767.98px) {
+    .col-md-4 {
+        border-bottom: 1px solid var(--border-color);
+        border-right: none !important;
+    }
+}

@@ -3,16 +3,14 @@
     <div *ngIf="compactMode" class="compact-row d-flex align-items-center gap-3 flex-wrap">
         <!-- Game Selection (Searchable) -->
         <div class="compact-item flex-grow-1 position-relative" style="min-width: 200px;">
-            <div class="input-group input-group-sm shadow-sm">
-                <span class="input-group-text bg-surface border-2 border-end-0"><i class="bi bi-search"></i></span>
-                <input type="text" list="compactGameOptions" [disabled]="isIntermission"
-                    class="form-control bg-surface border-2 border-start-0 py-2"
-                    [placeholder]="isIntermission ? 'GAME LOCKED' : 'CHOOSE GAME'" [(ngModel)]="gameSearchQuery"
-                    (ngModelChange)="changeGameType(gameSearchQuery)">
-                <datalist id="compactGameOptions">
-                    <option *ngFor="let game of availableGames" [value]="game.name">{{ game.name }}</option>
-                </datalist>
-            </div>
+            <app-game-combobox
+                [(ngModel)]="selectedGameType"
+                [options]="availableGames"
+                [disabled]="isIntermission"
+                [placeholder]="isIntermission ? 'GAME LOCKED' : 'CHOOSE GAME'"
+                (selectionChange)="changeGameType()"
+                idPrefix="compact-game">
+            </app-game-combobox>
         </div>
 
         <!-- Timer Setting -->
@@ -84,32 +82,25 @@
                 </div>
 
                 <div class="setting-group">
-                    <label for="gameSearchInputFull" class="x-small text-uppercase fw-bold opacity-75">Search
-                        Gallery</label>
-                    <div class="position-relative">
-                        <div class="input-group input-group-sm shadow-sm">
-                            <span class="input-group-text bg-surface border-2 border-end-0"><i
-                                    class="bi bi-search"></i></span>
-                            <input id="gameSearchInputFull" type="text" list="fullGameOptions"
-                                [disabled]="isIntermission"
-                                class="form-control bg-surface border-2 border-start-0 fw-bold"
-                                [placeholder]="isIntermission ? 'GAME LOCKED' : '...'" [(ngModel)]="gameSearchQuery"
-                                (ngModelChange)="changeGameType(gameSearchQuery)">
-                            <datalist id="fullGameOptions">
-                                <option *ngFor="let game of availableGames" [value]="game.name">{{ game.name }}</option>
-                            </datalist>
-                        </div>
+                    <label for="full-game-input" class="x-small text-uppercase fw-bold opacity-75">Search Gallery</label>
+                    <app-game-combobox
+                        [(ngModel)]="selectedGameType"
+                        [options]="availableGames"
+                        [disabled]="isIntermission"
+                        [placeholder]="isIntermission ? 'GAME LOCKED' : 'Select a game...'"
+                        (selectionChange)="changeGameType()"
+                        idPrefix="full-game">
+                    </app-game-combobox>
 
-                        <!-- Selected Game Info Badge -->
-                        <div *ngIf="selectedGameType !== 'None'"
-                            class="mt-2 p-2 rounded-2 bg-brand-blue-subtle text-brand-blue d-flex align-items-center gap-2 border border-brand-blue border-opacity-10">
-                            <span class="fs-5">{{ selectedGame?.icon }}</span>
-                            <span class="fw-bold text-truncate">{{ selectedGame?.name }}</span>
-                            <button *ngIf="!isIntermission" class="btn btn-sm btn-link text-brand-blue ms-auto p-0"
-                                (click)="selectedGameType = 'None'; gameSearchQuery = ''">
-                                <i class="bi bi-x-circle-fill"></i>
-                            </button>
-                        </div>
+                    <!-- Selected Game Info Badge -->
+                    <div *ngIf="selectedGameType !== 'None'"
+                        class="mt-2 p-2 rounded-2 bg-brand-blue-subtle text-brand-blue d-flex align-items-center gap-2 border border-brand-blue border-opacity-10">
+                        <span class="fs-5">{{ selectedGame?.icon }}</span>
+                        <span class="fw-bold text-truncate">{{ selectedGame?.name }}</span>
+                        <button *ngIf="!isIntermission" class="btn btn-sm btn-link text-brand-blue ms-auto p-0"
+                            (click)="selectedGameType = 'None'; gameSearchQuery = ''">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -134,27 +125,16 @@
 
                 <div class="d-flex gap-3">
                     <div class="setting-group flex-grow-1">
-                        <label for="timerDuration" class="x-small fw-bold"><i class="bi bi-clock"></i> TIMER</label>
-                        <div *ngIf="!isHost; else timerInput" class="form-control form-control-sm bg-light text-center">
-                            {{ settings.timerDurationSeconds }}s
-                        </div>
-                        <ng-template #timerInput>
-                            <input id="timerDuration" type="number" min="0" max="600"
+                        <label for="timerDuration" class="x-small fw-bold text-uppercase d-block mb-1">Timer (Sec)</label>
+                        <input id="timerDuration" type="number" min="0" max="600"
                                 class="form-control form-control-sm text-center"
                                 [(ngModel)]="settings.timerDurationSeconds" style="max-width: 80px;">
-                        </ng-template>
                     </div>
                     <div class="setting-group flex-grow-1">
-                        <label for="totalRounds" class="x-small fw-bold"><i class="bi bi-hash"></i> ROUNDS</label>
-                        <div *ngIf="!isHost; else roundsInput"
-                            class="form-control form-control-sm bg-light text-center">
-                            {{ settings.totalRounds }}
-                        </div>
-                        <ng-template #roundsInput>
-                            <input id="totalRounds" type="number" min="1" max="50"
+                        <label for="totalRounds" class="x-small fw-bold text-uppercase d-block mb-1">Rounds</label>
+                        <input id="totalRounds" type="number" min="1" max="50"
                                 class="form-control form-control-sm text-center" [(ngModel)]="settings.totalRounds"
                                 style="max-width: 80px;">
-                        </ng-template>
                     </div>
                 </div>
 
@@ -166,13 +146,6 @@
                             {{ meta.label }}
                         </label>
 
-                        <ng-container *ngIf="!isHost; else dynamicInput">
-                            <div class="form-control form-control-sm bg-light">
-                                {{ settings[meta.id] }}
-                            </div>
-                        </ng-container>
-
-                        <ng-template #dynamicInput>
                             <div *ngIf="meta.type === 'select'" class="select-wrapper">
                                 <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]"
                                     class="form-select form-select-sm">
@@ -188,7 +161,6 @@
                                 <input class="form-check-input" type="checkbox" [id]="'host-' + meta.id"
                                     [(ngModel)]="settings[meta.id]">
                             </div>
-                        </ng-template>
                     </div>
                 </div>
 
@@ -196,11 +168,6 @@
                 <div *ngIf="selectedGameType === 'Scatterbrain'" class="game-specific-settings mt-1 border-top pt-2">
                     <div class="setting-group">
                         <span class="x-small fw-bold text-uppercase mb-1 d-block">List Options</span>
-                        <div *ngIf="!isHost; else listOptionsHost" class="form-control form-control-sm bg-light">
-                            {{ listSelectionMode | uppercase }} {{ listSelectionMode === 'manual' ? '(List ' +
-                            selectedListId + ')' : '' }}
-                        </div>
-                        <ng-template #listOptionsHost>
                             <div class="btn-group btn-group-xs w-100 shadow-sm rounded-2 overflow-hidden border">
                                 <button class="btn p-1 x-small" [class.btn-primary]="listSelectionMode === 'manual'"
                                     [class.btn-light]="listSelectionMode !== 'manual'"
@@ -212,12 +179,12 @@
                                     [class.btn-light]="listSelectionMode !== 'generative'"
                                     (click)="listSelectionMode = 'generative'; updateListId()">GEN</button>
                             </div>
-                        </ng-template>
                     </div>
 
                     <!-- Manual List Selection (Host Only for editing, but we might want to show preview to everyone) -->
                     <div *ngIf="listSelectionMode === 'manual'" class="setting-group mt-2 animate-fade-in">
-                        <div class="d-flex gap-1" *ngIf="isHost; else listPreviewOnly">
+                        <label for="preset-list-select" class="x-small fw-bold text-uppercase d-block mb-1">Select List</label>
+                        <div class="d-flex gap-1">
                             <select id="preset-list-select" class="form-select form-select-sm"
                                 [(ngModel)]="selectedListId" (change)="updateListId(); previewList(selectedListId)">
                                 <option *ngFor="let list of scatterbrainLists" [value]="list.id">List {{ list.id }}
@@ -227,16 +194,12 @@
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
-                        <ng-template #listPreviewOnly>
-                            <!-- List identifier already shown in read-only section above if desired, 
-                                 or we can show the preview badges here too -->
-                        </ng-template>
 
                         <!-- List Preview Area (Visible to everyone if previewedList is set) -->
                         <div *ngIf="previewedList" class="mt-2 p-2 bg-surface-2 border rounded-2 x-small">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="fw-bold text-uppercase">Categories: List {{ previewedList.id }}</span>
-                                <button *ngIf="isHost" class="btn btn-sm p-0 text-secondary"
+                                <button class="btn btn-sm p-0 text-secondary"
                                     (click)="previewedList = null"><i class="bi bi-x"></i></button>
                             </div>
                             <div class="d-flex flex-wrap gap-1 badge-list">
@@ -248,13 +211,9 @@
 
                     <!-- Generative Seed -->
                     <div *ngIf="listSelectionMode === 'generative'" class="setting-group mt-2 animate-fade-in">
-                        <div *ngIf="!isHost; else seedInput" class="form-control form-control-sm bg-light italic">
-                            {{ settings.generativeSeed || 'Random' }}
-                        </div>
-                        <ng-template #seedInput>
-                            <input id="generative-seed-input" type="text" class="form-control form-control-sm"
+                        <label for="generative-seed-input" class="x-small fw-bold text-uppercase d-block mb-1">Theme / Seed</label>
+                        <input id="generative-seed-input" type="text" class="form-control form-control-sm"
                                 [(ngModel)]="settings.generativeSeed" placeholder="Theme...">
-                        </ng-template>
                     </div>
                 </div>
             </div>
@@ -262,19 +221,15 @@
 
         <!-- Start Button (Full Width footer) -->
         <div class="mt-4 pt-3 border-top position-relative">
-            <button *ngIf="isHost" type="button" class="btn-start shadow-pink mb-2" (click)="startGame()"
+            <button type="button" class="btn-start shadow-pink mb-2" (click)="startGame()"
                 [disabled]="selectedGameType === 'None'">
                 <i class="bi" [class.bi-play-fill]="!isIntermission" [class.bi-fast-forward-fill]="isIntermission"></i>
                 {{ isIntermission ? 'START NEXT ROUND' : 'START GAME' }}
             </button>
-            <button *ngIf="isHost && isIntermission" type="button" class="btn btn-outline-danger w-100 fw-bold py-2"
+            <button *ngIf="isIntermission" type="button" class="btn btn-outline-danger w-100 fw-bold py-2"
                 (click)="emitExitGame()">
                 <i class="bi bi-stop-circle-fill me-1"></i> END SESSION
             </button>
-            <div *ngIf="!isHost"
-                class="alert alert-surface border border-secondary border-opacity-10 text-center py-2 mb-0 italic">
-                Waiting for the host to start...
-            </div>
 
         </div>
     </ng-container>

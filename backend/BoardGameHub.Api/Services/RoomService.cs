@@ -46,9 +46,18 @@ public class RoomService : IRoomService
         var newHost = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
         if (newHost == null) return null;
 
-        foreach (var p in room.Players) p.IsHost = false;
+        // Logic Change: Allow multiple hosts / Co-hosts. 
+        // We do NOT clear existing hosts. We just promote the new one.
+        // Also ensure Creator is always host.
         newHost.IsHost = true;
+
+        if (!string.IsNullOrEmpty(room.CreatorConnectionId))
+        {
+            var creator = room.Players.FirstOrDefault(p => p.ConnectionId == room.CreatorConnectionId);
+            if (creator != null) creator.IsHost = true;
+        }
         
+        // Update the "Primary" host pointer (for backwards compatibility or single-owner logic)
         room.HostPlayerId = connectionId;
         NotifyStatsChanged();
         return room;
@@ -448,7 +457,7 @@ public class RoomService : IRoomService
                 HostName = r.Players.FirstOrDefault(p => p.IsHost)?.Name ?? "Unknown",
                 RoundNumber = r.RoundNumber,
                 SettingsTimer = r.Settings?.TimerDurationSeconds ?? 0,
-                Settings = r.Settings,
+                Settings = r.Settings ?? new GameSettings(),
                 Players = r.Players.Select(p => new PlayerSummary 
                 {
                     Name = p.Name,

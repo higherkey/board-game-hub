@@ -82,13 +82,37 @@
     }
 }
 
+// Mobile Host Content Container
+.mobile-host-container {
+    // Moved inside .section-container, so it just takes the row space.
+    // Ensure scrolling.
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+
+    background-color: var(--bg-surface-2, #f8f9fa);
+    padding: 1rem;
+    padding-bottom: 120px;
+    padding-top: 1rem;
+
+    // Hide on desktop
+    @media (min-width: 768px) {
+        display: none;
+    }
+}
+
 dialog::backdrop {
     background-color: rgba(0, 34, 68, 0.7); // Navy tint
     backdrop-filter: blur(4px);
 }
 
 .main-stage-panel {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none; // Disable by default
+
+    // Only animate when transitions are enabled
+    .transitions-enabled & {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
     &.has-docked-top {
         padding-top: 140px;
@@ -101,7 +125,9 @@ dialog::backdrop {
 
 .section-container {
     // Ensure we don't overflow the page, keep scroll internal if needed
-    height: 100%;
+    flex-grow: 1;
+    min-height: 0; // CRITICAL: Allows flex container to shrink below content size and enables scrolling inside
+    display: flex;
 }
 
 .score-circle {
@@ -126,9 +152,13 @@ dialog::backdrop {
 }
 
 .sidebar-panel {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none; // Disable by default
     position: relative;
-    overflow: visible;
+    overflow: hidden;
+
+    .transitions-enabled & {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
     &.is-collapsed {
         width: 0 !important;
@@ -184,5 +214,13 @@ dialog::backdrop {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+.subtle-placeholder {
+    &::placeholder {
+        color: #d1d5db !important; // Light gray (Tailwind gray-300 equiv)
+        font-weight: normal;
+        opacity: 0.8;
     }
 }

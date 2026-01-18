@@ -1,5 +1,5 @@
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, ElementRef, HostListener, inject, OnInit, Type, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, OnInit, Type, ViewChild, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { map, Observable, take } from 'rxjs';
@@ -15,6 +15,7 @@ import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
 import { LobbyComponent } from '../room/lobby/lobby.component';
 import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
+import { PlayerSettingsComponent } from './components/player-settings/player-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
 import { LoggerService } from '../../core/services/logger.service';
 
@@ -32,13 +33,14 @@ import { LoggerService } from '../../core/services/logger.service';
     UndoToastComponent,
     FormsModule,
     UserProfileDropdownComponent,
+    PlayerSettingsComponent,
     RouterModule,
     MobileTabBarComponent
   ],
   templateUrl: './game-room.component.html',
   styleUrls: ['./game-room.component.scss']
 })
-export class GameRoomComponent implements OnInit {
+export class GameRoomComponent implements OnInit, AfterViewInit {
   roomCode = '';
   isCreating = false;
   needsName = false;
@@ -115,6 +117,8 @@ export class GameRoomComponent implements OnInit {
     this.mobileView = tab;
   }
 
+  enableTransitions = false;
+
   constructor(
     private readonly route: ActivatedRoute,
     public readonly signalRService: SignalRService,
@@ -136,9 +140,7 @@ export class GameRoomComponent implements OnInit {
       if (room) {
         // Sync local isScreen state with the server-side player state
         const me = room.players.find(p => p.connectionId === this.signalRService.getConnectionId());
-        if (me) {
-          this.isScreen = me.isScreen;
-        }
+        this.isScreen = me?.isScreen ?? this.isScreen;
         this.updateActiveGame(room);
 
         // If host joins a fresh lobby with a pre-selected game type from query params, apply it
@@ -147,6 +149,8 @@ export class GameRoomComponent implements OnInit {
           if (isHost) {
             this.setGameType(this.selectedGameType);
           }
+        } else if (room.gameType && room.gameType !== 'None') {
+          this.selectedGameType = room.gameType;
         }
       }
     });
@@ -155,6 +159,13 @@ export class GameRoomComponent implements OnInit {
     this.gameStarted$ = this.currentRoom$.pipe(map(r => r?.state === 'Playing' || r?.state === 'Finished'));
 
     this.isHost$ = this.signalRService.isHost$;
+  }
+
+  ngAfterViewInit() {
+    // Enable transitions after initial layout to prevent sliding
+    setTimeout(() => {
+      this.enableTransitions = true;
+    }, 300);
   }
 
   get isIntermission$(): Observable<boolean> {
@@ -273,8 +284,22 @@ export class GameRoomComponent implements OnInit {
     }
   }
 
+  showNameError = false;
+
   async submitEntry() {
-    if (!this.promptPlayerName) return;
+    // Validation: Name is required
+    if (!this.promptPlayerName || !this.promptPlayerName.trim()) {
+      this.showNameError = true;
+      this.toastService.showError('Please enter a display name to continue.');
+
+      // Focus the input if possible (simple way given current setup)
+      setTimeout(() => {
+        const input = document.getElementById('playerNameInput');
+        if (input) input.focus();
+      });
+      return;
+    }
+
     if (!this.joinType) {
       this.toastService.showError('Please select whether you are joining as a Player or a Table.');
       return;
@@ -282,6 +307,11 @@ export class GameRoomComponent implements OnInit {
 
     this.authService.setGuestName(this.promptPlayerName);
     this.needsName = false;
+    this.showNameError = false;
+
+    // Briefly disable transitions when switching from entry to lobby
+    this.enableTransitions = false;
+    setTimeout(() => this.enableTransitions = true, 500);
 
     if (this.isCreating) {
       try {
@@ -382,6 +412,7 @@ export class GameRoomComponent implements OnInit {
   }
 
   @ViewChild('undoDialog') undoDialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild('videoChat') videoChat?: VideoChatComponent;
 
   requestUndo() {
     this.undoDialog.nativeElement.showModal();
@@ -440,5 +471,9 @@ export class GameRoomComponent implements OnInit {
     if (this.roomCode) {
       this.signalRService.setHostPlayer(this.roomCode, targetId);
     }
+  }
+
+  checkIsCreator(room: Room | null, playerConnectionId: string): boolean {
+    return room?.creatorConnectionId === playerConnectionId;
   }
 }

@@ -46,6 +46,7 @@ export interface Room {
   totalRounds?: number;
   hostScreenId?: string;
   hostPlayerId?: string;
+  creatorConnectionId?: string;
 
   // Voting
   nextGameVotes: { [key: string]: number }; // Vote is GameType enum int or string
