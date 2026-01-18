@@ -38,7 +38,6 @@ export interface Room {
   gameType: string;
 
   // Generic Game State
-  // Generic Game State
   gameState: any; // Deprecated: Use gameData
   gameData: any; // Matches backend property
 
@@ -55,7 +54,6 @@ export interface Room {
   isPaused: boolean;
   timeRemainingWhenPaused?: string;
 
-  // Scores
   // Scores
   roundScores: { [key: string]: number };
   playerAnswers?: { [key: string]: string[] };
@@ -252,7 +250,7 @@ export class SignalRService {
     });
 
     this.hubConnection.onreconnected(connectionId => {
-      console.log('SignalR Reconnected', connectionId);
+      console.info('SignalR Reconnected', connectionId);
       this.connectionId$.next(connectionId || this.hubConnection.connectionId);
       this.validateActiveRooms();
     });
@@ -352,7 +350,7 @@ export class SignalRService {
         const connectionId = this.hubConnection.connectionId;
         this.connectionId$.next(connectionId);
         this.connectionStatus$.next('Connected');
-        console.log('SignalR Connection started', connectionId);
+        console.info('SignalR Connection started', connectionId);
 
         // Proactively validate active rooms on startup to catch any that closed while offline
         this.validateActiveRooms();

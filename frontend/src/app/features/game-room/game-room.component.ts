@@ -187,7 +187,6 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   async toggleReady() {
-    console.log('toggleReady called', this.roomCode);
     if (this.roomCode) {
       await this.signalRService.toggleReady(this.roomCode);
     }
@@ -288,7 +287,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
   async submitEntry() {
     // Validation: Name is required
-    if (!this.promptPlayerName || !this.promptPlayerName.trim()) {
+    if (!this.promptPlayerName?.trim()) {
       this.showNameError = true;
       this.toastService.showError('Please enter a display name to continue.');
 
@@ -342,8 +341,6 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     localStorage.setItem('bgh_preferred_role', this.joinType);
     await this.signalRService.changeRole(isScreen);
   }
-
-
 
   startGame(settings: GameSettings) {
     this.logger.info(`Starting game: ${this.selectedGameType}`, settings);

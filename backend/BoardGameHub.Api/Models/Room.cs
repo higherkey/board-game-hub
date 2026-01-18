@@ -50,7 +50,6 @@ public class Room
     public Dictionary<string, List<string>> PlayerAnswers { get; set; } = new();
     
     // PlayerId -> Round Score
-    // PlayerId -> Round Score
     public Dictionary<string, int> RoundScores { get; set; } = new();
 
     // Undo System

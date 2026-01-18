@@ -62,7 +62,6 @@ export class SocialService {
         });
 
         this.hubConnection.on('FriendRequestAccepted', (userId: string) => {
-            console.log('Friend request accepted by:', userId);
             this.loadFriends(); // Refresh friends list
         });
     }
@@ -71,7 +70,7 @@ export class SocialService {
         if (this.hubConnection.state === 'Disconnected') {
             try {
                 await this.hubConnection.start();
-                console.log('SocialHub connected');
+                console.info('SocialHub connected');
                 this.loadInitialData();
             } catch (err) {
                 console.error('Error connecting to SocialHub:', err);

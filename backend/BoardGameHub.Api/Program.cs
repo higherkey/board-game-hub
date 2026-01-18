@@ -41,7 +41,6 @@ builder.Services.AddIdentity<User, IdentityRole>(options => {
 .AddDefaultTokenProviders();
 
 // JWT Authentication
-// JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
 {
@@ -171,9 +170,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
-app.MapHub<SocialHub>("/socialhub").RequireRateLimiting("HubRateLimit");
+app.MapHub<SocialHub>("/socialhub");
 app.MapHub<AdminHub>("/adminhub").RequireRateLimiting("HubRateLimit");
-
 
 
 app.MapFallbackToFile("index.html");

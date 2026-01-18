@@ -50,9 +50,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         private readonly adminService: AdminService,
         private readonly gameDataService: GameDataService
     ) {
-        this.stats$ = this.adminService.stats$.pipe(
-            tap((stats: RoomStats | null) => stats && console.log('Admin Dashboard stats updated:', stats))
-        );
+        this.stats$ = this.adminService.stats$;
         this.connectionStatus$ = this.adminService.connectionStatus$;
     }
 

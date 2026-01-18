@@ -58,7 +58,6 @@ export class AdminService {
             .build();
 
         this.hubConnection.on('StatsUpdated', (stats: RoomStats) => {
-            console.log('Real-time update received');
             this.statsSubject.next(stats);
         });
 
@@ -73,7 +72,7 @@ export class AdminService {
         try {
             await this.hubConnection.start();
             this.connectionStatusSubject.next('Connected');
-            console.log('AdminHub connection started');
+            console.info('AdminHub connection started');
             this.refreshStats();
         } catch (err) {
             this.connectionStatusSubject.next('Disconnected');
