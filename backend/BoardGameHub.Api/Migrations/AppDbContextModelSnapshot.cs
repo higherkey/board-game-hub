@@ -155,7 +155,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 2,
                             Name = "Scatterbrain",
                             SettingsMetadataJson = "[{\"id\":\"letterMode\",\"label\":\"Letter Difficulty\",\"type\":\"select\",\"options\":[{\"label\":\"Normal (No Q, V,X, Z)\",\"value\":0},{\"label\":\"Hard (Only Q, V, X, Z...)\",\"value\":1},{\"label\":\"True Random\",\"value\":2}]}]",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Word,Party,Timed",
                             TimerType = 2
                         },
@@ -186,7 +186,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 7,
                             MinPlayers = 3,
                             Name = "One & Only",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Cooperative,Word,Social",
                             TimerType = 0
                         },
@@ -261,7 +261,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 4,
                             Name = "Universal Translator",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Social Deduction,Sci-Fi,Bluffing",
                             TimerType = 1
                         },
@@ -276,7 +276,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 12,
                             MinPlayers = 4,
                             Name = "Pictophone",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Drawing,Party,Humor",
                             TimerType = 2
                         },
@@ -291,7 +291,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 3,
                             Name = "Wisecrack",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Humor,Social,Party",
                             TimerType = 2
                         },
@@ -306,7 +306,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 3,
                             Name = "Poppycock",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Bluffing,Word,Social",
                             TimerType = 0
                         },
@@ -321,7 +321,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 3,
                             Name = "Symbology",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Cooperative,Communication,Icons",
                             TimerType = 1
                         },
@@ -336,7 +336,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 10,
                             MinPlayers = 3,
                             Name = "Breaking News",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Humor,Social,Party,Timed",
                             TimerType = 2
                         },
@@ -351,7 +351,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 10,
                             MinPlayers = 4,
                             Name = "Deepfake",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Social Deduction,Drawing,AI",
                             TimerType = 1
                         },
@@ -366,7 +366,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 5,
                             MinPlayers = 2,
                             Name = "Sushi Train!",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Drafting,Card Game,Family",
                             TimerType = 0
                         },
@@ -381,8 +381,158 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 4,
                             MinPlayers = 2,
                             Name = "Great Minds",
-                            Status = 1,
+                            Status = 2,
                             Tags = "Cooperative,Card Game,Social",
+                            TimerType = 0
+                        },
+                        new
+                        {
+                            Id = "Farkle",
+                            AveragePlayTime = 20,
+                            Complexity = 1,
+                            DefaultRoundLengthSeconds = 0,
+                            Description = "Push your luck with six dice to score 10,000 points!",
+                            Icon = "🎲",
+                            MaxPlayers = 8,
+                            MinPlayers = 1,
+                            Name = "Farkle",
+                            Status = 3,
+                            Tags = "Dice,Party,Luck,Classic",
+                            TimerType = 0
+                        },
+                        new
+                        {
+                            Id = "Spectrum",
+                            AveragePlayTime = 30,
+                            Complexity = 2,
+                            DefaultRoundLengthSeconds = 0,
+                            Description = "Read your team's mind on a scale of polar opposites.",
+                            Icon = "🌈",
+                            MaxPlayers = 12,
+                            MinPlayers = 2,
+                            Name = "Spectrum",
+                            Status = 3,
+                            Tags = "Social,Party,Team,Word",
+                            TimerType = 0
+                        },
+                        new
+                        {
+                            Id = "Courtship",
+                            AveragePlayTime = 20,
+                            Complexity = 2,
+                            DefaultRoundLengthSeconds = 0,
+                            Description = "Get your love letter delivered while exposing your rivals.",
+                            Icon = "💌",
+                            MaxPlayers = 4,
+                            MinPlayers = 2,
+                            Name = "Courtship",
+                            Status = 3,
+                            Tags = "Deduction,Cards",
+                            TimerType = 0
+                        },
+                        new
+                        {
+                            Id = "SilentHeist",
+                            AveragePlayTime = 10,
+                            Complexity = 3,
+                            DefaultRoundLengthSeconds = 180,
+                            Description = "Coordinate moves in silence to rob a secure facility.",
+                            Icon = "🤫",
+                            MaxPlayers = 8,
+                            MinPlayers = 1,
+                            Name = "Silent Heist",
+                            Status = 3,
+                            Tags = "Cooperative,Real-time,Puzzle",
+                            TimerType = 2
+                        },
+                        new
+                        {
+                            Id = "FoleyArtist",
+                            AveragePlayTime = 20,
+                            Complexity = 1,
+                            DefaultRoundLengthSeconds = 60,
+                            Description = "Make sound effects for silent clips and have your friends guess the scene.",
+                            Icon = "🎤",
+                            MaxPlayers = 8,
+                            MinPlayers = 3,
+                            Name = "Foley Artist",
+                            Status = 3,
+                            Tags = "Audio,Party,Creative",
+                            TimerType = 2
+                        },
+                        new
+                        {
+                            Id = "LostInTranslation",
+                            AveragePlayTime = 15,
+                            Complexity = 1,
+                            DefaultRoundLengthSeconds = 60,
+                            Description = "Identify famous phrases garbled by too many translations.",
+                            Icon = "🗣️",
+                            MaxPlayers = 12,
+                            MinPlayers = 3,
+                            Name = "Lost in Translation",
+                            Status = 3,
+                            Tags = "Word,Humor,Puzzle",
+                            TimerType = 2
+                        },
+                        new
+                        {
+                            Id = "CodeBreaker",
+                            AveragePlayTime = 15,
+                            Complexity = 2,
+                            DefaultRoundLengthSeconds = 0,
+                            Description = "Hack the system by deducing the secret color sequence.",
+                            Icon = "🔐",
+                            MaxPlayers = 6,
+                            MinPlayers = 2,
+                            Name = "Code Breaker",
+                            Status = 3,
+                            Tags = "Logic,Deduction,Puzzle",
+                            TimerType = 0
+                        },
+                        new
+                        {
+                            Id = "Yacht",
+                            AveragePlayTime = 30,
+                            Complexity = 1,
+                            DefaultRoundLengthSeconds = 0,
+                            Description = "Classic dice rolling fun. Get five of a kind!",
+                            Icon = "⛵",
+                            MaxPlayers = 8,
+                            MinPlayers = 1,
+                            Name = "Yacht",
+                            Status = 3,
+                            Tags = "Dice,Classic",
+                            TimerType = 0
+                        },
+                        new
+                        {
+                            Id = "Terminal",
+                            AveragePlayTime = 20,
+                            Complexity = 3,
+                            DefaultRoundLengthSeconds = 300,
+                            Description = "One Hacker. Four Agents. Keep talking to survive the infiltration.",
+                            Icon = "📟",
+                            MaxPlayers = 5,
+                            MinPlayers = 2,
+                            Name = "Terminal",
+                            Status = 3,
+                            Tags = "Cooperative,Asymmetric,Real-Time",
+                            TimerType = 2
+                        },
+                        new
+                        {
+                            Id = "CloverMinded",
+                            AveragePlayTime = 25,
+                            Complexity = 2,
+                            DefaultRoundLengthSeconds = 0,
+                            Description = "Work together to associate keywords on your clover board.",
+                            Icon = "🍀",
+                            MaxPlayers = 6,
+                            MinPlayers = 3,
+                            Name = "Clover-Minded",
+                            Status = 3,
+                            Tags = "Cooperative,Word,Party",
                             TimerType = 0
                         });
                 });
