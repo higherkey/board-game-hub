@@ -1,4 +1,4 @@
-name: Deploy Frontend to Azure SWA
+name: Deploy Frontend to Azure Container App
 
 on:
   push:
@@ -8,48 +8,44 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend-azure.yml'
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
-      - dev
-    paths:
-      - 'frontend/**'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ${{ secrets.AZURE_REGISTRY_URL }}
 
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  build-and-deploy:
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-          lfs: false
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Log in to Azure
+        uses: azure/login@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "frontend" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist/frontend/browser" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request Job
-    steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Log in to ACR
+        uses: azure/docker-login@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          action: "close"
-          app_location: "frontend" # Required by the action even for close
+          login-server: ${{ env.REGISTRY }}
+          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          TAG=${{ github.ref_name }}
+          IMAGE_NAME=${{ env.REGISTRY }}/board-game-hub-frontend:$TAG
+          docker build -t $IMAGE_NAME -f frontend/Dockerfile frontend/
+          docker push $IMAGE_NAME
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: boardgamehubacr
+          # Deploy main -> 'board-game-hub-frontend', dev -> 'board-game-hub-frontend-dev'
+          containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-frontend' || 'board-game-hub-frontend-dev' }}
+          resourceGroup: board-game-hub-rg
+          imageToDeploy: ${{ env.IMAGE_NAME }}
+          targetPort: 8080

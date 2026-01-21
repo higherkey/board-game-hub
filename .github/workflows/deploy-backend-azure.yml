@@ -41,11 +41,25 @@ jobs:
           docker push $IMAGE_NAME
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
+      - name: Determine Secrets
+        id: determine_secrets
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+             echo "DB_CONNECTION=${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "dev" ]]; then
+             echo "DB_CONNECTION=${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}" >> $GITHUB_ENV
+          else
+             echo "Error: Branch '${{ github.ref_name }}' is not supported for backend deployment."
+             exit 1
+          fi
+
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v1
         with:
-          acrName: ${{ env.ACR_NAME }}
+          acrName: boardgamehubacr
           containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-api-prod' || 'board-game-hub-api-dev' }}
           resourceGroup: board-game-hub-rg
           imageToDeploy: ${{ env.IMAGE_NAME }}
           targetPort: 8080
+          secrets: "db-connection=${{ env.DB_CONNECTION }}"
+          environmentVariables: "ConnectionStrings__DefaultConnection=secretref:db-connection"
