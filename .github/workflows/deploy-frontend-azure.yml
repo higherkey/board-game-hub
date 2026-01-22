@@ -35,8 +35,13 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           TAG=${{ github.ref_name }}
+          if [ "$TAG" = "main" ]; then
+            BUILD_CONFIG="production"
+          else
+            BUILD_CONFIG="azure_dev"
+          fi
           IMAGE_NAME=${{ env.REGISTRY }}/board-game-hub-frontend:$TAG
-          docker build -t $IMAGE_NAME -f frontend/Dockerfile frontend/
+          docker build --build-arg CONFIGURATION=$BUILD_CONFIG -t $IMAGE_NAME -f frontend/Dockerfile frontend/
           docker push $IMAGE_NAME
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 

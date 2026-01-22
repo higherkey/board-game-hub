@@ -7,7 +7,8 @@ RUN npm install
 
 # Copy everything else and build
 COPY . .
-RUN npm run build -- --configuration production
+ARG CONFIGURATION=production
+RUN npm run build -- --configuration $CONFIGURATION
 
 # Build runtime image (nginx)
 FROM nginxinc/nginx-unprivileged:alpine

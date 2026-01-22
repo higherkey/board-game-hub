@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
@@ -26,7 +27,7 @@ export interface Session {
     providedIn: 'root'
 })
 export class AuthService {
-    private readonly apiUrl = '/api/auth'; // Relative path for tunnel compatibility
+    private readonly apiUrl = `${environment.apiUrl}/auth`;
     private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
 

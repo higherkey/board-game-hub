@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { ToastService } from '../shared/services/toast.service';
@@ -99,7 +100,7 @@ export class SignalRService {
     private readonly logger: LoggerService
   ) {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl('/gamehub', {
+      .withUrl(environment.hubUrl, {
         accessTokenFactory: () => localStorage.getItem('auth_token') || ''
       })
       .withAutomaticReconnect()

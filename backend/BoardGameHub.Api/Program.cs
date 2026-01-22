@@ -134,7 +134,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:62915") // Angular dev ports
+        policy.WithOrigins(
+            "http://localhost:4200", 
+            "http://localhost:62915",
+            "https://board-game-hub-frontend.yellowriver-792eed17.eastus.azurecontainerapps.io",
+            "https://board-game-hub-frontend-dev.yellowriver-792eed17.eastus.azurecontainerapps.io"
+        ) // Angular dev ports & Azure Apps
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // Required for SignalR
