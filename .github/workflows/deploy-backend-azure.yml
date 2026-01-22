@@ -57,7 +57,7 @@ jobs:
         uses: azure/container-apps-deploy-action@v1
         with:
           acrName: boardgamehubacr
-          containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-api-prod' || 'board-game-hub-api-dev' }}
+          containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-api' || 'board-game-hub-api-dev' }}
           resourceGroup: board-game-hub-rg
           imageToDeploy: ${{ env.IMAGE_NAME }}
           targetPort: 8080
