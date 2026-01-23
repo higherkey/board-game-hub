@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GameSettings, SignalRService, Player } from '../../../../services/signalr.service';
 import { GameDataService, GameDefinition } from '../../../../services/game-data.service';
+import { GameComboboxComponent } from '../game-combobox/game-combobox.component';
 
 @Component({
   selector: 'app-host-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, GameComboboxComponent],
   templateUrl: './host-settings.component.html',
   styleUrl: './host-settings.component.scss'
 })

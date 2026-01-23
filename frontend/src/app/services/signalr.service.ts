@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { ToastService } from '../shared/services/toast.service';
@@ -38,7 +39,6 @@ export interface Room {
   gameType: string;
 
   // Generic Game State
-  // Generic Game State
   gameState: any; // Deprecated: Use gameData
   gameData: any; // Matches backend property
 
@@ -46,6 +46,7 @@ export interface Room {
   totalRounds?: number;
   hostScreenId?: string;
   hostPlayerId?: string;
+  creatorConnectionId?: string;
 
   // Voting
   nextGameVotes: { [key: string]: number }; // Vote is GameType enum int or string
@@ -54,7 +55,6 @@ export interface Room {
   isPaused: boolean;
   timeRemainingWhenPaused?: string;
 
-  // Scores
   // Scores
   roundScores: { [key: string]: number };
   playerAnswers?: { [key: string]: string[] };
@@ -100,7 +100,7 @@ export class SignalRService {
     private readonly logger: LoggerService
   ) {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl('/gamehub', {
+      .withUrl(environment.hubUrl, {
         accessTokenFactory: () => localStorage.getItem('auth_token') || ''
       })
       .withAutomaticReconnect()
@@ -251,7 +251,7 @@ export class SignalRService {
     });
 
     this.hubConnection.onreconnected(connectionId => {
-      console.log('SignalR Reconnected', connectionId);
+      console.info('SignalR Reconnected', connectionId);
       this.connectionId$.next(connectionId || this.hubConnection.connectionId);
       this.validateActiveRooms();
     });
@@ -351,7 +351,7 @@ export class SignalRService {
         const connectionId = this.hubConnection.connectionId;
         this.connectionId$.next(connectionId);
         this.connectionStatus$.next('Connected');
-        console.log('SignalR Connection started', connectionId);
+        console.info('SignalR Connection started', connectionId);
 
         // Proactively validate active rooms on startup to catch any that closed while offline
         this.validateActiveRooms();

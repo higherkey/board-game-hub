@@ -1,0 +1,65 @@
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend-azure.yml'
+  workflow_dispatch:
+
+env:
+  ACR_NAME: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+  REGISTRY: ${{ secrets.AZURE_REGISTRY_URL }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.REGISTRY }}
+          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          TAG=${{ github.ref_name }}
+          IMAGE_NAME=${{ env.REGISTRY }}/board-game-hub-api:$TAG
+          docker build -t $IMAGE_NAME -f backend/Dockerfile backend/
+          docker push $IMAGE_NAME
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
+      - name: Determine Secrets
+        id: determine_secrets
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+             echo "DB_CONNECTION=${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "dev" ]]; then
+             echo "DB_CONNECTION=${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}" >> $GITHUB_ENV
+          else
+             echo "Error: Branch '${{ github.ref_name }}' is not supported for backend deployment."
+             exit 1
+          fi
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: boardgamehubacr
+          containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-api' || 'board-game-hub-api-dev' }}
+          resourceGroup: board-game-hub-rg
+          imageToDeploy: ${{ env.IMAGE_NAME }}
+          targetPort: 8080
+          secrets: "db-connection=${{ env.DB_CONNECTION }}"
+          environmentVariables: "ConnectionStrings__DefaultConnection=secretref:db-connection"

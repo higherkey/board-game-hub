@@ -51,6 +51,7 @@ public class GameHub : Hub
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
         var room = _roomService.CreateRoom(Context.ConnectionId, playerName, isPublic, type, userId, avatarUrl, isScreen);
+        room.CreatorConnectionId = Context.ConnectionId; // Set the creator
         
         // Log creation
         Console.WriteLine($"[GameHub] Room Created: {room.Code}, GameType: {room.GameType}, Host: {playerName}");

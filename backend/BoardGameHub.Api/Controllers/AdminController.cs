@@ -40,8 +40,6 @@ public class AdminController : ControllerBase
         _context = context;
     }
 
-
-
     [HttpGet("stats")]
     public IActionResult GetStats()
     {

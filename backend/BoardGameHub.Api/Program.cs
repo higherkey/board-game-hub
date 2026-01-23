@@ -41,7 +41,6 @@ builder.Services.AddIdentity<User, IdentityRole>(options => {
 .AddDefaultTokenProviders();
 
 // JWT Authentication
-// JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
 {
@@ -135,7 +134,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:62915") // Angular dev ports
+        policy.WithOrigins(
+            "http://localhost:4200", 
+            "http://localhost:62915",
+            "https://board-game-hub-frontend.yellowriver-792eed17.eastus.azurecontainerapps.io",
+            "https://board-game-hub-frontend-dev.yellowriver-792eed17.eastus.azurecontainerapps.io"
+        ) // Angular dev ports & Azure Apps
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // Required for SignalR
@@ -171,9 +175,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
-app.MapHub<SocialHub>("/socialhub").RequireRateLimiting("HubRateLimit");
+app.MapHub<SocialHub>("/socialhub");
 app.MapHub<AdminHub>("/adminhub").RequireRateLimiting("HubRateLimit");
-
 
 
 app.MapFallbackToFile("index.html");

@@ -1,7 +1,7 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { WebRTCService } from './webrtc.service';
 import { SignalRService } from './signalr.service';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 const setRemoteDescriptionSpy = jasmine.createSpy('setRemoteDescription').and.returnValue(Promise.resolve());
 
@@ -43,9 +43,9 @@ describe('WebRTCService', () => {
             sendIceCandidate: jasmine.createSpy('sendIceCandidate')
         };
 
-        (window as any).RTCPeerConnection = MockRTCPeerConnection;
-        (window as any).RTCSessionDescription = class { constructor(public init: any) { } };
-        (window as any).RTCIceCandidate = class { constructor(public init: any) { } };
+        (globalThis as any).RTCPeerConnection = MockRTCPeerConnection;
+        (globalThis as any).RTCSessionDescription = class { constructor(public init: any) { } };
+        (globalThis as any).RTCIceCandidate = class { constructor(public init: any) { } };
 
         TestBed.configureTestingModule({
             providers: [

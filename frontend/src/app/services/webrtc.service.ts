@@ -128,7 +128,7 @@ export class WebRTCService {
 
         // Track received
         pc.ontrack = (event) => {
-            console.log(`Received track from ${peerId}`, event.streams[0]);
+            console.info(`Received track from ${peerId}`, event.streams[0]);
 
             const currentStreams = this.remoteStreams$.value;
 

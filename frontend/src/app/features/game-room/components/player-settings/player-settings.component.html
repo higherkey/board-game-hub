@@ -1,0 +1,75 @@
+<div class="player-settings-panel shadow-sm border-0 rounded-4 overflow-hidden bg-white">
+    <div class="row g-0">
+        <!-- LEFT: Room Info & Actions -->
+        <div class="col-md-4 border-end bg-light p-4 d-flex flex-column align-items-center justify-content-center text-center">
+            <div class="group-label mb-3">
+                <i class="bi bi-qr-code"></i> ROOM INFO
+            </div>
+            
+            <div class="qr-box bg-white p-2 rounded shadow-sm mb-3">
+                <img [src]="getQrCodeUrl()" alt="Room QR Code" style="width: 120px; height: 120px;">
+            </div>
+
+            <div class="mb-4">
+                <span class="x-small text-muted text-uppercase fw-bold ls-wide d-block">Room Code</span>
+                <span class="h3 fw-bold text-primary font-monospace">{{ roomCode }}</span>
+            </div>
+
+            <button type="button" class="btn btn-lg w-100 py-3 fw-bold shadow-sm ready-button"
+                [class.btn-success]="meReady" [class.btn-outline-primary]="!meReady" (click)="onToggleReady()">
+                <i class="bi" [class.bi-check-circle-fill]="meReady" [class.bi-circle]="!meReady"></i>
+                {{ meReady ? 'READY!' : (isScreen ? 'ROOM READY' : 'I\'M READY') }}
+            </button>
+        </div>
+
+        <!-- RIGHT: Game Settings Overview -->
+        <div class="col-md-8 p-4">
+            <div class="group-label mb-3">
+                <i class="bi bi-controller"></i> GAME OVERVIEW
+            </div>
+
+            <!-- Current Game Badge -->
+            <div class="selected-game-banner d-flex align-items-center gap-3 p-3 rounded-3 mb-4 bg-brand-blue-subtle border border-brand-blue border-opacity-10">
+                <span class="display-6">{{ selectedGame?.icon || '🎮' }}</span>
+                <div>
+                    <h4 class="mb-0 fw-bold text-brand-blue">{{ selectedGame?.name || 'Waiting for Game Selection...' }}</h4>
+                    <span class="x-small text-uppercase opacity-75">Current Selection</span>
+                </div>
+            </div>
+
+            <!-- Settings Grid (ReadOnly) -->
+            <div class="row g-3" *ngIf="settings">
+                <div class="col-6 col-sm-4">
+                    <div class="info-card p-3 h-100">
+                        <i class="bi bi-clock text-secondary mb-1 d-block"></i>
+                        <span class="x-small text-muted text-uppercase fw-bold d-block">Timer</span>
+                        <span class="fw-bold">{{ settings.timerDurationSeconds ? settings.timerDurationSeconds + 's' : 'No Timer' }}</span>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <div class="info-card p-3 h-100">
+                        <i class="bi bi-hash text-secondary mb-1 d-block"></i>
+                        <span class="x-small text-muted text-uppercase fw-bold d-block">Rounds</span>
+                        <span class="fw-bold">{{ settings.totalRounds || 5 }}</span>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Metadata -->
+                <ng-container *ngIf="selectedGame?.parsedMetadata">
+                    <div class="col-6 col-sm-4" *ngFor="let meta of selectedGame?.parsedMetadata">
+                        <div class="info-card p-3 h-100">
+                            <i class="bi bi-gear-fill text-secondary mb-1 d-block"></i>
+                            <span class="x-small text-muted text-uppercase fw-bold d-block">{{ meta.label }}</span>
+                            <span class="fw-bold">{{ room?.settings?.[meta.id] || 'Default' }}</span>
+                        </div>
+                    </div>
+                </ng-container>
+            </div>
+
+            <div class="alert alert-surface mt-4 border border-secondary border-opacity-10 text-center py-3 italic">
+                <i class="bi bi-hourglass-split me-2"></i>
+                Waiting for the host to start the session...
+            </div>
+        </div>
+    </div>
+</div>

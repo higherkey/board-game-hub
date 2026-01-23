@@ -48,7 +48,7 @@ public class ScatterbrainGameService : IGameService
         _logger = logger;
     }
 
-    public async Task StartRound(Room room, GameSettings settings)
+    public Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Scatterbrain round in room {Code}", room.Code);
         // Pick random letter based on mode
@@ -65,6 +65,7 @@ public class ScatterbrainGameService : IGameService
         room.State = GameState.Playing;
         room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
         room.RoundNumber++;
+        return Task.CompletedTask;
     }
 
     public Task CalculateScores(Room room)

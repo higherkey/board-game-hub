@@ -18,11 +18,11 @@ export class SocialSidebarComponent implements OnInit, OnDestroy {
   friendRequests: FriendRequest[] = [];
   newMessage = '';
   friendUserId = '';
-  private destroy$ = new Subject<void>();
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
-    private socialService: SocialService,
-    private authService: AuthService
+    private readonly socialService: SocialService,
+    private readonly authService: AuthService
   ) { }
 
   async ngOnInit() {

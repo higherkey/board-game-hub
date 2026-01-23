@@ -1,0 +1,30 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# IDE files
+.vscode/
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Sensitive files
+*.local.json
+appsettings.Development.json
+.env
+*.pfx
+secrets.json
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Git files
+.git/
+.gitignore
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -3,6 +3,7 @@ using System;
 using BoardGameHub.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BoardGameHub.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119041642_EnableRlsOnEfHistory")]
+    partial class EnableRlsOnEfHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -397,7 +400,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 1,
                             Name = "Farkle",
                             Status = 3,
-                            Tags = "Dice,Party,Luck,Classic",
+                            Tags = "Dice,Party,Luck",
                             TimerType = 0
                         },
                         new
@@ -412,7 +415,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 2,
                             Name = "Spectrum",
                             Status = 3,
-                            Tags = "Social,Party,Team,Word",
+                            Tags = "Social,Party,Team",
                             TimerType = 0
                         },
                         new
@@ -427,7 +430,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 2,
                             Name = "Courtship",
                             Status = 3,
-                            Tags = "Deduction,Cards",
+                            Tags = "Deduction,Cards,Risk",
                             TimerType = 0
                         },
                         new
@@ -442,7 +445,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 1,
                             Name = "Silent Heist",
                             Status = 3,
-                            Tags = "Cooperative,Real-time,Puzzle",
+                            Tags = "Coop,Real-time,Puzzle",
                             TimerType = 2
                         },
                         new
@@ -496,13 +499,13 @@ namespace BoardGameHub.Api.Migrations
                             AveragePlayTime = 30,
                             Complexity = 1,
                             DefaultRoundLengthSeconds = 0,
-                            Description = "Classic dice rolling fun. Get five of a kind!",
+                            Description = "Classic dice rolling strategy. Get five of a kind!",
                             Icon = "⛵",
                             MaxPlayers = 8,
                             MinPlayers = 1,
                             Name = "Yacht",
                             Status = 3,
-                            Tags = "Dice,Classic",
+                            Tags = "Dice,Strategy,Classic",
                             TimerType = 0
                         },
                         new

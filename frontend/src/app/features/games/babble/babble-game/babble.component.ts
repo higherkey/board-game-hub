@@ -200,7 +200,6 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
   handleEndRound() {
     if (this.isEnding) return;
-    console.log('[Babble] Host triggered End Round');
     if (this.isHost && this.room) {
       this.isEnding = true;
       this.signalRService.endRound().catch(() => {
@@ -210,7 +209,6 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   }
 
   handleNextRound() {
-    console.log('[Babble] Host triggered Next Round');
     if (this.isHost && this.room) {
       this.signalRService.nextRound();
     }

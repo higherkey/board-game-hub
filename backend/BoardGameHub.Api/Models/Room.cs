@@ -30,6 +30,7 @@ public class Room
 
     public string? HostScreenId { get; set; }
     public string? HostPlayerId { get; set; }
+    public string? CreatorConnectionId { get; set; } // The original creator
 
     // Generic Game State
     public object? GameData { get; set; }
@@ -48,7 +49,6 @@ public class Room
     // PlayerId -> List of Answers (index matches Categories)
     public Dictionary<string, List<string>> PlayerAnswers { get; set; } = new();
     
-    // PlayerId -> Round Score
     // PlayerId -> Round Score
     public Dictionary<string, int> RoundScores { get; set; } = new();
 

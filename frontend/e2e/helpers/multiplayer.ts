@@ -1,4 +1,4 @@
-import { Browser, BrowserContext, Page, expect } from '@playwright/test';
+import { Browser, BrowserContext, Page } from '@playwright/test';
 
 export class MultiplayerTestHelper {
     readonly browser: Browser;
