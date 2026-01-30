@@ -27,6 +27,7 @@ export class VideoChatComponent implements OnInit, OnDestroy {
   public isAudioMuted = false;
   public isVideoMuted = false;
   public isVideoActive = false;
+  @Output() isVideoActiveChange = new EventEmitter<boolean>();
   public localStream: MediaStream | null = null;
   public localConnectionId: string = '';
 
@@ -85,6 +86,7 @@ export class VideoChatComponent implements OnInit, OnDestroy {
     try {
       this.localStream = await this.webrtcService.initLocalStream();
       this.isVideoActive = true;
+      this.isVideoActiveChange.emit(true);
 
       this.localConnectionId = this.signalRService.getConnectionId() || '';
       this.mapStreamsToPlayers();
@@ -119,6 +121,7 @@ export class VideoChatComponent implements OnInit, OnDestroy {
     this.webrtcService.stopLocalStream();
     this.localStream = null;
     this.isVideoActive = false;
+    this.isVideoActiveChange.emit(false);
     this.remoteStreams = [];
   }
 

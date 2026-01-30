@@ -159,6 +159,7 @@ export class SignalRService {
     });
 
     this.hubConnection.on('GameTypeChanged', (gameType: string) => {
+      this.logger.info(`[SignalR] Received GameTypeChanged: ${gameType}`);
       const current = this.currentRoomSubject.value;
       if (current) {
         current.gameType = gameType;
@@ -248,6 +249,18 @@ export class SignalRService {
 
     this.hubConnection.on('RoomGameTypeChanged', (code: string, gameType: string) => {
       this.updateActiveRoomGameType(code, gameType);
+    });
+
+    this.hubConnection.on('RoomStatePatch', (patch: any) => {
+      // console.debug('RoomStatePatch', patch);
+      const current = this.currentRoomSubject.value;
+      if (current) {
+        // Deep clone to ensure immutability for OnPush change detection
+        const newState = structuredClone(current);
+        this.applyPatch(newState, patch);
+        this.currentRoomSubject.next(newState);
+        this.players$.next(newState.players); // Sync players stream
+      }
     });
 
     this.hubConnection.onreconnected(connectionId => {
@@ -521,7 +534,8 @@ export class SignalRService {
   }
 
   public async setGameType(roomCode: string, gameType: string): Promise<void> {
-    await this.hubConnection.invoke('SetGameType', roomCode, gameType);
+    console.info(`[SignalR] Invoking SetGameType: ${gameType} for room ${roomCode}`);
+    return this.hubConnection.invoke('SetGameType', roomCode, gameType);
   }
 
   // WebRTC Invokers
@@ -687,6 +701,36 @@ export class SignalRService {
   public submitGreatMindsSync() {
     this.hubConnection.invoke('SubmitGreatMindsSync', this.currentRoomSubject.value!.code)
       .catch(err => console.error(err));
+  }
+
+  private applyPatch(target: any, patch: any) {
+    if (!target || !patch) return;
+
+    for (const key of Object.keys(patch)) {
+      const patchValue = patch[key];
+      const targetValue = target[key];
+
+      // If patch value is null, we might mean "delete" or "set to null".
+      // Our backend diff sends null for "set to null".
+      if (patchValue === null) {
+        target[key] = null;
+        continue;
+      }
+
+      // If array, we replaced the whole array in backend implementation, so just overwrite.
+      if (Array.isArray(patchValue)) {
+        target[key] = patchValue;
+        continue;
+      }
+
+      // If object, recurse
+      if (typeof patchValue === 'object' && typeof targetValue === 'object' && targetValue !== null && !Array.isArray(targetValue)) {
+        this.applyPatch(targetValue, patchValue);
+      } else {
+        // Primitive or structure replacement
+        target[key] = patchValue;
+      }
+    }
   }
 }
 

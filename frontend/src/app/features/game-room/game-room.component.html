@@ -13,8 +13,8 @@
                 <span>{{ isBigScreen ? 'QUIT ROOM' : 'QUIT' }}</span>
             </button>
             <!-- Video Chat Toggle -->
-            <button class="btn btn-outline-light btn-sm" (click)="videoChat.joinVideo()"
-                *ngIf="!needsName && videoChat && !videoChat.isVideoActive" title="Start Video">
+            <button class="btn btn-outline-light btn-sm" (click)="videoChat?.joinVideo()"
+                *ngIf="!needsName && videoChatReady && !isVideoActive" title="Start Video">
                 <i class="bi bi-camera-video"></i>
             </button>
 
@@ -176,7 +176,7 @@
 
             <!-- Video Chat Button / Status -->
             <div class="mt-3">
-                <app-video-chat #videoChat (viewModeChange)="onVideoLayoutChange($event)"></app-video-chat>
+                <app-video-chat #videoChat (viewModeChange)="onVideoLayoutChange($event)" (isVideoActiveChange)="isVideoActive = $event"></app-video-chat>
             </div>
         </div>
 

@@ -21,6 +21,8 @@ public class Player
 public class Room
 {
     public string Code { get; set; } = string.Empty;
+    [System.Text.Json.Serialization.JsonIgnore]
+    public readonly SemaphoreSlim StateLock = new(1, 1);
     public List<Player> Players { get; set; } = new();
     public GameState State { get; set; } = GameState.Lobby;
     public GameSettings Settings { get; set; } = new();
@@ -59,6 +61,10 @@ public class Room
     public UndoSettings UndoSettings { get; set; } = new();
     
     public UndoVote? CurrentVote { get; set; }
+
+    // Optimization: Track which top-level properties are dirty
+    [System.Text.Json.Serialization.JsonIgnore]
+    public HashSet<string> DirtyMembers { get; set; } = new();
 }
 
 public class UndoSettings

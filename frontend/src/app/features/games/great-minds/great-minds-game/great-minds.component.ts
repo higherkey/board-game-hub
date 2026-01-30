@@ -29,15 +29,31 @@ export class GreatMindsGameComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.myConnectionId = this.signalR.getConnectionId() || '';
 
-    this.subscription = this.signalR.gameState$.subscribe((state: any) => {
-      if (state) {
-        this.gameState = state;
-      }
-    });
+    // Legacy: this.subscription = this.signalR.gameState$.subscribe... REMOVED
 
     this.roomSubscription = this.signalR.currentRoom$.subscribe(room => {
-      if (room) {
+      if (room && room.gameData) {
         this.players = room.players;
+
+        // Adapter Layer: Convert Server V2 State to Frontend V1 Expectation
+        const rawState = room.gameData;
+        const myHand = rawState.playerHands?.[this.myConnectionId] || [];
+
+        const otherHandCounts: { [key: string]: number } = {};
+        if (rawState.playerHands) {
+          Object.keys(rawState.playerHands).forEach(key => {
+            if (key !== this.myConnectionId) {
+              otherHandCounts[key] = Array.isArray(rawState.playerHands[key]) ? rawState.playerHands[key].length : 0;
+            }
+          });
+        }
+
+        // Create a shallow copy enriched with derived data
+        this.gameState = {
+          ...rawState,
+          myHand: myHand,
+          otherHandCounts: otherHandCounts
+        };
       }
     });
   }

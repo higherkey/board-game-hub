@@ -15,6 +15,7 @@ public class RoomServiceTests
     private readonly Mock<IHubContext<GameHub>> _mockGameHub;
     private readonly Mock<IClientProxy> _mockClientProxy;
     private readonly Mock<IHubClients> _mockHubClients;
+    private readonly Mock<GameStateManager> _mockGameStateManager;
     private readonly List<IGameService> _gameServices;
     private readonly RoomService _sut;
 
@@ -24,6 +25,16 @@ public class RoomServiceTests
         _mockGameHub = new Mock<IHubContext<GameHub>>();
         _mockClientProxy = new Mock<IClientProxy>();
         _mockHubClients = new Mock<IHubClients>();
+        // Mocking concrete class (GameStateManager) requires empty constructor or arguments.
+        // GameStateManager has dependencies. The cleanest way is to mock dependencies and instantiate it, OR mock it if it's virtual.
+        // For simplicity in this test, we can pass null if the test doesn't use it, but constructor throws.
+        // Actually, we should mock it properly. Since it's not an interface, we might need to instantiate a real one with mocks?
+        // Or better: Create a Mock of it and use MockBehavior.Loose.
+        // BUT GameStateManager doesn't have virtual methods for MarkDirty usually.
+        // Let's add virtual to GameStateManager methods later? 
+        // For now, let's just create a real GameStateManager with mocked dependencies.
+        var diffService = new StateDiffService();
+        _mockGameStateManager = new Mock<GameStateManager>(_mockGameHub.Object, diffService, new Mock<ILogger<GameStateManager>>().Object);
 
         // Setup generic hub mocks to avoid null references
         _mockAdminHub.Setup(h => h.Clients).Returns(_mockHubClients.Object);
@@ -33,7 +44,7 @@ public class RoomServiceTests
 
         _gameServices = new List<IGameService>();
         
-        _sut = new RoomService(_gameServices, _mockAdminHub.Object, _mockGameHub.Object, new Mock<ILogger<RoomService>>().Object);
+        _sut = new RoomService(_gameServices, _mockAdminHub.Object, _mockGameHub.Object, _mockGameStateManager.Object, new Mock<ILogger<RoomService>>().Object);
     }
 
     [Fact]
