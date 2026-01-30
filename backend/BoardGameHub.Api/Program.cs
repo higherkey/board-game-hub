@@ -157,7 +157,8 @@ if (app.Environment.IsDevelopment())
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.EnsureCreated();
+        // Use Migrate() instead of EnsureCreated() to apply pending migrations automatically.
+        db.Database.Migrate();
     }
 }
 
