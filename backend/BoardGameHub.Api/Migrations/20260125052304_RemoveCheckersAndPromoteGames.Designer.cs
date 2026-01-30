@@ -3,6 +3,7 @@ using System;
 using BoardGameHub.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BoardGameHub.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260125052304_RemoveCheckersAndPromoteGames")]
+    partial class RemoveCheckersAndPromoteGames
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -155,7 +158,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 2,
                             Name = "Scatterbrain",
                             SettingsMetadataJson = "[{\"id\":\"letterMode\",\"label\":\"Letter Difficulty\",\"type\":\"select\",\"options\":[{\"label\":\"Normal (No Q, V,X, Z)\",\"value\":0},{\"label\":\"Hard (Only Q, V, X, Z...)\",\"value\":1},{\"label\":\"True Random\",\"value\":2}]}]",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Word,Party,Timed",
                             TimerType = 2
                         },
@@ -186,7 +189,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 7,
                             MinPlayers = 3,
                             Name = "One & Only",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Cooperative,Word,Social",
                             TimerType = 0
                         },
@@ -201,7 +204,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 4,
                             Name = "Nom de Code",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Teams,Word,Social",
                             TimerType = 1
                         },
@@ -216,7 +219,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 2,
                             MinPlayers = 2,
                             Name = "Warships",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Strategy,Combat",
                             TimerType = 0
                         },
@@ -231,7 +234,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 2,
                             MinPlayers = 2,
                             Name = "Four in a Row",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Strategy,Puzzle",
                             TimerType = 0
                         },
@@ -246,7 +249,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 4,
                             Name = "Universal Translator",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Social Deduction,Sci-Fi,Bluffing",
                             TimerType = 1
                         },
@@ -261,7 +264,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 12,
                             MinPlayers = 4,
                             Name = "Pictophone",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Drawing,Party,Humor",
                             TimerType = 2
                         },
@@ -276,7 +279,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 3,
                             Name = "Wisecrack",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Humor,Social,Party",
                             TimerType = 2
                         },
@@ -291,7 +294,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 3,
                             Name = "Poppycock",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Bluffing,Word,Social",
                             TimerType = 0
                         },
@@ -306,7 +309,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 3,
                             Name = "Symbology",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Cooperative,Communication,Icons",
                             TimerType = 1
                         },
@@ -321,7 +324,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 10,
                             MinPlayers = 3,
                             Name = "Breaking News",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Humor,Social,Party,Timed",
                             TimerType = 2
                         },
@@ -336,7 +339,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 10,
                             MinPlayers = 4,
                             Name = "Deepfake",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Social Deduction,Drawing,AI",
                             TimerType = 1
                         },
@@ -351,7 +354,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 5,
                             MinPlayers = 2,
                             Name = "Sushi Train!",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Drafting,Card Game,Family",
                             TimerType = 0
                         },
@@ -366,7 +369,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 4,
                             MinPlayers = 2,
                             Name = "Great Minds",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Cooperative,Card Game,Social",
                             TimerType = 0
                         },

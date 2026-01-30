@@ -109,11 +109,6 @@ public class AppDbContext : IdentityDbContext<User>
                 MinPlayers = 2, MaxPlayers = 2, Complexity = 1, AveragePlayTime = 5, Tags = "Strategy,Puzzle",
                 TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
             },
-            new GameDefinition { 
-                Id = "Checkers", Name = "Checkers", Icon = "🏁", Description = "Jump over opponent pieces to capture them.", Status = GameStatus.InDevelopment,
-                MinPlayers = 2, MaxPlayers = 2, Complexity = 2, AveragePlayTime = 15, Tags = "Strategy,Classic",
-                TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
-            },
 
             
             // New User Picks

@@ -112,6 +112,5 @@ public enum GameType
     GreatMinds = 12,
     NomDeCode = 13,
     Warships = 14,
-    FourInARow = 15,
-    Checkers = 16
+    FourInARow = 15
 }
