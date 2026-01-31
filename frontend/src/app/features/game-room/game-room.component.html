@@ -343,6 +343,7 @@
                         [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                         [currentRound]="(currentRoom$ | async)?.roundNumber || 0"
                         [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
+                        [players]="(players$ | async) || []"
                         (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()">
                     </app-host-settings>
                 </div>

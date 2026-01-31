@@ -15,9 +15,10 @@ import { Subscription } from 'rxjs';
 })
 export class GreatMindsGameComponent implements OnInit, OnDestroy {
   @Input() isHost: boolean = false;
+  @Input() room: any;
+  @Input() myConnectionId: string = '';
   gameState: any = null;
   players: any[] = [];
-  myConnectionId: string = '';
   showRules: boolean = false;
   private subscription: Subscription | null = null;
   private roomSubscription: Subscription | null = null;
@@ -27,7 +28,9 @@ export class GreatMindsGameComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.myConnectionId = this.signalR.getConnectionId() || '';
+    if (!this.myConnectionId) {
+      this.myConnectionId = this.signalR.getConnectionId() || '';
+    }
 
     // Legacy: this.subscription = this.signalR.gameState$.subscribe... REMOVED
 
