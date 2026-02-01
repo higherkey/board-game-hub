@@ -18,7 +18,6 @@ import { SushiTrainComponent } from './sushi-train/sushi-train-game/sushi-train.
 import { NomDeCodeGameComponent } from './nom-de-code/nom-de-code-game/nom-de-code-game.component';
 import { WarshipsGameComponent } from './warships/warships-game/warships-game.component';
 import { FourInARowGameComponent } from './four-in-a-row/four-in-a-row-game/four-in-a-row-game.component';
-import { CheckersGameComponent } from './checkers/checkers-game/checkers-game.component';
 
 export interface GameConfig {
     hostComponent: Type<any>;
@@ -70,8 +69,5 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
     },
     'FourInARow': {
         hostComponent: FourInARowGameComponent
-    },
-    'Checkers': {
-        hostComponent: CheckersGameComponent
     }
 };

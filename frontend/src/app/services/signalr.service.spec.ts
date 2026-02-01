@@ -266,5 +266,37 @@ describe('SignalRService', () => {
 
       expect(service.currentRoomSubject.value?.settings.timerDurationSeconds).toBe(999);
     });
+
+    it('should patch currentRoom on RoomStatePatch', () => {
+      // Setup initial state
+      const initialRoom: any = {
+        code: 'PATCH',
+        players: [{ name: 'A' }],
+        settings: { timerDurationSeconds: 10 },
+        gameData: { score: 0 }
+      };
+      service.currentRoomSubject.next(initialRoom);
+
+      const callback = getCallback('RoomStatePatch');
+
+      // Patch: Update settings time and add a player, change gameData score
+      const patch = {
+        settings: { timerDurationSeconds: 20 },
+        gameData: { score: 100 },
+        // Deep nested array replacement (arrays are replaced in our logic)
+        // actually players is NOT replaced deep, it's just a prop
+        players: [{ name: 'A' }, { name: 'B' }]
+      };
+
+      callback(patch);
+
+      const updated = service.currentRoomSubject.value;
+      expect(updated).not.toBeNull();
+      // Verified merged properties
+      expect(updated?.settings.timerDurationSeconds).toBe(20);
+      expect(updated?.gameData.score).toBe(100);
+      expect(updated?.players.length).toBe(2);
+      expect(updated?.code).toBe('PATCH'); // Should verify original props remain
+    });
   });
 });

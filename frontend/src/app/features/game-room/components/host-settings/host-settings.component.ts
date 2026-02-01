@@ -56,8 +56,8 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   ngOnInit() {
     this.gameDataService.games$.subscribe(games => {
       if (games) {
-        // Allow Deployed and Testing
-        this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+        // Allow Deployed, Testing, AND InDevelopment (to match Games Library)
+        this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing' || g.status === 'InDevelopment');
         this.syncSelectedGame();
       }
     });
@@ -154,13 +154,18 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       );
       this.selectedGameType = found ? found.id : 'None';
     } else {
-      this.selectedGameType = 'None';
+      // If no argument, likely coming from existing selection or no-op. 
+      // Do NOT force reset to None unless explicitly desired?
+      // Actually, if we want to reset, we should pass 'None'.
+      // If undefined, assume we just want to create the room update based on current selection.
+      if (!this.selectedGameType) this.selectedGameType = 'None';
     }
 
     if (this.roomCode && this.selectedGameType !== 'None') {
       if (this.isIntermission) return;
 
       this.gameSearchQuery = this.availableGames.find(g => g.id === this.selectedGameType)?.name || '';
+      console.info(`[HostSettings] Requesting Game Change to: ${this.selectedGameType}`);
       await this.signalRService.setGameType(this.roomCode, this.selectedGameType);
       this.syncSelectedGame();
     }
