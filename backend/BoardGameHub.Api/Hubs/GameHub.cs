@@ -37,6 +37,16 @@ public class GameHub : Hub
         _logger = logger;
     }
 
+    public async Task JoinLobby()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "LobbyGroup");
+    }
+
+    public async Task LeaveLobby()
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, "LobbyGroup");
+    }
+
     public Task<List<string>> ValidateRooms(List<string> codes)
     {
         return Task.FromResult(_roomService.ValidateRooms(codes));
@@ -59,6 +69,13 @@ public class GameHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code.ToUpper());
         // Broadcast to the creator (and anyone else in the group, though it's just them)
         await Clients.Group(room.Code.ToUpper()).SendAsync("PlayerJoined", room.Players);
+        
+        // Public Lobby Update
+        if (room.IsPublic)
+        {
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomCreated", room);
+        }
+
         return room;
     }
 
@@ -73,6 +90,18 @@ public class GameHub : Hub
         if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("GameStarted", room);
+            // If game starts, does it vanish from public lobby? Usually "Lobby" state rooms are shown.
+            // When State becomes "Playing", it disappears from GetPublicRooms().
+            // So we should broadcast this as a deletion (or update that implies removal).
+            // Let's assume frontend filters by state, or we send a delete if state changes.
+            // GetPublicRooms filters by `r.State == GameState.Lobby`.
+            // So if state changes to Playing, we should send "PublicRoomDeleted" (from the list perspective) or "PublicRoomUpdated".
+            // Sending "PublicRoomDeleted" is cleaner for the list.
+            if (room.IsPublic)
+            {
+                 // Removing from public view
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomDeleted", roomCode);
+            }
         }
     }
 
@@ -88,7 +117,14 @@ public class GameHub : Hub
 
     public async Task EndGame(string roomCode)
     {
-        _roomService.EndGame(roomCode);
+        var room = _roomService.EndGame(roomCode);
+        if (room != null && room.IsPublic && room.State == GameState.Finished)
+        {
+             // Finished rooms are not public? 
+             // GetPublicRooms filters r.State == GameState.Lobby.
+             // So if it was Playing (not public) and becomes Finished (not public), no change.
+             // If we ever support seeing Finished games, we'd need an update.
+        }
     }
 
     public async Task SetGameType(string roomCode, string gameType)
@@ -104,6 +140,16 @@ public class GameHub : Hub
                 // Redundant broadcast removed? Or kept for legacy? 
                 // Clients.All is definitely bad. Removing it.
                 // await Clients.All.SendAsync("RoomGameTypeChanged", roomCode.ToUpper(), type.ToString());
+                
+                if (room.IsPublic)
+                {
+                    // If switching back to Lobby state (SetGameType logic does this), it reappears!
+                    if (room.State == GameState.Lobby)
+                    {
+                         await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+                         // Or "PublicRoomCreated" if it wasn't there? "Updated" is safer if upsert logic used.
+                    }
+                }
             }
             else
             {
@@ -118,7 +164,11 @@ public class GameHub : Hub
 
     public async Task SetHostPlayer(string roomCode, string targetConnectionId)
     {
-        _roomService.SetHostPlayer(roomCode, targetConnectionId);
+        var room = _roomService.SetHostPlayer(roomCode, targetConnectionId);
+        if (room != null && room.IsPublic && room.State == GameState.Lobby)
+        {
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+        }
     }
 
     public async Task VoteNextGame(string roomCode, string gameType)
@@ -135,6 +185,11 @@ public class GameHub : Hub
         if (room != null)
         {
             await Clients.Group(roomCode.ToUpper()).SendAsync("SettingsUpdated", settings);
+            if (room.IsPublic && room.State == GameState.Lobby)
+            {
+                 // Settings (like timer) don't show on card usually, but good to keep sync.
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+            }
         }
     }
 
@@ -207,6 +262,12 @@ public class GameHub : Hub
         // Notify others in group
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
         
+        // Public Lobby Update
+        if (room.IsPublic && room.State == GameState.Lobby)
+        {
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+        }
+
         return room;
     }
 
@@ -216,6 +277,7 @@ public class GameHub : Hub
         if (room != null)
         {
             // await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
+            // Maybe update player count ready status? Not critical for public lobby list.
         }
     }
 
@@ -227,6 +289,11 @@ public class GameHub : Hub
             // Broadcast generic PlayerJoined to update the list, or we could make a specific PlayerRenamed event
             // Re-using PlayerJoined is easiest for now as the frontend likely just refreshes the list.
             await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
+            
+            if (room.IsPublic && room.State == GameState.Lobby)
+            {
+                await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+            }
         }
     }
 
@@ -401,6 +468,12 @@ public class GameHub : Hub
         if (room != null)
         {
            await Clients.Group(roomCode).SendAsync("GameStarted", room);
+           
+           if (room.IsPublic && room.State == GameState.Playing)
+           {
+                // Game started from Lobby -> Delete from public list
+                await Clients.Group("LobbyGroup").SendAsync("PublicRoomDeleted", roomCode);
+           }
         }
     }
 
@@ -427,14 +500,18 @@ public class GameHub : Hub
     
     public async Task LeaveRoom(string roomCode)
     {
-        _roomService.RemovePlayer(Context.ConnectionId);
+        var room = _roomService.RemovePlayer(Context.ConnectionId);
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomCode);
         
         // Notify others that player left (if room still exists)
-        var room = _roomService.GetRoom(roomCode);
         if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("PlayerJoined", room.Players);
+            
+            if (room.IsPublic && room.State == GameState.Lobby)
+            {
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+            }
         }
     }
 
@@ -505,13 +582,21 @@ public class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // We don't easily know which room they were in unless we track it or search all rooms.
-        // RoomService.RemovePlayer searches all rooms, so it handles cleanup.
-        // But we can't easily notify the specific room group here without finding it first.
-        // RoomService.RemovePlayer returns void. 
-        // Improvement: Have RemovePlayer return the Room it removed from?
+        var room = _roomService.RemovePlayer(Context.ConnectionId);
         
-        _roomService.RemovePlayer(Context.ConnectionId);
+        if (room != null)
+        {
+             // Notify the room group, because RemovePlayer only does internal logic
+             // But wait, RemovePlayer returns the room object.
+             // We need to notify the room that a player left.
+             await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
+             
+             if (room.IsPublic && room.State == GameState.Lobby)
+             {
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+             }
+        }
+        
         await base.OnDisconnectedAsync(exception);
     }
 }

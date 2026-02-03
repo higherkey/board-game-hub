@@ -73,6 +73,7 @@ export class SignalRService {
   public connectionStatus$ = new BehaviorSubject<string>('Disconnected');
   public currentRoomSubject = new BehaviorSubject<Room | null>(null);
   public currentRoom$ = this.currentRoomSubject.asObservable();
+  public publicRooms$ = new BehaviorSubject<Room[]>([]);
   public connectionId$ = new BehaviorSubject<string | null>(null);
   public me$: Observable<Player | null> = combineLatest([this.players$, this.connectionId$]).pipe(
     map(([players, myId]) => players.find(p => p.connectionId === myId) || null)
@@ -267,6 +268,30 @@ export class SignalRService {
       console.info('SignalR Reconnected', connectionId);
       this.connectionId$.next(connectionId || this.hubConnection.connectionId);
       this.validateActiveRooms();
+    });
+
+    // Public Lobby Events
+    this.hubConnection.on('PublicRoomCreated', (room: Room) => {
+      const current = this.publicRooms$.value;
+      this.publicRooms$.next([...current, room]);
+    });
+
+    this.hubConnection.on('PublicRoomUpdated', (room: Room) => {
+      const current = this.publicRooms$.value;
+      const index = current.findIndex(r => r.code === room.code);
+      if (index !== -1) {
+        const updated = [...current];
+        updated[index] = room;
+        this.publicRooms$.next(updated);
+      } else {
+        // If not found, treat as created (e.g. if we joined late or it became public)
+        this.publicRooms$.next([...current, room]);
+      }
+    });
+
+    this.hubConnection.on('PublicRoomDeleted', (code: string) => {
+      const current = this.publicRooms$.value;
+      this.publicRooms$.next(current.filter(r => r.code !== code));
     });
   }
 
@@ -478,8 +503,25 @@ export class SignalRService {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 
-  public async getPublicRooms(): Promise<any[]> {
-    return await this.hubConnection.invoke('GetPublicRooms');
+  public async getPublicRooms(): Promise<Room[]> {
+    const rooms: Room[] = await this.hubConnection.invoke('GetPublicRooms');
+    this.publicRooms$.next(rooms);
+    return rooms;
+  }
+
+  public async joinLobby(): Promise<void> {
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
+    await this.hubConnection.invoke('JoinLobby');
+    // Initial fetch to populate list
+    this.getPublicRooms();
+  }
+
+  public async leaveLobby(): Promise<void> {
+    if (this.hubConnection.state === HubConnectionState.Connected) {
+      await this.hubConnection.invoke('LeaveLobby');
+    }
   }
 
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {

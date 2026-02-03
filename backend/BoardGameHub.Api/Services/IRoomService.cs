@@ -8,7 +8,7 @@ public interface IRoomService
     Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null, bool isScreen = false);
     Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false);
     Room? ToggleReady(string code, string connectionId, bool? forcedState = null);
-    void RemovePlayer(string connectionId);
+    Room? RemovePlayer(string connectionId);
     Room? GetRoom(string code);
     List<Room> GetPublicRooms();
     Room? SetHostPlayer(string code, string connectionId);

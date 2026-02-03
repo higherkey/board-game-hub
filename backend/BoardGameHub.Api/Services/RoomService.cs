@@ -278,7 +278,7 @@ public class RoomService : IRoomService
         return null;
     }
 
-    public void RemovePlayer(string connectionId)
+    public Room? RemovePlayer(string connectionId)
     {
         if (_connectionRoomMap.TryRemove(connectionId, out var roomCode))
         {
@@ -299,13 +299,14 @@ public class RoomService : IRoomService
                     }
                     
                     // Trigger cleanup check
-                    // Trigger cleanup check
                     CheckRoomLifecycle(room);
                     _gameStateManager.MarkDirty(room.Code);
                     NotifyStatsChanged();
+                    return room;
                 }
             }
         }
+        return null;
     }
 
     private void CheckRoomLifecycle(Room room)

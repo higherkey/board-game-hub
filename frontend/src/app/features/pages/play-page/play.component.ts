@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -48,17 +48,34 @@ export class PlayComponent implements OnInit {
         });
         this.gameDataService.refreshGames();
 
-        this.loadRooms();
+        // Subscribe to real-time public rooms
+        this.signalRService.publicRooms$.subscribe(rooms => {
+            this.rooms = rooms;
+            this.loading = false;
+        });
+
+        this.initLobby();
+    }
+
+    ngOnDestroy() {
+        this.signalRService.leaveLobby();
+    }
+
+    async initLobby() {
+        this.loading = true;
+        try {
+            await this.signalRService.joinLobby();
+        } catch (e) {
+            this.logger.error('Failed to join lobby stream', e);
+            this.loading = false;
+        }
     }
 
     async loadRooms() {
+        // Refresh manually if needed, but separate from stream init
         this.loading = true;
         try {
-            if (this.signalRService.connectionStatus$.value !== 'Connected') {
-                await this.signalRService.startConnection();
-            }
-            this.rooms = await this.signalRService.getPublicRooms();
-            this.logger.debug(`Loaded ${this.rooms.length} public rooms`);
+            await this.signalRService.getPublicRooms();
         } catch (e) {
             this.logger.error('Failed to load rooms', e);
         } finally {
