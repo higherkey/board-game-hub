@@ -17,12 +17,3 @@
         <span class="small fw-bold">Players</span>
     </button>
 
-    <!-- Host Tab (Conditional) -->
-    <button *ngIf="isHost" class="btn btn-link nav-btn d-flex flex-column align-items-center"
-        [class.active]="activeTab === 'host'" (click)="selectTab('host')">
-        <div class="icon-wrapper mb-1">
-            <i class="bi bi-star-fill fs-4"></i>
-        </div>
-        <span class="small fw-bold">Host</span>
-    </button>
-</div>

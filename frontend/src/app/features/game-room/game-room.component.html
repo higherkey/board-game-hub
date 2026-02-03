@@ -75,7 +75,7 @@
         <!-- PLAYER SIDEBAR (Hidden during entry stage) -->
         <div *ngIf="!needsName" class="col-md-3 col-lg-2 d-md-flex flex-column flex-grow-1 sidebar-panel"
             [class.is-collapsed]="isSidebarCollapsed" [class.d-flex]="mobileView === 'players'"
-            [class.d-none]="mobileView !== 'players' && mobileView !== 'host'">
+            [class.d-none]="mobileView !== 'players'">
 
             <!-- TABLES SECTION -->
             <div class="card bg-surface shadow-sm border-0 flex-shrink-0 overflow-hidden" style="max-height: 40%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
@@ -321,20 +321,25 @@
                     </div>
         </div>
         <!-- ACTIVE GAME STATE -->
-        <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in position-relative">
+        <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in position-relative d-flex flex-column">
 
-            <ng-container *ngIf="gameComponent">
-                <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
-            </ng-container>
+            <div class="flex-grow-1 position-relative overflow-hidden">
+                <ng-container *ngIf="gameComponent">
+                <ng-container [ngComponentOutlet]="gameComponent" 
+                              [ngComponentOutletInputs]="gameInputs" 
+                              (activate)="onGameComponentActivate($event)">
+                </ng-container>
+                </ng-container>
 
-            <!-- Fallback removed: All games should have explicit components now -->
-            <div *ngIf="!gameComponent"
-                class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
-                <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
-                <p>Game component not found for {{ (currentRoom$ | async)?.gameType }}</p>
+                <!-- Fallback removed: All games should have explicit components now -->
+                <div *ngIf="!gameComponent"
+                    class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
+                    <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+                    <p>Game component not found for {{ (currentRoom$ | async)?.gameType }}</p>
+                </div>
             </div>
 
-            <!-- INTERMISSION SETTINGS BAR (Host Only) -->
+            <!-- INTERMISSION SETTINGS BAR (Host Only - Desktop) -->
             <div *ngIf="(isIntermission$ | async) && (isHost$ | async)"
                 class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 shadow-lg border-top border-secondary d-none d-md-block"
                 style="background-color: var(--surface-card); box-shadow: 0 -5px 20px rgba(0,0,0,0.3) !important;">
@@ -348,35 +353,31 @@
                     </app-host-settings>
                 </div>
             </div>
-        </div>
 
-        <!-- HOST TAB CONTENT (Mobile Only) - Moved Inside Section -->
-        <div class="mobile-host-container col-12"
-            *ngIf="mobileView === 'host' && (isHost$ | async)">
-            <div class="container" style="max-width: 600px;">
-                <h4 class="text-pink fw-bold mb-4 text-center">
-                    <i class="bi bi-star-fill me-2"></i>Host Controls
-                </h4>
+            <!-- HOST CONTROLS (Mobile Only - Bottom of Game View) -->
+            <div class="d-md-none bg-surface border-top border-pink p-3" *ngIf="(isHost$ | async)">
+                 <!-- Toggle for Host Controls if they take up too much space? For now, just show them as requested -->
+                 <details class="mb-2">
+                    <summary class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-star-fill"></i> Host Controls
+                    </summary>
+                    <div class="mt-3 card shadow-sm border-warning">
+                        <div class="card-body p-3">
+                            <!-- Dynamic Host Controls from Active Game -->
+                            <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-3 border-bottom pb-3">
+                                <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
+                            </div>
 
-                <!-- Dynamic Host Controls from Active Game -->
-                <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-4">
-                    <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
-                </div>
-
-                <div class="card shadow border-pink">
-                    <div class="card-header bg-white border-bottom-0 pt-3">
-                        <h6 class="fw-bold text-secondary text-uppercase mb-0">Game Settings</h6>
+                            <app-host-settings [roomCode]="roomCode" [compactMode]="true"
+                                [currentGameType]="(currentRoom$ | async)?.gameType || ''"
+                                [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
+                                [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
+                                (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()"
+                                (toggleReady)="toggleReady()">
+                            </app-host-settings>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <app-host-settings [roomCode]="roomCode" [compactMode]="true"
-                            [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                            [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
-                            [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
-                            (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()"
-                            (toggleReady)="toggleReady()">
-                        </app-host-settings>
-                    </div>
-                </div>
+                 </details>
             </div>
         </div>
     </div>
