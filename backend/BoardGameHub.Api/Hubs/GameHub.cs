@@ -105,17 +105,19 @@ public class GameHub : Hub
         }
     }
 
-    public async Task PauseGame(string roomCode)
+    public Task PauseGame(string roomCode)
     {
         _roomService.PauseGame(roomCode);
+        return Task.CompletedTask;
     }
 
-    public async Task ResumeGame(string roomCode)
+    public Task ResumeGame(string roomCode)
     {
         _roomService.ResumeGame(roomCode);
+        return Task.CompletedTask;
     }
 
-    public async Task EndGame(string roomCode)
+    public Task EndGame(string roomCode)
     {
         var room = _roomService.EndGame(roomCode);
         if (room != null && room.IsPublic && room.State == GameState.Finished)
@@ -125,6 +127,7 @@ public class GameHub : Hub
              // So if it was Playing (not public) and becomes Finished (not public), no change.
              // If we ever support seeing Finished games, we'd need an update.
         }
+        return Task.CompletedTask;
     }
 
     public async Task SetGameType(string roomCode, string gameType)
@@ -171,12 +174,13 @@ public class GameHub : Hub
         }
     }
 
-    public async Task VoteNextGame(string roomCode, string gameType)
+    public Task VoteNextGame(string roomCode, string gameType)
     {
         if (Enum.TryParse<GameType>(gameType, true, out var type))
         {
             _roomService.VoteNextGame(roomCode, Context.ConnectionId, type);
         }
+        return Task.CompletedTask;
     }
     
     public async Task UpdateSettings(string roomCode, GameSettings settings)
@@ -195,9 +199,10 @@ public class GameHub : Hub
 
 
 
-    public async Task UpdateUndoSettings(string roomCode, UndoSettings settings)
+    public Task UpdateUndoSettings(string roomCode, UndoSettings settings)
     {
         _roomService.UpdateUndoSettings(roomCode, settings);
+        return Task.CompletedTask;
     }
 
     public async Task RequestUndo(string roomCode)
@@ -271,7 +276,7 @@ public class GameHub : Hub
         return room;
     }
 
-    public async Task ToggleReady(string roomCode, bool? forcedState = null)
+    public Task ToggleReady(string roomCode, bool? forcedState = null)
     {
         var room = _roomService.ToggleReady(roomCode, Context.ConnectionId, forcedState);
         if (room != null)
@@ -279,6 +284,7 @@ public class GameHub : Hub
             // await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
             // Maybe update player count ready status? Not critical for public lobby list.
         }
+        return Task.CompletedTask;
     }
 
     public async Task RenamePlayer(string newName)
@@ -297,13 +303,14 @@ public class GameHub : Hub
         }
     }
 
-    public async Task ChangeRole(bool isScreen)
+    public Task ChangeRole(bool isScreen)
     {
         var room = _roomService.ChangeRole(Context.ConnectionId, isScreen);
         if (room != null)
         {
             // await Clients.Group(room.Code).SendAsync("RoomUpdated", room);
         }
+        return Task.CompletedTask;
     }
 
     public async Task SubmitAnswers(string roomCode, List<string> answers)

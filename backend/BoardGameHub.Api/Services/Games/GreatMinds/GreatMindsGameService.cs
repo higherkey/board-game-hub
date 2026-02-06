@@ -21,7 +21,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             _logger = logger;
         }
 
-        public async Task StartRound(Room room, GameSettings settings)
+        public Task StartRound(Room room, GameSettings settings)
         {
             _logger.LogInformation("Starting Great Minds round in room {Code}", room.Code);
             // 1. Setup State
@@ -46,6 +46,8 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
 
             // 3. Deal Level 1
             DealCards(room, state);
+
+            return Task.CompletedTask;
         }
 
         private void DealCards(Room room, GreatMindsGameState state)
