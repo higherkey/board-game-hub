@@ -1,4 +1,6 @@
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { ConfirmService } from '../../../../shared/services/confirm.service';
+import { LoggerService } from '../../../../core/services/logger.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GameSettings, SignalRService, Player } from '../../../../services/signalr.service';
@@ -25,9 +27,9 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() isScreen = false;
   @Output() gameStart = new EventEmitter<any>();
   @Output() nextRound = new EventEmitter<GameSettings>();
-  @Output() endGame = new EventEmitter<void>();
-  @Output() exitGame = new EventEmitter<void>();
-  @Output() toggleReady = new EventEmitter<void>();
+  @Output() endGame = new EventEmitter<MouseEvent>();
+  @Output() exitGame = new EventEmitter<MouseEvent>();
+  @Output() toggleReady = new EventEmitter<boolean>();
 
   selectedGameType = 'None';
   availableGames: GameDefinition[] = [];
@@ -50,7 +52,9 @@ export class HostSettingsComponent implements OnChanges, OnInit {
 
   constructor(
     private readonly signalRService: SignalRService,
-    private readonly gameDataService: GameDataService
+    private readonly gameDataService: GameDataService,
+    private readonly confirmService: ConfirmService,
+    private readonly logger: LoggerService
   ) { }
 
   ngOnInit() {
@@ -161,7 +165,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       if (!this.selectedGameType) this.selectedGameType = 'None';
     }
 
-    if (this.roomCode && this.selectedGameType !== 'None') {
+    if (this.roomCode) {
       if (this.isIntermission) return;
 
       this.gameSearchQuery = this.availableGames.find(g => g.id === this.selectedGameType)?.name || '';
@@ -204,7 +208,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     this.signalRService.updateUndoSettings(this.undoSettings);
   }
 
-  startGame() {
+  async startGame(event?: MouseEvent) {
     const playersOnly = this.players.filter(p => !p.isScreen);
     const readyPlayers = playersOnly.filter(p => p.isReady).length;
     const totalPlayers = playersOnly.length;
@@ -214,15 +218,27 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       return;
     }
 
+    // Relaxed Start: Show confirmation if not everyone is ready
     if (readyPlayers < totalPlayers) {
-      alert(`Cannot start the game! ${totalPlayers - readyPlayers} player(s) are not ready.`);
-      return;
+      const confirmed = await this.confirmService.confirm({
+        title: 'Players Not Ready!',
+        message: 'Some players haven\'t readied up yet. Starting now might leave them out or cause issues.',
+        confirmLabel: 'START ANYWAY',
+        cancelLabel: 'WAIT FOR OTHERS'
+      }, event);
+
+      if (!confirmed) return;
     }
 
+    this.confirmStart(event);
+  }
+
+  confirmStart(event?: MouseEvent) {
+    this.logger.info(`[HostSettings] Host confirms start of ${this.isIntermission ? 'next round' : 'game'}`);
     if (this.isIntermission) {
       // Check for Game Over condition (Soft Stop)
       if (this.currentRound >= (this.settings.totalRounds || 5)) {
-        this.endGame.emit();
+        this.endGame.emit(event);
       } else {
         this.nextRound.emit(this.settings);
       }
@@ -231,8 +247,8 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     }
   }
 
-  emitExitGame() {
-    this.exitGame.emit();
+  emitExitGame(event?: MouseEvent) {
+    this.exitGame.emit(event);
   }
 
   getQrCodeUrl(): string {
@@ -241,10 +257,12 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   }
 
   onToggleReady() {
+    this.logger.info(`[HostSettings] User clicked Ready Override/Toggle (forcedState: true)`);
     if (this.selectedGameType === 'None') {
       alert('Please select a game first!');
       return;
     }
-    this.toggleReady.emit();
+    // If we are Host or Screen, trigger the universal "Room Ready" override
+    this.toggleReady.emit(true);
   }
 }

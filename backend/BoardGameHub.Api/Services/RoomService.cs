@@ -384,7 +384,18 @@ public class RoomService : IRoomService
         room.StateLock.Wait();
         try
         {
-            player.IsReady = forcedState ?? !player.IsReady;
+            // If forcedState is true and requester is HOST, mark EVERYONE as ready.
+            if (forcedState == true && player.IsHost)
+            {
+                foreach (var p in room.Players.Where(p => !p.IsScreen))
+                {
+                    p.IsReady = true;
+                }
+            }
+            else
+            {
+                player.IsReady = forcedState ?? !player.IsReady;
+            }
         }
         finally
         {

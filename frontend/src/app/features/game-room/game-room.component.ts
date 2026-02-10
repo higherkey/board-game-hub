@@ -10,6 +10,7 @@ import { SocialPanelComponent } from '../../shared/components/social-panel/socia
 import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { GAME_REGISTRY } from '../games/game.registry';
+import { ConfirmService } from '../../shared/services/confirm.service';
 import { GameReviewComponent } from './components/game-review/game-review.component';
 import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
@@ -78,10 +79,22 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   // Video layout: 'sidebar' (default) | 'docked-top' | 'docked-bottom'
   public videoLayout: 'sidebar' | 'docked-top' | 'docked-bottom' = 'sidebar';
   public isVideoActive = false;
+  public isNavMenuOpen = false;
 
   get selectedGame(): GameDefinition | undefined {
     const type = this.selectedGameType.toLowerCase();
     return this.availableGames.find(g => g.id.toLowerCase() === type || g.name.toLowerCase() === type);
+  }
+
+  /**
+   * Returns a clean, human-readable name for the current room state.
+   */
+  getCurrentGameDisplayName(gameType: string | undefined): string {
+    if (!gameType || gameType === 'None') return 'Lobby';
+
+    // Find in available games to get the formatted name
+    const game = this.availableGames.find(g => g.id.toLowerCase() === gameType.toLowerCase());
+    return game ? game.name : gameType;
   }
 
   onVideoLayoutChange(mode: any) {
@@ -113,6 +126,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     this.mobileView = tab;
   }
 
+  toggleNavMenu() {
+    this.isNavMenuOpen = !this.isNavMenuOpen;
+  }
+
   enableTransitions = false;
 
   constructor(
@@ -122,7 +139,8 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     // authService injected via property
     private readonly toastService: ToastService,
     private readonly gameDataService: GameDataService,
-    private readonly logger: LoggerService
+    private readonly logger: LoggerService,
+    private readonly confirmService: ConfirmService
   ) {
     this.session$ = this.authService.session$;
     this.players$ = this.signalRService.players$;
@@ -195,9 +213,12 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
   }
 
-  async toggleReady() {
+  async toggleReady(forcedState?: boolean) {
+    if (forcedState) {
+      this.logger.info(`[GameRoom] User triggered ready OVERRIDE (forcedState: ${forcedState})`);
+    }
     if (this.roomCode) {
-      await this.signalRService.toggleReady(this.roomCode);
+      await this.signalRService.toggleReady(this.roomCode, forcedState);
     }
   }
 
@@ -355,7 +376,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   startGame(settings: GameSettings) {
-    this.logger.info(`Starting game: ${this.selectedGameType}`, settings);
+    this.logger.info(`[GameRoom] Starting game: ${this.selectedGameType}`, settings);
     this.signalRService.startGame(settings);
   }
 
@@ -369,16 +390,31 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     }
   }
 
-  async onEndGame() {
+  async onEndGame(event?: MouseEvent) {
     // This is for "Finish Game" (Results), usually called when max rounds reached
-    if (confirm('Are you sure you want to finish the game and see results?')) {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Finish Game?',
+      message: 'Are you sure you want to finish the game and see results?',
+      confirmLabel: 'SEE RESULTS',
+      cancelLabel: 'KEEP PLAYING'
+    }, event);
+
+    if (confirmed) {
       await this.signalRService.endGame();
     }
   }
 
-  async onExitGame() {
+  async onExitGame(event?: MouseEvent) {
     // This is for "End Session" (Return to Lobby)
-    if (confirm('Are you sure you want to end the session and return to the lobby?')) {
+    const confirmed = await this.confirmService.confirm({
+      title: 'End Session?',
+      message: 'Are you sure you want to end the session and return to the lobby?',
+      confirmLabel: 'END SESSION',
+      cancelLabel: 'CANCEL',
+      confirmButtonClass: 'btn-danger'
+    }, event);
+
+    if (confirmed) {
       if (this.roomCode) {
         await this.signalRService.setGameType(this.roomCode, 'None');
       }
@@ -420,20 +456,23 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     return me?.connectionId || '';
   }
 
-  @ViewChild('undoDialog') undoDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('videoChat') videoChat?: VideoChatComponent;
 
-  requestUndo() {
-    this.undoDialog.nativeElement.showModal();
-  }
+  async requestUndo() {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Request Undo?',
+      message: 'This will pause the game and ask all players to vote on the undo. Are you sure you want to proceed?',
+      confirmLabel: 'REQUEST UNDO',
+      cancelLabel: 'CANCEL'
+    });
 
-  confirmUndo() {
-    this.signalRService.requestUndo();
-    this.undoDialog.nativeElement.close();
+    if (confirmed) {
+      this.signalRService.requestUndo();
+    }
   }
 
   cancelUndo() {
-    this.undoDialog.nativeElement.close();
+    // No longer needed with ConfirmService, but kept if other parts specifically call it (unlikely)
   }
 
   async leaveRoom() {

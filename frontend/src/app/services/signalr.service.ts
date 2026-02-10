@@ -113,6 +113,22 @@ export class SignalRService {
 
     this.loadActiveRooms();
 
+    // Debugging: Log when everyone is ready (and when they stop being ready)
+    let wasReady = false;
+    this.players$.subscribe(players => {
+      const actualPlayers = players.filter(p => !p.isScreen);
+      const readyPlayers = actualPlayers.filter(p => p.isReady);
+      const isReady = actualPlayers.length > 0 && readyPlayers.length === actualPlayers.length;
+
+      if (isReady && !wasReady) {
+        this.logger.info(`[SignalR] Room is now READY. All ${actualPlayers.length} players are set.`);
+        wasReady = true;
+      } else if (!isReady && wasReady) {
+        this.logger.info(`[SignalR] Room is NO LONGER ready. (${readyPlayers.length}/${actualPlayers.length} players ready)`);
+        wasReady = false;
+      }
+    });
+
     this.hubConnection.onclose((err) => {
       this.logger.warn('SignalR Connection Closed', err);
       this.connectionStatus$.next('Disconnected');
@@ -140,6 +156,7 @@ export class SignalRService {
     });
 
     this.hubConnection.on('GameStarted', (room: Room) => {
+      this.logger.info(`[SignalR] Received GameStarted: ${room.gameType} for room: ${room.code}`);
       this.currentRoomSubject.next(room);
       this.players$.next(room.players);
     });
@@ -298,6 +315,7 @@ export class SignalRService {
   // ... startConnection implementation ...
 
   public async startGame(settings: GameSettings | null = null): Promise<void> {
+    this.logger.info(`[SignalR] Invoking StartGame for room: ${this.currentRoomSubject.value?.code}`);
     await this.hubConnection.invoke('StartGame', this.currentRoomSubject.value?.code, settings);
   }
 
@@ -563,6 +581,9 @@ export class SignalRService {
   }
 
   public async toggleReady(roomCode: string, forcedState?: boolean): Promise<void> {
+    if (forcedState) {
+      this.logger.info(`[SignalR] Requesting ToggleReady OVERRIDE for room: ${roomCode}`);
+    }
     await this.hubConnection.invoke('ToggleReady', roomCode, forcedState);
   }
 
@@ -576,7 +597,7 @@ export class SignalRService {
   }
 
   public async setGameType(roomCode: string, gameType: string): Promise<void> {
-    console.info(`[SignalR] Invoking SetGameType: ${gameType} for room ${roomCode}`);
+    this.logger.info(`[SignalR] Invoking SetGameType: ${gameType} for room ${roomCode}`);
     return this.hubConnection.invoke('SetGameType', roomCode, gameType);
   }
 

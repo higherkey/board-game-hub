@@ -2,8 +2,16 @@
     <!-- 1. HEADER (Top Bar) -->
     <header *ngIf="!isBigScreen"
         class="game-room-header px-4 py-2 mb-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
-        <!-- Left: Navigation & Room Actions -->
-        <div class="d-flex align-items-center gap-3">
+        
+        <!-- Mobile Left: Hamburger Menu -->
+        <div class="d-md-none">
+            <button class="btn btn-link text-white p-0" (click)="toggleNavMenu()" title="Room Menu">
+                <i class="bi bi-list fs-3"></i>
+            </button>
+        </div>
+
+        <!-- Desktop Left: Navigation & Room Actions -->
+        <div class="d-none d-md-flex align-items-center gap-3">
             <a routerLink="/" class="btn btn-outline-secondary btn-sm" title="Home (Keep Connected)">
                 <i class="bi bi-house-door-fill"></i>
             </a>
@@ -12,7 +20,8 @@
                 <i class="bi bi-box-arrow-left me-1"></i>
                 <span>{{ isBigScreen ? 'QUIT ROOM' : 'QUIT' }}</span>
             </button>
-            <!-- Video Chat Toggle -->
+            
+            <!-- Video Chat Toggle (Desktop) -->
             <button class="btn btn-outline-light btn-sm" (click)="videoChat?.joinVideo()"
                 *ngIf="!needsName && videoChatReady && !isVideoActive" title="Start Video">
                 <i class="bi bi-camera-video"></i>
@@ -24,43 +33,67 @@
                 title="Request Undo">
                 <i class="bi bi-arrow-counterclockwise"></i>
             </button>
+        </div>
 
-            <!-- Room Info (Repositioned to Left) -->
-            <div *ngIf="!isCreating" class="d-flex align-items-center gap-3 ms-2 border-start border-secondary ps-3">
-                <div class="d-flex align-items-baseline">
-                    <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline"
-                        style="font-size: 0.65rem; color: var(--text-light);">ROOM</span>
-                    <span class="font-monospace room-code-display">{{ roomCode }}</span>
-                </div>
-                <div *ngIf="(currentRoom$ | async)?.gameType as gameType"
-                    class="text-white game-title-badge fw-bold text-uppercase">
-                    {{ gameType !== 'None' ? gameType : 'Lobby' }}
-                </div>
+        <div *ngIf="!isCreating" class="room-info-container d-flex align-items-center gap-2 gap-sm-3 ms-1 ms-sm-2 ps-2 ps-sm-3">
+            <div class="d-flex align-items-baseline">
+                <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline"
+                    style="font-size: 0.65rem; color: var(--text-light);">ROOM</span>
+                <span class="font-monospace room-code-display">{{ roomCode }}</span>
+            </div>
+            <div *ngIf="(currentRoom$ | async)?.gameType as gameType"
+                class="text-white game-title-badge fw-bold text-uppercase"
+                [class.is-lobby]="gameType === 'None'">
+                {{ getCurrentGameDisplayName(gameType) }}
             </div>
         </div>
 
-        <!-- Round Indicator -->
-        <div *ngIf="(gameStarted$ | async)"
-            class="badge bg-dark border border-secondary text-light ms-3 px-3 py-2 d-none d-md-block">
-            ROUND {{ (currentRoom$ | async)?.roundNumber || 1 }} / {{ (currentRoom$ | async)?.totalRounds ||
-            (currentRoom$ | async)?.settings?.totalRounds || 5 }}
+        <!-- Right: Mobile Video & Desktop Profile -->
+        <div class="d-flex align-items-center gap-2 gap-md-3">
+            <!-- Video Chat Toggle (Mobile) -->
+            <button class="btn btn-outline-light btn-sm d-md-none" (click)="videoChat?.joinVideo()"
+                *ngIf="!needsName && videoChatReady && !isVideoActive" title="Start Video">
+                <i class="bi bi-camera-video"></i>
+            </button>
+
+            <!-- Round Indicator (Middle) -->
+            <div *ngIf="(gameStarted$ | async)"
+                class="badge bg-dark border border-secondary text-light ms-3 px-3 py-2 d-none d-md-block">
+                ROUND {{ (currentRoom$ | async)?.roundNumber || 1 }} / {{ (currentRoom$ | async)?.totalRounds ||
+                (currentRoom$ | async)?.settings?.totalRounds || 5 }}
+            </div>
+
+            <!-- Profile (Desktop Only) -->
+            <div class="d-none d-md-flex">
+                <app-user-profile-dropdown [session]="session$ | async"></app-user-profile-dropdown>
+            </div>
         </div>
 
-        <!-- End Game Button (Host Only) -->
-        <button class="btn btn-outline-danger btn-sm ms-3 fw-bold" *ngIf="(isHost$ | async) && (gameStarted$ | async)"
-            (click)="onExitGame()" title="End Game Session">
-            <i class="bi bi-stop-circle-fill me-1"></i> END GAME
-        </button>
+        <!-- NAV MENU OVERLAY (Mobile Only) -->
+        <div class="nav-menu-overlay d-md-none" [class.open]="isNavMenuOpen" (click)="toggleNavMenu()">
+            <div class="nav-menu-content p-3 d-flex flex-column gap-3" (click)="$event.stopPropagation()">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 class="mb-0 text-white fw-bold">Room Menu</h4>
+                    <button class="btn-close btn-close-white" (click)="toggleNavMenu()"></button>
+                </div>
 
-        <!-- Right: Profile -->
-        <div class="d-flex align-items-center gap-3">
-            <div class="d-flex align-items-center text-white-50 small d-none d-md-flex"
-                *ngIf="connectionStatus$ | async as status">
-                <span class="status-dot me-1" [class.connected]="status === 'Connected'"
-                    [class.disconnected]="status === 'Disconnected'"></span>
-                {{ status }}
+                <div class="menu-actions d-flex flex-column gap-3">
+                    <a routerLink="/" class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleNavMenu()">
+                        <i class="bi bi-house-door-fill fs-4"></i>
+                        <span class="fw-bold">Go Home</span>
+                    </a>
+                    
+                    <button class="btn btn-lg btn-pink w-100 d-flex align-items-center gap-3 py-3" (click)="leaveRoom()">
+                        <i class="bi bi-box-arrow-left fs-4"></i>
+                        <span class="fw-bold">Quit Room</span>
+                    </button>
+
+                    <div class="mt-4 pt-4 border-top border-secondary">
+                        <div class="small text-uppercase text-white-50 mb-3 fw-bold ls-wide">Profile</div>
+                        <app-user-profile-dropdown [session]="session$ | async" [compactMode]="false" menuAlign="start"></app-user-profile-dropdown>
+                    </div>
+                </div>
             </div>
-            <app-user-profile-dropdown [session]="session$ | async"></app-user-profile-dropdown>
         </div>
 
         <!-- UNDO TOAST OVERLAY -->
@@ -71,9 +104,9 @@
     </header>
 
     <!-- 2. MAIN BODY (Sidebar + Content) -->
-    <div class="row flex-grow-1 g-3 position-relative overflow-hidden section-container" [class.transitions-enabled]="enableTransitions">
+    <div class="row flex-grow-1 g-3 position-relative section-container" [class.transitions-enabled]="enableTransitions">
         <!-- PLAYER SIDEBAR (Hidden during entry stage) -->
-        <div *ngIf="!needsName" class="col-md-3 col-lg-2 d-md-flex flex-column flex-grow-1 sidebar-panel"
+        <div *ngIf="!needsName" class="col-md-4 col-lg-3 d-md-flex flex-column flex-grow-1 sidebar-panel"
             [class.is-collapsed]="isSidebarCollapsed" [class.d-flex]="mobileView === 'players'"
             [class.d-none]="mobileView !== 'players'">
 
@@ -150,22 +183,23 @@
                                     {{ p.userId ? 'User' : 'Guest' }}
                                 </div>
                             </div>
-                            <div class="ms-auto d-flex align-items-center gap-2 text-white">
+                            <div class="ms-auto d-flex align-items-center gap-1 text-white">
                                 <!-- HOST ICON (Show for ALL hosts, including creator, as a status check) -->
                                 <i *ngIf="p.isHost" class="bi bi-lightning-fill text-warning small" title="Host Privileges"></i>
                                 
                                 <button *ngIf="(isHost$ | async) && !p.isHost && !checkIsCreator(currentRoom$ | async, p.connectionId)"
                                     class="btn btn-xs btn-outline-warning rounded-circle p-1 text-warning border-warning"
                                     (click)="onSetHostPlayer(p.connectionId)" title="Set as Host">
-                                    <i class="bi bi-star"></i>
+                                    <i class="bi bi-star" style="font-size: 0.75rem;"></i>
                                 </button>
                                 <button *ngIf="p.connectionId === (connectionId$ | async)"
                                     class="btn btn-xs btn-outline-secondary rounded-circle p-1"
                                     (click)="changeRole(true)" title="Switch to Table Role">
-                                    <i class="bi bi-display"></i>
+                                    <i class="bi bi-display" style="font-size: 0.75rem;"></i>
                                 </button>
-                                <span class="badge rounded-pill bg-brand-light text-brand-blue">{{ p.score || 0
-                                    }}</span>
+                                <span class="badge rounded-pill bg-primary text-white border border-white-50 px-2 py-1" style="font-size: 0.7rem;">
+                                    {{ p.score || 0 }}
+                                </span>
                             </div>
                         </li>
                     </ul>
@@ -181,14 +215,14 @@
         </div>
 
         <!-- MAIN GAME STAGE -->
-        <div class="main-stage-panel d-md-flex flex-column flex-grow-1"
-            [ngClass]="needsName ? 'col-12' : (isSidebarCollapsed ? 'col-md-12' : 'col-md-9 col-lg-10')" 
+        <div class="main-stage-panel d-md-flex flex-column flex-grow-1 px-0"
+            [ngClass]="needsName ? 'col-12' : (isSidebarCollapsed ? 'col-md-12' : 'col-md-8 col-lg-9')" 
             [class.d-flex]="mobileView === 'game'"
             [class.mobile-hidden]="mobileView !== 'game'" [class.has-docked-top]="videoLayout === 'docked-top'"
             [class.has-docked-bottom]="videoLayout === 'docked-bottom'"
             style="min-height: 0;">
 
-            <div class="main-stage flex-grow-1 bg-surface-2 rounded-3 shadow-inner position-relative d-flex flex-column overflow-hidden" style="min-height: 0;">
+            <div class="main-stage flex-grow-1 bg-surface-2 rounded-3 shadow-inner position-relative d-flex flex-column" style="min-height: 0;">
                 <!-- Floating Sidebar Expand (Desktop Only, only if collapsed) -->
                 <button
                     class="btn btn-dark btn-sm position-absolute top-0 start-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none"
@@ -207,8 +241,8 @@
                 <div class="flex-grow-1 d-flex flex-column">
 
                     <!-- ENTRY STAGE (Name / Room Creation) -->
-                    <div *ngIf="needsName" class="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center">
-                        <div class="card shadow-lg border-accent p-4 p-md-5 w-100 mt-4" style="max-width: 600px;">
+                    <div *ngIf="needsName" class="flex-grow-1 d-flex flex-column align-items-center justify-content-start justify-content-md-center text-center p-2 p-md-3">
+                        <div class="card shadow-lg border-accent p-4 p-md-5 w-100" style="max-width: 600px;">
                             <h2 class="display-6 mb-4 fw-bold" style="color: var(--brand-blue);">
                                 {{ isCreating ? 'Create A New Room' : 'Ready to Join?' }}
                             </h2>
@@ -294,31 +328,32 @@
                         </div>
                     </div>
 
-                    <!-- LOBBY STATE -->
-    <div *ngIf="!needsName && !(gameStarted$ | async)"
-        class="h-100 d-flex flex-column align-items-center justify-content-start text-center pt-2 mt-2">
-                        <div class="w-100 px-3" style="max-width: 1000px;">
-                            <!-- Host Only Controls -->
-                            <div class="w-100" *ngIf="isHost$ | async">
-                                <app-host-settings [roomCode]="roomCode"
-                                    [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                                    [players]="(players$ | async) || []" [isHost]="true"
-                                    [meReady]="(me$ | async)?.isReady || false"
-                                    [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
-                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()"
-                                    (toggleReady)="toggleReady()">
-                                </app-host-settings>
-                            </div>
+                    <!-- LOBBY STATE (Host Only Controls & Player Read-Only View) -->
+                    <ng-container *ngIf="!needsName && !(gameStarted$ | async)">
+                        <div class="row w-100 justify-content-center m-0">
+                            <div class="col-12 px-0" style="max-width: 1200px;">
+                                <!-- Host Only Controls -->
+                                <div class="w-100" *ngIf="isHost$ | async">
+                                    <app-host-settings [roomCode]="roomCode"
+                                        [currentGameType]="(currentRoom$ | async)?.gameType || ''"
+                                        [players]="(players$ | async) || []" [isHost]="true"
+                                        [meReady]="(me$ | async)?.isReady || false"
+                                        [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
+                                        (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
+                                        (toggleReady)="toggleReady($event)">
+                                    </app-host-settings>
+                                </div>
 
-                            <!-- Player Read-Only View -->
-                            <div class="w-100" *ngIf="!(isHost$ | async)">
-                                <app-player-settings [roomCode]="roomCode" [room]="currentRoom$ | async"
-                                    [selectedGame]="selectedGame" [meReady]="(me$ | async)?.isReady || false"
-                                    [isScreen]="(me$ | async)?.isScreen || false" (toggleReady)="toggleReady()">
-                                </app-player-settings>
+                                <!-- Player Read-Only View -->
+                                <div class="w-100" *ngIf="!(isHost$ | async)">
+                                    <app-player-settings [roomCode]="roomCode" [room]="currentRoom$ | async"
+                                        [selectedGame]="selectedGame" [meReady]="(me$ | async)?.isReady || false"
+                                        [isScreen]="(me$ | async)?.isScreen || false" (toggleReady)="toggleReady($event)">
+                                    </app-player-settings>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </ng-container>
         </div>
         <!-- ACTIVE GAME STATE -->
         <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in position-relative d-flex flex-column">
@@ -349,7 +384,7 @@
                         [currentRound]="(currentRoom$ | async)?.roundNumber || 0"
                         [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
                         [players]="(players$ | async) || []"
-                        (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()">
+                        (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)">
                     </app-host-settings>
                 </div>
             </div>
@@ -372,8 +407,8 @@
                                 [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                                 [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
                                 [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
-                                (nextRound)="onNextRound($event)" (endGame)="onEndGame()" (exitGame)="onExitGame()"
-                                (toggleReady)="toggleReady()">
+                                (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
+                                (toggleReady)="toggleReady($event)">
                             </app-host-settings>
                         </div>
                     </div>
@@ -404,26 +439,3 @@
     (tabChange)="setMobileView($event)">
 </app-mobile-tab-bar>
 
-<!-- Undo Confirmation Modal -->
-<dialog #undoDialog class="border-0 p-0 bg-transparent rounded-3">
-    <div class="modal-dialog modal-dialog-centered m-0">
-        <div class="modal-content bg-surface shadow-lg border-pink">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title text-pink fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Request
-                    Undo?</h5>
-                <button type="button" class="btn-close" (click)="cancelUndo()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-secondary mb-0">This will pause the game and ask all players to vote on the undo.
-                    Are you
-                    sure you want to proceed?</p>
-            </div>
-            <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-ghost text-secondary" (click)="cancelUndo()">Cancel</button>
-                <button type="button" class="btn btn-pink px-4 text-white fw-bold" (click)="confirmUndo()">
-                    Yes, Request Undo
-                </button>
-            </div>
-        </div>
-    </div>
-</dialog>

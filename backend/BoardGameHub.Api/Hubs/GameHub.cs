@@ -276,15 +276,13 @@ public class GameHub : Hub
         return room;
     }
 
-    public Task ToggleReady(string roomCode, bool? forcedState = null)
+    public async Task ToggleReady(string roomCode, bool? forcedState = null)
     {
         var room = _roomService.ToggleReady(roomCode, Context.ConnectionId, forcedState);
         if (room != null)
         {
-            // await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
-            // Maybe update player count ready status? Not critical for public lobby list.
+            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
         }
-        return Task.CompletedTask;
     }
 
     public async Task RenamePlayer(string newName)
