@@ -40,7 +40,7 @@ Write-Host "--- 2) Launching Backend (Hot Reload) ---" -ForegroundColor Cyan
 $BackendScript = @"
 cd '$BackendDir'
 Write-Host 'Starting .NET Backend...' -ForegroundColor Cyan
-dotnet run --project BoardGameHub.Api
+dotnet watch run --project BoardGameHub.Api
 "@
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "$BackendScript"
 
