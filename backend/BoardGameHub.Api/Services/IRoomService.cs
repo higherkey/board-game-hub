@@ -12,6 +12,7 @@ public interface IRoomService
     Room? GetRoom(string code);
     List<Room> GetPublicRooms();
     Room? SetHostPlayer(string code, string connectionId);
+    Room? RemoveHostPlayer(string code, string requesterConnectionId, string targetConnectionId);
     Room? RenamePlayer(string connectionId, string newName);
     Room? ChangeRole(string connectionId, bool isScreen);
     void TerminateRoom(string code);

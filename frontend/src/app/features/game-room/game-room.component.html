@@ -125,13 +125,25 @@
                         *ngFor="let s of getTables(players$ | async)">
                         <i class="bi bi-display text-accent"></i>
                         <span class="text-truncate fw-bold text-primary">{{ s.name || 'Table' }}</span>
+                        <!-- CREATOR INDICATOR (Tables) -->
+                        <i *ngIf="checkIsCreator(currentRoom$ | async, s.connectionId)" 
+                           class="bi bi-person-badge-fill text-info"
+                           title="Room Creator"
+                           style="filter: drop-shadow(0 0 2px rgba(0, 150, 255, 0.5));"></i>
                         <div class="ms-auto d-flex align-items-center gap-2">
                             <span *ngIf="s.isHost" class="badge bg-warning text-dark x-small fw-bold">HOST</span>
                             <i *ngIf="s.isHost" class="bi bi-patch-check-fill text-warning" title="Room Host"></i>
-                            <button *ngIf="(isHost$ | async) && !s.isHost"
+                            <!-- SET HOST (Creator only, for non-hosts) -->
+                            <button *ngIf="checkIsCreator(currentRoom$ | async, (connectionId$ | async) || '') && !s.isHost"
                                 class="btn btn-xs btn-outline-warning rounded-circle p-1 text-warning border-warning"
                                 (click)="onSetHostPlayer(s.connectionId)" title="Set as Host">
                                 <i class="bi bi-star"></i>
+                            </button>
+                            <!-- REMOVE HOST (Creator only, for non-creator hosts) -->
+                            <button *ngIf="checkIsCreator(currentRoom$ | async, (connectionId$ | async) || '') && s.isHost && !checkIsCreator(currentRoom$ | async, s.connectionId)"
+                                class="btn btn-xs btn-outline-danger rounded-circle p-1 text-danger border-danger"
+                                (click)="onRemoveHostPlayer(s.connectionId)" title="Remove Host">
+                                <i class="bi bi-star-fill"></i>
                             </button>
                             <button *ngIf="s.connectionId === (connectionId$ | async)"
                                 class="btn btn-xs btn-outline-secondary rounded-circle p-1 text-white border-white-50"
@@ -187,10 +199,17 @@
                                 <!-- HOST ICON (Show for ALL hosts, including creator, as a status check) -->
                                 <i *ngIf="p.isHost" class="bi bi-lightning-fill text-warning small" title="Host Privileges"></i>
                                 
-                                <button *ngIf="(isHost$ | async) && !p.isHost && !checkIsCreator(currentRoom$ | async, p.connectionId)"
+                                <!-- SET HOST (Creator only, for non-hosts that aren't already creator) -->
+                                <button *ngIf="checkIsCreator(currentRoom$ | async, (connectionId$ | async) || '') && !p.isHost && !checkIsCreator(currentRoom$ | async, p.connectionId)"
                                     class="btn btn-xs btn-outline-warning rounded-circle p-1 text-warning border-warning"
                                     (click)="onSetHostPlayer(p.connectionId)" title="Set as Host">
                                     <i class="bi bi-star" style="font-size: 0.75rem;"></i>
+                                </button>
+                                <!-- REMOVE HOST (Creator only, for non-creator hosts) -->
+                                <button *ngIf="checkIsCreator(currentRoom$ | async, (connectionId$ | async) || '') && p.isHost && !checkIsCreator(currentRoom$ | async, p.connectionId)"
+                                    class="btn btn-xs btn-outline-danger rounded-circle p-1 text-danger border-danger"
+                                    (click)="onRemoveHostPlayer(p.connectionId)" title="Remove Host">
+                                    <i class="bi bi-star-fill" style="font-size: 0.75rem;"></i>
                                 </button>
                                 <button *ngIf="p.connectionId === (connectionId$ | async)"
                                     class="btn btn-xs btn-outline-secondary rounded-circle p-1"
@@ -222,7 +241,7 @@
             [class.has-docked-bottom]="videoLayout === 'docked-bottom'"
             style="min-height: 0;">
 
-            <div class="main-stage flex-grow-1 bg-surface-2 rounded-3 shadow-inner position-relative d-flex flex-column" style="min-height: 0;">
+            <div class="main-stage flex-grow-1 bg-surface-2 rounded-4 position-relative d-flex flex-column" style="min-height: 0;">
                 <!-- Floating Sidebar Expand (Desktop Only, only if collapsed) -->
                 <button
                     class="btn btn-dark btn-sm position-absolute top-0 start-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none"
@@ -338,7 +357,9 @@
                                         [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                                         [players]="(players$ | async) || []" [isHost]="true"
                                         [meReady]="(me$ | async)?.isReady || false"
-                                        [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
+                                        [isScreen]="(me$ | async)?.isScreen || false"
+                                        [isHostOverride]="(currentRoom$ | async)?.isHostOverride || false"
+                                        (gameStart)="startGame($event)"
                                         (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
                                         (toggleReady)="toggleReady($event)">
                                     </app-host-settings>
@@ -406,7 +427,9 @@
                             <app-host-settings [roomCode]="roomCode" [compactMode]="true"
                                 [currentGameType]="(currentRoom$ | async)?.gameType || ''"
                                 [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
-                                [isScreen]="(me$ | async)?.isScreen || false" (gameStart)="startGame($event)"
+                                [isScreen]="(me$ | async)?.isScreen || false"
+                                [isHostOverride]="(currentRoom$ | async)?.isHostOverride || false"
+                                (gameStart)="startGame($event)"
                                 (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
                                 (toggleReady)="toggleReady($event)">
                             </app-host-settings>

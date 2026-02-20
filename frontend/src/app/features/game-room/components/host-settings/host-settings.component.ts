@@ -25,6 +25,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() meReady = false;
   @Input() isHost = false;
   @Input() isScreen = false;
+  @Input() isHostOverride = false;
   @Output() gameStart = new EventEmitter<any>();
   @Output() nextRound = new EventEmitter<GameSettings>();
   @Output() endGame = new EventEmitter<MouseEvent>();
@@ -257,12 +258,19 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   }
 
   onToggleReady() {
-    this.logger.info(`[HostSettings] User clicked Ready Override/Toggle (forcedState: true)`);
-    if (this.selectedGameType === 'None') {
-      alert('Please select a game first!');
-      return;
+    if (this.isScreen) {
+      const newState = !this.isHostOverride;
+      this.logger.info(`[HostSettings] Screen-Host triggering Room Ready override (forcedState: ${newState})`);
+      if (newState && this.selectedGameType === 'None') {
+        alert('Please select a game first!');
+        return;
+      }
+      // If we are the Screen (Table), toggle the room-level override
+      this.toggleReady.emit(newState);
+    } else {
+      this.logger.info(`[HostSettings] Player-Host toggling personal readiness (forcedState: undefined)`);
+      // If we are a Player-Host, just toggle our own personal readiness
+      this.toggleReady.emit(undefined);
     }
-    // If we are Host or Screen, trigger the universal "Room Ready" override
-    this.toggleReady.emit(true);
   }
 }

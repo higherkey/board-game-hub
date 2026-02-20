@@ -90,6 +90,39 @@ public class RoomService : IRoomService
         return room;
     }
 
+    public Room? RemoveHostPlayer(string code, string requesterConnectionId, string targetConnectionId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        // Only the room creator can remove host status
+        if (room.CreatorConnectionId != requesterConnectionId) return null;
+
+        // Cannot demote the creator
+        if (room.CreatorConnectionId == targetConnectionId) return null;
+
+        room.StateLock.Wait();
+        try
+        {
+            var target = room.Players.FirstOrDefault(p => p.ConnectionId == targetConnectionId);
+            if (target == null) return null;
+
+            target.IsHost = false;
+
+            // If the primary host pointer was this player, clear it
+            if (room.HostPlayerId == targetConnectionId)
+            {
+                room.HostPlayerId = room.CreatorConnectionId;
+            }
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
+        NotifyStatsChanged();
+        return room;
+    }
+
     public Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null, bool isScreen = false)
     {
         var code = GenerateRoomCode();
@@ -110,7 +143,8 @@ public class RoomService : IRoomService
             },
             IsPublic = isPublic,
             HostScreenId = hostConnectionId,
-            HostPlayerId = hostConnectionId
+            HostPlayerId = hostConnectionId,
+            CreatorConnectionId = hostConnectionId // Set the creator
         };
 
         if (_rooms.TryAdd(code, room))
@@ -153,6 +187,8 @@ public class RoomService : IRoomService
                     // If this player was the host, update the room's host pointers to the new connection ID
                     if (room.HostPlayerId == existingPlayer.ConnectionId) room.HostPlayerId = connectionId;
                     if (room.HostScreenId == existingPlayer.ConnectionId) room.HostScreenId = connectionId;
+                    // Ensure creator pointer is updated
+                    if (room.CreatorConnectionId == existingPlayer.ConnectionId) room.CreatorConnectionId = connectionId;
 
                     _connectionRoomMap.TryRemove(existingPlayer.ConnectionId, out _);
                 }
@@ -163,7 +199,7 @@ public class RoomService : IRoomService
                 
                 if (userId != null) existingPlayer.UserId = userId;
                 if (avatarUrl != null) existingPlayer.AvatarUrl = avatarUrl;
-                existingPlayer.IsScreen = isScreen;
+                // existingPlayer.IsScreen = isScreen; // KEEP EXISTING ROLE ON RECONNECT
             }
             finally
             {
@@ -384,17 +420,18 @@ public class RoomService : IRoomService
         room.StateLock.Wait();
         try
         {
-            // If forcedState is true and requester is HOST, mark EVERYONE as ready.
-            if (forcedState == true && player.IsHost)
+            // If forcedState is set and requester is HOST, set the room-level override
+            if (forcedState != null && player.IsHost)
             {
-                foreach (var p in room.Players.Where(p => !p.IsScreen))
-                {
-                    p.IsReady = true;
-                }
+                room.IsHostOverride = forcedState.Value;
             }
             else
             {
+                // Personal toggle: flip the individual player's ready state
                 player.IsReady = forcedState ?? !player.IsReady;
+
+                // Auto-compute: if all non-screen players are now ready, no action needed on IsHostOverride
+                // The frontend/start logic will check both IsHostOverride and individual states
             }
         }
         finally

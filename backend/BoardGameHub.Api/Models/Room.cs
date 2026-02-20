@@ -33,6 +33,7 @@ public class Room
     public string? HostScreenId { get; set; }
     public string? HostPlayerId { get; set; }
     public string? CreatorConnectionId { get; set; } // The original creator
+    public bool IsHostOverride { get; set; } = false; // Host forced room readiness
 
     // Generic Game State
     public object? GameData { get; set; }

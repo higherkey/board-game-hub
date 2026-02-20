@@ -62,6 +62,9 @@ export interface Room {
   // Undo System
   currentVote: any; // { initiatorId, initiatorName, votes: {} }
   undoSettings: { allowVoting: boolean, hostOnly: boolean };
+
+  // Host Override (room-level readiness, independent of player states)
+  isHostOverride?: boolean;
 }
 
 @Injectable({
@@ -581,8 +584,8 @@ export class SignalRService {
   }
 
   public async toggleReady(roomCode: string, forcedState?: boolean): Promise<void> {
-    if (forcedState) {
-      this.logger.info(`[SignalR] Requesting ToggleReady OVERRIDE for room: ${roomCode}`);
+    if (forcedState !== undefined) {
+      this.logger.info(`[SignalR] Requesting Ready OVERRIDE (${forcedState ? 'ON' : 'OFF'}) for room: ${roomCode}`);
     }
     await this.hubConnection.invoke('ToggleReady', roomCode, forcedState);
   }
@@ -594,6 +597,10 @@ export class SignalRService {
 
   public async setHostPlayer(roomCode: string, targetId: string): Promise<void> {
     await this.hubConnection.invoke('SetHostPlayer', roomCode, targetId);
+  }
+
+  public async removeHostPlayer(roomCode: string, targetId: string): Promise<void> {
+    await this.hubConnection.invoke('RemoveHostPlayer', roomCode, targetId);
   }
 
   public async setGameType(roomCode: string, gameType: string): Promise<void> {

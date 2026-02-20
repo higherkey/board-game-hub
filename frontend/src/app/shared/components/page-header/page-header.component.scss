@@ -1,8 +1,6 @@
 .page-header {
     padding-top: 0.5rem;
-    /* Smaller top spacing */
-    padding-bottom: 3.5rem;
-    /* Larger bottom spacing */
+    padding-bottom: 2.5rem; /* Reduced from 3.5rem */
 }
 
 h1 {
@@ -17,11 +15,11 @@ h1 {
 
 @media (max-width: 768px) {
     .page-header {
-        padding-top: 1rem;
-        padding-bottom: 1.5rem;
+        padding-top: 0.5rem;   /* Reduced from 1rem */
+        padding-bottom: 1rem;  /* Reduced from 1.5rem */
     }
 
     h1 {
-        font-size: calc(1.475rem + 2.7vw);
+        font-size: calc(1.375rem + 1.5vw); /* Slightly smaller than before */
     }
 }

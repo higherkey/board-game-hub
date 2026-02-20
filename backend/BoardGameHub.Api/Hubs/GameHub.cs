@@ -61,7 +61,6 @@ public class GameHub : Hub
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
         var room = _roomService.CreateRoom(Context.ConnectionId, playerName, isPublic, type, userId, avatarUrl, isScreen);
-        room.CreatorConnectionId = Context.ConnectionId; // Set the creator
         
         // Log creation
         _logger.LogInformation("[GameHub] Room Created: {Code}, GameType: {GameType}, Host: {Host}", room.Code, room.GameType, playerName);
@@ -174,6 +173,15 @@ public class GameHub : Hub
         }
     }
 
+    public async Task RemoveHostPlayer(string roomCode, string targetConnectionId)
+    {
+        var room = _roomService.RemoveHostPlayer(roomCode, Context.ConnectionId, targetConnectionId);
+        if (room != null)
+        {
+            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
+        }
+    }
+
     public Task VoteNextGame(string roomCode, string gameType)
     {
         if (Enum.TryParse<GameType>(gameType, true, out var type))
@@ -278,6 +286,10 @@ public class GameHub : Hub
 
     public async Task ToggleReady(string roomCode, bool? forcedState = null)
     {
+        if (forcedState != null)
+        {
+            _logger.LogInformation("[Hub] Host override ToggleReady: {RoomCode}, ForcedState: {State}", roomCode, forcedState);
+        }
         var room = _roomService.ToggleReady(roomCode, Context.ConnectionId, forcedState);
         if (room != null)
         {

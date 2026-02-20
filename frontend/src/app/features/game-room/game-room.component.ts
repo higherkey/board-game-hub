@@ -537,6 +537,12 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     }
   }
 
+  onRemoveHostPlayer(targetId: string) {
+    if (this.roomCode) {
+      this.signalRService.removeHostPlayer(this.roomCode, targetId);
+    }
+  }
+
   checkIsCreator(room: Room | null, playerConnectionId: string): boolean {
     return room?.creatorConnectionId === playerConnectionId;
   }

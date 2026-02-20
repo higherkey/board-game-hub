@@ -68,9 +68,13 @@
 
                 <div class="d-grid gap-2">
                     <button type="button" class="btn btn-lg w-100 py-3 mb-2 fw-bold shadow-sm ready-button"
-                        [class.btn-success]="meReady" [class.btn-outline-primary]="!meReady" (click)="onToggleReady()">
-                        <i class="bi" [class.bi-check-circle-fill]="meReady" [class.bi-circle]="!meReady"></i>
-                        {{ meReady ? 'READY!' : (isScreen ? 'ROOM READY' : 'I\'M READY') }}
+                        [class.btn-success]="isScreen ? isHostOverride : meReady"
+                        [class.btn-outline-primary]="isScreen ? !isHostOverride : !meReady"
+                        (click)="onToggleReady()">
+                        <i class="bi"
+                            [class.bi-check-circle-fill]="isScreen ? isHostOverride : meReady"
+                            [class.bi-circle]="isScreen ? !isHostOverride : !meReady"></i>
+                        {{ isScreen ? (isHostOverride ? 'ROOM READY!' : 'FORCE ROOM READY') : (meReady ? 'I\'M READY!' : 'SET PERSONAL READY') }}
                     </button>
                 </div>
             </div>
