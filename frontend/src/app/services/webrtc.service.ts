@@ -24,6 +24,7 @@ export class WebRTCService {
 
     constructor(private readonly signalRService: SignalRService) {
         this.initialiseSignalRListeners();
+        this.initialiseTurnServerListener();
     }
 
     private initialiseSignalRListeners() {
@@ -42,6 +43,29 @@ export class WebRTCService {
         this.signalRService.iceCandidateReceived$.subscribe(async (data) => {
             if (data) {
                 await this.handleIceCandidate(data.senderId, data.candidate);
+            }
+        });
+    }
+
+    private initialiseTurnServerListener() {
+        this.signalRService.turnServerCredentials$.subscribe((credentials) => {
+            if (credentials && credentials.url) {
+                const turnServer: RTCIceServer = {
+                    urls: credentials.url
+                };
+                if (credentials.username) {
+                    turnServer.username = credentials.username;
+                }
+                if (credentials.credential) {
+                    turnServer.credential = credentials.credential;
+                }
+
+                // Make sure we don't add the same TURN server multiple times
+                const hasTurn = this.rtcConfig.iceServers?.some(s => s.urls === credentials.url);
+                if (!hasTurn) {
+                    this.rtcConfig.iceServers?.push(turnServer);
+                    console.info('[WebRTC] TURN Server credentials applied.');
+                }
             }
         });
     }

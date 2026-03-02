@@ -97,6 +97,9 @@ export class SignalRService {
   public offerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
   public answerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
   public iceCandidateReceived$ = new BehaviorSubject<{ senderId: string, candidate: string } | null>(null);
+  
+  // TURN Server Configuration
+  public turnServerCredentials$ = new BehaviorSubject<{ url: string, username?: string, credential?: string } | null>(null);
 
   constructor(
     private readonly toastService: ToastService,
@@ -253,6 +256,11 @@ export class SignalRService {
 
     this.hubConnection.on('ReceiveIceCandidate', (senderId: string, candidate: string) => {
       this.iceCandidateReceived$.next({ senderId, candidate });
+    });
+
+    this.hubConnection.on('ReceiveTurnCredentials', (credentials: { url: string, username?: string, credential?: string }) => {
+      this.logger.info(`[SignalR] Received TURN Credentials for ${credentials.url}`);
+      this.turnServerCredentials$.next(credentials);
     });
 
     this.hubConnection.on('RoomTerminated', (message: string) => {
@@ -574,6 +582,7 @@ export class SignalRService {
     this.gameState$.next(null);
     this.gameEvents$.next(null);
     this.isHost$.next(false);
+    this.turnServerCredentials$.next(null);
   }
 
   public async renamePlayer(newName: string): Promise<void> {

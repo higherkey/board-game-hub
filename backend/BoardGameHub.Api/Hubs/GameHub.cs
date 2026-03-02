@@ -13,6 +13,7 @@ public class GameHub : Hub
 {
     private readonly IRoomService _roomService;
     private readonly IGameHistoryService _historyService;
+    private readonly IConfiguration _configuration;
 
     public async Task<List<GameSessionPlayer>> GetGameHistory()
     {
@@ -30,11 +31,12 @@ public class GameHub : Hub
 
     private readonly ILogger<GameHub> _logger;
 
-    public GameHub(IRoomService roomService, IGameHistoryService historyService, ILogger<GameHub> logger)
+    public GameHub(IRoomService roomService, IGameHistoryService historyService, ILogger<GameHub> logger, IConfiguration configuration)
     {
         _roomService = roomService;
         _historyService = historyService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task JoinLobby()
@@ -66,6 +68,9 @@ public class GameHub : Hub
         _logger.LogInformation("[GameHub] Room Created: {Code}, GameType: {GameType}, Host: {Host}", room.Code, room.GameType, playerName);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code.ToUpper());
+        // Send TURN credentials to the creator
+        await SendTurnCredentialsToClient();
+
         // Broadcast to the creator (and anyone else in the group, though it's just them)
         await Clients.Group(room.Code.ToUpper()).SendAsync("PlayerJoined", room.Players);
         
@@ -271,6 +276,9 @@ public class GameHub : Hub
         if (room == null) return null;
 
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
+        
+        // Send TURN credentials to the joining player
+        await SendTurnCredentialsToClient();
         
         // Notify others in group
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
@@ -615,5 +623,14 @@ public class GameHub : Hub
         }
         
         await base.OnDisconnectedAsync(exception);
+    }
+    
+    private async Task SendTurnCredentialsToClient()
+    {
+        var turnConfig = _configuration.GetSection("TurnServer").Get<TurnCredentials>();
+        if (turnConfig != null && !string.IsNullOrEmpty(turnConfig.Url))
+        {
+            await Clients.Caller.SendAsync("ReceiveTurnCredentials", turnConfig);
+        }
     }
 }
