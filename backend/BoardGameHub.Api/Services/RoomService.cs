@@ -18,18 +18,36 @@ public class RoomService : IRoomService
     private readonly IEnumerable<IGameService> _gameServices;
     private readonly Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub> _adminHubContext;
     private readonly Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> _gameHubContext;
+    private readonly GameStateManager _gameStateManager;
     private readonly ILogger<RoomService> _logger;
+
+    private readonly Timer _statsTimer;
+    private bool _statsDirty = false;
 
     public RoomService(
         IEnumerable<IGameService> gameServices,
         Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub> adminHubContext,
         Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> gameHubContext,
+        GameStateManager gameStateManager,
         ILogger<RoomService> logger)
     {
         _gameServices = gameServices;
         _adminHubContext = adminHubContext;
         _gameHubContext = gameHubContext;
+        _gameStateManager = gameStateManager;
         _logger = logger;
+        
+        // Broadcast stats at most every 2 seconds
+        _statsTimer = new Timer(async _ => await BroadcastStatsIfNeeded(), null, 2000, 2000);
+    }
+
+    private async Task BroadcastStatsIfNeeded()
+    {
+        if (_statsDirty)
+        {
+            _statsDirty = false;
+            await _adminHubContext.Clients.All.SendAsync("StatsUpdated", GetServerStats());
+        }
     }
 
     public T? GetGameService<T>(GameType type) where T : class
@@ -43,22 +61,64 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
 
-        var newHost = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
-        if (newHost == null) return null;
-
-        // Logic Change: Allow multiple hosts / Co-hosts. 
-        // We do NOT clear existing hosts. We just promote the new one.
-        // Also ensure Creator is always host.
-        newHost.IsHost = true;
-
-        if (!string.IsNullOrEmpty(room.CreatorConnectionId))
+        room.StateLock.Wait();
+        try
         {
-            var creator = room.Players.FirstOrDefault(p => p.ConnectionId == room.CreatorConnectionId);
-            if (creator != null) creator.IsHost = true;
+            var newHost = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+            if (newHost == null) return null;
+
+            // Logic Change: Allow multiple hosts / Co-hosts. 
+            // We do NOT clear existing hosts. We just promote the new one.
+            // Also ensure Creator is always host.
+            newHost.IsHost = true;
+
+            if (!string.IsNullOrEmpty(room.CreatorConnectionId))
+            {
+                var creator = room.Players.FirstOrDefault(p => p.ConnectionId == room.CreatorConnectionId);
+                if (creator != null) creator.IsHost = true;
+            }
+            
+            // Update the "Primary" host pointer (for backwards compatibility or single-owner logic)
+            room.HostPlayerId = connectionId;
         }
-        
-        // Update the "Primary" host pointer (for backwards compatibility or single-owner logic)
-        room.HostPlayerId = connectionId;
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
+        NotifyStatsChanged();
+        return room;
+    }
+
+    public Room? RemoveHostPlayer(string code, string requesterConnectionId, string targetConnectionId)
+    {
+        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+
+        // Only the room creator can remove host status
+        if (room.CreatorConnectionId != requesterConnectionId) return null;
+
+        // Cannot demote the creator
+        if (room.CreatorConnectionId == targetConnectionId) return null;
+
+        room.StateLock.Wait();
+        try
+        {
+            var target = room.Players.FirstOrDefault(p => p.ConnectionId == targetConnectionId);
+            if (target == null) return null;
+
+            target.IsHost = false;
+
+            // If the primary host pointer was this player, clear it
+            if (room.HostPlayerId == targetConnectionId)
+            {
+                room.HostPlayerId = room.CreatorConnectionId;
+            }
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -83,13 +143,18 @@ public class RoomService : IRoomService
             },
             IsPublic = isPublic,
             HostScreenId = hostConnectionId,
-            HostPlayerId = hostConnectionId
+            HostPlayerId = hostConnectionId,
+            CreatorConnectionId = hostConnectionId // Set the creator
         };
 
         if (_rooms.TryAdd(code, room))
         {
             _logger.LogInformation("Room created: {Code} by {Host} (Type: {GameType})", code, hostName, gameType);
             _connectionRoomMap.TryAdd(hostConnectionId, code);
+            
+            // Start State Tracking
+            _gameStateManager.TrackRoom(room);
+            
             NotifyStatsChanged();
         }
         return room;
@@ -114,24 +179,35 @@ public class RoomService : IRoomService
         var existingPlayer = room.Players.FirstOrDefault(p => userId != null && p.UserId == userId);
         if (existingPlayer != null)
         {
-            if (existingPlayer.ConnectionId != connectionId)
+            room.StateLock.Wait();
+            try
             {
-                // If this player was the host, update the room's host pointers to the new connection ID
-                if (room.HostPlayerId == existingPlayer.ConnectionId) room.HostPlayerId = connectionId;
-                if (room.HostScreenId == existingPlayer.ConnectionId) room.HostScreenId = connectionId;
+                if (existingPlayer.ConnectionId != connectionId)
+                {
+                    // If this player was the host, update the room's host pointers to the new connection ID
+                    if (room.HostPlayerId == existingPlayer.ConnectionId) room.HostPlayerId = connectionId;
+                    if (room.HostScreenId == existingPlayer.ConnectionId) room.HostScreenId = connectionId;
+                    // Ensure creator pointer is updated
+                    if (room.CreatorConnectionId == existingPlayer.ConnectionId) room.CreatorConnectionId = connectionId;
 
-                _connectionRoomMap.TryRemove(existingPlayer.ConnectionId, out _);
+                    _connectionRoomMap.TryRemove(existingPlayer.ConnectionId, out _);
+                }
+                
+                existingPlayer.ConnectionId = connectionId;
+                existingPlayer.IsConnected = true; // Mark as connected
+                existingPlayer.Name = playerName; // Update name in case it changed
+                
+                if (userId != null) existingPlayer.UserId = userId;
+                if (avatarUrl != null) existingPlayer.AvatarUrl = avatarUrl;
+                // existingPlayer.IsScreen = isScreen; // KEEP EXISTING ROLE ON RECONNECT
             }
-            
-            existingPlayer.ConnectionId = connectionId;
-            existingPlayer.IsConnected = true; // Mark as connected
-            existingPlayer.Name = playerName; // Update name in case it changed
-            
-            if (userId != null) existingPlayer.UserId = userId;
-            if (avatarUrl != null) existingPlayer.AvatarUrl = avatarUrl;
-            existingPlayer.IsScreen = isScreen;
+            finally
+            {
+                room.StateLock.Release();
+            }
 
             _connectionRoomMap.TryAdd(connectionId, code);
+            _gameStateManager.MarkDirty(room.Code);
             NotifyStatsChanged();
             return room;
         }
@@ -141,28 +217,39 @@ public class RoomService : IRoomService
         // Actually, if a room exists, it already had a creator (HostScreen/Player).
         // But if they disconnected and the room is still alive, maybe we need to reassign?
         // Let's stick to the core requirement: creator starts as both.
-        bool assignHost = !room.Players.Any(p => p.IsHost);
+        bool assignHost = false;
         
-        if (assignHost && string.IsNullOrEmpty(room.HostPlayerId))
+        room.StateLock.Wait();
+        try
         {
-            room.HostPlayerId = connectionId;
+            assignHost = !room.Players.Any(p => p.IsHost);
+            
+            if (assignHost && string.IsNullOrEmpty(room.HostPlayerId))
+            {
+                room.HostPlayerId = connectionId;
+            }
+
+            var newPlayer = new Player
+            {
+                ConnectionId = connectionId,
+                Name = playerName,
+                IsHost = assignHost,
+                IsConnected = true,
+                UserId = userId,
+                AvatarUrl = avatarUrl,
+                IsScreen = isScreen
+            };
+
+            room.Players.Add(newPlayer);
         }
-
-        var newPlayer = new Player
+        finally
         {
-            ConnectionId = connectionId,
-            Name = playerName,
-            IsHost = assignHost,
-            IsConnected = true,
-            UserId = userId,
-            AvatarUrl = avatarUrl,
-            IsScreen = isScreen
-        };
-
-        room.Players.Add(newPlayer);
+            room.StateLock.Release();
+        }
         _connectionRoomMap.TryAdd(connectionId, code);
         _logger.LogInformation("New player {Player} joined room {Code} (Host: {IsHost})", playerName, code, assignHost);
         
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -176,7 +263,16 @@ public class RoomService : IRoomService
                 var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
                 if (player != null)
                 {
-                    player.IsScreen = isScreen;
+                    room.StateLock.Wait();
+                    try
+                    {
+                        player.IsScreen = isScreen;
+                    }
+                    finally
+                    {
+                        room.StateLock.Release();
+                    }
+                    _gameStateManager.MarkDirty(room.Code);
                     NotifyStatsChanged();
                     return room;
                 }
@@ -200,7 +296,16 @@ public class RoomService : IRoomService
                 var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
                 if (player != null)
                 {
-                    player.Name = newName;
+                    room.StateLock.Wait();
+                    try
+                    {
+                        player.Name = newName;
+                    }
+                    finally
+                    {
+                        room.StateLock.Release();
+                    }
+                    _gameStateManager.MarkDirty(room.Code);
                     NotifyStatsChanged();
                     return room;
                 }
@@ -209,7 +314,7 @@ public class RoomService : IRoomService
         return null;
     }
 
-    public void RemovePlayer(string connectionId)
+    public Room? RemovePlayer(string connectionId)
     {
         if (_connectionRoomMap.TryRemove(connectionId, out var roomCode))
         {
@@ -219,20 +324,42 @@ public class RoomService : IRoomService
                 if (player != null)
                 {
                     // SOFT DELETE: Just mark as disconnected
-                    player.IsConnected = false;
+                    room.StateLock.Wait();
+                    try
+                    {
+                        player.IsConnected = false;
+                    }
+                    finally
+                    {
+                        room.StateLock.Release();
+                    }
                     
                     // Trigger cleanup check
                     CheckRoomLifecycle(room);
+                    _gameStateManager.MarkDirty(room.Code);
                     NotifyStatsChanged();
+                    return room;
                 }
             }
         }
+        return null;
     }
 
     private void CheckRoomLifecycle(Room room)
     {
+        bool isEmpty = false;
+        room.StateLock.Wait();
+        try
+        {
+            isEmpty = room.Players.All(p => !p.IsConnected);
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+
         // If everyone is disconnected, schedule destruction
-        if (room.Players.All(p => !p.IsConnected))
+        if (isEmpty)
         {
             Task.Run(() => ScheduleRoomDestruction(room.Code));
         }
@@ -246,7 +373,18 @@ public class RoomService : IRoomService
         if (_rooms.TryGetValue(code, out var room))
         {
             // If still everyone disconnected, kill it
-            if (room.Players.All(p => !p.IsConnected))
+            bool isEmpty = false;
+            await room.StateLock.WaitAsync();
+            try
+            {
+                 isEmpty = room.Players.All(p => !p.IsConnected);
+            }
+            finally
+            {
+                room.StateLock.Release();
+            }
+
+            if (isEmpty)
             {
                  // Terminate
                  _rooms.TryRemove(code, out _);
@@ -257,6 +395,7 @@ public class RoomService : IRoomService
                  // Notify all clients that this room is gone (for Active Tables list)
                  await _gameHubContext.Clients.All.SendAsync("RoomDeleted", code);
 
+                 _gameStateManager.UntrackRoom(code);
                  NotifyStatsChanged();
             }
         }
@@ -267,6 +406,7 @@ public class RoomService : IRoomService
         _rooms.TryRemove(code.ToUpper(), out _);
         _ = _gameHubContext.Clients.Group(code.ToUpper()).SendAsync("RoomTerminated", "Room terminated by administrator");
         _ = _gameHubContext.Clients.All.SendAsync("RoomDeleted", code.ToUpper());
+        _gameStateManager.UntrackRoom(code.ToUpper());
         NotifyStatsChanged();
     }
 
@@ -277,7 +417,28 @@ public class RoomService : IRoomService
         var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
         if (player == null) return null;
 
-        player.IsReady = forcedState ?? !player.IsReady;
+        room.StateLock.Wait();
+        try
+        {
+            // If forcedState is set and requester is HOST, set the room-level override
+            if (forcedState != null && player.IsHost)
+            {
+                room.IsHostOverride = forcedState.Value;
+            }
+            else
+            {
+                // Personal toggle: flip the individual player's ready state
+                player.IsReady = forcedState ?? !player.IsReady;
+
+                // Auto-compute: if all non-screen players are now ready, no action needed on IsHostOverride
+                // The frontend/start logic will check both IsHostOverride and individual states
+            }
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code, "Players");
         return room;
     }
 
@@ -303,15 +464,24 @@ public class RoomService : IRoomService
         room.PlayerAnswers.Clear();
         room.RoundScores.Clear();
 
-        var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
-        if (service != null)
+        await room.StateLock.WaitAsync();
+        try
         {
-            await service.StartRound(room, room.Settings);
-        }
+            var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
+            if (service != null)
+            {
+                await service.StartRound(room, room.Settings);
+            }
 
-        // Set Timer
-        room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
+            // Set Timer
+            room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
         
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -319,10 +489,24 @@ public class RoomService : IRoomService
     public Room? PauseGame(string code)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        if (room.IsPaused || !room.RoundEndTime.HasValue) return null;
-
-        room.IsPaused = true;
-        room.TimeRemainingWhenPaused = room.RoundEndTime.Value - DateTime.UtcNow;
+        room.StateLock.Wait();
+        try
+        {
+             if (!room.IsPaused && room.RoundEndTime.HasValue)
+             {
+                 room.IsPaused = true;
+                 room.TimeRemainingWhenPaused = room.RoundEndTime.Value - DateTime.UtcNow;
+             }
+             else
+             {
+                 return null;
+             }
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -330,11 +514,25 @@ public class RoomService : IRoomService
     public Room? ResumeGame(string code)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        if (!room.IsPaused || !room.TimeRemainingWhenPaused.HasValue) return null;
-
-        room.IsPaused = false;
-        room.RoundEndTime = DateTime.UtcNow.Add(room.TimeRemainingWhenPaused.Value);
-        room.TimeRemainingWhenPaused = null;
+        room.StateLock.Wait();
+        try
+        {
+            if (room.IsPaused && room.TimeRemainingWhenPaused.HasValue)
+            {
+                room.IsPaused = false;
+                room.RoundEndTime = DateTime.UtcNow.Add(room.TimeRemainingWhenPaused.Value);
+                room.TimeRemainingWhenPaused = null;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -346,10 +544,19 @@ public class RoomService : IRoomService
         // Already finished?
         if (room.State == GameState.Finished) return room;
 
-        room.State = GameState.Finished;
-        room.IsPaused = false;
-        room.RoundEndTime = null; // Clear timer
+        room.StateLock.Wait();
+        try
+        {
+            room.State = GameState.Finished;
+            room.IsPaused = false;
+            room.RoundEndTime = null; // Clear timer
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
         
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -367,9 +574,31 @@ public class RoomService : IRoomService
         if (service != null)
         {
             var action = new GameAction(actionType, payload);
-            bool success = await service.HandleAction(room, action, connectionId);
+            bool success = false;
+            
+            await room.StateLock.WaitAsync();
+            try
+            {
+                success = await service.HandleAction(room, action, connectionId);
+            }
+            finally
+            {
+                room.StateLock.Release();
+            }
+
             if (success) 
             {
+                // Action could change anything. Usually GameData, Scores, Players.
+                // For safety on generic actions, we might need full diff? 
+                // Or GameService tells us what changed?
+                // Generic Action -> Assume GameData changed.
+                _gameStateManager.MarkDirty(room.Code, "GameData");
+                // Some actions change scores
+                _gameStateManager.MarkDirty(room.Code, "RoundScores");
+                _gameStateManager.MarkDirty(room.Code, "PlayerAnswers");
+                // And Players (e.g. ready state?)
+                _gameStateManager.MarkDirty(room.Code, "Players");
+
                 NotifyStatsChanged();
                 return room;
             }
@@ -384,9 +613,18 @@ public class RoomService : IRoomService
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         if (service != null)
         {
-            await service.EndRound(room);
+            await room.StateLock.WaitAsync();
+            try
+            {
+                await service.EndRound(room);
+            }
+            finally
+            {
+                room.StateLock.Release();
+            }
         }
         
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -397,11 +635,20 @@ public class RoomService : IRoomService
         // Only allow changing game type in Lobby or Finished state?
         // if (room.State != GameState.Lobby && room.State != GameState.Finished) return null;
 
-        room.GameType = gameType;
-        room.State = GameState.Lobby; // Reset to Lobby so clients switch view
-        // Clear votes if game type is manually force set? 
-        room.NextGameVotes.Clear();
+        room.StateLock.Wait();
+        try
+        {
+            room.GameType = gameType;
+            room.State = GameState.Lobby; // Reset to Lobby so clients switch view
+            // Clear votes if game type is manually force set? 
+            room.NextGameVotes.Clear();
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
         
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -409,7 +656,16 @@ public class RoomService : IRoomService
     public Room? UpdateSettings(string code, GameSettings settings)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        room.Settings = settings;
+        room.StateLock.Wait();
+        try
+        {
+            room.Settings = settings;
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -417,7 +673,16 @@ public class RoomService : IRoomService
     public Room? UpdateUndoSettings(string code, UndoSettings settings)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        room.UndoSettings = settings;
+        room.StateLock.Wait();
+        try
+        {
+            room.UndoSettings = settings;
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -426,7 +691,16 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         
-        room.NextGameVotes[playerId] = vote;
+        room.StateLock.Wait();
+        try
+        {
+            room.NextGameVotes[playerId] = vote;
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -447,25 +721,37 @@ public class RoomService : IRoomService
             ActiveRooms = activeRooms.Count,
             TotalOnlinePlayers = activeRooms.Sum(r => r.Players.Count),
             Uptime = DateTime.UtcNow - System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime(),
-            Rooms = activeRooms.Select(r => new RoomSummary
+            Rooms = activeRooms.Select(r => 
             {
-                Code = r.Code,
-                GlobalState = r.State.ToString(),
-                GameType = r.GameType.ToString(),
-                PlayerCount = r.Players.Count,
-                IsPublic = r.IsPublic,
-                HostName = r.Players.FirstOrDefault(p => p.IsHost)?.Name ?? "Unknown",
-                RoundNumber = r.RoundNumber,
-                SettingsTimer = r.Settings?.TimerDurationSeconds ?? 0,
-                Settings = r.Settings ?? new GameSettings(),
-                Players = r.Players.Select(p => new PlayerSummary 
+                // We must lock to read Players list safely
+                r.StateLock.Wait();
+                try 
                 {
-                    Name = p.Name,
-                    IsHost = p.IsHost,
-                    Score = p.Score,
-                    UserId = p.UserId,
-                    ConnectionId = p.ConnectionId
-                }).ToList()
+                    return new RoomSummary
+                    {
+                        Code = r.Code,
+                        GlobalState = r.State.ToString(),
+                        GameType = r.GameType.ToString(),
+                        PlayerCount = r.Players.Count,
+                        IsPublic = r.IsPublic,
+                        HostName = r.Players.FirstOrDefault(p => p.IsHost)?.Name ?? "Unknown",
+                        RoundNumber = r.RoundNumber,
+                        SettingsTimer = r.Settings?.TimerDurationSeconds ?? 0,
+                        Settings = r.Settings ?? new GameSettings(),
+                        Players = r.Players.Select(p => new PlayerSummary 
+                        {
+                            Name = p.Name,
+                            IsHost = p.IsHost,
+                            Score = p.Score,
+                            UserId = p.UserId,
+                            ConnectionId = p.ConnectionId
+                        }).ToList()
+                    };
+                }
+                finally
+                {
+                    r.StateLock.Release();
+                }
             }).ToList()
         };
 
@@ -474,7 +760,8 @@ public class RoomService : IRoomService
 
     public void NotifyStatsChanged()
     {
-        _ = _adminHubContext.Clients.All.SendAsync("StatsUpdated", GetServerStats());
+        // Mark dirty, handled by timer
+        _statsDirty = true;
     }
 
     private string GenerateRoomCode()
@@ -557,6 +844,7 @@ public class RoomService : IRoomService
             // Implicit "Yes" from initiator
             room.CurrentVote.Votes[connectionId] = true;
             
+            _gameStateManager.MarkDirty(room.Code);
             NotifyStatsChanged();
             return room; // Caller will broadcast "UndoVoteStarted"
         }
@@ -591,6 +879,7 @@ public class RoomService : IRoomService
             room.CurrentVote = null;
         }
 
+        _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
     }
@@ -642,6 +931,7 @@ public class RoomService : IRoomService
                  }
             }
 
+            _gameStateManager.MarkDirty(currentRoom.Code);
             NotifyStatsChanged();
             return currentRoom;
         }

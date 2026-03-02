@@ -11,7 +11,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    backdrop-filter: blur(10px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
@@ -85,7 +84,6 @@
         position: fixed;
         z-index: 1050;
         background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(8px);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         padding: 10px;
         border: 1px solid rgba(255, 255, 255, 0.1);

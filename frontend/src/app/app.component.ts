@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, ActivatedRoute } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { ToastComponent } from './shared/components/toast/toast.component';
+import { AppConfirmComponent } from './shared/components/app-confirm/app-confirm.component';
 import { ActiveGamesComponent } from './features/active-games/active-games.component';
 import { SignalRService } from './services/signalr.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, ToastComponent, ActiveGamesComponent],
+  imports: [CommonModule, RouterOutlet, ToastComponent, AppConfirmComponent, ActiveGamesComponent],
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {

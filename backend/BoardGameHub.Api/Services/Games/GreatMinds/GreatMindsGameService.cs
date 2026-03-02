@@ -21,7 +21,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             _logger = logger;
         }
 
-        public async Task StartRound(Room room, GameSettings settings)
+        public Task StartRound(Room room, GameSettings settings)
         {
             _logger.LogInformation("Starting Great Minds round in room {Code}", room.Code);
             // 1. Setup State
@@ -44,7 +44,10 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             // 3. Deal Level 1
             DealCards(room, state);
 
-            await BroadcastState(room);
+            // 3. Deal Level 1
+            DealCards(room, state);
+
+            return Task.CompletedTask;
         }
 
         private void DealCards(Room room, GreatMindsGameState state)
@@ -139,7 +142,8 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             else
             {
                 // SUCCESS
-                state.PlayerHands[playerId].Remove(cardValue);
+                bool removed = state.PlayerHands[playerId].Remove(cardValue);
+                _logger.LogInformation("Submitted Card {Card} for {Player}. Removed: {Removed}. Remaining: {Count}", cardValue, playerId, removed, state.PlayerHands[playerId].Count);
                 state.TopCard = cardValue;
                 
                 await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "CARD_PLAYED", new 
@@ -154,7 +158,6 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                 }
             }
 
-            await BroadcastState(room);
             return true;
         }
 
@@ -186,7 +189,6 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                  await NextLevel(room, state);
              }
 
-             await BroadcastState(room);
              return true;
         }
 
@@ -216,31 +218,6 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             await _hubContext.Clients.Group(room.Code).SendAsync("GameEvent", "LEVEL_START", new { Level = state.CurrentLevel });
         }
 
-        private async Task BroadcastState(Room room)
-        {
-            var state = GetState(room);
-            if(state == null) return;
-
-            foreach (var player in room.Players)
-            {
-                // Ensure the player is in the state (might have joined late?)
-                // If not in state, they get empty hand view?
-                var myHand = state.PlayerHands.ContainsKey(player.ConnectionId) ? state.PlayerHands[player.ConnectionId] : new List<int>();
-
-                var sanitizedState = new 
-                {
-                    CurrentLevel = state.CurrentLevel,
-                    Lives = state.Lives,
-                    SyncTokens = state.SyncTokens,
-                    TopCard = state.TopCard,
-                    MyHand = myHand,
-                    OtherHandCounts = state.PlayerHands.Where(p => p.Key != player.ConnectionId).ToDictionary(p => p.Key, p => p.Value.Count),
-                    PlayerPresence = state.PlayerPresence // Share all presence info
-                };
-
-                await _hubContext.Clients.Client(player.ConnectionId).SendAsync("GameState", sanitizedState);
-            }
-        }
 
         private GreatMindsGameState? GetState(Room room)
         {
@@ -282,7 +259,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                     if (state != null)
                     {
                         state.PlayerPresence[connectionId] = presenceProp.GetDouble();
-                        await BroadcastState(room);
+                        state.PlayerPresence[connectionId] = presenceProp.GetDouble();
                         return true;
                     }
                 }

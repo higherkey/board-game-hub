@@ -8,7 +8,7 @@
                 [options]="availableGames"
                 [disabled]="isIntermission"
                 [placeholder]="isIntermission ? 'GAME LOCKED' : 'CHOOSE GAME'"
-                (selectionChange)="changeGameType()"
+                (selectionChange)="changeGameType($event)"
                 idPrefix="compact-game">
             </app-game-combobox>
         </div>
@@ -29,7 +29,7 @@
 
         <!-- Start Button -->
         <div class="compact-item">
-            <button type="button" class="btn fw-bold" (click)="startGame()" [disabled]="selectedGameType === 'None'"
+            <button type="button" class="btn fw-bold" (click)="startGame($event)" [disabled]="selectedGameType === 'None'"
                 [ngClass]="(isIntermission && currentRound >= (settings.totalRounds || 5)) ? 'btn-danger' : 'btn-primary'"
                 style="border: none;"
                 [style.background]="(isIntermission && currentRound >= (settings.totalRounds || 5)) ? '' : 'linear-gradient(135deg, var(--secondary) 0%, var(--accent-dark) 100%)'">
@@ -68,9 +68,13 @@
 
                 <div class="d-grid gap-2">
                     <button type="button" class="btn btn-lg w-100 py-3 mb-2 fw-bold shadow-sm ready-button"
-                        [class.btn-success]="meReady" [class.btn-outline-primary]="!meReady" (click)="onToggleReady()">
-                        <i class="bi" [class.bi-check-circle-fill]="meReady" [class.bi-circle]="!meReady"></i>
-                        {{ meReady ? 'READY!' : (isScreen ? 'ROOM READY' : 'I\'M READY') }}
+                        [class.btn-success]="isScreen ? isHostOverride : meReady"
+                        [class.btn-outline-primary]="isScreen ? !isHostOverride : !meReady"
+                        (click)="onToggleReady()">
+                        <i class="bi"
+                            [class.bi-check-circle-fill]="isScreen ? isHostOverride : meReady"
+                            [class.bi-circle]="isScreen ? !isHostOverride : !meReady"></i>
+                        {{ isScreen ? (isHostOverride ? 'ROOM READY!' : 'FORCE ROOM READY') : (meReady ? 'I\'M READY!' : 'SET PERSONAL READY') }}
                     </button>
                 </div>
             </div>
@@ -88,7 +92,7 @@
                         [options]="availableGames"
                         [disabled]="isIntermission"
                         [placeholder]="isIntermission ? 'GAME LOCKED' : 'Select a game...'"
-                        (selectionChange)="changeGameType()"
+                        (selectionChange)="changeGameType($event)"
                         idPrefix="full-game">
                     </app-game-combobox>
 
@@ -98,7 +102,7 @@
                         <span class="fs-5">{{ selectedGame?.icon }}</span>
                         <span class="fw-bold text-truncate">{{ selectedGame?.name }}</span>
                         <button *ngIf="!isIntermission" class="btn btn-sm btn-link text-brand-blue ms-auto p-0"
-                            (click)="selectedGameType = 'None'; gameSearchQuery = ''">
+                            (click)="changeGameType('None'); gameSearchQuery = ''">
                             <i class="bi bi-x-circle-fill"></i>
                         </button>
                     </div>
@@ -221,13 +225,13 @@
 
         <!-- Start Button (Full Width footer) -->
         <div class="mt-4 pt-3 border-top position-relative">
-            <button type="button" class="btn-start shadow-pink mb-2" (click)="startGame()"
+            <button type="button" class="btn-start shadow-pink mb-2" (click)="startGame($event)"
                 [disabled]="selectedGameType === 'None'">
                 <i class="bi" [class.bi-play-fill]="!isIntermission" [class.bi-fast-forward-fill]="isIntermission"></i>
                 {{ isIntermission ? 'START NEXT ROUND' : 'START GAME' }}
             </button>
             <button *ngIf="isIntermission" type="button" class="btn btn-outline-danger w-100 fw-bold py-2"
-                (click)="emitExitGame()">
+                (click)="emitExitGame($event)">
                 <i class="bi bi-stop-circle-fill me-1"></i> END SESSION
             </button>
 

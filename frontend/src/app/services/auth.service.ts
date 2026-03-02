@@ -185,7 +185,7 @@ export class AuthService {
     logout() {
         this.clearSessionState();
         this.updateSession();
-        this.router.navigate(['/login']);
+        this.router.navigate(['/']);
     }
 
     private clearSessionState() {

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: board-game-hub-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: oregon 
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Set in Render Dashboard
+      - key: Jwt__Key
+        sync: false # Set in Render Dashboard
+      - key: TurnServer__Url
+        sync: false # Set in Render Dashboard
+      - key: TurnServer__Username
+        sync: false # Set in Render Dashboard
+      - key: TurnServer__Credential
+        sync: false # Set in Render Dashboard

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, forwardRef, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { GameDefinition } from '../../../../services/game-data.service';
@@ -17,7 +17,7 @@ import { GameDefinition } from '../../../../services/game-data.service';
         }
     ]
 })
-export class GameComboboxComponent implements ControlValueAccessor, AfterViewInit, OnDestroy {
+export class GameComboboxComponent implements ControlValueAccessor, OnInit, AfterViewInit, OnDestroy {
     @Input() options: GameDefinition[] = [];
     @Input() disabled = false;
     @Input() placeholder = 'Select a game...';
@@ -41,8 +41,11 @@ export class GameComboboxComponent implements ControlValueAccessor, AfterViewIni
 
     constructor() { }
 
-    ngAfterViewInit() {
+    ngOnInit() {
         this.filterOptions();
+    }
+
+    ngAfterViewInit() {
         document.addEventListener('pointerup', this.onBackgroundClick);
     }
 

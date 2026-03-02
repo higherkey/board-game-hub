@@ -10,6 +10,7 @@ import { SocialPanelComponent } from '../../shared/components/social-panel/socia
 import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { GAME_REGISTRY } from '../games/game.registry';
+import { ConfirmService } from '../../shared/services/confirm.service';
 import { GameReviewComponent } from './components/game-review/game-review.component';
 import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
@@ -77,22 +78,30 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
   // Video layout: 'sidebar' (default) | 'docked-top' | 'docked-bottom'
   public videoLayout: 'sidebar' | 'docked-top' | 'docked-bottom' = 'sidebar';
+  public isVideoActive = false;
+  public isNavMenuOpen = false;
 
   get selectedGame(): GameDefinition | undefined {
     const type = this.selectedGameType.toLowerCase();
     return this.availableGames.find(g => g.id.toLowerCase() === type || g.name.toLowerCase() === type);
   }
 
+  /**
+   * Returns a clean, human-readable name for the current room state.
+   */
+  getCurrentGameDisplayName(gameType: string | undefined): string {
+    if (!gameType || gameType === 'None') return 'Lobby';
+
+    // Find in available games to get the formatted name
+    const game = this.availableGames.find(g => g.id.toLowerCase() === gameType.toLowerCase());
+    return game ? game.name : gameType;
+  }
+
   onVideoLayoutChange(mode: any) {
     this.videoLayout = mode;
   }
 
-  onGameSelected(gameType: string) {
-    this.selectedGameType = gameType;
-    if (this.roomCode) {
-      this.signalRService.setGameType(this.roomCode, gameType);
-    }
-  }
+
 
   @HostListener('window:keydown.shift.f', ['$event'])
   toggleBigScreen(event?: KeyboardEvent) {
@@ -117,6 +126,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     this.mobileView = tab;
   }
 
+  toggleNavMenu() {
+    this.isNavMenuOpen = !this.isNavMenuOpen;
+  }
+
   enableTransitions = false;
 
   constructor(
@@ -126,7 +139,8 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     // authService injected via property
     private readonly toastService: ToastService,
     private readonly gameDataService: GameDataService,
-    private readonly logger: LoggerService
+    private readonly logger: LoggerService,
+    private readonly confirmService: ConfirmService
   ) {
     this.session$ = this.authService.session$;
     this.players$ = this.signalRService.players$;
@@ -138,9 +152,15 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     // Subscribe to room updates to select component
     this.currentRoom$.subscribe(room => {
       if (room) {
-        // Sync local isScreen state with the server-side player state
+        // Sync local isScreen state with the server-side player state only if already in a joined state
         const me = room.players.find(p => p.connectionId === this.signalRService.getConnectionId());
-        this.isScreen = me?.isScreen ?? this.isScreen;
+        if (me && !this.needsName) {
+          // Update local state if it differs from server (source of truth)
+          if (this.isScreen !== me.isScreen) {
+            this.isScreen = me.isScreen;
+            this.joinType = this.isScreen ? 'table' : 'player';
+          }
+        }
         this.updateActiveGame(room);
 
         // If host joins a fresh lobby with a pre-selected game type from query params, apply it
@@ -161,7 +181,14 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     this.isHost$ = this.signalRService.isHost$;
   }
 
+  videoChatReady = false;
+
   ngAfterViewInit() {
+    // Prevent NG0100 by delaying ViewChild dependent logic
+    setTimeout(() => {
+      this.videoChatReady = true;
+    }, 0);
+
     // Enable transitions after initial layout to prevent sliding
     setTimeout(() => {
       this.enableTransitions = true;
@@ -186,9 +213,12 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
   }
 
-  async toggleReady() {
+  async toggleReady(forcedState?: boolean) {
+    if (forcedState) {
+      this.logger.info(`[GameRoom] User triggered ready OVERRIDE (forcedState: ${forcedState})`);
+    }
     if (this.roomCode) {
-      await this.signalRService.toggleReady(this.roomCode);
+      await this.signalRService.toggleReady(this.roomCode, forcedState);
     }
   }
 
@@ -230,7 +260,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     // Load available games for creation
     this.gameDataService.games$.subscribe(games => {
       if (games) {
-        this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing');
+        this.availableGames = games.filter(g => g.status !== 'Backlog');
 
         // If we have a selectedGameType from query params, ensure it's valid
         if (this.selectedGameType !== 'None' && !this.availableGames.some(g => g.id === this.selectedGameType)) {
@@ -248,15 +278,8 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     });
     this.gameDataService.refreshGames();
 
-    // Restore role from localStorage if available
-    const savedRole = localStorage.getItem('bgh_preferred_role');
-    if (savedRole) {
-      this.joinType = savedRole as 'player' | 'table';
-      this.isScreen = this.joinType === 'table';
-    } else {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      this.isScreen = !isMobile;
-    }
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    this.isScreen = !isMobile;
 
     const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
 
@@ -338,12 +361,22 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   async changeRole(isScreen: boolean) {
     this.isScreen = isScreen;
     this.joinType = isScreen ? 'table' : 'player';
-    localStorage.setItem('bgh_preferred_role', this.joinType);
     await this.signalRService.changeRole(isScreen);
   }
 
+  private ignoreGameTypeUpdatesUntil = 0;
+
+  onGameSelected(gameType: string) {
+    this.selectedGameType = gameType;
+    // Optimistic UI: Ignore server updates for 500ms (or until server matches) to prevent flickering
+    this.ignoreGameTypeUpdatesUntil = Date.now() + 500;
+    if (this.roomCode) {
+      this.signalRService.setGameType(this.roomCode, gameType);
+    }
+  }
+
   startGame(settings: GameSettings) {
-    this.logger.info(`Starting game: ${this.selectedGameType}`, settings);
+    this.logger.info(`[GameRoom] Starting game: ${this.selectedGameType}`, settings);
     this.signalRService.startGame(settings);
   }
 
@@ -357,16 +390,31 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     }
   }
 
-  async onEndGame() {
+  async onEndGame(event?: MouseEvent) {
     // This is for "Finish Game" (Results), usually called when max rounds reached
-    if (confirm('Are you sure you want to finish the game and see results?')) {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Finish Game?',
+      message: 'Are you sure you want to finish the game and see results?',
+      confirmLabel: 'SEE RESULTS',
+      cancelLabel: 'KEEP PLAYING'
+    }, event);
+
+    if (confirmed) {
       await this.signalRService.endGame();
     }
   }
 
-  async onExitGame() {
+  async onExitGame(event?: MouseEvent) {
     // This is for "End Session" (Return to Lobby)
-    if (confirm('Are you sure you want to end the session and return to the lobby?')) {
+    const confirmed = await this.confirmService.confirm({
+      title: 'End Session?',
+      message: 'Are you sure you want to end the session and return to the lobby?',
+      confirmLabel: 'END SESSION',
+      cancelLabel: 'CANCEL',
+      confirmButtonClass: 'btn-danger'
+    }, event);
+
+    if (confirmed) {
       if (this.roomCode) {
         await this.signalRService.setGameType(this.roomCode, 'None');
       }
@@ -408,20 +456,23 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     return me?.connectionId || '';
   }
 
-  @ViewChild('undoDialog') undoDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('videoChat') videoChat?: VideoChatComponent;
 
-  requestUndo() {
-    this.undoDialog.nativeElement.showModal();
-  }
+  async requestUndo() {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Request Undo?',
+      message: 'This will pause the game and ask all players to vote on the undo. Are you sure you want to proceed?',
+      confirmLabel: 'REQUEST UNDO',
+      cancelLabel: 'CANCEL'
+    });
 
-  confirmUndo() {
-    this.signalRService.requestUndo();
-    this.undoDialog.nativeElement.close();
+    if (confirmed) {
+      this.signalRService.requestUndo();
+    }
   }
 
   cancelUndo() {
-    this.undoDialog.nativeElement.close();
+    // No longer needed with ConfirmService, but kept if other parts specifically call it (unlikely)
   }
 
   async leaveRoom() {
@@ -438,6 +489,20 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
       isHost: this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '')
     };
 
+    // Synchronize local selection state with the room's current game type
+    // Optimistic UI: Respect local override window
+    if (Date.now() < this.ignoreGameTypeUpdatesUntil) {
+      // If the server has caught up to our desired state, clear the lock early
+      if (room.gameType === this.selectedGameType) {
+        this.ignoreGameTypeUpdatesUntil = 0;
+      }
+      // Otherwise ignore the server's old state (revert prevention)
+    } else {
+      if (room.gameType && this.selectedGameType !== room.gameType) {
+        this.selectedGameType = room.gameType;
+      }
+    }
+
     let gameConfig = GAME_REGISTRY[room.gameType];
 
     // Fallback for case mismatches (e.g., "BABBLE" vs "Babble")
@@ -453,8 +518,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
       } else {
         this.gameComponent = gameConfig.hostComponent;
       }
-    } else {
+    } else if (room.gameType !== 'None') {
       console.warn(`Game type ${room.gameType} not found in registry.`);
+      this.gameComponent = null;
+    } else {
       this.gameComponent = null;
     }
   }
@@ -467,6 +534,12 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   onSetHostPlayer(targetId: string) {
     if (this.roomCode) {
       this.signalRService.setHostPlayer(this.roomCode, targetId);
+    }
+  }
+
+  onRemoveHostPlayer(targetId: string) {
+    if (this.roomCode) {
+      this.signalRService.removeHostPlayer(this.roomCode, targetId);
     }
   }
 

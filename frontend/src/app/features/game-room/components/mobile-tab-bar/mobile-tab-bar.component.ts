@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type GameRoomTab = 'game' | 'players' | 'host';
+export type GameRoomTab = 'game' | 'players';
 
 @Component({
     selector: 'app-mobile-tab-bar',
@@ -16,7 +16,6 @@ export class MobileTabBarComponent {
     @Output() tabChange = new EventEmitter<GameRoomTab>();
 
     selectTab(tab: GameRoomTab) {
-        if (tab === 'host' && !this.isHost) return;
         this.tabChange.emit(tab);
     }
 }

@@ -13,6 +13,7 @@ public class GameHub : Hub
 {
     private readonly IRoomService _roomService;
     private readonly IGameHistoryService _historyService;
+    private readonly IConfiguration _configuration;
 
     public async Task<List<GameSessionPlayer>> GetGameHistory()
     {
@@ -24,17 +25,28 @@ public class GameHub : Hub
 
     public async Task SubmitAction(string roomCode, string actionType, JsonElement payload)
     {
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, actionType, payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        // State update broadcast via GameStateManager
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, actionType, payload);
     }
 
-    public GameHub(IRoomService roomService, IGameHistoryService historyService)
+    private readonly ILogger<GameHub> _logger;
+
+    public GameHub(IRoomService roomService, IGameHistoryService historyService, ILogger<GameHub> logger, IConfiguration configuration)
     {
         _roomService = roomService;
         _historyService = historyService;
+        _logger = logger;
+        _configuration = configuration;
+    }
+
+    public async Task JoinLobby()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "LobbyGroup");
+    }
+
+    public async Task LeaveLobby()
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, "LobbyGroup");
     }
 
     public Task<List<string>> ValidateRooms(List<string> codes)
@@ -51,16 +63,30 @@ public class GameHub : Hub
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
         var room = _roomService.CreateRoom(Context.ConnectionId, playerName, isPublic, type, userId, avatarUrl, isScreen);
-        room.CreatorConnectionId = Context.ConnectionId; // Set the creator
         
         // Log creation
-        Console.WriteLine($"[GameHub] Room Created: {room.Code}, GameType: {room.GameType}, Host: {playerName}");
+        _logger.LogInformation("[GameHub] Room Created: {Code}, GameType: {GameType}, Host: {Host}", room.Code, room.GameType, playerName);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code.ToUpper());
+        // Send TURN credentials to the creator
+        await SendTurnCredentialsToClient();
+
         // Broadcast to the creator (and anyone else in the group, though it's just them)
         await Clients.Group(room.Code.ToUpper()).SendAsync("PlayerJoined", room.Players);
+        
+        // Public Lobby Update
+        if (room.IsPublic)
+        {
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomCreated", room);
+        }
+
         return room;
     }
+
+    // ... (StartGame, PauseGame etc skipped for brevity in replacement if not touched, but here I need to be careful with range)
+    // Actually I should target specific blocks. But SetGameType is further down.
+
+    // Let's do a multi-replace or carefully targeted replacement.
 
     public async Task StartGame(string roomCode, GameSettings settings)
     {
@@ -68,70 +94,106 @@ public class GameHub : Hub
         if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("GameStarted", room);
+            // If game starts, does it vanish from public lobby? Usually "Lobby" state rooms are shown.
+            // When State becomes "Playing", it disappears from GetPublicRooms().
+            // So we should broadcast this as a deletion (or update that implies removal).
+            // Let's assume frontend filters by state, or we send a delete if state changes.
+            // GetPublicRooms filters by `r.State == GameState.Lobby`.
+            // So if state changes to Playing, we should send "PublicRoomDeleted" (from the list perspective) or "PublicRoomUpdated".
+            // Sending "PublicRoomDeleted" is cleaner for the list.
+            if (room.IsPublic)
+            {
+                 // Removing from public view
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomDeleted", roomCode);
+            }
         }
     }
 
-    public async Task PauseGame(string roomCode)
+    public Task PauseGame(string roomCode)
     {
-        var room = _roomService.PauseGame(roomCode);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        _roomService.PauseGame(roomCode);
+        return Task.CompletedTask;
     }
 
-    public async Task ResumeGame(string roomCode)
+    public Task ResumeGame(string roomCode)
     {
-        var room = _roomService.ResumeGame(roomCode);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        _roomService.ResumeGame(roomCode);
+        return Task.CompletedTask;
     }
 
-    public async Task EndGame(string roomCode)
+    public Task EndGame(string roomCode)
     {
         var room = _roomService.EndGame(roomCode);
-        if (room != null)
+        if (room != null && room.IsPublic && room.State == GameState.Finished)
         {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+             // Finished rooms are not public? 
+             // GetPublicRooms filters r.State == GameState.Lobby.
+             // So if it was Playing (not public) and becomes Finished (not public), no change.
+             // If we ever support seeing Finished games, we'd need an update.
         }
+        return Task.CompletedTask;
     }
 
     public async Task SetGameType(string roomCode, string gameType)
     {
+        _logger.LogInformation("[GameHub] SetGameType Request: Room={Room}, Type={GameType}", roomCode, gameType);
         if (Enum.TryParse<GameType>(gameType, true, out var type))
         {
             var room = _roomService.SetGameType(roomCode, type);
             if (room != null)
             {
+                _logger.LogInformation("[GameHub] SetGameType Success: Room={Room}, Enum={Enum}", roomCode, type);
                 await Clients.Group(roomCode.ToUpper()).SendAsync("GameTypeChanged", type.ToString());
-                // Global broadcast for Active Tables list
-                await Clients.All.SendAsync("RoomGameTypeChanged", roomCode.ToUpper(), type.ToString());
-                await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
+                // Redundant broadcast removed? Or kept for legacy? 
+                // Clients.All is definitely bad. Removing it.
+                // await Clients.All.SendAsync("RoomGameTypeChanged", roomCode.ToUpper(), type.ToString());
+                
+                if (room.IsPublic)
+                {
+                    // If switching back to Lobby state (SetGameType logic does this), it reappears!
+                    if (room.State == GameState.Lobby)
+                    {
+                         await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+                         // Or "PublicRoomCreated" if it wasn't there? "Updated" is safer if upsert logic used.
+                    }
+                }
             }
+            else
+            {
+                _logger.LogWarning("[GameHub] SetGameType Failed: Room {Room} not found in RoomService.", roomCode);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("[GameHub] SetGameType Failed: Could not parse {GameType} as GameType enum.", gameType);
         }
     }
 
     public async Task SetHostPlayer(string roomCode, string targetConnectionId)
     {
         var room = _roomService.SetHostPlayer(roomCode, targetConnectionId);
+        if (room != null && room.IsPublic && room.State == GameState.Lobby)
+        {
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+        }
+    }
+
+    public async Task RemoveHostPlayer(string roomCode, string targetConnectionId)
+    {
+        var room = _roomService.RemoveHostPlayer(roomCode, Context.ConnectionId, targetConnectionId);
         if (room != null)
         {
             await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
         }
     }
 
-    public async Task VoteNextGame(string roomCode, string gameType)
+    public Task VoteNextGame(string roomCode, string gameType)
     {
         if (Enum.TryParse<GameType>(gameType, true, out var type))
         {
-            var room = _roomService.VoteNextGame(roomCode, Context.ConnectionId, type);
-            if (room != null)
-            {
-               await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
-            }
+            _roomService.VoteNextGame(roomCode, Context.ConnectionId, type);
         }
+        return Task.CompletedTask;
     }
     
     public async Task UpdateSettings(string roomCode, GameSettings settings)
@@ -140,17 +202,20 @@ public class GameHub : Hub
         if (room != null)
         {
             await Clients.Group(roomCode.ToUpper()).SendAsync("SettingsUpdated", settings);
-            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
+            if (room.IsPublic && room.State == GameState.Lobby)
+            {
+                 // Settings (like timer) don't show on card usually, but good to keep sync.
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+            }
         }
     }
 
-    public async Task UpdateUndoSettings(string roomCode, UndoSettings settings)
+
+
+    public Task UpdateUndoSettings(string roomCode, UndoSettings settings)
     {
-        var room = _roomService.UpdateUndoSettings(roomCode, settings);
-        if (room != null)
-        {
-            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
-        }
+        _roomService.UpdateUndoSettings(roomCode, settings);
+        return Task.CompletedTask;
     }
 
     public async Task RequestUndo(string roomCode)
@@ -166,7 +231,8 @@ public class GameHub : Hub
             else
             {
                 // Immediate undo happened
-                await Clients.Group(roomCode.ToUpper()).SendAsync("GameRestored", room);
+                // await Clients.Group(roomCode.ToUpper()).SendAsync("GameRestored", room); 
+                // Let the GameStateManager handle the state update.
             }
         }
     }
@@ -187,7 +253,6 @@ public class GameHub : Hub
                 // Let's send "GameRestored" if it worked (checking history stack change? No.)
                 // Let's just send "RoomUpdated" and an explicit "UndoVoteFinished" message?
                 await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteFinished", "Vote Completed"); // Generic
-                await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
             }
             else
             {
@@ -212,14 +277,27 @@ public class GameHub : Hub
 
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
         
+        // Send TURN credentials to the joining player
+        await SendTurnCredentialsToClient();
+        
         // Notify others in group
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
         
+        // Public Lobby Update
+        if (room.IsPublic && room.State == GameState.Lobby)
+        {
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+        }
+
         return room;
     }
 
     public async Task ToggleReady(string roomCode, bool? forcedState = null)
     {
+        if (forcedState != null)
+        {
+            _logger.LogInformation("[Hub] Host override ToggleReady: {RoomCode}, ForcedState: {State}", roomCode, forcedState);
+        }
         var room = _roomService.ToggleReady(roomCode, Context.ConnectionId, forcedState);
         if (room != null)
         {
@@ -235,56 +313,46 @@ public class GameHub : Hub
             // Broadcast generic PlayerJoined to update the list, or we could make a specific PlayerRenamed event
             // Re-using PlayerJoined is easiest for now as the frontend likely just refreshes the list.
             await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
+            
+            if (room.IsPublic && room.State == GameState.Lobby)
+            {
+                await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+            }
         }
     }
 
-    public async Task ChangeRole(bool isScreen)
+    public Task ChangeRole(bool isScreen)
     {
         var room = _roomService.ChangeRole(Context.ConnectionId, isScreen);
         if (room != null)
         {
-            await Clients.Group(room.Code).SendAsync("RoomUpdated", room);
+            // await Clients.Group(room.Code).SendAsync("RoomUpdated", room);
         }
+        return Task.CompletedTask;
     }
 
     public async Task SubmitAnswers(string roomCode, List<string> answers)
     {
         var payload = JsonSerializer.SerializeToElement(new { answers });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWERS", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWERS", payload);
     }
 
     public async Task SubmitClue(string roomCode, string clue)
     {
         var payload = JsonSerializer.SerializeToElement(new { clue });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_CLUE", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_CLUE", payload);
     }
 
     public async Task SubmitGuess(string roomCode, string guess)
     {
         var payload = JsonSerializer.SerializeToElement(new { guess });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_GUESS", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_GUESS", payload);
     }
 
     public async Task SubmitBreakingNewsSlot(string roomCode, int slotId, string value)
     {
         var payload = JsonSerializer.SerializeToElement(new { slotId, value });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SLOT", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SLOT", payload);
     }
 
     // --- Deepfake Methods ---
@@ -292,11 +360,7 @@ public class GameHub : Hub
     public async Task SubmitPictophonePage(string roomCode, string content)
     {
         var payload = JsonSerializer.SerializeToElement(new { content });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_PAGE", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_PAGE", payload);
     }
 
     public async Task SubmitPictophoneDraft(string roomCode, string content)
@@ -307,30 +371,18 @@ public class GameHub : Hub
 
     public async Task ForcePictophoneNext(string roomCode)
     {
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_NEXT_PHASE", null);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_NEXT_PHASE", null);
     }
 
     public async Task RevealPictophoneNext(string roomCode)
     {
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REVEAL_NEXT", null);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REVEAL_NEXT", null);
     }
 
     public async Task StarPictophonePage(string roomCode, int bookIndex, int pageIndex)
     {
         var payload = JsonSerializer.SerializeToElement(new { bookIndex, pageIndex });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "STAR_PAGE", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "STAR_PAGE", payload);
     }
 
     public List<string> GetPictophoneSuggestions()
@@ -348,30 +400,25 @@ public class GameHub : Hub
     {
         var payload = JsonSerializer.SerializeToElement(new { pathData, color });
         var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_STROKE", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        // Stroke is handled by optimized path? 
+        // If we want strokes to be delta compressed, we rely on game loop.
+        // But usually strokes are high frequency and might bypass state for latency?
+        // Current implementation puts them in state. So delta engine picks it up.
+        // But 50ms latency for drawing might be jerky.
+        // Ideally strokes are replayed. This architecture V2 uses StateDiff. 
+        // Let's stick to the plan.
     }
 
     public async Task DeepfakeVote(string roomCode, string accusedId)
     {
         var payload = JsonSerializer.SerializeToElement(new { accusedId });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
 
     public async Task DeepfakeAiGuess(string roomCode, string guess)
     {
         var payload = JsonSerializer.SerializeToElement(new { guess });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_AI_GUESS", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_AI_GUESS", payload);
     }
 
     // --- Wisecrack Methods ---
@@ -379,66 +426,45 @@ public class GameHub : Hub
     public async Task SubmitWisecrackAnswer(string roomCode, string promptId, string answer)
     {
         var payload = JsonSerializer.SerializeToElement(new { promptId, answer });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWER", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWER", payload);
     }
 
     public async Task SubmitWisecrackVote(string roomCode, int choice)
     {
         var payload = JsonSerializer.SerializeToElement(new { choice });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
 
     public async Task NextWisecrackBattle(string roomCode)
     {
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "NEXT_BATTLE", null);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "NEXT_BATTLE", null);
     }
 
 
     public async Task SubmitPoppycockDefinition(string roomCode, string definition)
     {
         var payload = JsonSerializer.SerializeToElement(new { definition });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_DEFINITION", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_DEFINITION", payload);
     }
 
     public async Task SubmitPoppycockVote(string roomCode, string votedId)
     {
         var payload = JsonSerializer.SerializeToElement(new { votedId });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
-
 
     public async Task EndRound(string roomCode)
     {
-        try 
+        try
         {
             if (string.IsNullOrEmpty(roomCode)) return;
 
             var room = await _roomService.CalculateRoundScores(roomCode.Trim().ToUpperInvariant());
-            
+
             if (room != null)
             {
                 // Record history with extra safety
-                try 
+                try
                 {
                     if (_historyService != null && room.Players.Any())
                     {
@@ -449,7 +475,7 @@ public class GameHub : Hub
                 {
                     Console.WriteLine($"Error recording game history for room {roomCode}: {hex.Message}");
                 }
-                
+
                 await Clients.Group(roomCode.ToUpper()).SendAsync("RoundEnded", room);
             }
         }
@@ -467,6 +493,12 @@ public class GameHub : Hub
         if (room != null)
         {
            await Clients.Group(roomCode).SendAsync("GameStarted", room);
+           
+           if (room.IsPublic && room.State == GameState.Playing)
+           {
+                // Game started from Lobby -> Delete from public list
+                await Clients.Group("LobbyGroup").SendAsync("PublicRoomDeleted", roomCode);
+           }
         }
     }
 
@@ -493,14 +525,18 @@ public class GameHub : Hub
     
     public async Task LeaveRoom(string roomCode)
     {
-        _roomService.RemovePlayer(Context.ConnectionId);
+        var room = _roomService.RemovePlayer(Context.ConnectionId);
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomCode);
         
         // Notify others that player left (if room still exists)
-        var room = _roomService.GetRoom(roomCode);
         if (room != null)
         {
             await Clients.Group(roomCode).SendAsync("PlayerJoined", room.Players);
+            
+            if (room.IsPublic && room.State == GameState.Lobby)
+            {
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+            }
         }
     }
 
@@ -509,75 +545,48 @@ public class GameHub : Hub
     public async Task SymbologyPlaceMarker(string roomCode, string icon, string markerType, string color)
     {
         var payload = JsonSerializer.SerializeToElement(new { icon, markerType, color });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PLACE_MARKER", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PLACE_MARKER", payload);
     }
 
     public async Task SymbologyRemoveMarker(string roomCode, string markerId)
     {
         var payload = JsonSerializer.SerializeToElement(new { markerId });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REMOVE_MARKER", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REMOVE_MARKER", payload);
     }
 
     public async Task UniversalTranslatorToken(string roomCode, string token)
     {
         var payload = JsonSerializer.SerializeToElement(new { token });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_TOKEN", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_TOKEN", payload);
     }
 
     public async Task UniversalTranslatorVote(string roomCode, string targetId)
     {
         var payload = JsonSerializer.SerializeToElement(new { accusedId = targetId });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
-        if (room != null)
-        {
-            await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
     
     public async Task UniversalTranslatorForcePhase(string roomCode, string phaseName)
     {
-        // Debug/Admin or specific flow trigger
         var payload = JsonSerializer.SerializeToElement(new { phase = phaseName });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_PHASE", payload);
-        if (room != null) await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_PHASE", payload);
     }
 
     public async Task UniversalTranslatorPickWord(string roomCode, string word)
     {
         var payload = JsonSerializer.SerializeToElement(new { word });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PICK_WORD", payload);
-        if (room != null) await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PICK_WORD", payload);
     }
 
     public async Task SubmitSushiTrainSelection(string roomCode, string cardId)
     {
         var payload = JsonSerializer.SerializeToElement(new { cardId });
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SELECTION", payload);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SELECTION", payload);
     }
 
     public async Task ToggleSushiTrainChopsticks(string roomCode)
     {
-        var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "TOGGLE_CHOPSTICKS", null);
-        if (room != null)
-        {
-             await Clients.Group(roomCode).SendAsync("RoomUpdated", room);
-        }
+        await _roomService.SubmitAction(roomCode, Context.ConnectionId, "TOGGLE_CHOPSTICKS", null);
     }
 
     public async Task SubmitGreatMindsCard(string roomCode, int cardValue)
@@ -598,13 +607,30 @@ public class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // We don't easily know which room they were in unless we track it or search all rooms.
-        // RoomService.RemovePlayer searches all rooms, so it handles cleanup.
-        // But we can't easily notify the specific room group here without finding it first.
-        // RoomService.RemovePlayer returns void. 
-        // Improvement: Have RemovePlayer return the Room it removed from?
+        var room = _roomService.RemovePlayer(Context.ConnectionId);
         
-        _roomService.RemovePlayer(Context.ConnectionId);
+        if (room != null)
+        {
+             // Notify the room group, because RemovePlayer only does internal logic
+             // But wait, RemovePlayer returns the room object.
+             // We need to notify the room that a player left.
+             await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
+             
+             if (room.IsPublic && room.State == GameState.Lobby)
+             {
+                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
+             }
+        }
+        
         await base.OnDisconnectedAsync(exception);
+    }
+    
+    private async Task SendTurnCredentialsToClient()
+    {
+        var turnConfig = _configuration.GetSection("TurnServer").Get<TurnCredentials>();
+        if (turnConfig != null && !string.IsNullOrEmpty(turnConfig.Url))
+        {
+            await Clients.Caller.SendAsync("ReceiveTurnCredentials", turnConfig);
+        }
     }
 }

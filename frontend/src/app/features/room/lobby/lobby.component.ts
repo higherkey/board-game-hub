@@ -22,7 +22,7 @@ export class LobbyComponent {
     @Input() isScreen = false;
 
     @Output() gameSelected = new EventEmitter<string>();
-    @Output() toggleReady = new EventEmitter<void>();
+    @Output() toggleReady = new EventEmitter<boolean | undefined>();
     @Output() startGame = new EventEmitter<GameSettings>();
     @Output() setHost = new EventEmitter<string>();
     @Output() changeRole = new EventEmitter<boolean>();
@@ -56,7 +56,7 @@ export class LobbyComponent {
     }
 
     onToggleReady() {
-        this.toggleReady.emit();
+        this.toggleReady.emit(undefined);
     }
 
     onStartGame(settings: any) {

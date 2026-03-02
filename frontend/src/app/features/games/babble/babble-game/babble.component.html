@@ -1,4 +1,4 @@
-<div class="babble-view" [class.showing-results]="isFinished" [class.is-host]="isHost">
+<div class="babble-view" [class.showing-results]="isFinished" [class.is-host]="isHost" [class.resizing]="isResizing">
     <div class="game-main">
         <div class="babble-header">
             <h2>Babble</h2>
@@ -39,7 +39,10 @@
         </p>
     </div>
 
-    <div class="game-sidebar">
+    <!-- Resize Handle (Desktop Only) -->
+    <div class="resize-handle d-none d-md-block" (mousedown)="startResizing($event)"></div>
+
+    <div class="game-sidebar" [style.width.px]="sidebarWidth">
         <!-- Player View -->
         <div *ngIf="!isHost && isPlaying" class="controls-section">
             <div class="word-input-wrapper mb-4">
@@ -70,6 +73,10 @@
 
         <!-- RESULTS VIEW -->
         <div *ngIf="isFinished" class="results-section fade-in">
+            <div *ngIf="!isHost" class="waiting-text mb-3 px-1">
+                <span class="spinner-border spinner-border-sm me-2"></span> Waiting for host...
+            </div>
+
             <div class="results-header">
                 <div class="d-flex align-items-center justify-content-between w-100 mb-2">
                     <h3 class="mb-0">{{ isHost ? 'Results' : 'Words Found' }}</h3>
@@ -84,13 +91,9 @@
                         </button>
                     </div>
                 </div>
-
-                <div *ngIf="!isHost && !showOnlyMyWords" class="waiting-text mt-1">
-                    <span class="spinner-border spinner-border-sm me-2"></span> Waiting for host...
-                </div>
             </div>
 
-            <div class="results-list" [class.filtered]="showOnlyMyWords">
+            <div class="results-list w-100" [class.filtered]="showOnlyMyWords">
                 <div class="result-row-container" *ngFor="let res of displayResults">
                     <button type="button" class="result-row" (click)="showDefinition(res)"
                         [class.active]="selectedWord === res" [class.is-mine]="isMyWord(res)"
@@ -99,7 +102,8 @@
                             <div class="d-flex flex-column text-start">
                                 <span class="word-text"
                                     [class.strike]="!res.isOnGrid || res.isDuplicate || res.isHostRejected"
-                                    [class.text-success]="res.isHostValidated && !res.isDuplicate">
+                                    [class.text-success]="res.isHostValidated && !res.isDuplicate"
+                                    [class.text-danger]="res.isHostRejected">
                                     {{ res.word }}
                                 </span>
                                 <div class="d-flex gap-1 mt-1">
@@ -117,29 +121,31 @@
 
                         <div class="side-info d-flex flex-column align-items-end gap-1">
                             <div class="d-flex align-items-center gap-2">
-                                <!-- Host Three-Dot Menu -->
-                                <div *ngIf="isHost" class="host-dropdown">
-                                    <button type="button" class="btn btn-icon-sm"
-                                        (click)="$event.stopPropagation(); res.showMenu = !res.showMenu">
-                                        <i class="bi bi-three-dots-vertical"></i>
+                                <!-- Inline Host Validation -->
+                                <div *ngIf="isHost && res.showMenu" class="host-validation-inline">
+                                    <button type="button" class="btn-validate text-success" 
+                                        (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, true)"
+                                        title="Accept">
+                                        <i class="bi bi-check-circle-fill"></i>
                                     </button>
-                                    <div class="custom-dropdown-menu shadow animate-pop" *ngIf="res.showMenu">
-                                        <button class="dropdown-item"
-                                            (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, true)">
-                                            <i class="bi bi-check-circle text-success me-2"></i> Accept
-                                        </button>
-                                        <button class="dropdown-item"
-                                            (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, false)">
-                                            <i class="bi bi-x-circle text-danger me-2"></i> Reject
-                                        </button>
-                                    </div>
-                                    <!-- Backdrop to close menu -->
-                                    <button class="dropdown-backdrop" *ngIf="res.showMenu"
+                                    <button type="button" class="btn-validate text-danger" 
+                                        (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, false)"
+                                        title="Reject">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </button>
+                                    <button type="button" class="btn-validate text-muted ms-1" 
                                         (click)="$event.stopPropagation(); res.showMenu = false"
-                                        (keydown.escape)="res.showMenu = false"></button>
+                                        title="Cancel">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
                                 </div>
 
-                                <span class="points-val" [class.zero]="res.points === 0">+{{ res.points }}</span>
+                                <button *ngIf="isHost && !res.showMenu" type="button" class="btn-icon-sm"
+                                    (click)="$event.stopPropagation(); res.showMenu = true">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+
+                                <span *ngIf="!res.showMenu" class="points-val" [class.zero]="res.points === 0">+{{ res.points }}</span>
                             </div>
                             <div class="players-col d-flex flex-wrap justify-content-end gap-1">
                                 <div class="player-mini-chip" [class.is-me]="pid === myConnectionId"

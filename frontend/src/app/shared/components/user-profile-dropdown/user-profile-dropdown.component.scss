@@ -11,6 +11,15 @@
         }
     }
 
+    .compact-arrow i {
+        transition: transform 0.3s ease;
+        display: inline-block;
+
+        &.rotated {
+            transform: rotate(180deg);
+        }
+    }
+
     .dropdown-menu {
         min-width: 200px;
         border: 1px solid rgba(255, 255, 255, 0.1);

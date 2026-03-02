@@ -62,6 +62,9 @@ export interface Room {
   // Undo System
   currentVote: any; // { initiatorId, initiatorName, votes: {} }
   undoSettings: { allowVoting: boolean, hostOnly: boolean };
+
+  // Host Override (room-level readiness, independent of player states)
+  isHostOverride?: boolean;
 }
 
 @Injectable({
@@ -73,6 +76,7 @@ export class SignalRService {
   public connectionStatus$ = new BehaviorSubject<string>('Disconnected');
   public currentRoomSubject = new BehaviorSubject<Room | null>(null);
   public currentRoom$ = this.currentRoomSubject.asObservable();
+  public publicRooms$ = new BehaviorSubject<Room[]>([]);
   public connectionId$ = new BehaviorSubject<string | null>(null);
   public me$: Observable<Player | null> = combineLatest([this.players$, this.connectionId$]).pipe(
     map(([players, myId]) => players.find(p => p.connectionId === myId) || null)
@@ -93,6 +97,9 @@ export class SignalRService {
   public offerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
   public answerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
   public iceCandidateReceived$ = new BehaviorSubject<{ senderId: string, candidate: string } | null>(null);
+  
+  // TURN Server Configuration
+  public turnServerCredentials$ = new BehaviorSubject<{ url: string, username?: string, credential?: string } | null>(null);
 
   constructor(
     private readonly toastService: ToastService,
@@ -111,6 +118,22 @@ export class SignalRService {
     this.connectionId$.subscribe(() => this.updateIsHostStatus());
 
     this.loadActiveRooms();
+
+    // Debugging: Log when everyone is ready (and when they stop being ready)
+    let wasReady = false;
+    this.players$.subscribe(players => {
+      const actualPlayers = players.filter(p => !p.isScreen);
+      const readyPlayers = actualPlayers.filter(p => p.isReady);
+      const isReady = actualPlayers.length > 0 && readyPlayers.length === actualPlayers.length;
+
+      if (isReady && !wasReady) {
+        this.logger.info(`[SignalR] Room is now READY. All ${actualPlayers.length} players are set.`);
+        wasReady = true;
+      } else if (!isReady && wasReady) {
+        this.logger.info(`[SignalR] Room is NO LONGER ready. (${readyPlayers.length}/${actualPlayers.length} players ready)`);
+        wasReady = false;
+      }
+    });
 
     this.hubConnection.onclose((err) => {
       this.logger.warn('SignalR Connection Closed', err);
@@ -139,6 +162,7 @@ export class SignalRService {
     });
 
     this.hubConnection.on('GameStarted', (room: Room) => {
+      this.logger.info(`[SignalR] Received GameStarted: ${room.gameType} for room: ${room.code}`);
       this.currentRoomSubject.next(room);
       this.players$.next(room.players);
     });
@@ -159,6 +183,7 @@ export class SignalRService {
     });
 
     this.hubConnection.on('GameTypeChanged', (gameType: string) => {
+      this.logger.info(`[SignalR] Received GameTypeChanged: ${gameType}`);
       const current = this.currentRoomSubject.value;
       if (current) {
         current.gameType = gameType;
@@ -233,6 +258,11 @@ export class SignalRService {
       this.iceCandidateReceived$.next({ senderId, candidate });
     });
 
+    this.hubConnection.on('ReceiveTurnCredentials', (credentials: { url: string, username?: string, credential?: string }) => {
+      this.logger.info(`[SignalR] Received TURN Credentials for ${credentials.url}`);
+      this.turnServerCredentials$.next(credentials);
+    });
+
     this.hubConnection.on('RoomTerminated', (message: string) => {
       const room = this.currentRoomSubject.value;
       if (room) {
@@ -250,16 +280,53 @@ export class SignalRService {
       this.updateActiveRoomGameType(code, gameType);
     });
 
+    this.hubConnection.on('RoomStatePatch', (patch: any) => {
+      // console.debug('RoomStatePatch', patch);
+      const current = this.currentRoomSubject.value;
+      if (current) {
+        // Deep clone to ensure immutability for OnPush change detection
+        const newState = structuredClone(current);
+        this.applyPatch(newState, patch);
+        this.currentRoomSubject.next(newState);
+        this.players$.next(newState.players); // Sync players stream
+      }
+    });
+
     this.hubConnection.onreconnected(connectionId => {
       console.info('SignalR Reconnected', connectionId);
       this.connectionId$.next(connectionId || this.hubConnection.connectionId);
       this.validateActiveRooms();
+    });
+
+    // Public Lobby Events
+    this.hubConnection.on('PublicRoomCreated', (room: Room) => {
+      const current = this.publicRooms$.value;
+      this.publicRooms$.next([...current, room]);
+    });
+
+    this.hubConnection.on('PublicRoomUpdated', (room: Room) => {
+      const current = this.publicRooms$.value;
+      const index = current.findIndex(r => r.code === room.code);
+      if (index !== -1) {
+        const updated = [...current];
+        updated[index] = room;
+        this.publicRooms$.next(updated);
+      } else {
+        // If not found, treat as created (e.g. if we joined late or it became public)
+        this.publicRooms$.next([...current, room]);
+      }
+    });
+
+    this.hubConnection.on('PublicRoomDeleted', (code: string) => {
+      const current = this.publicRooms$.value;
+      this.publicRooms$.next(current.filter(r => r.code !== code));
     });
   }
 
   // ... startConnection implementation ...
 
   public async startGame(settings: GameSettings | null = null): Promise<void> {
+    this.logger.info(`[SignalR] Invoking StartGame for room: ${this.currentRoomSubject.value?.code}`);
     await this.hubConnection.invoke('StartGame', this.currentRoomSubject.value?.code, settings);
   }
 
@@ -465,8 +532,25 @@ export class SignalRService {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 
-  public async getPublicRooms(): Promise<any[]> {
-    return await this.hubConnection.invoke('GetPublicRooms');
+  public async getPublicRooms(): Promise<Room[]> {
+    const rooms: Room[] = await this.hubConnection.invoke('GetPublicRooms');
+    this.publicRooms$.next(rooms);
+    return rooms;
+  }
+
+  public async joinLobby(): Promise<void> {
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
+    await this.hubConnection.invoke('JoinLobby');
+    // Initial fetch to populate list
+    this.getPublicRooms();
+  }
+
+  public async leaveLobby(): Promise<void> {
+    if (this.hubConnection.state === HubConnectionState.Connected) {
+      await this.hubConnection.invoke('LeaveLobby');
+    }
   }
 
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
@@ -498,6 +582,7 @@ export class SignalRService {
     this.gameState$.next(null);
     this.gameEvents$.next(null);
     this.isHost$.next(false);
+    this.turnServerCredentials$.next(null);
   }
 
   public async renamePlayer(newName: string): Promise<void> {
@@ -508,6 +593,9 @@ export class SignalRService {
   }
 
   public async toggleReady(roomCode: string, forcedState?: boolean): Promise<void> {
+    if (forcedState !== undefined) {
+      this.logger.info(`[SignalR] Requesting Ready OVERRIDE (${forcedState ? 'ON' : 'OFF'}) for room: ${roomCode}`);
+    }
     await this.hubConnection.invoke('ToggleReady', roomCode, forcedState);
   }
 
@@ -520,8 +608,13 @@ export class SignalRService {
     await this.hubConnection.invoke('SetHostPlayer', roomCode, targetId);
   }
 
+  public async removeHostPlayer(roomCode: string, targetId: string): Promise<void> {
+    await this.hubConnection.invoke('RemoveHostPlayer', roomCode, targetId);
+  }
+
   public async setGameType(roomCode: string, gameType: string): Promise<void> {
-    await this.hubConnection.invoke('SetGameType', roomCode, gameType);
+    this.logger.info(`[SignalR] Invoking SetGameType: ${gameType} for room ${roomCode}`);
+    return this.hubConnection.invoke('SetGameType', roomCode, gameType);
   }
 
   // WebRTC Invokers
@@ -687,6 +780,36 @@ export class SignalRService {
   public submitGreatMindsSync() {
     this.hubConnection.invoke('SubmitGreatMindsSync', this.currentRoomSubject.value!.code)
       .catch(err => console.error(err));
+  }
+
+  private applyPatch(target: any, patch: any) {
+    if (!target || !patch) return;
+
+    for (const key of Object.keys(patch)) {
+      const patchValue = patch[key];
+      const targetValue = target[key];
+
+      // If patch value is null, we might mean "delete" or "set to null".
+      // Our backend diff sends null for "set to null".
+      if (patchValue === null) {
+        target[key] = null;
+        continue;
+      }
+
+      // If array, we replaced the whole array in backend implementation, so just overwrite.
+      if (Array.isArray(patchValue)) {
+        target[key] = patchValue;
+        continue;
+      }
+
+      // If object, recurse
+      if (typeof patchValue === 'object' && typeof targetValue === 'object' && targetValue !== null && !Array.isArray(targetValue)) {
+        this.applyPatch(targetValue, patchValue);
+      } else {
+        // Primitive or structure replacement
+        target[key] = patchValue;
+      }
+    }
   }
 }
 

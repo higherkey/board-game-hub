@@ -237,21 +237,6 @@ namespace BoardGameHub.Api.Migrations
                         },
                         new
                         {
-                            Id = "Checkers",
-                            AveragePlayTime = 15,
-                            Complexity = 2,
-                            DefaultRoundLengthSeconds = 0,
-                            Description = "Jump over opponent pieces to capture them.",
-                            Icon = "🏁",
-                            MaxPlayers = 2,
-                            MinPlayers = 2,
-                            Name = "Checkers",
-                            Status = 2,
-                            Tags = "Strategy,Classic",
-                            TimerType = 0
-                        },
-                        new
-                        {
                             Id = "UniversalTranslator",
                             AveragePlayTime = 45,
                             Complexity = 3,
@@ -397,7 +382,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 1,
                             Name = "Farkle",
                             Status = 3,
-                            Tags = "Dice,Party,Luck,Classic",
+                            Tags = "Dice,Party,Luck",
                             TimerType = 0
                         },
                         new
@@ -412,7 +397,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 2,
                             Name = "Spectrum",
                             Status = 3,
-                            Tags = "Social,Party,Team,Word",
+                            Tags = "Social,Party,Team",
                             TimerType = 0
                         },
                         new
@@ -427,7 +412,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 2,
                             Name = "Courtship",
                             Status = 3,
-                            Tags = "Deduction,Cards",
+                            Tags = "Deduction,Cards,Risk",
                             TimerType = 0
                         },
                         new
@@ -442,7 +427,7 @@ namespace BoardGameHub.Api.Migrations
                             MinPlayers = 1,
                             Name = "Silent Heist",
                             Status = 3,
-                            Tags = "Cooperative,Real-time,Puzzle",
+                            Tags = "Coop,Real-time,Puzzle",
                             TimerType = 2
                         },
                         new
@@ -496,13 +481,13 @@ namespace BoardGameHub.Api.Migrations
                             AveragePlayTime = 30,
                             Complexity = 1,
                             DefaultRoundLengthSeconds = 0,
-                            Description = "Classic dice rolling fun. Get five of a kind!",
+                            Description = "Classic dice rolling strategy. Get five of a kind!",
                             Icon = "⛵",
                             MaxPlayers = 8,
                             MinPlayers = 1,
                             Name = "Yacht",
                             Status = 3,
-                            Tags = "Dice,Classic",
+                            Tags = "Dice,Strategy,Classic",
                             TimerType = 0
                         },
                         new

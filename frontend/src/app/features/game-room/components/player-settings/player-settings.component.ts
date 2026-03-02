@@ -17,14 +17,14 @@ export class PlayerSettingsComponent {
     @Input() meReady = false;
     @Input() isScreen = false;
 
-    @Output() toggleReady = new EventEmitter<void>();
+    @Output() toggleReady = new EventEmitter<boolean | undefined>();
 
     get settings(): GameSettings | undefined {
         return this.room?.settings;
     }
 
     onToggleReady() {
-        this.toggleReady.emit();
+        this.toggleReady.emit(undefined);
     }
 
     getQrCodeUrl(): string {

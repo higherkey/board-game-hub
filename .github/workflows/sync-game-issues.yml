@@ -1,0 +1,27 @@
+name: Sync Game Issues
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/BoardGameHub.Api/Data/AppDbContext.cs'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  sync-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Sync Script
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/SyncGameIssues.ps1

@@ -12,6 +12,8 @@ import { AuthService } from '../../../services/auth.service';
 })
 export class UserProfileDropdownComponent {
     @Input() session: any;
+    @Input() compactMode: boolean = false;
+    @Input() menuAlign: 'start' | 'end' = 'end';
 
     private readonly authService = inject(AuthService);
     isDropdownOpen = false;

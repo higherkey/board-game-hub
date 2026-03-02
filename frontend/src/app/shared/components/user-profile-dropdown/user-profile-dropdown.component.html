@@ -2,27 +2,39 @@
     <button class="d-flex align-items-center bg-transparent border-0 p-0 pointer profile-trigger gap-2" type="button"
         [attr.aria-expanded]="isDropdownOpen">
 
-        <div class="avatar-container position-relative">
-            <img *ngIf="session?.avatarUrl; else guestIcon" [src]="session?.avatarUrl" alt="Avatar"
-                class="rounded-circle border border-2 border-accent shadow-sm" width="40" height="40">
-            <ng-template #guestIcon>
-                <div class="guest-avatar rounded-circle border border-2 border-accent d-flex align-items-center justify-content-center bg-dark shadow-sm"
-                    style="width: 40px; height: 40px;">
-                    <i class="bi bi-person-fill text-accent fs-5"></i>
-                </div>
-            </ng-template>
-            <i class="bi bi-chevron-down position-absolute"
-                style="bottom: -2px; right: -4px; font-size: 0.7rem; background: var(--bg-surface); border-radius: 50%; padding: 1px; color: var(--text-secondary);"></i>
-        </div>
+        <ng-container *ngIf="!compactMode; else compactTrigger">
+            <div class="avatar-container position-relative">
+                <img *ngIf="session?.avatarUrl; else guestIcon" [src]="session?.avatarUrl" alt="Avatar"
+                    class="rounded-circle border border-2 border-accent shadow-sm" width="40" height="40">
+                <ng-template #guestIcon>
+                    <div class="guest-avatar rounded-circle border border-2 border-accent d-flex align-items-center justify-content-center bg-dark shadow-sm"
+                        style="width: 40px; height: 40px;">
+                        <i class="bi bi-person-fill text-accent fs-5"></i>
+                    </div>
+                </ng-template>
+                <i class="bi bi-chevron-down position-absolute"
+                    style="bottom: -2px; right: -4px; font-size: 0.7rem; background: var(--bg-surface); border-radius: 50%; padding: 1px; color: var(--text-secondary);"></i>
+            </div>
 
-        <div class="d-flex flex-column align-items-start line-height-1 d-none d-sm-flex">
-            <span class="user-name-text fw-bold" style="font-size: 0.9rem;">{{ session?.name }}</span>
-            <span *ngIf="session?.isGuest" class="badge rounded-pill bg-secondary text-white"
-                style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">Guest</span>
-        </div>
+            <div class="d-flex flex-column align-items-start line-height-1">
+                <span class="user-name-text fw-bold text-truncate" style="font-size: 0.8rem; max-width: 80px;">{{ session?.name }}</span>
+                <span *ngIf="session?.isGuest" class="badge rounded-pill bg-secondary text-white"
+                    style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">Guest</span>
+            </div>
+        </ng-container>
+
+        <ng-template #compactTrigger>
+            <div class="compact-arrow d-flex align-items-center justify-content-center bg-dark rounded-circle border border-secondary" 
+                 style="width: 32px; height: 32px;">
+                <i class="bi bi-chevron-down text-white-50" [class.rotated]="isDropdownOpen"></i>
+            </div>
+        </ng-template>
     </button>
 
-    <ul class="dropdown-menu dropdown-menu-end bg-dark border-secondary shadow mt-2" [class.show]="isDropdownOpen">
+    <ul class="dropdown-menu bg-dark border-secondary shadow mt-2" 
+        [class.dropdown-menu-end]="menuAlign === 'end'"
+        [class.dropdown-menu-start]="menuAlign === 'start'"
+        [class.show]="isDropdownOpen">
         <li class="px-3 py-2 border-bottom border-secondary mb-1">
             <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Account</div>
             <div class="text-white fw-bold truncate" style="max-width: 150px;">{{ session?.name }}</div>

@@ -121,6 +121,14 @@ builder.Services.AddSingleton<IGameService, PictophoneService>();
 builder.Services.AddSingleton<IGameService, WisecrackGameService>();
 builder.Services.AddSingleton<IGameService, SushiTrainGameService>();
 builder.Services.AddSingleton<IGameService, BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameService>();
+builder.Services.AddSingleton<IGameService, PoppycockGameService>();
+builder.Services.AddSingleton<IGameService, NomDeCodeService>();
+builder.Services.AddSingleton<IGameService, WarshipsGameService>();
+builder.Services.AddSingleton<IGameService, FourInARowGameService>();
+
+// Server Authority Services
+builder.Services.AddSingleton<StateDiffService>();
+builder.Services.AddSingleton<GameStateManager>();
 
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<ISocialService, SocialService>();
@@ -148,6 +156,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Start Game Loop
+var gameStateManager = app.Services.GetRequiredService<GameStateManager>();
+gameStateManager.StartGameLoop();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -157,7 +169,8 @@ if (app.Environment.IsDevelopment())
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.EnsureCreated();
+        // Use Migrate() instead of EnsureCreated() to apply pending migrations automatically.
+        db.Database.Migrate();
     }
 }
 

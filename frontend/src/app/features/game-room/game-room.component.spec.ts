@@ -17,7 +17,10 @@ class HostSettingsStubComponent {
 }
 
 @Component({ selector: 'app-video-chat', template: '', standalone: true, imports: [] })
-class VideoChatStubComponent { }
+class VideoChatStubComponent {
+  isVideoActive = false;
+  joinVideo() { }
+}
 
 @Component({ selector: 'app-word-hunt', template: '', standalone: true, imports: [] })
 class BabbleStubComponent {

@@ -4,7 +4,7 @@ $root = $PSScriptRoot
 # 1. Build Frontend
 Write-Host "Building Angular Frontend..."
 Push-Location "$root\frontend"
-cmd /c npm run build
+cmd /c npm run build -- --configuration development
 Pop-Location
 
 # 2. Copy artifacts to Backend
