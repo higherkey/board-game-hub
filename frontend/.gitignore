@@ -45,3 +45,4 @@ Thumbs.db
 /playwright-report
 /test-results
 /playwright/.cache
+.vercel
