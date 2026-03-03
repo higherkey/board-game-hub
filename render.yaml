@@ -3,7 +3,7 @@ services:
     name: board-game-hub-api
     env: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     region: oregon 
     plan: free
     envVars:

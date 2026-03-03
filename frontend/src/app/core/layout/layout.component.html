@@ -7,10 +7,11 @@
                     <i class="bi" [class.bi-list]="!mobileMenuOpen" [class.bi-x-lg]="mobileMenuOpen"></i>
                 </button>
 
-                <a class="logo-container" routerLink="/" (click)="closeMobileMenu()" aria-label="Go to Home">
+                <a class="logo-container d-flex align-items-center" routerLink="/" (click)="closeMobileMenu()" aria-label="Go to Home">
                     <app-logo [size]="40" class="text-primary"></app-logo>
                     <div class="logo-text ms-2 d-none d-sm-block">BoardGame<span class="text-primary">Hub</span></div>
                     <div class="logo-text ms-2 d-sm-none">BG<span class="text-primary">H</span></div>
+                    <span class="badge bg-primary text-white ms-2 rounded-pill shadow-sm" style="font-size: 0.65rem; transform: translateY(-8px);">BETA</span>
                 </a>
             </div>
 
@@ -52,9 +53,9 @@
 
     <!-- FOOTER -->
     <footer *ngIf="!(isGameRoom$ | async)" class="main-footer" role="contentinfo">
-        <div class="footer-content d-flex justify-content-center align-items-center gap-3 opacity-75">
+        <div class="footer-content d-flex justify-content-center align-items-center gap-3 opacity-75 flex-wrap">
             <app-logo [size]="24" class="text-secondary"></app-logo>
-            <p class="m-0">&copy; 2025 BoardGameHub. <span class="text-accent">Play Connected.</span></p>
+            <p class="m-0">&copy; 2026 BoardGameHub. <span class="text-accent">Play Connected.</span> <span class="ms-2">| &nbsp;We're currently in Beta!</span></p>
         </div>
     </footer>
 </div>

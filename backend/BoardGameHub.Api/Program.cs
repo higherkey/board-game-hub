@@ -177,6 +177,9 @@ using (var scope = app.Services.CreateScope())
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+// Redirect root to admin dashboard
+app.MapGet("/", () => Results.Redirect("/admin"));
+
 app.UseCors("AllowFrontend");
 
 app.UseRateLimiter();

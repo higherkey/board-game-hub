@@ -1,0 +1,19 @@
+# .NET
+**/bin
+**/obj
+backend/BoardGameHub.Api/out
+backend/BoardGameHub.Api/wwwroot/*
+!backend/BoardGameHub.Api/wwwroot/index.html
+
+# Node / Angular
+**/node_modules
+frontend/dist
+frontend/.angular
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
