@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
   workflow_dispatch:
 
 jobs:
@@ -23,3 +24,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
           release_branches: main
+          pre_release_branches: dev
