@@ -39,8 +39,7 @@
             <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Account</div>
             <div class="text-white fw-bold truncate" style="max-width: 150px;">{{ session?.name }}</div>
         </li>
-        <li *ngIf="!session?.isGuest"><a class="dropdown-item text-white" routerLink="/profile"><i
-                    class="bi bi-person me-2"></i>My Profile</a></li>
+        <li><a class="dropdown-item text-white" routerLink="/profile"><i class="bi bi-person me-2"></i>My Profile</a></li>
         <li><a class="dropdown-item text-white" routerLink="/history"><i class="bi bi-clock-history me-2"></i>Game
                 History</a></li>
         <li><a class="dropdown-item text-white" routerLink="/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>

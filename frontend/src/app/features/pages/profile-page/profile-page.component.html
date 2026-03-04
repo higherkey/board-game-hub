@@ -1,0 +1,100 @@
+<div class="container py-5 min-vh-75">
+    <div class="row min-vh-100 align-items-center justify-content-center" *ngIf="!session">
+        <div class="col-12 text-center text-secondary">
+            <div class="spinner-border mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Loading Profile...</div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center" *ngIf="session">
+        <div class="col-lg-10 col-xl-8">
+            <h1 class="display-6 fw-bold mb-4 text-primary">My Profile</h1>
+            
+            <div class="row g-4">
+                <div class="col-md-5 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 bg-dark text-white rounded-4 overflow-hidden">
+                        <div class="card-body text-center d-flex flex-column align-items-center justify-content-center p-4">
+                            <h5 class="fw-bold mb-4">Avatar</h5>
+                            <div class="avatar-preview-container mb-4 position-relative">
+                                <img [src]="currentAvatarUrl" class="img-fluid rounded-circle border border-4 border-secondary shadow" alt="Profile Avatar" width="180" height="180">
+                            </div>
+                            
+                            <div class="d-grid w-100 gap-2 mt-auto" *ngIf="!isGuest">
+                                <button class="btn btn-outline-light d-flex align-items-center justify-content-center gap-2" (click)="randomize()">
+                                    <i class="bi bi-dice-5"></i> Randomize
+                                </button>
+                                <button class="btn btn-primary d-flex align-items-center justify-content-center gap-2" (click)="save()" [disabled]="!hasChanges || isSaving">
+                                    <i class="bi bi-floppy" *ngIf="!isSaving"></i> 
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" *ngIf="isSaving"></span>
+                                    Save Avatar
+                                </button>
+                            </div>
+                            <div class="mt-4 text-muted small" *ngIf="isGuest">
+                                Log in or create an account to customize your avatar.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-7 col-lg-8">
+                    <div class="card h-100 shadow-sm border-0 rounded-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-4 text-secondary">Account Details</h5>
+                            <div class="mb-4">
+                                <label class="form-label text-muted small text-uppercase mb-1">Display Name</label>
+                                <div class="fs-5 fw-medium">{{ session.name }}</div>
+                            </div>
+                            
+                            <div class="mb-4" *ngIf="user?.email">
+                                <label class="form-label text-muted small text-uppercase mb-1">Email</label>
+                                <div class="fs-5 fw-medium">{{ user?.email }}</div>
+                            </div>
+                            
+                            <hr class="my-4 text-muted opacity-25">
+
+                            <h5 class="fw-bold mb-3 text-secondary" *ngIf="!isGuest">Customize Avatar</h5>
+                            
+                            <div class="avatar-tweaker" *ngIf="!isGuest">
+                                <div class="mb-3 d-flex align-items-center justify-content-between">
+                                    <span class="fw-medium">Hair / Headwear</span>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary" (click)="cycleTop(-1)"><i class="bi bi-chevron-left"></i></button>
+                                        <button class="btn btn-outline-secondary" (click)="cycleTop(1)"><i class="bi bi-chevron-right"></i></button>
+                                    </div>
+                                </div>
+                                <div class="mb-3 d-flex align-items-center justify-content-between">
+                                    <span class="fw-medium">Accessories</span>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary" (click)="cycleAccessory(-1)"><i class="bi bi-chevron-left"></i></button>
+                                        <button class="btn btn-outline-secondary" (click)="cycleAccessory(1)"><i class="bi bi-chevron-right"></i></button>
+                                    </div>
+                                </div>
+                                <div class="mb-3 d-flex align-items-center justify-content-between">
+                                    <span class="fw-medium">Clothing</span>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary" (click)="cycleClothing(-1)"><i class="bi bi-chevron-left"></i></button>
+                                        <button class="btn btn-outline-secondary" (click)="cycleClothing(1)"><i class="bi bi-chevron-right"></i></button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="fw-medium d-block mb-2">Background Color</span>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button class="color-swatch rounded-circle border-0 shadow-sm" style="background-color: #b6e3f4;" (click)="setBgColor('b6e3f4')" [class.active-swatch]="selectedBgColor === 'b6e3f4'"></button>
+                                        <button class="color-swatch rounded-circle border-0 shadow-sm" style="background-color: #c0aede;" (click)="setBgColor('c0aede')" [class.active-swatch]="selectedBgColor === 'c0aede'"></button>
+                                        <button class="color-swatch rounded-circle border-0 shadow-sm" style="background-color: #d1d4f9;" (click)="setBgColor('d1d4f9')" [class.active-swatch]="selectedBgColor === 'd1d4f9'"></button>
+                                        <button class="color-swatch rounded-circle border-0 shadow-sm" style="background-color: #ffdfbf;" (click)="setBgColor('ffdfbf')" [class.active-swatch]="selectedBgColor === 'ffdfbf'"></button>
+                                        <button class="color-swatch rounded-circle border-0 shadow-sm" style="background-color: #ffd5dc;" (click)="setBgColor('ffd5dc')" [class.active-swatch]="selectedBgColor === 'ffd5dc'"></button>
+                                        <button class="color-swatch rounded-circle border-0 shadow-sm" style="background-color: #a8e6cf;" (click)="setBgColor('a8e6cf')" [class.active-swatch]="selectedBgColor === 'a8e6cf'"></button>
+                                        <button class="color-swatch rounded-circle border-0 shadow-sm" style="background-color: #ffaaa5;" (click)="setBgColor('ffaaa5')" [class.active-swatch]="selectedBgColor === 'ffaaa5'"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

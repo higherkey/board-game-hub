@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using BoardGameHub.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -59,6 +60,34 @@ public class AuthController : ControllerBase
         return BadRequest("Invalid login attempt");
     }
 
+    [Authorize]
+    [HttpPut("profile/avatar")]
+    public async Task<IActionResult> UpdateAvatar([FromBody] UpdateAvatarDto model)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        user.AvatarUrl = model.NewAvatarUrl;
+        var result = await _userManager.UpdateAsync(user);
+
+        if (result.Succeeded)
+        {
+            var token = GenerateJwtToken(user);
+            return Ok(new { Token = token, User = new { user.Id, user.DisplayName, user.Email, user.AvatarUrl } });
+        }
+
+        return BadRequest(result.Errors);
+    }
+
     private string GenerateJwtToken(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
@@ -95,4 +124,9 @@ public class LoginDto
 {
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+}
+
+public class UpdateAvatarDto
+{
+    public string NewAvatarUrl { get; set; } = string.Empty;
 }

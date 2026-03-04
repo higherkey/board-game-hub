@@ -27,6 +27,7 @@ export const routes: Routes = [
             { path: 'social', component: SocialComponent, canActivate: [authGuard], title: 'Social' },
             { path: 'social/:gameId', loadComponent: () => import('./features/pages/game-social/game-social.component').then(m => m.GameSocialComponent), title: 'Game Social Hub' },
             { path: 'history', loadComponent: () => import('./features/game-history/game-history.component').then(m => m.GameHistoryComponent), canActivate: [authGuard], title: 'Game History' },
+            { path: 'profile', loadComponent: () => import('./features/pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent), title: 'My Profile' },
             { path: 'about', loadComponent: () => import('./features/pages/about-page/about.component').then(m => m.AboutComponent), title: 'About' },
             { path: 'login', component: AuthComponent, title: 'Login' },
             { path: 'register', loadComponent: () => import('./features/pages/register-page/register.component').then(m => m.RegisterComponent), title: 'Register' },

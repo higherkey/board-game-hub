@@ -45,6 +45,7 @@ export class AuthService {
     private readonly staySignedInKey = 'auth_stay_signed_in';
     private readonly guestNameKey = 'guest_name';
     private readonly guestIdKey = 'guest_id';
+    private readonly guestAvatarKey = 'guest_avatar';
 
     private readonly INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
     private readonly DEFAULT_ABSOLUTE_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
@@ -83,6 +84,9 @@ export class AuthService {
         if (!id) {
             id = crypto.randomUUID();
             localStorage.setItem(this.guestIdKey, id);
+            // Assign a random avatar for new guests
+            const newAvatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${id}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`;
+            localStorage.setItem(this.guestAvatarKey, newAvatar);
         }
         this.refreshGuestSession();
         return id;
@@ -121,7 +125,8 @@ export class AuthService {
         if (guestName) {
             this.sessionSubject.next({
                 name: guestName,
-                isGuest: true
+                isGuest: true,
+                avatarUrl: localStorage.getItem(this.guestAvatarKey) || undefined
             });
             return;
         }
@@ -158,6 +163,7 @@ export class AuthService {
     private clearGuestSession() {
         localStorage.removeItem(this.guestNameKey);
         localStorage.removeItem(this.guestIdKey);
+        localStorage.removeItem(this.guestAvatarKey);
     }
 
     register(data: any): Observable<any> {
@@ -176,6 +182,17 @@ export class AuthService {
                 localStorage.setItem(this.activityKey, Date.now().toString());
                 localStorage.setItem(this.staySignedInKey, staySignedInLonger.toString());
 
+                this.currentUserSubject.next(response.user);
+                this.updateSession();
+            })
+        );
+    }
+
+    updateAvatar(newAvatarUrl: string): Observable<AuthResponse> {
+        return this.http.put<AuthResponse>(`${this.apiUrl}/profile/avatar`, { newAvatarUrl }).pipe(
+            tap(response => {
+                localStorage.setItem(this.tokenKey, response.token);
+                localStorage.setItem(this.userKey, JSON.stringify(response.user));
                 this.currentUserSubject.next(response.user);
                 this.updateSession();
             })
