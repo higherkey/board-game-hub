@@ -1,4 +1,4 @@
-using BoardGameHub.Api.Models;
+﻿using BoardGameHub.Api.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
