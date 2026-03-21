@@ -1,5 +1,5 @@
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, ElementRef, HostListener, inject, OnInit, Type, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, HostListener, inject, OnInit, Type, ViewChild, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { map, Observable, take } from 'rxjs';
@@ -295,7 +295,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
   private autoJoin(name: string, isScreen: boolean = false) {
     const currentRoom = this.signalRService.currentRoomSubject.value;
-    if (!currentRoom || currentRoom.code !== this.roomCode) {
+    if (currentRoom?.code !== this.roomCode) {
       this.signalRService.joinRoom(this.roomCode, name, isScreen).then(success => {
         if (!success) {
           this.toastService.showError(`Room ${this.roomCode} not found or no longer active.`);
@@ -497,10 +497,8 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
         this.ignoreGameTypeUpdatesUntil = 0;
       }
       // Otherwise ignore the server's old state (revert prevention)
-    } else {
-      if (room.gameType && this.selectedGameType !== room.gameType) {
-        this.selectedGameType = room.gameType;
-      }
+    } else if (room.gameType && this.selectedGameType !== room.gameType) {
+      this.selectedGameType = room.gameType;
     }
 
     let gameConfig = GAME_REGISTRY[room.gameType];

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit } from '@angular/core';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { CommonModule } from '@angular/common';
@@ -158,12 +158,8 @@ export class HostSettingsComponent implements OnChanges, OnInit {
         g.name.toLowerCase() === typeOrName.toLowerCase()
       );
       this.selectedGameType = found ? found.id : 'None';
-    } else {
-      // If no argument, likely coming from existing selection or no-op. 
-      // Do NOT force reset to None unless explicitly desired?
-      // Actually, if we want to reset, we should pass 'None'.
-      // If undefined, assume we just want to create the room update based on current selection.
-      if (!this.selectedGameType) this.selectedGameType = 'None';
+    } else if (!this.selectedGameType) {
+      this.selectedGameType = 'None';
     }
 
     if (this.roomCode) {
