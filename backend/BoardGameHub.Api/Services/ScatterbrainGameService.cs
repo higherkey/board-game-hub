@@ -150,9 +150,9 @@ public class ScatterbrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
-        if (room.GameData is not ScatterbrainState state) return Task.FromResult(false);
+        if (room.GameData is not ScatterbrainState state) return false;
 
         switch (action.Type)
         {
@@ -165,12 +165,12 @@ public class ScatterbrainGameService : IGameService
                         if (answers != null)
                         {
                             room.PlayerAnswers[connectionId] = answers;
-                            return Task.FromResult(true);
+                            return true;
                         }
                     }
                     catch
                     {
-                        return Task.FromResult(false);
+                        return false;
                     }
                 }
                 break;
@@ -197,7 +197,7 @@ public class ScatterbrainGameService : IGameService
                             {
                                 list.Add(data.CategoryIndex);
                             }
-                            return Task.FromResult(true);
+                            return true;
                         }
                     }
                     catch { }
@@ -217,7 +217,7 @@ public class ScatterbrainGameService : IGameService
                                 CategoryIndex = data.CategoryIndex,
                                 ChallengerId = connectionId
                             };
-                            return Task.FromResult(true);
+                            return true;
                         }
                     }
                     catch { }
@@ -259,7 +259,7 @@ public class ScatterbrainGameService : IGameService
 
                         state.ActiveChallenge = null;
                     }
-                    return Task.FromResult(true);
+                    return true;
                 }
                 break;
 
@@ -267,28 +267,17 @@ public class ScatterbrainGameService : IGameService
                 if (state.Phase == ScatterbrainPhase.Writing)
                 {
                     state.Phase = ScatterbrainPhase.Validation;
-                    return Task.FromResult(true);
+                    return true;
                 }
                 else if (state.Phase == ScatterbrainPhase.Validation)
                 {
-                    // Transition to Result -> This is effectively EndRound
-                    // Use the standardized logic
-                    // We can't await EndRound easily here because HandleAction returns Task<bool> and EndRound is Task.
-                    // But we can just call it and return true, letting it run. Await is better though.
-                    // Actually, simpler: Set phase to Result?
-                    // CalculateScores sets phase to Result. 
-                    // Let's call EndRound.
-                    // Warning: We need to fire the state update. RoomService usually does this after HandleAction returns true.
-                    // If we call EndRound, it modifies state.
-                    
-                    // We need to execute the async EndRound.
-                    _ = EndRound(room); 
-                    return Task.FromResult(true);
+                    await EndRound(room); 
+                    return true;
                 }
                 break;
         }
 
-        return Task.FromResult(false);
+        return false;
     }
 
     public async Task EndRound(Room room)

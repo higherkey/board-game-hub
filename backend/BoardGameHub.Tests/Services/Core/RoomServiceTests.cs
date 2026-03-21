@@ -223,4 +223,164 @@ public class RoomServiceTests
         stats.TotalOnlinePlayers.Should().Be(2);
         stats.Rooms.Should().HaveCount(2);
     }
+
+    [Fact]
+    public async Task SubmitAction_ShouldRouteToGameService()
+    {
+        // Arrange
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Babble);
+        _gameServices.Add(mockService.Object);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+
+        // Act
+        await _sut.SubmitAction(room.Code, "conn1", "SOME_ACTION", default);
+
+        // Assert
+        mockService.Verify(s => s.HandleAction(room, It.IsAny<GameAction>(), "conn1"), Times.Once);
+    }
+
+    [Fact]
+    public async Task CalculateRoundScores_ShouldUpdateTotals()
+    {
+        // Arrange
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Babble);
+        _gameServices.Add(mockService.Object);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+
+        // Act
+        await _sut.CalculateRoundScores(room.Code);
+
+        // Assert
+        mockService.Verify(s => s.EndRound(room), Times.Once);
+    }
+
+    [Fact]
+    public void RequestUndo_ShouldStartVote_WhenNonHostRequests()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2");
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+
+        // Act
+        var result = _sut.RequestUndo(room.Code, "conn2");
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.CurrentVote.Should().NotBeNull();
+        result.CurrentVote!.InitiatorId.Should().Be("conn2");
+    }
+
+    [Fact]
+    public void SubmitUndoVote_ShouldRevertStateOnSuccess()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2");
+        _sut.JoinRoom(room.Code, "conn3", "Player3"); // 3 players total, need 2 votes for majority (> 50% of 3 is 1.5 -> 2)
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+        _sut.RequestUndo(room.Code, "conn2"); // Initiator conn2 votes Yes automatically
+
+        // Act
+        var result = _sut.SubmitUndoVote(room.Code, "conn3", true); // Second Yes vote -> Majority reached
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.CurrentVote.Should().BeNull(); // Majority reached, vote closed
+    }
+
+    [Fact]
+    public void EndGame_ShouldWipeStateAndSetStatus()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        
+        // Act
+        var result = _sut.EndGame(room.Code);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
+    public void EndGame_WhenAlreadyFinished_ShouldReturnExistingRoom()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        room.State = GameState.Finished;
+
+        var result = _sut.EndGame(room.Code);
+
+        result.Should().Be(room);
+    }
+
+    [Fact]
+    public void RequestUndo_HostOnly_ShouldPerformUndoImmediately()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { HostOnly = true });
+
+        var result = _sut.RequestUndo(room.Code, "host1");
+
+        result.Should().NotBeNull();
+        room.StateHistory.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public void RequestUndo_HostOnly_NonHost_ShouldReturnNull()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2");
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { HostOnly = true });
+
+        var result = _sut.RequestUndo(room.Code, "conn2");
+
+        result.Should().BeNull();
+        room.StateHistory.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public void SubmitUndoVote_ShouldCloseVoteOnTotalCastWithoutMajority()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2"); // 2 players total. Majority needed: > 2/2 = 1 (so 2).
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+        _sut.RequestUndo(room.Code, "conn2"); // conn2 says Yes
+        
+        var result = _sut.SubmitUndoVote(room.Code, "host1", false); // host1 says No. 1 Yes, 1 No. 
+
+        result.Should().NotBeNull();
+        result!.CurrentVote.Should().BeNull(); // Closed because everyone voted
+        room.StateHistory.Count.Should().Be(1); // Not reverted
+    }
+
+    [Fact]
+    public async Task SubmitAction_NoService_ShouldReturnNull()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.None);
+
+        var result = await _sut.SubmitAction(room.Code, "conn1", "ANY", null);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SubmitAction_ShouldNotSaveStateForStrokes()
+    {
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Babble);
+        _gameServices.Add(mockService.Object);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+
+        await _sut.SubmitAction(room.Code, "conn1", "SUBMIT_STROKE", null);
+
+        room.StateHistory.Should().BeEmpty();
+    }
 }

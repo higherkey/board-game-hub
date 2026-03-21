@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -41,6 +42,7 @@ public class BreakingNewsGameServiceTests
         state.ScriptTitle.Should().Be("The Weather Report");
         state.Slots.Should().HaveCount(4);
         state.SlotOwners.Should().HaveCount(4);
+        state.SlotOwners[0].Should().NotBeNull(); // Added check
         
         // Ensure Anchor is not a slot owner (ideally)
         // In current implementation: writers = all except anchor.
@@ -92,5 +94,32 @@ public class BreakingNewsGameServiceTests
         var success = await _service.UpdateSlot(room, 99, "Value", "p0");
 
         success.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished()
+    {
+        var room = new Room { GameData = new BreakingNewsState() };
+        await _service.EndRound(room);
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitSlot_ShouldUpdateSlot()
+    {
+        var player = new Player { ConnectionId = "p1" };
+        var state = new BreakingNewsState
+        {
+            Slots = new List<ScriptSlot> { new ScriptSlot { Id = 0, CurrentValue = "" } },
+            SlotOwners = new Dictionary<int, string> { { 0, "p1" } }
+        };
+        var room = new Room { Players = new List<Player> { player }, GameData = state };
+        var payload = JsonSerializer.SerializeToElement(new { slotId = 0, value = "FOO" });
+        var action = new GameAction("SUBMIT_SLOT", payload);
+
+        var result = await _service.HandleAction(room, action, "p1");
+
+        result.Should().BeTrue();
+        state.Slots[0].CurrentValue.Should().Be("FOO");
     }
 }

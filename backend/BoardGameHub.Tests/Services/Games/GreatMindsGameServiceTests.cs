@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BoardGameHub.Tests.Services.Games.GreatMinds;
 
@@ -41,8 +45,8 @@ public class GreatMindsGameServiceTests
         Assert.NotNull(state);
         Assert.Equal(1, state.CurrentLevel);
         Assert.Equal(2, state.Lives);
-        Assert.Equal(1, state.PlayerHands["p1"].Count);
-        Assert.Equal(1, state.PlayerHands["p2"].Count);
+        Assert.Single(state.PlayerHands["p1"]);
+        Assert.Single(state.PlayerHands["p2"]);
     }
 
     [Fact]
@@ -65,5 +69,40 @@ public class GreatMindsGameServiceTests
         
         // Verify Event Broadcast (Sound Effect)
         _mockClientProxy.Verify(c => c.SendCoreAsync("GameEvent", It.Is<object[]>(o => o[0].ToString() == "CARD_PLAYED"), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished()
+    {
+        var room = new Room { Code = "TEST", State = GameState.Playing };
+        await _service.EndRound(room);
+        Assert.Equal(GameState.Finished, room.State);
+    }
+
+    [Fact]
+    public async Task HandleAction_PlayCard_ShouldWork()
+    {
+        var room = new Room { Code = "TEST", Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        await _service.StartRound(room, new GameSettings());
+        var state = room.GameData as GreatMindsGameState;
+        var card = state!.PlayerHands["p1"][0];
+        var payload = JsonSerializer.SerializeToElement(new { cardValue = card });
+        var action = new GameAction("PLAY_CARD", payload);
+
+        var result = await _service.HandleAction(room, action, "p1");
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task HandleAction_SyncToken_ShouldWork()
+    {
+        var room = new Room { Code = "TEST", Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        await _service.StartRound(room, new GameSettings());
+        var action = new GameAction("SYNC_TOKEN", null);
+
+        var result = await _service.HandleAction(room, action, "p1");
+
+        Assert.True(result);
     }
 }

@@ -19,8 +19,11 @@ describe('PlayComponent', () => {
     beforeEach(async () => {
         mockSignalRService = {
             connectionStatus$: new BehaviorSubject('Connected'),
+            publicRooms$: new BehaviorSubject([]),
             startConnection: jasmine.createSpy('startConnection').and.returnValue(Promise.resolve()),
-            getPublicRooms: jasmine.createSpy('getPublicRooms').and.returnValue(Promise.resolve([]))
+            getPublicRooms: jasmine.createSpy('getPublicRooms').and.returnValue(Promise.resolve([])),
+            joinLobby: jasmine.createSpy('joinLobby').and.returnValue(Promise.resolve()),
+            leaveLobby: jasmine.createSpy('leaveLobby')
         };
 
         mockAuthService = {
@@ -65,8 +68,8 @@ describe('PlayComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should load rooms on init', fakeAsync(() => {
-        expect(mockSignalRService.getPublicRooms).toHaveBeenCalled();
+    it('should join lobby on init', fakeAsync(() => {
+        expect(mockSignalRService.joinLobby).toHaveBeenCalled();
     }));
 
     it('should refresh games on init', () => {

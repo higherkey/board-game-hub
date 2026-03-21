@@ -4,6 +4,10 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -116,5 +120,64 @@ public class WisecrackGameServiceTests
         // Logic: 100 + (votes * 25). 1 vote -> 125 pts.
         p1.Score.Should().Be(125);
         p2.Score.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished()
+    {
+        var room = new Room { GameData = new WisecrackState() };
+        await _sut.EndRound(room);
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitAnswer_ShouldWork()
+    {
+        var room = new Room
+        {
+            Players = new List<Player> { new Player { ConnectionId = "p1", Name = "P1" } },
+            RoundNumber = 1
+        };
+        var state = new WisecrackState 
+        { 
+            Phase = WisecrackPhase.Writing,
+            Assignments = new List<WisecrackPromptAssignment> { new WisecrackPromptAssignment { PromptId = "a1", AssignedPlayerIds = new List<string> { "p1" } } }
+        };
+        room.GameData = state;
+        var payload = JsonSerializer.SerializeToElement(new { promptId = "a1", answer = "Funny Ans" });
+        var action = new GameAction("SUBMIT_ANSWER", payload);
+
+        var result = await _sut.HandleAction(room, action, "p1");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitVote_ShouldWork()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "voter" }, new Player { ConnectionId = "p1" }, new Player { ConnectionId = "p2" } } };
+        var state = new WisecrackState 
+        { 
+            Phase = WisecrackPhase.Battling,
+            Battles = new List<WisecrackBattle> { new WisecrackBattle { Id = "b1", AnswerA = new WisecrackAnswer { PlayerId = "p1" }, AnswerB = new WisecrackAnswer { PlayerId = "p2" } } }
+        };
+        room.GameData = state;
+        var payload = JsonSerializer.SerializeToElement(new { choice = 0 });
+        var action = new GameAction("SUBMIT_VOTE", payload);
+
+        var result = await _sut.HandleAction(room, action, "voter");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAction_NextBattle_ShouldWork()
+    {
+        var room = new Room { GameData = new WisecrackState { Phase = WisecrackPhase.Battling, Battles = new List<WisecrackBattle> { new WisecrackBattle() } } };
+        var action = new GameAction("NEXT_BATTLE", null);
+
+        var result = await _sut.HandleAction(room, action, "any");
+
+        result.Should().BeTrue();
     }
 }

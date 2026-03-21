@@ -4,6 +4,10 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -157,5 +161,48 @@ public class SushiTrainGameServiceTests
         room.RoundScores["p1"].Should().Be(7);
         room.RoundScores["p2"].Should().Be(4);
         room.RoundScores["p3"].Should().Be(1);
+    }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished()
+    {
+        var room = new Room { GameData = new SushiTrainState() };
+        await _sut.EndRound(room);
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitSelection_ShouldWork()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        var state = new SushiTrainState();
+        var card = new SushiCard { Id = "c1", Type = SushiType.Tempura };
+        state.PlayerStates["p1"] = new SushiPlayerState { PlayerId = "p1", Hand = new List<SushiCard> { card, new SushiCard { Id = "c2" } } };
+        room.GameData = state;
+        var payload = JsonSerializer.SerializeToElement(new { cardId = "c1" });
+        var action = new GameAction("SUBMIT_SELECTION", payload);
+
+        var result = await _sut.HandleAction(room, action, "p1");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAction_ToggleChopsticks_ShouldWork()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        var state = new SushiTrainState();
+        state.PlayerStates["p1"] = new SushiPlayerState 
+        { 
+            PlayerId = "p1", 
+            Tableau = new List<SushiCard> { new SushiCard { Type = SushiType.Chopsticks } } 
+        };
+        room.GameData = state;
+        var action = new GameAction("TOGGLE_CHOPSTICKS", null);
+
+        var result = await _sut.HandleAction(room, action, "p1");
+
+        result.Should().BeTrue();
+        state.PlayerStates["p1"].IsUsingChopsticks.Should().BeTrue();
     }
 }

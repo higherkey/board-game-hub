@@ -8,6 +8,7 @@ using System;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Text.Json;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -130,5 +131,56 @@ public class SymbologyGameServiceTests
         room.Players.First(p => p.ConnectionId == "p0").Score.Should().Be(10);
         room.Players.First(p => p.ConnectionId == "p1").Score.Should().Be(10);
         room.RoundScores["p0"].Should().Be(10);
+    }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished()
+    {
+        var room = new Room { GameData = new SymbologyState() };
+        await _service.EndRound(room);
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
+    public async Task HandleAction_PlaceMarker_ShouldWork()
+    {
+        var room = CreateMockRoom(3);
+        await _service.StartRound(room, new GameSettings());
+        var payload = JsonSerializer.SerializeToElement(new { icon = "🔥", markerType = "Main", color = "green" });
+        var action = new GameAction("PLACE_MARKER", payload);
+
+        var result = await _service.HandleAction(room, action, "p1");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAction_RemoveMarker_ShouldWork()
+    {
+        var room = CreateMockRoom(3);
+        await _service.StartRound(room, new GameSettings());
+        var state = (SymbologyState)room.GameData;
+        await _service.PlaceMarker(room, "p1", "🔥", "Main", "green");
+        var markerId = state.Markers[0].Id;
+        var payload = JsonSerializer.SerializeToElement(new { markerId });
+        var action = new GameAction("REMOVE_MARKER", payload);
+
+        var result = await _service.HandleAction(room, action, "p1");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitGuess_ShouldWork()
+    {
+        var room = CreateMockRoom(3);
+        await _service.StartRound(room, new GameSettings());
+        var state = (SymbologyState)room.GameData!;
+        var payload = JsonSerializer.SerializeToElement(new { guess = state!.CurrentWord! });
+        var action = new GameAction("SUBMIT_GUESS", payload);
+
+        var result = await _service.HandleAction(room, action, "p0");
+
+        result.Should().BeTrue();
     }
 }

@@ -148,6 +148,31 @@ describe('SignalRService', () => {
     });
   });
 
+  describe('Lobby Actions', () => {
+    it('joinLobby should invoke JoinLobby', async () => {
+      mockHubConnection.state = HubConnectionState.Connected;
+      mockHubConnection.invoke.withArgs('GetPublicRooms').and.returnValue(Promise.resolve([]));
+      await service.joinLobby();
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinLobby');
+    });
+
+    it('leaveLobby should invoke LeaveLobby', async () => {
+      mockHubConnection.state = HubConnectionState.Connected;
+      await service.leaveLobby();
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('LeaveLobby');
+    });
+
+    it('getPublicRooms should invoke GetPublicRooms and return array', async () => {
+      const mockRooms = [{ code: 'PUB1' }, { code: 'PUB2' }] as any;
+      mockHubConnection.invoke.withArgs('GetPublicRooms').and.returnValue(Promise.resolve(mockRooms));
+
+      const rooms = await service.getPublicRooms();
+
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('GetPublicRooms');
+      expect(rooms).toEqual(mockRooms);
+    });
+  });
+
   describe('Game Actions', () => {
     // Setup a room first for these tests
     beforeEach(() => {
@@ -215,6 +240,35 @@ describe('SignalRService', () => {
       const newSettings = { timerDurationSeconds: 120, letterMode: 0 };
       await service.updateSettings(newSettings);
       expect(mockHubConnection.invoke).toHaveBeenCalledWith('UpdateSettings', 'TEST', newSettings);
+    });
+  });
+
+  describe('Connection Events', () => {
+    it('should set status to Reconnecting on onreconnecting event', () => {
+      const callback = getCallback('onreconnecting'); // Wait, getCallback parses 'on' calls. 'onreconnecting' is a direct method on HubConnection.
+      // In the mockup, we mocked onreconnecting as a spy. Let's trigger it if we captured it.
+      // Actually, in SignalRService constructor: `this.hubConnection.onreconnecting(error => { ... })`
+      expect(mockHubConnection.onreconnecting).toHaveBeenCalled();
+      const reconnectCallback = mockHubConnection.onreconnecting.calls.argsFor(0)[0];
+      
+      reconnectCallback(new Error('Dropped!'));
+      expect(service.connectionStatus$.value).toBe('Reconnecting');
+    });
+
+    it('should set status to Connected on onreconnected event', () => {
+      expect(mockHubConnection.onreconnected).toHaveBeenCalled();
+      const reconnectedCallback = mockHubConnection.onreconnected.calls.argsFor(0)[0];
+      
+      reconnectedCallback('new-connection-id');
+      expect(service.connectionStatus$.value).toBe('Connected');
+    });
+
+    it('should set status to Disconnected on onclose event', () => {
+      expect(mockHubConnection.onclose).toHaveBeenCalled();
+      const closeCallback = mockHubConnection.onclose.calls.argsFor(0)[0];
+      
+      closeCallback(new Error('Closed!'));
+      expect(service.connectionStatus$.value).toBe('Disconnected');
     });
   });
 

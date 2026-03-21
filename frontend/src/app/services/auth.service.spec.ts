@@ -73,7 +73,7 @@ describe('AuthService', () => {
             localStorage.setItem('auth_token', 'stored-token');
             service.logout();
             expect(localStorage.getItem('auth_token')).toBeNull();
-            expect(router.navigate).toHaveBeenCalledWith(['/login']);
+            expect(router.navigate).toHaveBeenCalledWith(['/']);
         });
     });
 

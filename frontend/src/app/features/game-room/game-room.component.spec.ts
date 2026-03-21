@@ -54,6 +54,7 @@ class OneAndOnlyPlayerStubComponent {
 @Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true, imports: [] })
 class UserProfileDropdownStubComponent {
   @Input() session: any;
+  @Input() compactMode: boolean = false;
 }
 
 // Import real components to override
