@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
 using Xunit;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -93,5 +96,115 @@ public class ScatterbrainGameServiceTests
 
         // Assert
         room.RoundScores["p1"].Should().Be(2);
+    }
+
+    [Fact]
+    public async Task CalculateScores_ShouldIgnoreVetoedAnswers()
+    {
+        // Arrange
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        var state = new ScatterbrainState 
+        { 
+            CurrentLetter = 'B', 
+            Categories = new List<string> { "Animal" },
+            Vetoes = new Dictionary<string, List<int>> { { "p1", new List<int> { 0 } } }
+        };
+        room.GameData = state;
+        room.PlayerAnswers["p1"] = new List<string> { "Bear" }; // Valid, but vetoed
+
+        // Act
+        await _sut.CalculateScores(room);
+
+        // Assert
+        room.RoundScores["p1"].Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CalculateScores_ShouldTreatCaseInsensitiveAsDuplicates()
+    {
+        // Arrange
+        var room = new Room { Players = new List<Player> 
+        { 
+            new Player { ConnectionId = "p1" },
+            new Player { ConnectionId = "p2" }
+        } };
+        var state = new ScatterbrainState 
+        { 
+            CurrentLetter = 'C', 
+            Categories = new List<string> { "Vehicle" },
+        };
+        room.GameData = state;
+        room.PlayerAnswers["p1"] = new List<string> { "Car" };
+        room.PlayerAnswers["p2"] = new List<string> { "car" };
+
+        // Act
+        await _sut.CalculateScores(room);
+
+        // Assert
+        room.RoundScores["p1"].Should().Be(0);
+        room.RoundScores["p2"].Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished_AndCalculateScores()
+    {
+        // Arrange
+        var room = new Room { 
+            State = GameState.Playing,
+            Players = new List<Player> { new Player { ConnectionId = "p1" } }
+        };
+        var state = new ScatterbrainState { CurrentLetter = 'Z', Categories = new List<string> { "Zoo Animal" } };
+        room.GameData = state;
+        room.PlayerAnswers["p1"] = new List<string> { "Zebra" };
+
+        // Act
+        await _sut.EndRound(room);
+
+        // Assert
+        room.State.Should().Be(GameState.Finished);
+        room.RoundScores!["p1"].Should().Be(1);
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitAnswer_ShouldWork()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        room.GameData = new ScatterbrainState();
+        var payload = JsonSerializer.SerializeToElement(new List<string> { "Apple" });
+        var action = new GameAction("SUBMIT_ANSWER", payload);
+
+        var result = await _sut.HandleAction(room, action, "p1");
+
+        result.Should().BeTrue();
+        room.PlayerAnswers["p1"].Should().Contain("Apple");
+    }
+
+    [Fact]
+    public async Task HandleAction_NextPhase_ShouldWork()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        var state = new ScatterbrainState { Phase = ScatterbrainPhase.Writing };
+        room.GameData = state;
+        var action = new GameAction("NEXT_PHASE", null);
+
+        var result = await _sut.HandleAction(room, action, "any");
+
+        result.Should().BeTrue();
+        state.Phase.Should().Be(ScatterbrainPhase.Validation);
+    }
+
+    [Fact]
+    public async Task HandleAction_ToggleVeto_ShouldWork()
+    {
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        var state = new ScatterbrainState();
+        room.GameData = state;
+        var payload = JsonSerializer.SerializeToElement(new { TargetPlayerId = "p1", CategoryIndex = 0 });
+        var action = new GameAction("TOGGLE_VETO", payload);
+
+        var result = await _sut.HandleAction(room, action, "any");
+
+        result.Should().BeTrue();
+        state.Vetoes["p1"].Should().Contain(0);
     }
 }

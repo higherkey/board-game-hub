@@ -34,8 +34,8 @@ public class StateDiffServiceTests
         var diff = _service.GetDiff(original, modified);
 
         Assert.NotNull(diff);
-        Assert.Equal("New", diff["Name"]?.GetValue<string>());
-        Assert.Equal(2, diff["Value"]?.GetValue<int>());
+        Assert.Equal("New", diff["name"]?.GetValue<string>());
+        Assert.Equal(2, diff["value"]?.GetValue<int>());
     }
 
     [Fact]
@@ -47,9 +47,9 @@ public class StateDiffServiceTests
         var diff = _service.GetDiff(original, modified);
 
         Assert.NotNull(diff);
-        Assert.NotNull(diff["Config"]);
-        Assert.Equal(false, diff["Config"]?["IsEnabled"]?.GetValue<bool>());
-        Assert.Null(diff["Config"]?["Max"]); // Should not be present if unchanged
+        Assert.NotNull(diff["config"]);
+        Assert.Equal(false, diff["config"]?["isEnabled"]?.GetValue<bool>());
+        Assert.Null(diff["config"]?["max"]); // Should not be present if unchanged
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class StateDiffServiceTests
         var diff = _service.GetDiff(original, modified);
 
         Assert.NotNull(diff);
-        var array = diff["Items"] as JsonArray;
+        var array = diff["items"] as JsonArray;
         Assert.NotNull(array);
         Assert.Equal(3, array.Count);
         Assert.Equal(4, array[2]?.GetValue<int>());
@@ -76,10 +76,10 @@ public class StateDiffServiceTests
         var diff = _service.GetDiff(original, modified);
 
         Assert.NotNull(diff);
-        // We expect "Optional": null
+        // We expect "optional": null
         // JsonNode allows null values but checking it requires care
-        Assert.True(diff.AsObject().ContainsKey("Optional"));
-        Assert.Null(diff["Optional"]); 
+        Assert.True(diff.AsObject().ContainsKey("optional"));
+        Assert.Null(diff["optional"]); 
     }
 
     [Fact]
@@ -91,6 +91,6 @@ public class StateDiffServiceTests
         var diff = _service.GetDiff(original, modified);
 
         Assert.NotNull(diff);
-        Assert.Equal("Added", diff["NewProp"]?.GetValue<string>());
+        Assert.Equal("Added", diff["newProp"]?.GetValue<string>());
     }
 }

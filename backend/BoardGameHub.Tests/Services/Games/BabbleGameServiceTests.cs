@@ -137,4 +137,34 @@ public class BabbleGameServiceTests
         // Should have points now
         wordResult.Points.Should().Be(10);
     }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished_AndCalculateScores()
+    {
+        // Arrange
+        var room = new Room { Code = "TEST", Players = new List<Player>(), GameData = new BabbleState() };
+
+        // Act
+        await _sut.EndRound(room);
+
+        // Assert
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitAnswers_ShouldStoreAnswers()
+    {
+        // Arrange
+        var player = new Player { ConnectionId = "p1", IsHost = false };
+        var room = new Room { Players = new List<Player> { player } };
+        var payload = JsonSerializer.SerializeToElement(new { answers = new[] { "WORD1", "WORD2" } });
+        var action = new GameAction("SUBMIT_ANSWERS", payload);
+
+        // Act
+        var result = await _sut.HandleAction(room, action, "p1");
+
+        // Assert
+        result.Should().BeTrue();
+        room.PlayerAnswers["p1"].Should().ContainInOrder("WORD1", "WORD2");
+    }
 }

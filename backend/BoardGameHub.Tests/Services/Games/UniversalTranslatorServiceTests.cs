@@ -8,6 +8,7 @@ using System;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Text.Json;
 
 namespace BoardGameHub.Tests.Services.Games;
 
@@ -159,5 +160,62 @@ public class UniversalTranslatorServiceTests
         state.Phase.Should().Be(UniversalTranslatorPhase.Result);
         state.Winner.Should().Be("J");
         state.EndReason.Should().Be(GameEndReason.EmpathAssassinated);
+    }
+
+    [Fact]
+    public async Task EndRound_ShouldSetStateToFinished()
+    {
+        var room = new Room { GameData = new UniversalTranslatorState() };
+        await _service.EndRound(room);
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitToken_ShouldWork()
+    {
+        var room = CreateMockRoom(3);
+        await _service.StartRound(room, new GameSettings());
+        var state = (UniversalTranslatorState)room.GameData;
+        state.Phase = UniversalTranslatorPhase.Day;
+        var computerId = state.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
+        var payload = JsonSerializer.SerializeToElement(new { token = "Yes" });
+        var action = new GameAction("SUBMIT_TOKEN", payload);
+
+        var result = await _service.HandleAction(room, action, computerId);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAction_SubmitVote_ShouldWork()
+    {
+        var room = CreateMockRoom(3);
+        await _service.StartRound(room, new GameSettings());
+        var state = (UniversalTranslatorState)room.GameData;
+        state.Phase = UniversalTranslatorPhase.VotingForJ;
+        var jId = state.Roles.First(r => r.Value == UniversalTranslatorRole.J).Key;
+        var crewId = state.Roles.First(r => r.Value == UniversalTranslatorRole.Crew).Key;
+        var payload = JsonSerializer.SerializeToElement(new { accusedId = crewId });
+        var action = new GameAction("SUBMIT_VOTE", payload);
+
+        var result = await _service.HandleAction(room, action, jId);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAction_PickWord_ShouldWork()
+    {
+        var room = CreateMockRoom(3);
+        await _service.StartRound(room, new GameSettings());
+        var state = (UniversalTranslatorState)room.GameData!;
+        var computerId = state.Roles!.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
+        var word = state.WordChoices!.First();
+        var payload = JsonSerializer.SerializeToElement(new { word });
+        var action = new GameAction("PICK_WORD", payload);
+
+        var result = await _service.HandleAction(room, action, computerId);
+
+        result.Should().BeTrue();
     }
 }

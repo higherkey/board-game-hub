@@ -16,7 +16,7 @@ import { LoggerService } from '../../../core/services/logger.service';
     templateUrl: './play.component.html',
     styleUrls: ['./play.component.scss']
 })
-export class PlayComponent implements OnInit {
+export class PlayComponent implements OnInit, OnDestroy {
     rooms: any[] = [];
     loading = false;
     playerName = '';

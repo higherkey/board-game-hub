@@ -33,6 +33,7 @@ public class FourInARowGameService : IGameService
 
     public Task EndRound(Room room)
     {
+        room.State = GameState.Finished;
         return Task.CompletedTask;
     }
 

@@ -1,7 +1,7 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { WebRTCService } from './webrtc.service';
 import { SignalRService } from './signalr.service';
-import { Subject } from 'rxjs';
+import { Subject, BehaviorSubject } from 'rxjs';
 
 const setRemoteDescriptionSpy = jasmine.createSpy('setRemoteDescription').and.returnValue(Promise.resolve());
 
@@ -40,7 +40,8 @@ describe('WebRTCService', () => {
             iceCandidateReceived$: candidateSub.asObservable(),
             sendOffer: jasmine.createSpy('sendOffer').and.returnValue(Promise.resolve()),
             sendAnswer: jasmine.createSpy('sendAnswer').and.returnValue(Promise.resolve()),
-            sendIceCandidate: jasmine.createSpy('sendIceCandidate')
+            sendIceCandidate: jasmine.createSpy('sendIceCandidate'),
+            turnServerCredentials$: new BehaviorSubject(null)
         };
 
         (globalThis as any).RTCPeerConnection = MockRTCPeerConnection;

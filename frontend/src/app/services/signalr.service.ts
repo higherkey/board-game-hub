@@ -164,22 +164,22 @@ export class SignalRService {
     this.hubConnection.on('GameStarted', (room: Room) => {
       this.logger.info(`[SignalR] Received GameStarted: ${room.gameType} for room: ${room.code}`);
       this.currentRoomSubject.next(room);
-      this.players$.next(room.players);
+      this.players$.next(room.players || []);
     });
 
     this.hubConnection.on('GamePaused', (room: Room) => {
       this.currentRoomSubject.next(room);
-      this.players$.next(room.players);
+      this.players$.next(room.players || []);
     });
 
     this.hubConnection.on('GameResumed', (room: Room) => {
       this.currentRoomSubject.next(room);
-      this.players$.next(room.players);
+      this.players$.next(room.players || []);
     });
 
     this.hubConnection.on('RoundEnded', (room: Room) => {
       this.currentRoomSubject.next(room);
-      this.players$.next(room.players);
+      this.players$.next(room.players || []);
     });
 
     this.hubConnection.on('GameTypeChanged', (gameType: string) => {
@@ -193,7 +193,7 @@ export class SignalRService {
 
     this.hubConnection.on('RoomUpdated', (room: Room) => {
       this.currentRoomSubject.next(room);
-      this.players$.next(room.players);
+      this.players$.next(room.players || []);
     });
 
     this.hubConnection.on('SettingsUpdated', (settings: GameSettings) => {
@@ -281,7 +281,6 @@ export class SignalRService {
     });
 
     this.hubConnection.on('RoomStatePatch', (patch: any) => {
-      // console.debug('RoomStatePatch', patch);
       const current = this.currentRoomSubject.value;
       if (current) {
         // Deep clone to ensure immutability for OnPush change detection
@@ -307,13 +306,13 @@ export class SignalRService {
     this.hubConnection.on('PublicRoomUpdated', (room: Room) => {
       const current = this.publicRooms$.value;
       const index = current.findIndex(r => r.code === room.code);
-      if (index !== -1) {
+      if (index === -1) {
+        // If not found, treat as created (e.g. if we joined late or it became public)
+        this.publicRooms$.next([...current, room]);
+      } else {
         const updated = [...current];
         updated[index] = room;
         this.publicRooms$.next(updated);
-      } else {
-        // If not found, treat as created (e.g. if we joined late or it became public)
-        this.publicRooms$.next([...current, room]);
       }
     });
 
