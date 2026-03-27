@@ -93,6 +93,9 @@ public class GameSettings
     public List<string> CustomCategories { get; set; } = new(); // If populated, use this
     public bool IsGenerative { get; set; } = false;
     public string GenerativeSeed { get; set; } = string.Empty;
+
+    /// <summary>Clover-Minded: each Hand may rotate exactly one placed card per resolution round (default true).</summary>
+    public bool CloverAllowPerPlayerSingleCardRotation { get; set; } = true;
 }
 
 public enum GameState
@@ -119,5 +122,6 @@ public enum GameType
     GreatMinds = 12,
     NomDeCode = 13,
     Warships = 14,
-    FourInARow = 15
+    FourInARow = 15,
+    CloverMinded = 16
 }

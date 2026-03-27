@@ -1,0 +1,93 @@
+.card-3d {
+    user-select: none;
+    position: relative;
+    border-radius: 16px;
+    background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.35), transparent 35%),
+        linear-gradient(145deg, rgba(16, 185, 129, 0.18), rgba(2, 6, 23, 0.2));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+        0 18px 50px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(16, 185, 129, 0.06) inset;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transform-style: preserve-3d;
+    transform: translateZ(0) rotateX(10deg) rotateY(-18deg);
+    transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease, filter 220ms ease;
+}
+
+.card-3d.dimmed {
+    opacity: 0.4;
+    filter: grayscale(0.25);
+}
+
+.card-3d.interactive {
+    cursor: pointer;
+}
+
+.card-3d.interactive:hover {
+    transform: translateY(-4px) rotateX(12deg) rotateY(-22deg);
+    box-shadow:
+        0 22px 60px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(16, 185, 129, 0.12) inset;
+}
+
+.card-face {
+    position: absolute;
+    inset: 10px;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 10px;
+}
+
+.word {
+    position: absolute;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1rem;
+    line-height: 1.05;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    max-width: 90%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.word.top {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateZ(8px);
+}
+
+.word.right {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%) translateZ(8px) rotate(90deg);
+    transform-origin: right center;
+}
+
+.word.bottom {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateZ(8px);
+}
+
+.word.left {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%) translateZ(8px) rotate(-90deg);
+    transform-origin: left center;
+}
+
+.card-3d.placed {
+    filter: saturate(1.05);
+}
+

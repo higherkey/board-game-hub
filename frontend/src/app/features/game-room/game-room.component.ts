@@ -483,10 +483,14 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   private updateActiveGame(room: Room) {
+    const isScreen = this.isScreen;
     this.gameInputs = {
       room: room,
       myConnectionId: this.getMyConnectionId(room.players),
-      isHost: this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '')
+      isHost: this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || ''),
+      isScreen,
+      isTable: isScreen,
+      isHand: !isScreen
     };
 
     // Synchronize local selection state with the room's current game type
@@ -510,9 +514,9 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     }
 
     if (gameConfig) {
-      const isHost = this.signalRService.checkIsHost(room, this.signalRService.getConnectionId() || '');
-      if (!isHost && gameConfig.playerComponent) {
-        this.gameComponent = gameConfig.playerComponent;
+      // Table (shared screen) vs Hand (personal device): use isScreen when both shells exist.
+      if (gameConfig.playerComponent) {
+        this.gameComponent = this.isScreen ? gameConfig.hostComponent : gameConfig.playerComponent;
       } else {
         this.gameComponent = gameConfig.hostComponent;
       }

@@ -134,6 +134,20 @@ export class HostSettingsComponent implements OnChanges, OnInit {
         this.settings.boardSize = 4;
       }
 
+      // Apply per-game metadata defaults (e.g., checkbox defaults).
+      // This keeps "on by default" game settings working when the host never touches the UI.
+      if (Array.isArray(game.parsedMetadata)) {
+        for (const meta of game.parsedMetadata) {
+          if (!meta || !meta.id || meta.type !== 'checkbox') continue;
+
+          const currentVal = (this.settings as any)[meta.id];
+          if (currentVal === undefined) {
+            // Accept multiple naming conventions to stay compatible with potential older metadata.
+            (this.settings as any)[meta.id] = meta.default ?? meta.defaultValue ?? false;
+          }
+        }
+      }
+
       // Pre-fetch Scatterbrain lists if needed
       if (game.id === 'Scatterbrain') {
         if (!this.scatterbrainLists.length) {

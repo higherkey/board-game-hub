@@ -1,35 +1,55 @@
 # Clover-Minded Game Flow
 
+This flow mirrors the rulebook (So Clover!) while mapping to how the clone works across **Table** and **Hand** clients.
+
+Key terms (global platform terms):
+*   **Table**: shared display (`Player.isScreen === true`)
+*   **Hand**: personal device (`Player.isScreen === false`)
+*   **Spectator**: a rule role picked per resolution round (Spectator's Hand is locked; no team actions)
+
 ## 1. Setup
-*   **Initialization:** Game draws from a pool of ~500 common nouns/adjectives.
-*   **Board Assignment:** Each player receives a digital Clover Board.
-*   **Card Dealing:** 4 cards are automatically assigned and rotated to outer edges.
+*   **Initialization:** The server generates cards from a built-in word bank.
+*   **Board Assignment:** Each Hand player receives a digital Clover Board (4 slots).
 
-## 2. Planning Phase (Individual)
-*   Players see 4 outer edges, each with a pair of words (e.g., "Apple" & "Tree").
-*   Input boxes appear on the 4 leaves of the clover.
-*   Players type their single-word connections (e.g., "ORCHARD").
-*   Action: "I'm Done" button.
+## 2. Planning Phase (Individual, Hands only)
+*   Each Hand sees 4 outer edges, each containing a **pair** of keywords.
+*   Each Hand types a **single-word Clue** for each pair.
+*   Action: tap **`I'M DONE`**.
+*   **Clone note:** The rulebook’s “invalid clue” constraints are not fully enforced yet.
 
-## 3. The Shuffle
-*   The game removes the 4 used cards.
-*   A 5th random card is added as a distractor.
-*   All 5 cards are shuffled.
+## 3. The Shuffle (server-side)
+*   The 4 used cards are removed from the board.
+*   A 5th random card is added as a distractor (decoy).
+*   The 5 cards are shuffled and placed into the center pool.
 
 ## 4. Resolution Phase (Team)
-*   **Focus:** The UI cycles through each player's board one by one.
-*   **Team Interface:** Players (except the current board owner) can drag and drop cards onto the board.
-*   **Rotations:** Cards can be rotated 0, 90, 180, or 270 degrees.
-*   **Submit:** Team clicks "GUESS".
+*   Table + Hands cycle through each Hand player one by one.
+*   One Hand is the **Spectator** for that board.
+*   Table shows:
+    *   Spectator name
+    *   the 5 center cards
+    *   the Spectator’s 4 clue words
+*   Hands show:
+    *   a tap-to-place UI for the team (Spectator is locked)
+*   **Rotations:** 0 / 90 / 180 / 270 (digitally represented as 0..3 quarter turns).
+*   Team submits by tapping **`GUESS`** when all 4 slots are filled.
+
+### Optional rule setting (on by default)
+*   `cloverAllowPerPlayerSingleCardRotation = true`
+*   During a resolution attempt, each Hand may rotate **exactly one** placed card (server enforced).
 
 ## 5. Feedback Loop
 *   **Attempt 1:**
     *   If 4/4 correct: 🌟 PERFECT! +6 points.
-    *   If <4: Game removes incorrect cards. Team gets one last chance.
+    *   Otherwise: the Spectator removes the incorrect card(s) from the center; Team gets one last attempt.
 *   **Attempt 2:**
-    *   Team places remaining cards.
-    *   Scoring: +1 per correct card.
+    *   Team fills remaining empty slots.
+    *   Scoring: +1 per correct card (0..4).
 
 ## 6. Global Scoreboard
-*   Points from all boards are tallied.
-*   Final rating displayed based on total score (e.g., "Botanist", "Lucky Leprechaun").
+*   Points from all resolved boards are totaled.
+*   Final score is shown on the Table during the round transitions / end.
+
+## Tie-break (rulebook)
+If there’s disagreement on where cards should go, the rulebook says: **“player to the Spectator’s left”** decides.
+The clone does not yet implement the tie-break UI; the current team submits once they agree.

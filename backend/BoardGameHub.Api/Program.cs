@@ -125,6 +125,7 @@ builder.Services.AddSingleton<IGameService, PoppycockGameService>();
 builder.Services.AddSingleton<IGameService, NomDeCodeService>();
 builder.Services.AddSingleton<IGameService, WarshipsGameService>();
 builder.Services.AddSingleton<IGameService, FourInARowGameService>();
+builder.Services.AddSingleton<IGameService, CloverMindedGameService>();
 
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();

@@ -15,6 +15,8 @@ export interface GameSettings {
   customCategories?: string[];
   isGenerative?: boolean;
   generativeSeed?: string;
+  /** Clover-Minded: each Hand may rotate one card per resolution round (default true). */
+  cloverAllowPerPlayerSingleCardRotation?: boolean;
   [key: string]: any;
 }
 
