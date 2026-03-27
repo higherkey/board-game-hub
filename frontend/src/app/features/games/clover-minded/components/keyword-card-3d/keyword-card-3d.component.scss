@@ -15,7 +15,7 @@
 
     transform-style: preserve-3d;
     transform: translateZ(0) rotateX(10deg) rotateY(-18deg);
-    transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease, filter 220ms ease;
+    transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 400ms ease, opacity 220ms ease, filter 220ms ease;
 }
 
 .card-3d.dimmed {
@@ -41,6 +41,7 @@
     background: rgba(2, 6, 23, 0.42);
     border: 1px solid rgba(255, 255, 255, 0.06);
     padding: 10px;
+    transition: transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .word {
@@ -89,5 +90,18 @@
 
 .card-3d.placed {
     filter: saturate(1.05);
+}
+
+::ng-content .owner-symbol {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateZ(15px);
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    z-index: 10;
 }
 

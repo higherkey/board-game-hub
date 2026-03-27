@@ -16,12 +16,13 @@ import { CloverCardModel } from '../../clover-minded.types';
             [style.height.px]="sizePx * 1.55"
             (click)="interactive && onCardClick($event)">
 
-            <div class="card-face">
-                <div class="word top">{{ getWord(0) }}</div>
-                <div class="word right">{{ getWord(1) }}</div>
-                <div class="word bottom">{{ getWord(2) }}</div>
-                <div class="word left">{{ getWord(3) }}</div>
+            <div class="card-face" [style.transform]="'rotate(' + (rotation * 90) + 'deg)'">
+                <div class="word top">{{ words[0] }}</div>
+                <div class="word right">{{ words[1] }}</div>
+                <div class="word bottom">{{ words[2] }}</div>
+                <div class="word left">{{ words[3] }}</div>
             </div>
+            <ng-content></ng-content>
         </div>
     `,
     styleUrls: ['./keyword-card-3d.component.scss']
@@ -40,11 +41,8 @@ export class KeywordCard3dComponent {
         this.cardSelected.emit(this.card.id);
     }
 
-    getWord(edgeLocal: number): string {
-        const words = this.card?.words ?? [];
-        const r = ((this.rotation % 4) + 4) % 4;
-        const idx = (edgeLocal + r) % 4;
-        return words[idx] || '';
+    get words(): string[] {
+        return this.card?.words ?? ['', '', '', ''];
     }
 }
 

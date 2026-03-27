@@ -1,0 +1,132 @@
+<div class="table-root">
+    <div class="table-header">
+        <div class="title">
+            <span class="emoji">🍀</span>
+            <span class="name">Clover-Minded</span>
+        </div>
+
+        <div class="status">
+            <span class="pill" *ngIf="state as s">
+                {{ phaseLabel(s.phase) }}
+            </span>
+        </div>
+    </div>
+
+    <div class="table-body" *ngIf="state as s; else waiting">
+        <div class="top-row">
+            <div class="spectator-box" *ngIf="s.currentSpectatorId && s.phase !== phases.ClueWriting">
+                <div class="label">Spectator</div>
+                <div class="value">
+                    {{ getPlayerName(s.currentSpectatorId) }}
+                </div>
+                <div class="sub">
+                    Attempt {{ s.resolutionAttempt }}
+                </div>
+            </div>
+
+            <div class="clue-progress" *ngIf="s.phase === phases.ClueWriting">
+                <div class="label">Hands Clues</div>
+                <div class="value">
+                    {{ getClueSubmittedCount(s) }}/{{ s.participantIds.length }}
+                    completed
+                </div>
+                <div class="sub">Table waits while Hands submit.</div>
+            </div>
+
+            <div class="message" *ngIf="s.message || s.lastResult">
+                {{ s.message || s.lastResult }}
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Board -->
+            <div class="board-wrap">
+                <div class="clover-board">
+                    <div class="center-disk"></div>
+
+                    <div class="leaf" [class]="'leaf-' + idx"
+                         *ngFor="let idx of [0,1,2,3]">
+                        <div class="clue-zone">
+                            <div class="clue-title">Clue {{ idx + 1 }}</div>
+                            <div class="clue-word">{{ s.currentClues?.[idx] || '...' }}</div>
+                            <div class="pair" *ngIf="getPairWords(idx) as pair">
+                                {{ pair[0] }} + {{ pair[1] }}
+                            </div>
+                        </div>
+                        <div class="leaf-card" *ngIf="getSlotCard(idx) as card">
+                            <app-keyword-card-3d
+                                [card]="card"
+                                [rotation]="s.slots?.[idx]?.rotation || 0"
+                                [sizePx]="90"
+                                [placed]="true">
+                            </app-keyword-card-3d>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pool -->
+            <div class="pool-wrap">
+                <div class="pool-title">Center Cards</div>
+                <div class="pool-cards">
+                    <div class="pool-card"
+                        *ngFor="let c of s.pool; let i = index"
+                        [id]="'pool-card-' + c.id"
+                        [class.dimmed]="!c || !c.id">
+                        <app-keyword-card-3d
+                            [card]="c"
+                            [rotation]="0"
+                            [interactive]="false"
+                            [sizePx]="70"
+                            [dimmed]="false">
+                        </app-keyword-card-3d>
+                    </div>
+                </div>
+                <div class="pool-hint">
+                    Team places the 4 real cards on the clover. Rotation matters.
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlays for Immersion -->
+        <div class="ghost-layer" #ghostLayer>
+            <div *ngFor="let drag of activeDrags | keyvalue" 
+                 class="ghost-card"
+                 [id]="'ghost-' + drag.key">
+                 <app-keyword-card-3d
+                    *ngIf="getCardById(drag.value.cardId) as c"
+                    [card]="c"
+                    [sizePx]="80"
+                    [placed]="false">
+                    <div class="owner-symbol">{{ getPlayerSymbol(drag.value.connectionId) }}</div>
+                 </app-keyword-card-3d>
+            </div>
+        </div>
+
+        <svg class="tether-layer" #tetherLayer>
+            <path *ngFor="let drag of activeDrags | keyvalue"
+                  [id]="'tether-' + drag.key"
+                  d="M0,0 L0,0"></path>
+        </svg>
+
+        <div class="player-buckets">
+            <div class="player-bucket" 
+                 *ngFor="let pId of s.participantIds; let i = index"
+                 [class]="'pos-' + (i % 4)"
+                 [id]="'bucket-' + pId">
+                <div class="avatar">{{ pId[0] }}</div>
+                <div class="p-name">{{ getPlayerName(pId) }}</div>
+            </div>
+        </div>
+
+        <div class="deck-wrap" *ngIf="s.phase === phases.ClueWriting && !stateInResolution">
+            <div class="deck-stack" #deckStack></div>
+        </div>
+    </div>
+
+    <ng-template #waiting>
+        <div class="empty-state">
+            Waiting for the Clover game to start…
+        </div>
+    </ng-template>
+</div>

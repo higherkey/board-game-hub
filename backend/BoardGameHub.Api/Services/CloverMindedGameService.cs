@@ -138,8 +138,37 @@ public class CloverMindedGameService : IGameService
             "CLOVER_CLEAR_SLOT" when action.Payload.HasValue => Task.FromResult(TryClearSlot(room, state, connectionId, action.Payload.Value)),
             "CLOVER_ROTATE_SLOT" when action.Payload.HasValue => Task.FromResult(TryRotateSlot(room, state, connectionId, action.Payload.Value)),
             "CLOVER_SUBMIT_GUESS" => Task.FromResult(TrySubmitGuess(room, state, connectionId)),
+            "CLOVER_GRAB_CARD" when action.Payload.HasValue => Task.FromResult(TryGrabCard(state, connectionId, action.Payload.Value)),
+            "CLOVER_RELEASE_CARD" when action.Payload.HasValue => Task.FromResult(TryReleaseCard(state, connectionId, action.Payload.Value)),
             _ => Task.FromResult(false)
         };
+    }
+
+    private bool TryGrabCard(CloverMindedState state, string connectionId, JsonElement payload)
+    {
+        if (state.Phase != CloverMindedPhase.Resolution.ToString() &&
+            state.Phase != CloverMindedPhase.ResolutionSecond.ToString()) return false;
+
+        if (!payload.TryGetProperty("cardId", out var cid)) return false;
+        var cardId = cid.GetString();
+        if (string.IsNullOrEmpty(cardId)) return false;
+
+        state.CardOccupants ??= new ConcurrentDictionary<string, string?>();
+        return state.CardOccupants.TryAdd(cardId, connectionId);
+    }
+
+    private bool TryReleaseCard(CloverMindedState state, string connectionId, JsonElement payload)
+    {
+        if (!payload.TryGetProperty("cardId", out var cid)) return false;
+        var cardId = cid.GetString();
+        if (string.IsNullOrEmpty(cardId)) return false;
+
+        if (state.CardOccupants != null && state.CardOccupants.TryGetValue(cardId, out var occupant) && occupant == connectionId)
+        {
+            state.CardOccupants.TryRemove(cardId, out _);
+            return true;
+        }
+        return false;
     }
 
     private bool TrySubmitClues(Room room, CloverMindedState state, string connectionId, JsonElement payload)
@@ -246,6 +275,10 @@ public class CloverMindedGameService : IGameService
 
         state.Slots[slotIndex].CardId = cardId;
         state.Slots[slotIndex].Rotation = rotation;
+
+        // Auto-release on placement
+        state.CardOccupants?.TryRemove(cardId, out _);
+
         return true;
     }
 
@@ -261,8 +294,16 @@ public class CloverMindedGameService : IGameService
         if (!payload.TryGetProperty("slotIndex", out var si) || si.ValueKind != JsonValueKind.Number) return false;
         var slotIndex = si.GetInt32();
         if (slotIndex is < 0 or > 3 || state.Slots == null) return false;
+        var cardId = state.Slots[slotIndex].CardId;
         state.Slots[slotIndex].CardId = null;
         state.Slots[slotIndex].Rotation = 0;
+
+        // Auto-release if it was cleared
+        if (!string.IsNullOrEmpty(cardId))
+        {
+            state.CardOccupants?.TryRemove(cardId, out _);
+        }
+
         return true;
     }
 
@@ -442,6 +483,9 @@ public class CloverMindedState
     // Hand-only rule: in a given resolution attempt, a Hand can rotate exactly one card.
     // Value is the CardId they locked to (null means they haven't rotated yet).
     public Dictionary<string, string?> RotationCardIdByPlayerThisAttempt { get; set; } = new();
+
+    /// <summary>Who is currently dragging which card (cardId -> connectionId)</summary>
+    public ConcurrentDictionary<string, string?> CardOccupants { get; set; } = new();
 }
 
 public class CloverPlayerPrep

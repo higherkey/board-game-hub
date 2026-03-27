@@ -100,6 +100,9 @@ export class SignalRService {
   public answerReceived$ = new BehaviorSubject<{ senderId: string, sdp: string } | null>(null);
   public iceCandidateReceived$ = new BehaviorSubject<{ senderId: string, candidate: string } | null>(null);
   
+  // Clover-Minded Transient Events
+  public cloverCardMoved$ = new BehaviorSubject<{ connectionId: string, cardId: string, x: number, y: number } | null>(null);
+  
   // TURN Server Configuration
   public turnServerCredentials$ = new BehaviorSubject<{ url: string, username?: string, credential?: string } | null>(null);
 
@@ -321,6 +324,10 @@ export class SignalRService {
     this.hubConnection.on('PublicRoomDeleted', (code: string) => {
       const current = this.publicRooms$.value;
       this.publicRooms$.next(current.filter(r => r.code !== code));
+    });
+
+    this.hubConnection.on('CloverCardMoved', (connectionId: string, cardId: string, x: number, y: number) => {
+      this.cloverCardMoved$.next({ connectionId, cardId, x, y });
     });
   }
 
@@ -602,6 +609,14 @@ export class SignalRService {
 
   public async changeRole(isScreen: boolean): Promise<void> {
     await this.hubConnection.invoke('ChangeRole', isScreen);
+  }
+
+  public async cloverDragMove(cardId: string, x: number, y: number): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) {
+      this.hubConnection.invoke('CloverDragMove', roomCode, cardId, x, y)
+        .catch(err => console.error(err));
+    }
   }
   // ... rest of file
 

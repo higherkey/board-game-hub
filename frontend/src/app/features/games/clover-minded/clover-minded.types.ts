@@ -40,6 +40,9 @@ export interface CloverMindedState {
     // Hand-only: in a single resolution attempt, each Hand can rotate cards locked to one cardId.
     // null => they haven't rotated yet.
     rotationCardIdByPlayerThisAttempt?: Record<string, string | null>;
+
+    /** Who is currently dragging which card (cardId -> connectionId) */
+    cardOccupants?: Record<string, string | null>;
 }
 
 export enum CloverMindedPhase {

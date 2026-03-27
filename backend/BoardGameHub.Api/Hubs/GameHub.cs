@@ -605,6 +605,12 @@ public class GameHub : Hub
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SYNC_TOKEN", null);
     }
 
+    public async Task CloverDragMove(string roomCode, string cardId, double x, double y)
+    {
+        // Direct relay to others in the room to keep dragging smooth and bypass state persistence
+        await Clients.OthersInGroup(roomCode.ToUpper()).SendAsync("CloverCardMoved", Context.ConnectionId, cardId, x, y);
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var room = _roomService.RemovePlayer(Context.ConnectionId);

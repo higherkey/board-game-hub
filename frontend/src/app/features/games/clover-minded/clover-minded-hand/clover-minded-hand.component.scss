@@ -141,6 +141,19 @@
     filter: grayscale(0.2);
 }
 
+.submission-confirmation {
+    padding: 14px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 16px;
+    color: #4ade80;
+    font-weight: 800;
+    text-align: center;
+    .check {
+        margin-right: 6px;
+    }
+}
+
 .resolution-phase {
     display: flex;
     flex-direction: column;
@@ -183,14 +196,37 @@
     justify-content: center;
 }
 
+.pool-card-slot {
+    position: relative;
+    &.occupied {
+        opacity: 0.5;
+        pointer-events: none;
+        filter: grayscale(0.5);
+    }
+    &.dragging {
+        opacity: 0.2;
+    }
+}
+
+.occupied-indicator {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
 .pool-card {
     border: 0;
     padding: 0;
     background: transparent;
-}
-
-.pool-card.selected {
-    filter: drop-shadow(0 12px 30px rgba(16, 185, 129, 0.35));
+    touch-action: none; // Crucial for custom touch handling
 }
 
 .slot-grid {
@@ -216,6 +252,13 @@
 
 .slot.filled {
     border-color: rgba(16, 185, 129, 0.45);
+}
+
+.slot.drag-over {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
 }
 
 .slot-title {
@@ -308,5 +351,13 @@
     opacity: 0.75;
     font-weight: 900;
     text-align: center;
+}
+
+.drag-clone {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%) rotate(4deg);
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
 }
 
