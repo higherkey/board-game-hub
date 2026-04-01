@@ -15,6 +15,10 @@ import { Subscription } from 'rxjs';
 })
 export class GreatMindsGameComponent implements OnInit, OnDestroy {
   @Input() isHost: boolean = false;
+  @Input() isCreator: boolean = false;
+  @Input() isHand: boolean = false;
+  @Input() isScreen: boolean = false;
+  @Input() isTable: boolean = false;
   @Input() room: any;
   @Input() myConnectionId: string = '';
   gameState: any = null;

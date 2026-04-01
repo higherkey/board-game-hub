@@ -34,6 +34,12 @@ interface DeepfakeStroke {
 })
 export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() room!: Room;
+  @Input() myConnectionId: string = '';
+  @Input() isHost: boolean = false;
+  @Input() isCreator: boolean = false;
+  @Input() isHand: boolean = false;
+  @Input() isScreen: boolean = false;
+  @Input() isTable: boolean = false;
 
   // State helpers
   get state(): DeepfakeState { return this.room.gameData as DeepfakeState; }

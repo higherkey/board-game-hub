@@ -19,6 +19,10 @@ export class PictophoneGameComponent {
     @Input() room!: Room;
     @Input() myConnectionId!: string;
     @Input() isHost: boolean = false;
+    @Input() isCreator: boolean = false;
+    @Input() isHand: boolean = false;
+    @Input() isScreen: boolean = false;
+    @Input() isTable: boolean = false;
 
     readonly timeLeft$: Observable<number>;
 

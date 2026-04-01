@@ -23,7 +23,10 @@ export class CloverMindedHandComponent implements OnInit, OnChanges, OnDestroy {
     @Input() room!: Room;
     @Input() myConnectionId: string = '';
     @Input() isHost = false;
+    @Input() isCreator = false;
+    @Input() isHand = true;
     @Input() isScreen = false;
+    @Input() isTable = false;
 
     phases = CloverMindedPhase;
 

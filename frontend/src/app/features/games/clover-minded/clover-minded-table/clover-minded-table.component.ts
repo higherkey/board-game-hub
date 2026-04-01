@@ -24,7 +24,10 @@ export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy 
     // The base game-room passes both Table/Hand roles, but this component is Table-only.
     @Input() myConnectionId: string = '';
     @Input() isHost = false;
+    @Input() isCreator = false;
+    @Input() isHand = false;
     @Input() isScreen = true;
+    @Input() isTable = true;
 
     @ViewChild('deckStack') deckStack?: ElementRef<HTMLDivElement>;
     @ViewChild('ghostLayer') ghostLayer?: ElementRef<HTMLDivElement>;

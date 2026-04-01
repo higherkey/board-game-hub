@@ -15,6 +15,10 @@ export class SushiTrainComponent implements OnInit {
     @Input() room!: Room;
     @Input() myConnectionId: string = '';
     @Input() isHost: boolean = false;
+    @Input() isCreator: boolean = false;
+    @Input() isHand: boolean = false;
+    @Input() isScreen: boolean = false;
+    @Input() isTable: boolean = false;
 
     constructor(private readonly signalRService: SignalRService) { }
 

@@ -15,5 +15,9 @@ export class NomDeCodeGameComponent {
   @Input() room: any;
   @Input() myConnectionId: string = '';
   @Input() isHost: boolean = false;
+  @Input() isCreator: boolean = false;
+  @Input() isHand: boolean = false;
+  @Input() isScreen: boolean = false;
+  @Input() isTable: boolean = false;
   showRules = false;
 }
