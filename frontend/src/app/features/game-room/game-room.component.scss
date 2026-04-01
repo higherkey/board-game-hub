@@ -153,6 +153,17 @@
                 overflow-y: auto;
             }
         }
+
+        // Entry stage (Create Room / Join form) should scroll on desktop
+        // when content overflows the visible height
+        .entry-stage {
+            @media (min-width: 768px) {
+                overflow-y: auto;
+                align-items: flex-start;
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+        }
     }
 
     .transitions-enabled & {

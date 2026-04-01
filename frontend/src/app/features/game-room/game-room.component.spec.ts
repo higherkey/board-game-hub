@@ -222,4 +222,14 @@ describe('GameRoomComponent', () => {
     await component.onExitGame();
     expect(mockSignalRService.setGameType).toHaveBeenCalledWith('TEST', 'None');
   });
+
+  it('should show entry-stage when needsName is true (Fix 1)', () => {
+    component.needsName = true;
+    fixture.detectChanges();
+    const entryStage = fixture.nativeElement.querySelector('.entry-stage');
+    expect(entryStage).toBeTruthy();
+    // Verify it doesn't have the old centering class if we want to be thorough, 
+    // though that's more of a snapshot style test.
+    expect(entryStage.classList.contains('justify-content-md-center')).toBeFalse();
+  });
 });

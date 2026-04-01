@@ -260,11 +260,11 @@
                 <div class="flex-grow-1 d-flex flex-column">
 
                     <!-- ENTRY STAGE (Name / Room Creation) -->
-                    <div *ngIf="needsName" class="flex-grow-1 d-flex flex-column align-items-center justify-content-start justify-content-md-center text-center p-2 p-md-3">
-                        <div class="card shadow-lg border-accent p-4 p-md-5 w-100" style="max-width: 600px;">
-                            <h2 class="display-6 mb-4 fw-bold" style="color: var(--brand-blue);">
+                    <div *ngIf="needsName" class="entry-stage flex-grow-1 d-flex flex-column align-items-center justify-content-start text-center p-2 p-md-3">
+                        <div class="card shadow-lg border-accent p-3 p-md-4 w-100 text-start" style="max-width: 800px;">
+                            <h3 class="mb-3 fw-bold" style="color: var(--brand-blue);">
                                 {{ isCreating ? 'Create A New Room' : 'Ready to Join?' }}
-                            </h2>
+                            </h3>
 
                             <!-- Login Suggestion for Guests -->
                             <div *ngIf="(session$ | async)?.isGuest"
@@ -275,7 +275,7 @@
                                     (click)="goToLogin()">Login</button>
                             </div>
 
-                            <div class="mb-4 text-start">
+                            <div class="mb-3 text-start">
                                 <label for="playerNameInput" class="form-label fw-bold text-secondary">Your Display
                                     Name</label>
                                 <input id="playerNameInput" type="text" 
@@ -290,7 +290,7 @@
                                 <p class="text-muted small mt-1" *ngIf="!showNameError">This is how other players will see you.</p>
                             </div>
 
-                            <div class="mb-4 text-start">
+                            <div class="mb-3 text-start">
                                 <label for="joinPlayer" id="joinAsLabel"
                                     class="form-label fw-bold text-secondary mb-3">Join As:</label>
                                 <div class="d-flex gap-3" role="radiogroup" aria-labelledby="joinAsLabel">
@@ -298,7 +298,7 @@
                                         <input type="radio" class="btn-check" name="joinType" id="joinPlayer"
                                             value="player" [(ngModel)]="joinType">
                                         <label
-                                            class="btn btn-outline-secondary w-100 py-3 d-flex flex-column align-items-center gap-2"
+                                            class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-2"
                                             for="joinPlayer">
                                             <i class="bi bi-phone-fill fs-3"></i>
                                             <span class="fw-bold">PLAYER</span>
@@ -309,7 +309,7 @@
                                         <input type="radio" class="btn-check" name="joinType" id="joinTable"
                                             value="table" [(ngModel)]="joinType">
                                         <label
-                                            class="btn btn-outline-secondary w-100 py-3 d-flex flex-column align-items-center gap-2"
+                                            class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-2"
                                             for="joinTable">
                                             <i class="bi bi-display-fill fs-3"></i>
                                             <span class="fw-bold">TABLE</span>
@@ -319,7 +319,7 @@
                                 </div>
                             </div>
 
-                            <div *ngIf="isCreating" class="mb-4 text-start">
+                            <div *ngIf="isCreating" class="mb-3 text-start">
                                 <div class="form-check form-switch m-0">
                                     <input class="form-check-input" type="checkbox" id="publicSwitch"
                                         [(ngModel)]="isPublic">
@@ -330,7 +330,7 @@
                             </div>
 
                             <!-- Add Friends Section (Mock) -->
-                            <div class="mb-4 text-start border-top pt-3" *ngIf="!(session$ | async)?.isGuest">
+                            <div class="mb-3 text-start border-top pt-3" *ngIf="!(session$ | async)?.isGuest">
                                 <span class="form-label d-block fw-bold text-secondary mb-2">
                                     <i class="bi bi-people-fill me-2"></i> Invite Friends
                                 </span>
