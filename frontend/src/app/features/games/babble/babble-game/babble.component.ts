@@ -126,7 +126,9 @@ export class BabbleComponent implements OnChanges, OnDestroy {
       this.gridChars = newGrid.split('');
       this.boardSize = Math.sqrt(this.gridChars.length);
       this.foundWords = [];
-      this.lastRoundResults = [];
+      // Do NOT clear lastRoundResults here — host word overrides cause grid state
+      // updates and would wipe the results panel. Results are set from data.lastRoundResults
+      // in updateStateFromRoom() and are cleared only by fresh round starts above.
     }
   }
 
