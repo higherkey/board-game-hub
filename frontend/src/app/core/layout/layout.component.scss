@@ -38,6 +38,18 @@
         }
     }
 
+    .header-left-group {
+        gap: 1.5rem;
+
+        @media (max-width: 992px) {
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 576px) {
+            gap: 0.4rem; // Slimmer gap on mobile
+        }
+    }
+
     .logo-container {
         display: flex;
         align-items: center;
@@ -84,9 +96,18 @@
         cursor: pointer;
         padding: 0.25rem;
         margin-left: -0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         @media (max-width: 992px) {
-            display: block;
+            display: flex;
+        }
+
+        @media (max-width: 576px) {
+            padding: 0.1rem; // Slimmer padding on mobile
+            margin-left: -0.1rem;
+            font-size: 1.35rem; // Slightly smaller icon
         }
     }
 
@@ -167,16 +188,20 @@
 
     .auth-actions {
         display: flex;
-        gap: clamp(0.4rem, 1vw, 0.75rem);
+        gap: clamp(0.25rem, 1vw, 0.75rem);
         align-items: center;
         justify-content: flex-end;
+
+        @media (max-width: 480px) {
+            gap: 0.25rem;
+        }
 
         .btn {
             white-space: nowrap;
             min-width: fit-content;
-            padding-left: 1rem;
-            padding-right: 1rem;
-            font-size: 0.8rem;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            font-size: 0.75rem;
         }
     }
 

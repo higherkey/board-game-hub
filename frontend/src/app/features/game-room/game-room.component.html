@@ -1,7 +1,7 @@
 <div class="container-fluid d-flex flex-column h-100 pt-2">
     <!-- 1. HEADER (Top Bar) -->
     <header *ngIf="!isBigScreen"
-        class="game-room-header px-4 py-2 mb-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
+        class="game-room-header px-4 py-2 mb-2 mb-md-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
         
         <!-- Mobile Left: Hamburger Menu -->
         <div class="d-md-none">
@@ -260,18 +260,18 @@
                 <div class="flex-grow-1 d-flex flex-column">
 
                     <!-- ENTRY STAGE (Name / Room Creation) -->
-                    <div *ngIf="needsName" class="entry-stage flex-grow-1 d-flex flex-column align-items-center justify-content-start text-center p-2 p-md-3">
-                        <div class="card shadow-lg border-accent p-3 p-md-4 w-100 text-start" style="max-width: 800px;">
+                    <div *ngIf="needsName" class="entry-stage flex-grow-1 d-flex flex-column align-items-center justify-content-start text-center p-1 p-sm-2 p-md-3">
+                        <div class="card shadow-lg border-accent p-2 p-sm-3 p-md-4 w-100 text-start" style="max-width: 800px;">
                             <h3 class="mb-3 fw-bold" style="color: var(--brand-blue);">
                                 {{ isCreating ? 'Create A New Room' : 'Ready to Join?' }}
                             </h3>
 
                             <!-- Login Suggestion for Guests -->
                             <div *ngIf="(session$ | async)?.isGuest"
-                                class="alert alert-info py-2 mb-4 d-flex align-items-center justify-content-between">
-                                <span class="small"><i class="bi bi-info-circle me-2"></i>Log in to save stats and play
-                                    with friends!</span>
-                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between">
+                                <span class="small d-flex align-items-center"><i class="bi bi-info-circle me-2 fs-5"></i><span>Log in to save stats and play
+                                    with friends!</span></span>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-3"
                                     (click)="goToLogin()">Login</button>
                             </div>
 
@@ -290,30 +290,30 @@
                                 <p class="text-muted small mt-1" *ngIf="!showNameError">This is how other players will see you.</p>
                             </div>
 
-                            <div class="mb-3 text-start">
+                            <div class="mb-3 text-start mt-4">
                                 <label for="joinPlayer" id="joinAsLabel"
                                     class="form-label fw-bold text-secondary mb-3">Join As:</label>
-                                <div class="d-flex gap-3" role="radiogroup" aria-labelledby="joinAsLabel">
+                                <div class="d-flex gap-2 gap-sm-3" role="radiogroup" aria-labelledby="joinAsLabel">
                                     <div class="flex-grow-1">
                                         <input type="radio" class="btn-check" name="joinType" id="joinPlayer"
                                             value="player" [(ngModel)]="joinType">
                                         <label
-                                            class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-2"
+                                            class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-1"
                                             for="joinPlayer">
-                                            <i class="bi bi-phone-fill fs-3"></i>
-                                            <span class="fw-bold">PLAYER</span>
-                                            <small class="opacity-75">Use your mobile phone</small>
+                                            <i class="bi bi-phone-fill fs-4"></i>
+                                            <span class="fw-bold small">PLAYER</span>
+                                            <small class="opacity-75" style="font-size: 0.65rem;">Use your mobile phone</small>
                                         </label>
                                     </div>
                                     <div class="flex-grow-1">
                                         <input type="radio" class="btn-check" name="joinType" id="joinTable"
                                             value="table" [(ngModel)]="joinType">
                                         <label
-                                            class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-2"
+                                            class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-1"
                                             for="joinTable">
-                                            <i class="bi bi-display-fill fs-3"></i>
-                                            <span class="fw-bold">TABLE</span>
-                                            <small class="opacity-75">Shared screen / TV</small>
+                                            <i class="bi bi-display-fill fs-4"></i>
+                                            <span class="fw-bold small">TABLE</span>
+                                            <small class="opacity-75" style="font-size: 0.65rem;">Shared screen / TV</small>
                                         </label>
                                     </div>
                                 </div>

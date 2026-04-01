@@ -2,7 +2,7 @@
     <!-- HEADER -->
     <header *ngIf="!(isGameRoom$ | async)" class="main-header" role="banner">
         <div class="header-container">
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center header-left-group">
                 <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation">
                     <i class="bi" [class.bi-list]="!mobileMenuOpen" [class.bi-x-lg]="mobileMenuOpen"></i>
                 </button>

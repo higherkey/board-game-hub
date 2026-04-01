@@ -17,6 +17,9 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   @Input() room: Room | null = null;
   @Input() myConnectionId: string = '';
   @Input() isHost: boolean = false;
+  @Input() isHand: boolean = false;
+  @Input() isScreen: boolean = false;
+  @Input() isTable: boolean = false;
 
   sidebarWidth = 450;
   isResizing = false;

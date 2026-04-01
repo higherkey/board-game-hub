@@ -3,12 +3,15 @@
 }
 
 .hero-title {
-    font-size: clamp(3.5rem, 12vw, 7rem);
+    font-size: clamp(2.5rem, 10vw, 7rem);
     font-weight: 900;
     line-height: 0.9;
     letter-spacing: -0.03em;
     color: var(--primary);
     text-transform: uppercase;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 
     /* Low Poly / 3D Text Effect */
     text-shadow:

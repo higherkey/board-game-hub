@@ -15,6 +15,9 @@ export class ScatterbrainComponent implements OnInit, OnChanges {
     @Input() room!: Room;
     @Input() myConnectionId!: string;
     @Input() isHost: boolean = false;
+    @Input() isHand: boolean = false;
+    @Input() isScreen: boolean = false;
+    @Input() isTable: boolean = false;
 
     timeLeft$: Observable<number>;
     answers: string[] = [];
