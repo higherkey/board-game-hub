@@ -17,9 +17,8 @@
 }
 
 .babble-view {
-    /* DEBUG BORDER */
-    height: 100vh;
-    width: 100vw;
+    height: 100%;
+    width: 100%;
     overflow: hidden;
     display: flex;
     flex-direction: row;
@@ -569,7 +568,7 @@
 @media (max-width: 900px) {
     .babble-view {
         flex-direction: column;
-        height: 100vh;
+        height: 100%;
         overflow: hidden;
     }
 
@@ -616,7 +615,9 @@
         gap: 1rem;
     }
 
-    .babble-view:not(.is-host) .grid-stage {
+    // Hide the full grid on mobile for ALL roles — hosts on mobile use the
+    // sidebar (found words + controls), not the shared table view.
+    .grid-stage {
         display: none;
     }
 

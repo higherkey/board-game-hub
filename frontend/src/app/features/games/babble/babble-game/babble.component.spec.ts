@@ -101,4 +101,34 @@ describe('BabbleComponent', () => {
 
         discardPeriodicTasks();
     }));
+
+    it('should NOT clear lastRoundResults when grid is updated (Fix 3)', () => {
+        // Setup: Initial results and grid
+        const mockResults = [{ word: 'TEST', foundBy: ['conn1'], points: 1 }];
+        component.lastRoundResults = [...mockResults];
+        
+        // Action: Update grid data in room
+        const updatedRoom = createMockRoom({
+            gameType: 'Babble',
+            gameData: {
+                grid: 'ZYXWVUTSRQPONMLK' // Different grid
+            }
+        });
+        
+        component.room = updatedRoom;
+        component.ngOnChanges({
+            room: {
+                room: {
+                    previousValue: null,
+                    currentValue: updatedRoom,
+                    firstChange: false,
+                    isFirstChange: () => false
+                }
+            } as any
+        });
+
+        // Assert: results should still be there
+        expect(component.lastRoundResults).toEqual(mockResults);
+        expect(component.lastRoundResults.length).toBe(1);
+    });
 });
