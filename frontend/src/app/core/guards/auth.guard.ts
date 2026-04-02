@@ -13,10 +13,6 @@ export const authGuard: CanActivateFn = (route, state) => {
     // Let's stick to the current logic but make it testable by checking if we CAN mock it.
     // We will leave it as is for now and focus on Interceptor which is more logic heavy.
 
-    if (globalThis.location.port !== '4200') {
-        return true;
-    }
-
     if (authService.isAuthenticated()) {
         return true;
     }

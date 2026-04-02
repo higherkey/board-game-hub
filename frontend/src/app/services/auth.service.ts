@@ -248,4 +248,42 @@ export class AuthService {
 
         return true;
     }
+
+    private decodeToken(token: string): any {
+        try {
+            const payload = token.split('.')[1];
+            const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error('Error decoding JWT token', e);
+            return null;
+        }
+    }
+
+    getUserRoles(): string[] {
+        const token = this.getToken();
+        if (!token) return [];
+
+        const payload = this.decodeToken(token);
+        if (!payload) return [];
+
+        // Admin roles are typically in 'role' or the full Microsoft claim URI
+        const roleClaim = payload['role'] || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        
+        if (!roleClaim) return [];
+        if (Array.isArray(roleClaim)) return roleClaim;
+        return [roleClaim];
+    }
+
+    hasRole(role: string): boolean {
+        return this.getUserRoles().includes(role);
+    }
+
+    isAdmin(): boolean {
+        return this.hasRole('Admin');
+    }
 }

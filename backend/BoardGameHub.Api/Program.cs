@@ -38,6 +38,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options => {
     options.Password.RequiredLength = 6;
 })
 .AddEntityFrameworkStores<AppDbContext>()
+.AddRoles<IdentityRole>()
 .AddDefaultTokenProviders();
 
 // JWT Authentication
@@ -175,6 +176,9 @@ using (var scope = app.Services.CreateScope())
     {
         db.Database.Migrate();
     }
+    
+    // Seed Roles and Admin User
+    await DbInitializer.SeedAsync(scope.ServiceProvider);
 }
 
 
@@ -195,7 +199,9 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
 app.MapHub<SocialHub>("/socialhub");
-app.MapHub<AdminHub>("/adminhub").RequireRateLimiting("HubRateLimit");
+app.MapHub<AdminHub>("/adminhub")
+    .RequireRateLimiting("HubRateLimit")
+    .RequireAuthorization(p => p.RequireRole("Admin"));
 
 
 app.MapFallbackToFile("index.html");

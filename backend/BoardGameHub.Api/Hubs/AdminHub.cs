@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BoardGameHub.Api.Hubs;
 
+[Authorize(Roles = "Admin")]
 public class AdminHub : Hub
 {
     private readonly IRoomService _roomService;

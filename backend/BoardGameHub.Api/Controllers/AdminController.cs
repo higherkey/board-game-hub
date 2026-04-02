@@ -12,6 +12,7 @@ namespace BoardGameHub.Api.Controllers;
 
 [ApiController]
 [Route("admin")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IRoomService _roomService;
@@ -129,19 +130,15 @@ public class AdminController : ControllerBase
     [HttpPost("rooms/message")]
     public async Task<IActionResult> SendMessage([FromBody] MsgReq req)
     {
-        
         if (req.Target == "global")
         {
-             var adminUser = await _userManager.FindByNameAsync("SystemAdmin");
-             if (adminUser == null)
+             // Use the system user for global messages 
+             var adminUser = await _userManager.FindByNameAsync("admin@boardgamehub.com");
+             if (adminUser != null)
              {
-                 adminUser = new User { UserName = "SystemAdmin", DisplayName = "SYSTEM" };
-                 var result = await _userManager.CreateAsync(adminUser, "AdminPassword123!");
-                 if (!result.Succeeded) return StatusCode(500, "Failed to create system user");
+                 await _socialService.SaveGlobalMessage(adminUser.Id, req.Message);
+                 await _socialHub.Clients.All.SendAsync("ReceiveGlobalMessage", "ADMIN", req.Message);
              }
-
-             await _socialService.SaveGlobalMessage(adminUser.Id, req.Message);
-             await _socialHub.Clients.All.SendAsync("ReceiveGlobalMessage", "ADMIN", req.Message);
         }
         return Ok();
     }

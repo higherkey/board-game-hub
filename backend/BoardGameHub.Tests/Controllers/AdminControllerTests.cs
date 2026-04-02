@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
+using Microsoft.AspNetCore.Authorization;
+using System.Reflection;
 
 namespace BoardGameHub.Tests.Controllers;
 
@@ -58,6 +60,17 @@ public class AdminControllerTests : IDisposable
     {
         _context.Database.EnsureDeleted();
         _context.Dispose();
+    }
+
+    [Fact]
+    public void Controller_ShouldHaveAuthorizeAdminAttribute()
+    {
+        // Act
+        var attribute = typeof(AdminController).GetCustomAttribute<AuthorizeAttribute>();
+
+        // Assert
+        attribute.Should().NotBeNull();
+        attribute!.Roles.Should().Be("Admin");
     }
 
     [Fact]
@@ -123,11 +136,11 @@ public class AdminControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task SendMessage_ShouldCreateSystemAdminIfMissingAndSendGlobalMessage()
+    public async Task SendMessage_ShouldUseAdminUserAndSendGlobalMessage()
     {
         // Arrange
-        _mockUserManager.Setup(u => u.FindByNameAsync("SystemAdmin")).ReturnsAsync((User?)null);
-        _mockUserManager.Setup(u => u.CreateAsync(It.IsAny<User>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success).Callback<User, string>((u, p) => u.Id = "sysadmin_id");
+        var adminUser = new User { Id = "admin_id", UserName = "admin@boardgamehub.com" };
+        _mockUserManager.Setup(u => u.FindByNameAsync("admin@boardgamehub.com")).ReturnsAsync(adminUser);
         
         var req = new AdminController.MsgReq("Test message", "global");
 
@@ -136,7 +149,7 @@ public class AdminControllerTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        _mockSocialService.Verify(s => s.SaveGlobalMessage("sysadmin_id", "Test message"), Times.Once);
+        _mockSocialService.Verify(s => s.SaveGlobalMessage("admin_id", "Test message"), Times.Once);
         _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", new object[] { "ADMIN", "Test message" }, default), Times.Once);
     }
 }
