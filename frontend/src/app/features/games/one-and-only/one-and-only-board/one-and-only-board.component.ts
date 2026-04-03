@@ -1,11 +1,10 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { OneAndOnlyRulesComponent } from '../one-and-only-rules/one-and-only-rules.component';
 
 @Component({
     selector: 'app-one-and-only-board',
     standalone: true,
-    imports: [CommonModule, OneAndOnlyRulesComponent],
+    imports: [CommonModule],
     templateUrl: './one-and-only-board.component.html',
     styleUrls: ['./one-and-only-board.component.scss']
 })
