@@ -33,8 +33,11 @@ public class AuthControllerTests
 
         _mockConfig = new Mock<IConfiguration>();
         _mockConfig.Setup(c => c["Jwt:Key"]).Returns("SuperSecretKeyForTestingTheJwtTokenGeneration123!");
+        _mockConfig.Setup(c => c["Jwt:Issuer"]).Returns("BoardGameHub");
+        _mockConfig.Setup(c => c["Jwt:Audience"]).Returns("BoardGameHubUsers");
 
         _sut = new AuthController(_mockUserManager.Object, _mockSignInManager.Object, _mockConfig.Object);
+
     }
 
     [Fact]
@@ -64,6 +67,10 @@ public class AuthControllerTests
 
         _mockUserManager.Setup(u => u.FindByEmailAsync(model.Email))
             .ReturnsAsync(user);
+
+        _mockUserManager.Setup(u => u.GetRolesAsync(user))
+            .ReturnsAsync(new List<string>());
+
 
         // Act
         var result = await _sut.Login(model);
@@ -119,6 +126,8 @@ public class AuthControllerTests
         
         _mockUserManager.Setup(u => u.FindByIdAsync("valid-id")).ReturnsAsync(user);
         _mockUserManager.Setup(u => u.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+        _mockUserManager.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string>());
+
 
         var result = await _sut.UpdateAvatar(new UpdateAvatarDto { NewAvatarUrl = "new-url" });
 

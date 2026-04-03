@@ -104,9 +104,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
 
   @HostListener('window:keydown.shift.f', ['$event'])
-  toggleBigScreen(event?: KeyboardEvent) {
+  toggleBigScreen(event: Event) {
+    const keyboardEvent = event as KeyboardEvent;
     // Ignore if user is typing in an input text field
-    if (event && /INPUT|TEXTAREA|SELECT|DIALOG/i.test((event.target as HTMLElement).tagName)) {
+    if (keyboardEvent && /INPUT|TEXTAREA|SELECT|DIALOG/i.test((keyboardEvent.target as HTMLElement).tagName)) {
       return;
     }
 

@@ -108,12 +108,13 @@ public class AuthController : ControllerBase
         }
 
         var token = new JwtSecurityToken(
-            issuer: null,
-            audience: null,
+            issuer: _configuration["Jwt:Issuer"] ?? "BoardGameHub",
+            audience: _configuration["Jwt:Audience"] ?? "BoardGameHubUsers",
             claims: claims,
             expires: DateTime.UtcNow.AddHours(2),
             signingCredentials: creds
         );
+
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

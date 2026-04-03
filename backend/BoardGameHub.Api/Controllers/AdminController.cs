@@ -22,6 +22,7 @@ public class AdminController : ControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly UserManager<User> _userManager;
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
     public AdminController(
         IRoomService roomService, 
@@ -30,7 +31,8 @@ public class AdminController : ControllerBase
         IHubContext<SocialHub> socialHub,
         IWebHostEnvironment env,
         UserManager<User> userManager,
-        AppDbContext context)
+        AppDbContext context,
+        IConfiguration configuration)
     {
         _roomService = roomService;
         _socialService = socialService;
@@ -39,6 +41,7 @@ public class AdminController : ControllerBase
         _env = env;
         _userManager = userManager;
         _context = context;
+        _configuration = configuration;
     }
 
     [HttpGet("stats")]
@@ -133,7 +136,8 @@ public class AdminController : ControllerBase
         if (req.Target == "global")
         {
              // Use the system user for global messages 
-             var adminUser = await _userManager.FindByNameAsync("admin@boardgamehub.com");
+             var adminEmail = _configuration["Admin:Email"] ?? "admin@boardgamehub.com";
+             var adminUser = await _userManager.FindByNameAsync(adminEmail);
              if (adminUser != null)
              {
                  await _socialService.SaveGlobalMessage(adminUser.Id, req.Message);

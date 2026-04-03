@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 using Microsoft.AspNetCore.Authorization;
 using System.Reflection;
@@ -28,6 +29,7 @@ public class AdminControllerTests : IDisposable
     private readonly AdminController _sut;
     private readonly Mock<IClientProxy> _mockClientProxy;
     private readonly Mock<IHubClients> _mockHubClients;
+    private readonly Mock<IConfiguration> _mockConfig;
 
     public AdminControllerTests()
     {
@@ -48,12 +50,14 @@ public class AdminControllerTests : IDisposable
         _mockClientProxy = new Mock<IClientProxy>();
         _mockHubClients = new Mock<IHubClients>();
         
+        _mockConfig = new Mock<IConfiguration>();
+        
         _mockGameHub.Setup(h => h.Clients).Returns(_mockHubClients.Object);
         _mockSocialHub.Setup(h => h.Clients).Returns(_mockHubClients.Object);
         _mockHubClients.Setup(c => c.All).Returns(_mockClientProxy.Object);
         _mockHubClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockClientProxy.Object);
 
-        _sut = new AdminController(_mockRoomService.Object, _mockSocialService.Object, _mockGameHub.Object, _mockSocialHub.Object, _mockEnv.Object, _mockUserManager.Object, _context);
+        _sut = new AdminController(_mockRoomService.Object, _mockSocialService.Object, _mockGameHub.Object, _mockSocialHub.Object, _mockEnv.Object, _mockUserManager.Object, _context, _mockConfig.Object);
     }
 
     public void Dispose()
@@ -140,6 +144,7 @@ public class AdminControllerTests : IDisposable
     {
         // Arrange
         var adminUser = new User { Id = "admin_id", UserName = "admin@boardgamehub.com" };
+        _mockConfig.Setup(c => c["Admin:Email"]).Returns("admin@boardgamehub.com");
         _mockUserManager.Setup(u => u.FindByNameAsync("admin@boardgamehub.com")).ReturnsAsync(adminUser);
         
         var req = new AdminController.MsgReq("Test message", "global");

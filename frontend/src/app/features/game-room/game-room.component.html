@@ -253,7 +253,7 @@
                 <!-- Floating Big Screen Toggle (Desktop Only) -->
                 <button
                     class="btn btn-dark btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none d-md-block"
-                    (click)="toggleBigScreen()" style="z-index: 1000; width: 32px; height: 32px; padding: 0;"
+                    (click)="toggleBigScreen($event)" style="z-index: 1000; width: 32px; height: 32px; padding: 0;"
                     title="{{ isBigScreen ? 'Exit Big Screen (Shift+F)' : 'Big Screen Mode (Shift+F)' }}">
                     <i class="bi" [class.bi-fullscreen]="!isBigScreen" [class.bi-fullscreen-exit]="isBigScreen"></i>
                 </button>

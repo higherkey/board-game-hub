@@ -12,7 +12,7 @@
                                 class="bi bi-pause-fill"></i></button>
                         <button class="btn btn-success shadow-sm" *ngIf="room.isPaused" (click)="resumeGame()"><i
                                 class="bi bi-play-fill"></i></button>
-                        <button class="btn btn-danger shadow-sm" (click)="nextPhase()">End Early <i
+                        <button class="btn btn-danger shadow-sm" (click)="endRound()">End Early <i
                                 class="bi bi-skip-end-fill"></i></button>
                     </div>
                 </div>
@@ -139,11 +139,10 @@
                         </ng-template>
 
                         <div class="mt-4 pt-4 border-top">
-                            <div class="small text-secondary mb-2">Votes: {{ (room.gameData.activeChallenge.votes |
-                                keyvalue).length }} / {{ room.players.length }}</div>
+                            <div class="small text-secondary mb-2">Votes: {{ voteCount }} / {{ totalPlayers }}</div>
                             <div class="progress" style="height: 8px;">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                    [style.width.%]="((room.gameData.activeChallenge.votes | keyvalue).length / room.players.length) * 100">
+                                    [style.width.%]="votePercentage">
                                 </div>
                             </div>
                         </div>
