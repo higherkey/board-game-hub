@@ -521,10 +521,11 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
       } else {
         this.gameComponent = gameConfig.hostComponent;
       }
-    } else if (room.gameType !== 'None') {
-      console.warn(`Game type ${room.gameType} not found in registry.`);
+    } else if (room.gameType === 'None') {
       this.gameComponent = null;
     } else {
+      // room.gameType is set but not found in registry
+      console.warn(`Game type ${room.gameType} not found in registry.`);
       this.gameComponent = null;
     }
   }

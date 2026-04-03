@@ -16,6 +16,9 @@ Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angula
 ### Git & Source Control (Windows/PowerShell)
 - **PowerShell Chaining:** NEVER use `&&` to chain commands. Always use `;` (e.g., `git add .; git commit -m "msg"`).
 - **Commits:** Prefer `git commit -am "message"` for modified tracked files. Use `git add` explicitly for new files.
+- **Standards:** All commits and PR titles **MUST** follow **Conventional Commits** (e.g., `feat:`, `fix:`) and use **Imperative Tense** (e.g., `Update`, not `Updated`).
+- **Issue Reference:** Link GitHub Issues with `#123` or `fixes #123` where applicable.
+- **Enforcement:** PR titles are strictly linted via GitHub Actions.
 - **Staging:** Do not stage or commit unless explicitly requested.
 
 ### Local Environment
