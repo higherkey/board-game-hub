@@ -12,6 +12,7 @@ namespace BoardGameHub.Api.Controllers;
 
 [ApiController]
 [Route("admin")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IRoomService _roomService;
@@ -21,6 +22,7 @@ public class AdminController : ControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly UserManager<User> _userManager;
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
     public AdminController(
         IRoomService roomService, 
@@ -29,7 +31,8 @@ public class AdminController : ControllerBase
         IHubContext<SocialHub> socialHub,
         IWebHostEnvironment env,
         UserManager<User> userManager,
-        AppDbContext context)
+        AppDbContext context,
+        IConfiguration configuration)
     {
         _roomService = roomService;
         _socialService = socialService;
@@ -38,6 +41,7 @@ public class AdminController : ControllerBase
         _env = env;
         _userManager = userManager;
         _context = context;
+        _configuration = configuration;
     }
 
     [HttpGet("stats")]
@@ -129,19 +133,16 @@ public class AdminController : ControllerBase
     [HttpPost("rooms/message")]
     public async Task<IActionResult> SendMessage([FromBody] MsgReq req)
     {
-        
         if (req.Target == "global")
         {
-             var adminUser = await _userManager.FindByNameAsync("SystemAdmin");
-             if (adminUser == null)
+             // Use the system user for global messages 
+             var adminEmail = _configuration["Admin:Email"] ?? "admin@boardgamehub.com";
+             var adminUser = await _userManager.FindByNameAsync(adminEmail);
+             if (adminUser != null)
              {
-                 adminUser = new User { UserName = "SystemAdmin", DisplayName = "SYSTEM" };
-                 var result = await _userManager.CreateAsync(adminUser, "AdminPassword123!");
-                 if (!result.Succeeded) return StatusCode(500, "Failed to create system user");
+                 await _socialService.SaveGlobalMessage(adminUser.Id, req.Message);
+                 await _socialHub.Clients.All.SendAsync("ReceiveGlobalMessage", "ADMIN", req.Message);
              }
-
-             await _socialService.SaveGlobalMessage(adminUser.Id, req.Message);
-             await _socialHub.Clients.All.SendAsync("ReceiveGlobalMessage", "ADMIN", req.Message);
         }
         return Ok();
     }

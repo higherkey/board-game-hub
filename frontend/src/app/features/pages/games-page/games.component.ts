@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+
 
 @Component({
     selector: 'app-games',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent],
+    imports: [CommonModule, FormsModule, RouterModule],
     templateUrl: './games.component.html',
     styleUrls: ['./games.component.scss']
 })

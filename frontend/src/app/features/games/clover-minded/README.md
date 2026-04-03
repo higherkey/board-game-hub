@@ -25,9 +25,32 @@ Lucky Clover is a cooperative word-association game. Players work together to ge
 5.  **Winning:** Total points after all players' boards are resolved.
 
 ## 🏗️ Components & Architecture
-*   `LuckyCloverGameService`: Handles card generation and board state validation.
-*   `CloverBoardComponent`: A 4-leaf clover UI with text inputs for clues.
-*   `KeywordCardComponent`: Square cards with words on each edge, rotatable.
+Server authority:
+*   `backend/BoardGameHub.Api/Services/CloverMindedGameService.cs`: Generates cards, owns the round state, validates actions, computes scoring.
+
+Frontend shells (Table vs Hand):
+*   `CloverMindedTableComponent` (`clover-minded-table.component.ts`): Shared screen that renders the Clover board + center cards in real time.
+*   `CloverMindedHandComponent` (`clover-minded-hand.component.ts`): Phone/tablet UI for private clue entry and team placement actions.
+
+Shared visuals:
+*   `KeywordCard3dComponent` (`keyword-card-3d.component.ts`): 3D-styled card that displays the 4 edge keywords and updates with rotation.
+
+## Table vs Hand (global platform terms)
+See `docs/platform-glossary.md` for the global definitions.
+*   **Table**: `Player.isScreen === true` client; renders spectator’s clue words + the public card pool.
+*   **Hand**: `Player.isScreen === false` client; submits private clues and performs team placement.
+
+During resolution:
+*   The backend marks a single **Spectator** (rule role) in `room.gameData.currentSpectatorId`.
+*   The Spectator’s Hand is disabled for team actions (rotate/place/guess).
+
+## Game setting (optional, on by default)
+*   `cloverAllowPerPlayerSingleCardRotation`: if enabled, each Hand may rotate exactly one placed card per resolution attempt.
+    *   UI disables rotation on other cards once the Hand has rotated their locked card.
+
+## Status / Known gaps
+*   Invalid clue rules (made-up words, keyword family, translations) are not enforced yet; the clone focuses on the card-placement loop.
+*   The rulebook’s tie-break (“player to the Spectator’s left”) is not implemented; current scoring is rule-consistent and doesn’t require tie votes yet.
 
 ## 🎭 Alternative Names (The Pun-derful List)
 1.  **So Clover** (The "Clever" Classic)

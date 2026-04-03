@@ -30,14 +30,19 @@ describe('LoggerService', () => {
     });
 
     it('should log info if level is INFO', () => {
-        // Force level if needed, but we'll assume default for now
         service.info('test info');
         expect(console.info).toHaveBeenCalledWith('[INFO] test info');
+        if (environment.remoteLogging) {
+            httpMock.expectOne(`${environment.apiUrl}/ClientLogging`).flush({});
+        }
     });
 
     it('should log error if level is ERROR', () => {
         service.error('test error');
         expect(console.error).toHaveBeenCalledWith('[ERROR] test error');
+        if (environment.remoteLogging) {
+            httpMock.expectOne(`${environment.apiUrl}/ClientLogging`).flush({});
+        }
     });
 
     it('should send to remote if remoteLogging is enabled', () => {

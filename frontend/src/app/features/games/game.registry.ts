@@ -14,6 +14,10 @@ import { PictophoneGameComponent } from './pictophone/pictophone-game/pictophone
 import { DeepfakeGameComponent } from './deepfake-game/deepfake-game/deepfake-game.component';
 import { SushiTrainComponent } from './sushi-train/sushi-train-game/sushi-train.component';
 
+// Clover-Minded
+import { CloverMindedTableComponent } from './clover-minded/clover-minded-table/clover-minded-table.component';
+import { CloverMindedHandComponent } from './clover-minded/clover-minded-hand/clover-minded-hand.component';
+
 // Backlog Stubs
 import { NomDeCodeGameComponent } from './nom-de-code/nom-de-code-game/nom-de-code-game.component';
 import { WarshipsGameComponent } from './warships/warships-game/warships-game.component';
@@ -69,5 +73,9 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
     },
     'FourInARow': {
         hostComponent: FourInARowGameComponent
+    },
+    'CloverMinded': {
+        hostComponent: CloverMindedTableComponent,
+        playerComponent: CloverMindedHandComponent
     }
 };

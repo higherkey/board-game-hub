@@ -1,4 +1,4 @@
-﻿using BoardGameHub.Api.Models;
+using BoardGameHub.Api.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -207,7 +207,8 @@ public class AppDbContext : IdentityDbContext<User>
             new GameDefinition { 
                 Id = "CloverMinded", Name = "Clover-Minded", Icon = "🍀", Description = "Work together to associate keywords on your clover board.", Status = GameStatus.Backlog,
                 MinPlayers = 3, MaxPlayers = 6, Complexity = 2, AveragePlayTime = 25, Tags = "Cooperative,Word,Party",
-                TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
+                TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0,
+                SettingsMetadataJson = "[{\"id\":\"cloverAllowPerPlayerSingleCardRotation\",\"label\":\"Per-Hand Single-Card Rotation\",\"type\":\"checkbox\",\"default\":true}]"
             }
         );
     }

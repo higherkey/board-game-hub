@@ -153,6 +153,76 @@
                 overflow-y: auto;
             }
         }
+
+        // Entry stage (Create Room / Join form) should scroll on desktop
+        // when content overflows the visible height
+        .entry-stage {
+            @media (min-width: 768px) {
+                overflow-y: auto;
+                align-items: flex-start;
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+
+            @media (max-width: 767.98px) {
+                padding-top: 0.25rem !important;
+                
+                .card {
+                    margin-top: 0 !important;
+                    border-radius: 1rem !important;
+                    border: none !important;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+                }
+
+                .alert {
+                    padding: 0.5rem 0.75rem !important;
+                    font-size: 0.8rem;
+                    
+                    .btn {
+                        padding: 0.2rem 0.6rem !important;
+                        font-size: 0.75rem !important;
+                    }
+                }
+
+                h3 {
+                    font-size: 1.25rem !important;
+                    margin-bottom: 0.75rem !important;
+                }
+
+                .form-label {
+                    font-size: 0.85rem !important;
+                    margin-bottom: 0.25rem !important;
+                }
+
+                .form-control-lg {
+                    padding: 0.5rem 0.75rem !important;
+                    font-size: 1rem !important;
+                }
+
+                .btn-outline-secondary {
+                    padding: 0.6rem !important;
+                    
+                    i {
+                        font-size: 1.5rem !important;
+                    }
+
+                    span {
+                        font-size: 0.75rem !important;
+                    }
+                    
+                    small {
+                        font-size: 0.6rem !important;
+                        display: block;
+                        margin-top: 0.1rem;
+                    }
+                }
+
+                .btn-primary.w-100 {
+                    padding: 0.75rem !important;
+                    font-size: 1.1rem !important;
+                }
+            }
+        }
     }
 
     .transitions-enabled & {
@@ -224,20 +294,25 @@
         }
 
         .gap-3 {
-            gap: 0.5rem !important;
+            gap: 0.25rem !important; // Slimmer gap
         }
 
         .ps-3 {
-            padding-left: 0.5rem !important;
+            padding-left: 0.25rem !important;
         }
 
         .ms-2 {
-            margin-left: 0.25rem !important;
+            margin-left: 0.15rem !important;
         }
 
         .border-start {
             border-left: none !important;
             padding-left: 0 !important;
+        }
+
+        @media (max-width: 480px) {
+            padding-left: 0.4rem !important;
+            padding-right: 0.4rem !important;
         }
     }
 }

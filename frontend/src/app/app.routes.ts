@@ -8,12 +8,13 @@ import { AuthComponent } from './features/pages/login-page/login.component';
 import { PlayComponent } from './features/pages/play-page/play.component';
 import { SocialComponent } from './features/pages/social-page/social.component';
 import { NotFoundComponent } from './features/pages/not-found-page/not-found.component';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
     {
         path: 'admin',
         loadComponent: () => import('./features/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
-        canActivate: [authGuard],
+        canActivate: [adminGuard],
         title: 'Admin Dashboard'
     },
     {

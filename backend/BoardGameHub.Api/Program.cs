@@ -38,6 +38,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options => {
     options.Password.RequiredLength = 6;
 })
 .AddEntityFrameworkStores<AppDbContext>()
+.AddRoles<IdentityRole>()
 .AddDefaultTokenProviders();
 
 // JWT Authentication
@@ -55,12 +56,15 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = false,
-        ValidateAudience = false,
+        ValidateIssuer = true,
+        ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "BoardGameHub",
+        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "BoardGameHubUsers",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
+
 
     // SignalR Token Handling
     options.Events = new JwtBearerEvents
@@ -125,6 +129,7 @@ builder.Services.AddSingleton<IGameService, PoppycockGameService>();
 builder.Services.AddSingleton<IGameService, NomDeCodeService>();
 builder.Services.AddSingleton<IGameService, WarshipsGameService>();
 builder.Services.AddSingleton<IGameService, FourInARowGameService>();
+builder.Services.AddSingleton<IGameService, CloverMindedGameService>();
 
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();
@@ -174,6 +179,9 @@ using (var scope = app.Services.CreateScope())
     {
         db.Database.Migrate();
     }
+    
+    // Seed Roles and Admin User
+    await DbInitializer.SeedAsync(scope.ServiceProvider);
 }
 
 
@@ -194,7 +202,9 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
 app.MapHub<SocialHub>("/socialhub");
-app.MapHub<AdminHub>("/adminhub").RequireRateLimiting("HubRateLimit");
+app.MapHub<AdminHub>("/adminhub")
+    .RequireRateLimiting("HubRateLimit")
+    .RequireAuthorization(p => p.RequireRole("Admin"));
 
 
 app.MapFallbackToFile("index.html");

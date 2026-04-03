@@ -1,0 +1,13 @@
+---
+description: Git on Windows in this repo—PowerShell chaining and commit habits
+alwaysApply: true
+---
+
+# Git (PowerShell)
+
+When running git from a **PowerShell** terminal in this project:
+
+- **Do not** chain with `&&`. Use **`;`** between commands.
+- Prefer **`git commit -am "message"`** when committing **only modified tracked** files; use **`git add`** for new/untracked files first.
+
+Full rationale and examples: **`.agent/workflows/git-commands.md`**.

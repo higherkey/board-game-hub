@@ -1,0 +1,14 @@
+---
+description: SonarQube / SonarCloud reviews—scanner vs Web API vs MCP
+alwaysApply: true
+---
+
+# SonarQube workflow
+
+Use **`sonar-scanner`** only to **run analysis and upload** results. Use the **Web API** (e.g. curl) or **Sonar MCP tools** for quality gates, issue search, measures, and issue transitions—not the scanner.
+
+Security hotspots are **not** handled by SonarScanner; use **UI**, **SonarQube for IDE**, or **hotspot endpoints** from your server’s **`/web_api`** if permitted.
+
+Follow **`.agent/workflows/sonarqube-review.md`** for the full process and tool names.
+
+Use **`gh`** only for **GitHub / CI** context (PR checks, workflow runs), not as a Sonar client.

@@ -15,6 +15,9 @@ export class ScatterbrainComponent implements OnInit, OnChanges {
     @Input() room!: Room;
     @Input() myConnectionId!: string;
     @Input() isHost: boolean = false;
+    @Input() isHand: boolean = false;
+    @Input() isScreen: boolean = false;
+    @Input() isTable: boolean = false;
 
     timeLeft$: Observable<number>;
     answers: string[] = [];
@@ -121,4 +124,17 @@ export class ScatterbrainComponent implements OnInit, OnChanges {
     pauseGame() { this.signalRService.pauseGame(); }
     resumeGame() { this.signalRService.resumeGame(); }
     endRound() { this.nextPhase(); }
+
+    get voteCount(): number {
+        const votes = this.room?.gameData?.activeChallenge?.votes;
+        return votes ? Object.keys(votes).length : 0;
+    }
+
+    get totalPlayers(): number {
+        return this.room?.players?.length ?? 1;
+    }
+
+    get votePercentage(): number {
+        return (this.voteCount / this.totalPlayers) * 100;
+    }
 }

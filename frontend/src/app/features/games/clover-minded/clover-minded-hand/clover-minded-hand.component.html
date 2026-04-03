@@ -1,0 +1,165 @@
+<div class="hand-root">
+    <div class="hand-header">
+        <div class="title">
+            <span class="emoji">🍀</span>
+            <span class="name">Your Hand</span>
+        </div>
+
+        <div class="phase-pill" *ngIf="state as s">
+            {{ phaseLabel(s.phase) }}
+        </div>
+    </div>
+
+    <div class="hand-body" *ngIf="state as s; else notInGame">
+        <ng-container *ngIf="!isInParticipantList(s); else inHandScope">
+            <div class="note">
+                Waiting for the next round… (you are currently Table-only)
+            </div>
+        </ng-container>
+
+        <ng-template #inHandScope>
+            <!-- CLUE WRITING -->
+            <div *ngIf="s.phase === phases.ClueWriting" class="clue-phase">
+                <div class="hint" *ngIf="!isSubmitted(s)">
+                    Look at your 4 pairs and write one single-word clue for each.
+                    (Compounds/proper nouns/numbers are allowed.)
+                </div>
+
+                <div class="clue-zones">
+                    <div class="clue-zone" *ngFor="let idx of [0,1,2,3]">
+                        <div class="clue-zone-title">Pair {{ idx + 1 }}</div>
+                        <div class="pair">
+                            {{ getMyPair(s, idx)?.[0] }} <span class="plus">+</span>
+                            {{ getMyPair(s, idx)?.[1] }}
+                        </div>
+
+                        <input class="clue-input" type="text"
+                            [(ngModel)]="draftClues[idx]"
+                            [disabled]="isSubmitted(s)"
+                            placeholder="Type your clue…"
+                            (keyup.enter)="submitCluesIfReady(s)">
+                    </div>
+                </div>
+
+                <div class="submission-confirmation" *ngIf="isSubmitted(s)">
+                    <span class="check">✓</span> Submitted successfully.
+                </div>
+
+                <button class="primary-btn"
+                    *ngIf="!isSubmitted(s)"
+                    [disabled]="!canSubmitClues(s) || isSubmitting"
+                    (click)="submitClues(s)">
+                    {{ isSubmitting ? 'SUBMITTING...' : "I'M DONE" }}
+                </button>
+            </div>
+
+            <!-- RESOLUTION -->
+            <div *ngIf="s.phase === phases.Resolution || s.phase === phases.ResolutionSecond" class="resolution-phase">
+                <div class="spectator-banner" *ngIf="isSpectator(s)">
+                    Spectator for this board. No team actions allowed.
+                </div>
+
+                <div class="resolution-grid" *ngIf="!isSpectator(s)">
+                    <div class="pool-panel">
+                        <div class="panel-title">
+                            Center Cards (drag to board)
+                        </div>
+
+                        <div class="pool-cards">
+                            <div class="pool-card-slot" 
+                                *ngFor="let c of s.pool"
+                                [class.dragging]="draggedCardId === c.id"
+                                [class.occupied]="isOccupiedByOthers(s, c.id)">
+                                
+                                <button class="pool-card"
+                                    (touchstart)="onCardTouchStart($event, c.id)"
+                                    (touchmove)="onCardTouchMove($event)"
+                                    (touchend)="onCardTouchEnd($event)">
+                                    <app-keyword-card-3d
+                                        [card]="c"
+                                        [rotation]="0"
+                                        [interactive]="false"
+                                        [sizePx]="62">
+                                    </app-keyword-card-3d>
+                                </button>
+                                <div class="occupied-indicator" *ngIf="isOccupiedByOthers(s, c.id)">
+                                    Locked
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="clover-panel">
+                        <div class="panel-title">Your Board</div>
+                        <div class="slot-grid">
+                            <div class="slot"
+                                *ngFor="let idx of [0,1,2,3]"
+                                [id]="'slot-' + idx"
+                                [class.filled]="s.slots?.[idx]?.cardId"
+                                [class.drag-over]="isDragging && currentHoverSlot === idx">
+
+                                <div class="slot-title">Slot {{ idx + 1 }}</div>
+
+                                <div class="slot-card" *ngIf="getSlotCard(s, idx) as card">
+                                    <app-keyword-card-3d
+                                        [card]="card"
+                                        [rotation]="s.slots?.[idx]?.rotation || 0"
+                                        [sizePx]="84"
+                                        [placed]="true">
+                                    </app-keyword-card-3d>
+                                </div>
+
+                                <div class="slot-empty" *ngIf="!getSlotCard(s, idx)">
+                                    Drop here
+                                </div>
+
+                                <div class="slot-actions" *ngIf="s.slots?.[idx]?.cardId">
+                                    <button class="mini-btn"
+                                        (click)="rotateSlot(idx); $event.stopPropagation()"
+                                        [disabled]="!canRotateSlot(s, idx)">
+                                        Rotate
+                                    </button>
+                                    <button class="mini-btn ghost"
+                                        (click)="clearSlot(idx); $event.stopPropagation()">
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="guess-btn"
+                            [disabled]="!slotsFilled(s) || isSubmitting"
+                            (click)="submitGuess(s)">
+                            {{ isSubmitting ? 'SUBMITTING...' : 'GUESS' }}
+                        </button>
+
+                        <div class="small-note" *ngIf="slotsFilled(s) && !isSpectator(s)">
+                            Team can submit once all 4 slots are filled.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization of Dragging Card -->
+            <div class="drag-clone" *ngIf="isDragging && draggedCardId" 
+                 [style.left.px]="dragX" 
+                 [style.top.px]="dragY">
+                 <app-keyword-card-3d
+                    *ngIf="getDraggedCard() as c"
+                    [card]="c"
+                    [sizePx]="80">
+                 </app-keyword-card-3d>
+            </div>
+
+            <div class="footer-note">
+                {{ s.lastResult || s.message || '' }}
+            </div>
+        </ng-template>
+    </div>
+
+    <ng-template #notInGame>
+        <div class="empty-state">
+            Waiting for Clover-Minded to start…
+        </div>
+    </ng-template>
+</div>

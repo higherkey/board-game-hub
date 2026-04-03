@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
         if (result.Succeeded)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
-            var token = GenerateJwtToken(user!);
+            var token = await GenerateJwtTokenAsync(user!);
             return Ok(new { Token = token, User = new { user!.Id, user.DisplayName, user.Email, user.AvatarUrl } });
         }
 
@@ -81,19 +81,20 @@ public class AuthController : ControllerBase
 
         if (result.Succeeded)
         {
-            var token = GenerateJwtToken(user);
+            var token = await GenerateJwtTokenAsync(user);
             return Ok(new { Token = token, User = new { user.Id, user.DisplayName, user.Email, user.AvatarUrl } });
         }
 
         return BadRequest(result.Errors);
     }
 
-    private string GenerateJwtToken(User user)
+    private async Task<string> GenerateJwtTokenAsync(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var roles = await _userManager.GetRolesAsync(user);
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
@@ -101,13 +102,19 @@ public class AuthController : ControllerBase
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
         var token = new JwtSecurityToken(
-            issuer: null,
-            audience: null,
+            issuer: _configuration["Jwt:Issuer"] ?? "BoardGameHub",
+            audience: _configuration["Jwt:Audience"] ?? "BoardGameHubUsers",
             claims: claims,
             expires: DateTime.UtcNow.AddHours(2),
             signingCredentials: creds
         );
+
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

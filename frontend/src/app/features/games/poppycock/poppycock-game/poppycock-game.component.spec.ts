@@ -44,11 +44,7 @@ describe('PoppycockGameComponent', () => {
       ]
     })
     .overrideComponent(PoppycockGameComponent, {
-      remove: { imports: [any] }, // This doesn't work well with standalone
-      // Better to just let it import and not worry too much if they are simple,
-      // or use the 'declarations' trick if they weren't standalone.
-      // Since they ARE standalone, we can't easily swap them in 'imports' via configureTestingModule.
-      // But we can use 'overrideComponent'.
+      // Cleaned up override
     })
     .compileComponents();
 

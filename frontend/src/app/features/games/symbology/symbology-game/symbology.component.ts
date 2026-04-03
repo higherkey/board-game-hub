@@ -14,6 +14,12 @@ import { IconBoardComponent } from '../icon-board/icon-board.component';
 })
 export class SymbologyComponent {
     @Input() room!: Room;
+    @Input() myConnectionId: string = '';
+    @Input() isHost: boolean = false;
+    @Input() isCreator: boolean = false;
+    @Input() isHand: boolean = false;
+    @Input() isScreen: boolean = false;
+    @Input() isTable: boolean = false;
 
     guess: string = '';
     get isActivePlayer(): boolean {

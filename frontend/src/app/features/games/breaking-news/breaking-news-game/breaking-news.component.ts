@@ -26,6 +26,10 @@ export class BreakingNewsComponent implements OnInit, OnChanges, OnDestroy {
   @Input() room: any; // Type 'Room' properly if available
   @Input() myConnectionId: string = '';
   @Input() isHost: boolean = false;
+  @Input() isCreator: boolean = false;
+  @Input() isHand: boolean = false;
+  @Input() isScreen: boolean = false;
+  @Input() isTable: boolean = false;
 
   state: any; // BreakingNewsState
 

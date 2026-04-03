@@ -1,0 +1,48 @@
+# GEMINI.md - Board Game Hub Foundational Mandates
+
+This file defines the core architectural principles, development workflows, and technical standards for the Board Game Hub project. These instructions take precedence over general defaults.
+
+## 1. Project Overview & Architecture
+
+Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angular frontend, designed for "Table" (Shared Screen) and "Hand" (Private Device) gameplay.
+
+- **Backend (`/backend`):** ASP.NET Core 8, SignalR for real-time orchestration, EF Core with PostgreSQL.
+- **Frontend (`/frontend`):** Angular (Standalone Components). Uses a `GameType` registry to route between Table and Hand views.
+- **Real-time Engine:** `RoomService` and `GameStateManager` manage in-memory game state and broadcast partial diffs (`RoomStatePatch`) every 50ms.
+- **Game Plugin Model:** New games must implement `IGameService` (backend) and be registered in `game.registry.ts` (frontend).
+
+## 2. Critical Development Workflows
+
+### Git & Source Control (Windows/PowerShell)
+- **PowerShell Chaining:** NEVER use `&&` to chain commands. Always use `;` (e.g., `git add .; git commit -m "msg"`).
+- **Commits:** Prefer `git commit -am "message"` for modified tracked files. Use `git add` explicitly for new files.
+- **Staging:** Do not stage or commit unless explicitly requested.
+
+### Local Environment
+- **Dependencies:** Use `docker compose up -d postgres pgadmin` for the database.
+- **Startup:** Use `.\dev-start-dev.ps1` to launch the full development environment with hot reload.
+- **Backend Tests:** `dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj`
+- **Frontend Tests:** `npm --prefix frontend test` (Karma) and `npm --prefix frontend run test:babble` (Playwright).
+
+### SonarQube & Code Quality
+- **Scanner vs. API:** Use `sonar-scanner` ONLY for running/uploading analysis.
+- **Management:** Use the SonarQube Web API or MCP tools for checking Quality Gates, searching issues, or transitioning issue states.
+- **Hotspots:** Security hotspots must be reviewed via the SonarQube UI or IDE; they cannot be resolved via the scanner.
+
+### Deployment
+- **Production:** Triggered by pushes to `main`.
+- **Workflows:** Located in `.github/workflows/`. Use `gh run list` and `gh run watch` to monitor deployments.
+- **Secrets:** Never print or log GitHub secrets or environment variables.
+
+## 3. Engineering Standards
+
+- **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
+- **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
+- **Validation:** Every change requires verification. Run `dotnet build` for backend and `npm run build` (dev config) for frontend to ensure no regressions.
+- **Peer Review:** Follow the full audit sequence (Code, UX, Accessibility, Sonar, Build) for significant PRs or features.
+
+## 4. Tool-Specific Instructions
+
+- **Backend Build:** `dotnet build backend/BoardGameHub.Api/BoardGameHub.Api.csproj`
+- **Frontend Build:** `npm run build -- --configuration=development`
+- **GitHub CLI:** Use `gh` for CI/CD context and issue management, but NOT for SonarQube operations.

@@ -516,6 +516,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 6,
                             MinPlayers = 3,
                             Name = "Clover-Minded",
+                            SettingsMetadataJson = "[{\"id\":\"cloverAllowPerPlayerSingleCardRotation\",\"label\":\"Per-Hand Single-Card Rotation\",\"type\":\"checkbox\",\"default\":true}]",
                             Status = 3,
                             Tags = "Cooperative,Word,Party",
                             TimerType = 0
