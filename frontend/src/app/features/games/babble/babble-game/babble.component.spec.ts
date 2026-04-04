@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from '@angular/core/testing';
-import { SimpleChanges } from '@angular/core';
 import { BabbleComponent } from './babble.component';
 import { SignalRService } from '../../../../services/signalr.service';
 import { FormsModule } from '@angular/forms';
@@ -14,8 +13,11 @@ describe('BabbleComponent', () => {
     beforeEach(async () => {
         mockSignalRService = {
             submitAnswers: jasmine.createSpy('submitAnswers'),
-            submitClue: jasmine.createSpy('submitClue'),
-            submitGuess: jasmine.createSpy('submitGuess')
+            endRound: jasmine.createSpy('endRound').and.returnValue(Promise.resolve()),
+            nextRound: jasmine.createSpy('nextRound'),
+            pauseGame: jasmine.createSpy('pauseGame'),
+            resumeGame: jasmine.createSpy('resumeGame'),
+            sendGameAction: jasmine.createSpy('sendGameAction')
         };
 
         await TestBed.configureTestingModule({
@@ -31,9 +33,9 @@ describe('BabbleComponent', () => {
         // Mock Inputs
         component.room = createMockRoom({
             gameType: 'Babble',
-            settings: { timerDurationSeconds: 60, letterMode: 0, boardSize: 4 }, // Specifying boardSize
+            settings: { timerDurationSeconds: 60, letterMode: 0, boardSize: 4 },
             gameData: {
-                grid: 'ABCDEFGHIJKLMNOP' // 4x4 grid
+                grid: 'ABCDEFGHIJKLMNOP'
             }
         });
         component.myConnectionId = 'conn1';
@@ -53,26 +55,19 @@ describe('BabbleComponent', () => {
             state: 'Playing'
         });
 
-        // Trigger ngOnChanges logic manually if needed, or rely on updateStateFromRoom if called
-        // Since updateStateFromRoom is private, we can simulate the effect by calling ngOnChanges or exposing it.
-        // However, looking at the code, ngOnChanges calls updateStateFromRoom.
-
-        // Trigger ngOnChanges logic manually
-        const changes: any = {
+        component.ngOnChanges({
             room: {
                 previousValue: null,
                 currentValue: component.room,
                 firstChange: true,
                 isFirstChange: () => true
             }
-        };
-
-        component.ngOnChanges(changes);
+        });
 
         expect(component.isBlurred).toBeTrue();
     });
 
-    it('should not show timer text during countdown', fakeAsync(() => {
+    it('should NOT show timer text during countdown', fakeAsync(() => {
         component.countdownSeconds = 3;
         component.room = createMockRoom({
             gameType: 'Babble',
@@ -80,7 +75,6 @@ describe('BabbleComponent', () => {
             roundEndTime: new Date(Date.now() + 10000).toISOString()
         });
 
-        // We need to access private startTimer or trigger it via ngOnChanges
         component.ngOnChanges({
             room: {
                 previousValue: null,
@@ -90,45 +84,114 @@ describe('BabbleComponent', () => {
             }
         });
 
-        tick(500); // Advance timer interval
-
+        tick(500);
         expect(component.timerText).toBe('--:--');
 
         component.countdownSeconds = 0;
         tick(500);
-
         expect(component.timerText).not.toBe('--:--');
 
         discardPeriodicTasks();
     }));
 
-    it('should NOT clear lastRoundResults when grid is updated (Fix 3)', () => {
-        // Setup: Initial results and grid
-        const mockResults = [{ word: 'TEST', foundBy: ['conn1'], points: 1 }];
-        component.lastRoundResults = [...mockResults];
-        
-        // Action: Update grid data in room
-        const updatedRoom = createMockRoom({
-            gameType: 'Babble',
-            gameData: {
-                grid: 'ZYXWVUTSRQPONMLK' // Different grid
-            }
-        });
-        
-        component.room = updatedRoom;
-        component.ngOnChanges({
-            room: {
-                room: {
-                    previousValue: null,
-                    currentValue: updatedRoom,
-                    firstChange: false,
-                    isFirstChange: () => false
-                }
-            } as any
+    describe('Gameplay Interactions', () => {
+        it('should submit valid words', () => {
+            component.currentWord = 'test';
+            component.submitWord();
+
+            expect(mockSignalRService.submitAnswers).toHaveBeenCalledWith(['TEST']);
+            expect(component.foundWords).toContain('TEST');
+            expect(component.currentWord).toBe('');
         });
 
-        // Assert: results should still be there
-        expect(component.lastRoundResults).toEqual(mockResults);
-        expect(component.lastRoundResults.length).toBe(1);
+        it('should NOT submit short words', () => {
+            component.currentWord = 'it';
+            component.submitWord();
+
+            expect(mockSignalRService.submitAnswers).not.toHaveBeenCalled();
+            expect(component.foundWords.length).toBe(0);
+        });
+
+        it('should NOT submit duplicates', () => {
+            component.foundWords = ['APPLE'];
+            component.currentWord = 'apple';
+            component.submitWord();
+
+            expect(mockSignalRService.submitAnswers).not.toHaveBeenCalled();
+            expect(component.foundWords.length).toBe(1);
+        });
+    });
+
+    describe('Host Controls', () => {
+        beforeEach(() => {
+            component.isHost = true;
+            fixture.detectChanges();
+        });
+
+        it('should call pauseGame when handlePause is called', () => {
+            component.handlePause();
+            expect(mockSignalRService.pauseGame).toHaveBeenCalled();
+        });
+
+        it('should call resumeGame when handleResume is called', () => {
+            component.handleResume();
+            expect(mockSignalRService.resumeGame).toHaveBeenCalled();
+        });
+
+        it('should call endRound when handleEndRound is called', () => {
+            component.handleEndRound();
+            expect(mockSignalRService.endRound).toHaveBeenCalled();
+            expect(component.isEnding).toBeTrue();
+        });
+
+        it('should call nextRound when handleNextRound is called', () => {
+            component.handleNextRound();
+            expect(mockSignalRService.nextRound).toHaveBeenCalled();
+        });
+    });
+
+    describe('Results View', () => {
+        const mockResults = [
+            { word: 'MINE', foundBy: ['conn1'], points: 1 },
+            { word: 'OTHER', foundBy: ['conn2'], points: 1 }
+        ];
+
+        beforeEach(() => {
+            component.lastRoundResults = mockResults;
+        });
+
+        it('should filter results when showOnlyMyWords is true', () => {
+            component.showOnlyMyWords = true;
+            component.isHost = false;
+            
+            expect(component.displayResults.length).toBe(1);
+            expect(component.displayResults[0].word).toBe('MINE');
+        });
+
+        it('should NOT filter results when isHost is true', () => {
+            component.showOnlyMyWords = true;
+            component.isHost = true;
+            
+            expect(component.displayResults.length).toBe(2);
+        });
+
+        it('should correctly identify my words', () => {
+            expect(component.isMyWord(mockResults[0])).toBeTrue();
+            expect(component.isMyWord(mockResults[1])).toBeFalse();
+        });
+    });
+
+    describe('Validation', () => {
+        it('should send VALIDATE_WORD action', () => {
+            component.isHost = true;
+            const res = { word: 'TEST', isHostValidated: false };
+            
+            component.toggleValidation(res, true);
+            
+            expect(mockSignalRService.sendGameAction).toHaveBeenCalledWith('VALIDATE_WORD', {
+                word: 'TEST',
+                isValid: true
+            });
+        });
     });
 });

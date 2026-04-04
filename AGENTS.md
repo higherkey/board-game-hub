@@ -94,6 +94,9 @@ Run commands from repo root unless noted.
 - `.cursor/rules/git-powershell.mdc` + `.agent/workflows/git-commands.md`:
   - In PowerShell, chain commands with `;` (not `&&`).
   - Prefer `git commit -am` for tracked-file-only commits; use `git add` first for new files.
+  - **Commit/PR Standards**: Follow **Conventional Commits** (e.g., `feat:`, `fix:`) and use **Imperative Tense** (e.g., `Update`, not `Updated`).
+  - **Issue Reference**: Link GitHub Issues with `#123` or `fixes #123` where applicable.
+  - **GitHub Enforcement**: PR titles are strictly linted via `.github/workflows/lint-pr.yml`.
 - `.cursor/rules/sonarqube-workflow.mdc` + `.agent/workflows/sonarqube-review.md`:
   - Use `sonar-scanner` only to run/upload analysis.
   - Use Sonar Web API/MCP/UI for gates/issues/hotspots/transitions.

@@ -1,12 +1,11 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PoppycockRulesComponent } from '../poppycock-rules/poppycock-rules.component';
 import { SignalRService } from '../../../../services/signalr.service';
 
 @Component({
     selector: 'app-poppycock-board',
     standalone: true,
-    imports: [CommonModule, PoppycockRulesComponent],
+    imports: [CommonModule],
     templateUrl: './poppycock-board.component.html',
     styleUrls: ['./poppycock-board.component.scss']
 })

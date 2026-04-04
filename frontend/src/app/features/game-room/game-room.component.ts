@@ -6,15 +6,12 @@ import { map, Observable, take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
 import { GameSettings, Player, Room, SignalRService } from '../../services/signalr.service';
-import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
 import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { GAME_REGISTRY } from '../games/game.registry';
 import { ConfirmService } from '../../shared/services/confirm.service';
-import { GameReviewComponent } from './components/game-review/game-review.component';
 import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
-import { LobbyComponent } from '../room/lobby/lobby.component';
 import { UndoToastComponent } from './components/undo-toast/undo-toast.component';
 import { PlayerSettingsComponent } from './components/player-settings/player-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
@@ -26,11 +23,8 @@ import { LoggerService } from '../../core/services/logger.service';
   imports: [
     CommonModule,
     NgComponentOutlet,
-    LobbyComponent,
     VideoChatComponent,
-    GameReviewComponent,
     HostSettingsComponent,
-    SocialPanelComponent,
     UndoToastComponent,
     FormsModule,
     UserProfileDropdownComponent,
@@ -521,10 +515,11 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
       } else {
         this.gameComponent = gameConfig.hostComponent;
       }
-    } else if (room.gameType !== 'None') {
-      console.warn(`Game type ${room.gameType} not found in registry.`);
+    } else if (room.gameType === 'None') {
       this.gameComponent = null;
     } else {
+      // room.gameType is set but not found in registry
+      console.warn(`Game type ${room.gameType} not found in registry.`);
       this.gameComponent = null;
     }
   }

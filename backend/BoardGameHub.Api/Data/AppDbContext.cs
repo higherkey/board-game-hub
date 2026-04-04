@@ -205,7 +205,7 @@ public class AppDbContext : IdentityDbContext<User>
                 TimerType = TimerType.Required, DefaultRoundLengthSeconds = 300
             },
             new GameDefinition { 
-                Id = "CloverMinded", Name = "Clover-Minded", Icon = "🍀", Description = "Work together to associate keywords on your clover board.", Status = GameStatus.Backlog,
+                Id = "CloverMinded", Name = "Clover-Minded", Icon = "🍀", Description = "Work together to associate keywords on your clover board.", Status = GameStatus.Testing,
                 MinPlayers = 3, MaxPlayers = 6, Complexity = 2, AveragePlayTime = 25, Tags = "Cooperative,Word,Party",
                 TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0,
                 SettingsMetadataJson = "[{\"id\":\"cloverAllowPerPlayerSingleCardRotation\",\"label\":\"Per-Hand Single-Card Rotation\",\"type\":\"checkbox\",\"default\":true}]"

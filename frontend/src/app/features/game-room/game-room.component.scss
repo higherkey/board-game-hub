@@ -4,10 +4,10 @@
     display: block;
     height: 100vh;
     overflow: hidden;
-    --side-padding: 1rem;
+    --side-padding: 0.75rem;
 
     @media (min-width: 992px) {
-        --side-padding: 2rem;
+        --side-padding: 1.25rem;
     }
 }
 
@@ -255,8 +255,8 @@
 
     padding-left: var(--side-padding);
     padding-right: var(--side-padding);
-    padding-top: var(--side-padding);
-    padding-bottom: var(--side-padding);
+    padding-top: 0.5rem;
+    padding-bottom: 0;
 
     @media (max-width: 767.98px) {
         display: block !important; // Change to block to allow natural vertical flow for scrolling

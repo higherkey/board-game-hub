@@ -71,6 +71,7 @@ describe('AuthComponent', () => {
   });
 
   it('should handle login error', () => {
+    spyOn(console, 'error');
     mockAuthService.login.and.returnValue(throwError(() => new Error('Failed')));
     fixture = TestBed.createComponent(AuthComponent);
     component = fixture.componentInstance;
@@ -83,5 +84,7 @@ describe('AuthComponent', () => {
 
     expect(component.errorMessage).toBe('Invalid email or password');
     expect(component.isLoading).toBeFalse();
+    expect(console.error).toHaveBeenCalled();
   });
+
 });

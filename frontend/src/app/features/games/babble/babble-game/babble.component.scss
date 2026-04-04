@@ -11,7 +11,7 @@
 }
 
 .babble-view {
-    height: 100%; width: 100%; overflow: hidden; display: flex; flex-direction: row;
+    min-height: 100%; width: 100%; display: flex; flex-direction: row;
     background: var(--babble-bg) radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1), transparent 50%);
     background-attachment: fixed; animation: fadeIn 0.5s ease-out; user-select: none;
     &.resizing { cursor: ew-resize !important; * { cursor: ew-resize !important; } }
@@ -72,7 +72,7 @@
 .babble-grid {
     display: grid; gap: 2vmin; padding: 2.5vmin; background: rgba(0, 0, 0, 0.4);
     border: 2px solid var(--glass-border); border-radius: 2rem;
-    width: min(80vw, 80vh, 600px); height: min(80vw, 80vh, 600px);
+    width: min(90vw, 72vh, 600px); height: min(90vw, 72vh, 600px);
     aspect-ratio: 1/1; position: relative; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     
     grid-template-columns: repeat(var(--grid-size, 4), 1fr);
@@ -154,10 +154,11 @@
 
 .player-mini-chip { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; font-size: 0.65rem; padding: 1px 8px; border-radius: 50px; font-weight: 700; white-space: nowrap; &.is-me { background: rgba(99, 102, 241, 0.2); border-color: var(--babble-primary); } }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
     .babble-header h2 { font-size: 2rem; }
-    .babble-view, .babble-header { flex-direction: column; align-items: flex-start; }
-    .game-main { padding: 1rem; flex: 0 0 auto; }
-    .game-sidebar { flex: 1; width: 100%; border-left: none; border-top: 1px solid var(--glass-border); padding: 0.75rem 1rem; background: rgba(0, 0, 0, 0.2); overflow-y: auto; }
+    .babble-view { flex-direction: column; overflow-y: auto; height: auto; }
+    .babble-header { flex-direction: row; width: 100%; }
+    .game-main { padding: 1rem; flex: 0 0 auto; width: 100%; }
+    .game-sidebar { flex: 1; width: 100%; border-left: none; border-top: 1px solid var(--glass-border); padding: 0.75rem 1rem; background: rgba(0, 0, 0, 0.2); }
     .grid-stage { display: none; }
 }
