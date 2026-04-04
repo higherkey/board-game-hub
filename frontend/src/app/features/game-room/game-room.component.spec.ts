@@ -57,6 +57,45 @@ class UserProfileDropdownStubComponent {
   @Input() compactMode: boolean = false;
 }
 
+@Component({ selector: 'app-room-header', template: '', standalone: true, imports: [] })
+class RoomHeaderStubComponent {
+  @Input() isBigScreen: any;
+  @Input() roomCode: any;
+  @Input() isLobby: any;
+  @Input() gameDisplayName: any;
+  @Input() videoChatReady: any;
+  @Input() isVideoActive: any;
+  @Input() gameStarted: any;
+  @Input() currentRound: any;
+  @Input() totalRounds: any;
+  @Input() session: any;
+  @Input() showUndoButton: any;
+  @Output() leaveRoom = new EventEmitter<any>();
+  @Output() startVideoChat = new EventEmitter<any>();
+  @Output() requestUndo = new EventEmitter<any>();
+}
+
+@Component({ selector: 'app-room-sidebar', template: '', standalone: true, imports: [] })
+class RoomSidebarStubComponent {
+  @Input() currentRoom: any;
+  @Input() players: any;
+  @Input() tables: any;
+  @Input() connectionId: any;
+  @Output() toggleSidebar = new EventEmitter<any>();
+  @Output() changeRole = new EventEmitter<any>();
+  @Output() setHostPlayer = new EventEmitter<any>();
+  @Output() removeHostPlayer = new EventEmitter<any>();
+}
+
+@Component({ selector: 'app-room-entry', template: '', standalone: true, imports: [] })
+class RoomEntryStubComponent {
+  @Input() isCreating: any;
+  @Input() isGuest: any;
+  @Input() initialName: any;
+  @Output() submitEntry = new EventEmitter<any>();
+  @Output() login = new EventEmitter<void>();
+}
+
 // Import real components to override
 
 import { SocialPanelComponent } from '../../shared/components/social-panel/social-panel.component';
@@ -69,6 +108,9 @@ import { VideoChatComponent } from './components/video-chat/video-chat.component
 import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { LoggerService } from '../../core/services/logger.service';
 import { LobbyComponent } from '../room/lobby/lobby.component';
+import { RoomHeaderComponent } from './components/room-header/room-header.component';
+import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.component';
+import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 
 @Component({ selector: 'app-lobby', template: '', standalone: true, imports: [] })
 class LobbyStubComponent {
@@ -166,7 +208,10 @@ describe('GameRoomComponent', () => {
             OneAndOnlyBoardComponent,
             OneAndOnlyPlayerComponent,
             LobbyComponent,
-            UserProfileDropdownComponent
+            UserProfileDropdownComponent,
+            RoomHeaderComponent,
+            RoomSidebarComponent,
+            RoomEntryComponent
           ]
         },
         add: {
@@ -180,7 +225,10 @@ describe('GameRoomComponent', () => {
             OneAndOnlyBoardStubComponent,
             OneAndOnlyPlayerStubComponent,
             LobbyStubComponent,
-            UserProfileDropdownStubComponent
+            UserProfileDropdownStubComponent,
+            RoomHeaderStubComponent,
+            RoomSidebarStubComponent,
+            RoomEntryStubComponent
           ]
         }
       })
@@ -223,13 +271,10 @@ describe('GameRoomComponent', () => {
     expect(mockSignalRService.setGameType).toHaveBeenCalledWith('TEST', 'None');
   });
 
-  it('should show entry-stage when needsName is true (Fix 1)', () => {
+  it('should show entry-stage when needsName is true', () => {
     component.needsName = true;
     fixture.detectChanges();
-    const entryStage = fixture.nativeElement.querySelector('.entry-stage');
+    const entryStage = fixture.nativeElement.querySelector('app-room-entry');
     expect(entryStage).toBeTruthy();
-    // Verify it doesn't have the old centering class if we want to be thorough, 
-    // though that's more of a snapshot style test.
-    expect(entryStage.classList.contains('justify-content-md-center')).toBeFalse();
   });
 });

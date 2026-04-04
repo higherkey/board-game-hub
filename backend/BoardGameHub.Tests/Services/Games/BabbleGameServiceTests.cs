@@ -84,7 +84,8 @@ public class BabbleGameServiceTests
         room.RoundScores["p2"].Should().Be(0);
 
         var state = room.GameData as BabbleState;
-        state.LastRoundResults.Should().Contain(r => r.Word == "COMMON" && r.IsDuplicate && r.Points == 0);
+        state.Should().NotBeNull();
+        state!.LastRoundResults.Should().Contain(r => r.Word == "COMMON" && r.IsDuplicate && r.Points == 0);
     }
 
     [Fact]
@@ -128,9 +129,10 @@ public class BabbleGameServiceTests
         // Assert
         result.Should().BeTrue();
         var state = room.GameData as BabbleState;
+        state.Should().NotBeNull();
         
         // Use FirstOrDefault to avoid exception if missing, then Assert
-        var wordResult = state.LastRoundResults.FirstOrDefault(r => r.Word == "FAKE");
+        var wordResult = state!.LastRoundResults.FirstOrDefault(r => r.Word == "FAKE");
         wordResult.Should().NotBeNull();
         wordResult.IsHostValidated.Should().BeTrue();
         

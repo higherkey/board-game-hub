@@ -6,7 +6,6 @@ import { map, Observable, take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
 import { GameSettings, Player, Room, SignalRService } from '../../services/signalr.service';
-import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { GAME_REGISTRY } from '../games/game.registry';
 import { ConfirmService } from '../../shared/services/confirm.service';
@@ -16,6 +15,9 @@ import { UndoToastComponent } from './components/undo-toast/undo-toast.component
 import { PlayerSettingsComponent } from './components/player-settings/player-settings.component';
 import { VideoChatComponent } from './components/video-chat/video-chat.component';
 import { LoggerService } from '../../core/services/logger.service';
+import { RoomHeaderComponent } from './components/room-header/room-header.component';
+import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.component';
+import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 
 @Component({
   selector: 'app-game-room',
@@ -27,10 +29,12 @@ import { LoggerService } from '../../core/services/logger.service';
     HostSettingsComponent,
     UndoToastComponent,
     FormsModule,
-    UserProfileDropdownComponent,
     PlayerSettingsComponent,
     RouterModule,
-    MobileTabBarComponent
+    MobileTabBarComponent,
+    RoomHeaderComponent,
+    RoomSidebarComponent,
+    RoomEntryComponent
   ],
   templateUrl: './game-room.component.html',
   styleUrls: ['./game-room.component.scss']
@@ -53,7 +57,6 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
   // Creation options
   selectedGameType = 'None';
-  isPublic = true;
   availableGames: GameDefinition[] = [];
   gameComponent: Type<any> | null = null;
   public gameInputs: Record<string, any> = {};
@@ -301,45 +304,26 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     }
   }
 
-  showNameError = false;
-
-  async submitEntry() {
-    // Validation: Name is required
-    if (!this.promptPlayerName?.trim()) {
-      this.showNameError = true;
-      this.toastService.showError('Please enter a display name to continue.');
-
-      // Focus the input if possible (simple way given current setup)
-      setTimeout(() => {
-        const input = document.getElementById('playerNameInput');
-        if (input) input.focus();
-      });
-      return;
-    }
-
-    if (!this.joinType) {
-      this.toastService.showError('Please select whether you are joining as a Player or a Table.');
-      return;
-    }
-
-    this.authService.setGuestName(this.promptPlayerName);
+  async submitEntry(entryData: { name: string, joinType: 'player' | 'table', isPublic: boolean }) {
+    this.authService.setGuestName(entryData.name);
     this.needsName = false;
-    this.showNameError = false;
 
     // Briefly disable transitions when switching from entry to lobby
     this.enableTransitions = false;
     setTimeout(() => this.enableTransitions = true, 500);
 
+    this.joinType = entryData.joinType;
+    this.isScreen = entryData.joinType === 'table';
+
     if (this.isCreating) {
       try {
         const newCode = await this.signalRService.createRoom(
-          this.promptPlayerName,
-          this.isPublic,
+          entryData.name,
+          entryData.isPublic,
           this.selectedGameType,
-          this.joinType === 'table'
+          this.isScreen
         );
         this.logger.info(`Room created successfully: ${newCode}`);
-        // Force update host status locally to ensure UI reflects it immediately
         this.signalRService.updateIsHostStatus();
         this.router.navigate(['/game', newCode]);
       } catch (err) {
@@ -349,7 +333,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
       }
     } else {
       this.logger.info(`User submitting entry to join room: ${this.roomCode}`);
-      await this.signalRService.joinRoom(this.roomCode, this.promptPlayerName, this.isScreen);
+      await this.signalRService.joinRoom(this.roomCode, entryData.name, this.isScreen);
     }
   }
 
@@ -414,30 +398,6 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
         await this.signalRService.setGameType(this.roomCode, 'None');
       }
     }
-  }
-
-  onBabbleWordsUpdated(words: string[]) {
-    this.signalRService.submitAnswers(words);
-  }
-
-  onClueSubmitted(clue: string) {
-    this.signalRService.submitClue(clue);
-  }
-
-  onGuessSubmitted(event: { guess: string, isPass: boolean } | string) {
-    if (typeof event === 'string') {
-      this.signalRService.submitGuess(event);
-    } else {
-      this.signalRService.submitGuess(event.guess, event.isPass);
-    }
-  }
-
-  onPoppycockDefSubmitted(def: string) {
-    this.signalRService.submitPoppycockDefinition(def);
-  }
-
-  onPoppycockVoteSubmitted(vote: string) {
-    this.signalRService.submitPoppycockVote(vote);
   }
 
   getMyConnectionId(players: Player[] | null | undefined): string {
@@ -539,9 +499,5 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     if (this.roomCode) {
       this.signalRService.removeHostPlayer(this.roomCode, targetId);
     }
-  }
-
-  checkIsCreator(room: Room | null, playerConnectionId: string): boolean {
-    return room?.creatorConnectionId === playerConnectionId;
   }
 }

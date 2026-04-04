@@ -29,7 +29,7 @@ module.exports = function karmaConfig(config) {
                 { type: 'text-summary' }
             ]
         },
-        reporters: ['progress', 'kjhtml'],
+        reporters: ['dots'],
         browsers: ['Chrome', 'ChromeHeadless'],
         restartOnFileChange: true,
         customLaunchers: {

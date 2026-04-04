@@ -37,8 +37,9 @@ public class SymbologyGameServiceTests
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
 
-        var state = (SymbologyState)room.GameData;
-        state.CurrentWord.Should().NotBeNullOrEmpty();
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
+        state!.CurrentWord.Should().NotBeNullOrEmpty();
         state.ActivePlayerId.Should().Be("p1"); // 1 % 3 = 1
         state.IsRoundActive.Should().BeTrue();
         state.Markers.Should().BeEmpty();
@@ -49,7 +50,8 @@ public class SymbologyGameServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (SymbologyState)room.GameData;
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
 
         var success = await _service.PlaceMarker(room, "p1", "🔥", "Main", "green");
 
@@ -74,7 +76,8 @@ public class SymbologyGameServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (SymbologyState)room.GameData;
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
 
         await _service.PlaceMarker(room, "p1", "🔥", "Main", "green");
         var markerId = state.Markers[0].Id;
@@ -90,8 +93,9 @@ public class SymbologyGameServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (SymbologyState)room.GameData;
-        var word = state.CurrentWord;
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
+        var word = state!.CurrentWord;
 
         var success = await _service.SubmitGuess(room, "p0", word);
 
@@ -106,12 +110,13 @@ public class SymbologyGameServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (SymbologyState)room.GameData;
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
 
         var success = await _service.SubmitGuess(room, "p0", "Wrong Guess");
 
         success.Should().BeFalse();
-        state.IsRoundActive.Should().BeTrue();
+        state!.IsRoundActive.Should().BeTrue();
         state.GuessLog.Should().Contain(g => g.Contains("Wrong Guess"));
     }
 
@@ -120,10 +125,11 @@ public class SymbologyGameServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (SymbologyState)room.GameData;
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
         
         // Mock a win
-        state.Scores["p0"] = 10;
+        state!.Scores["p0"] = 10;
         state.Scores["p1"] = 10;
 
         await _service.CalculateScores(room);
@@ -159,9 +165,10 @@ public class SymbologyGameServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (SymbologyState)room.GameData;
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
         await _service.PlaceMarker(room, "p1", "🔥", "Main", "green");
-        var markerId = state.Markers[0].Id;
+        var markerId = state!.Markers[0].Id;
         var payload = JsonSerializer.SerializeToElement(new { markerId });
         var action = new GameAction("REMOVE_MARKER", payload);
 
@@ -175,7 +182,8 @@ public class SymbologyGameServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (SymbologyState)room.GameData!;
+        var state = room.GameData as SymbologyState;
+        state.Should().NotBeNull();
         var payload = JsonSerializer.SerializeToElement(new { guess = state!.CurrentWord! });
         var action = new GameAction("SUBMIT_GUESS", payload);
 
