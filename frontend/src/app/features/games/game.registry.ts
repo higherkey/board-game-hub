@@ -65,6 +65,10 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
     'SushiTrain': {
         hostComponent: SushiTrainComponent
     },
+    'CloverMinded': {
+        hostComponent: CloverMindedTableComponent,
+        playerComponent: CloverMindedHandComponent
+    },
     'NomDeCode': {
         hostComponent: NomDeCodeGameComponent
     },
@@ -73,9 +77,5 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
     },
     'FourInARow': {
         hostComponent: FourInARowGameComponent
-    },
-    'CloverMinded': {
-        hostComponent: CloverMindedTableComponent,
-        playerComponent: CloverMindedHandComponent
     }
 };
