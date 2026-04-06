@@ -14,12 +14,13 @@ Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angula
 ## 2. Critical Development Workflows
 
 ### Git & Source Control (Windows/PowerShell)
-- **PowerShell Chaining:** NEVER use `&&` to chain commands. Always use `;` (e.g., `git add .; git commit -m "msg"`).
+- **PowerShell Chaining:** NEVER use `&&` to chain commands. Always use `;`.
 - **Commits:** Prefer `git commit -am "message"` for modified tracked files. Use `git add` explicitly for new files.
-- **Standards:** All commits and PR titles **MUST** follow **Conventional Commits** (e.g., `feat:`, `fix:`) and use **Imperative Tense** (e.g., `Update`, not `Updated`).
+- **Standards:** All commits and PR titles **MUST** follow **Conventional Commits** (e.g., `feat:`, `fix:`) and use **Imperative Tense** (e.g., `Update`, not `Updated`) for the **entire message** (header and body).
 - **Issue Reference:** Link GitHub Issues with `#123` or `fixes #123` where applicable.
 - **Enforcement:** PR titles are strictly linted via GitHub Actions.
 - **Staging:** Do not stage or commit unless explicitly requested.
+- **Feature Tracking:** MANDATORY running trace document in `/docs/traces/` for all **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`) per `.agent/workflows/feature-tracking.md`.
 
 ### Local Environment
 - **Dependencies:** Use `docker compose up -d postgres pgadmin` for the database.
