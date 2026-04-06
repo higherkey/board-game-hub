@@ -34,17 +34,23 @@ The document must contain the following four sections, kept as concise as possib
 
 ## 3. The Finalization Process (PR/Merge)
 
-When preparing to merge with `dev` or creating a Pull Request, follow these four steps exactly:
+When preparing to conclude work on a branch, follow this sequence:
 
-1.  **Parity Audit**: Review the code and the document to ensure they match exactly.
-2.  **Confirm Parity with USER**: Present the document to the USER. If there is a mismatch, inform the USER and suggest steps to align them. Repeat until the USER agrees that parity is reached.
-3.  **Issue Triage**:
-    - Remaining items in **4a** should be suggested as **sub-issues** (or parent issues if significant).
-    - Items in **4b** should be suggested as **new issues** or sub-issues.
-    - Ask the USER for confirmation before creating any issues.
-4.  **Git Commit**: Once the USER approves, use the **Completed Work** section as the basis for the final conventional git commit message.
+1.  **Final Verification**: Perform all necessary tests (builds, unit tests, etc.). Ensure the code is 100% ready.
+2.  **Functional Walkthrough**: Present a demo (recordings, screenshots, or summary) to the USER to prove the feature works as intended.
+3.  **Confirm Parity with USER**: Review the trace document and the code changes with the USER. Receive **EXPLICIT approval** to proceed.
+4.  **Final Development Commit**: Run `git commit` to seal the code changes and the verified trace doc.
+5.  **Create Pull Request**: Run `gh pr create`.
+6.  **Seal the Trace**: After the PR is created, update the **Formal Walkthrough** artifact and make one last minor `chore` commit to check off `[x] PR Created` and `[x] Formal Walkthrough Artifact`. This ensures the branch history is a complete record.
 
-## 4. Cleanup
+## 4. Pre-Commit / Pre-PR Checklist
+
+Before running your final development `git commit`, you MUST verify:
+- [ ] ALL code-related items in the Trace Document's TODO list are checked off (`[x]`), including **Final Verification**.
+- [ ] The **Completed Work** section accurately reflects all changes.
+- [ ] You have received **EXPLICIT approval** from the USER to commit and move to the PR phase.
+
+## 5. Cleanup
 
 Trace documents are automatically removed from the `main` branch by a GitHub Action on push/merge to ensure production history remains clean. You do not need to manually delete the file unless explicitly asked.
 

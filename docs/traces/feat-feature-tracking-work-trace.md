@@ -7,7 +7,8 @@
     - [x] Create `.agent/workflows/feature-tracking.md`
     - [x] Register mandate in `AGENTS.md` and `GEMINI.md`
     - [x] Update `AGENTS.md`, `GEMINI.md`, and `git-commands.md` to explicitly mandate imperative tense for entire commit messages.
-    - [ ] Final verification and walkthrough
+    - [x] Create Pull Request to `dev` for the `feat/feature-tracking` branch.
+    - [x] Final verification and walkthrough
 - **File List**:
     - **Workflows**: `.agent/workflows/feature-tracking.md` (New instructions for agents).
     - **CI/CD**: `.github/workflows/cleanup-traces.yml` (Automated cleanup).
