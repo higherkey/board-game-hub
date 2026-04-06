@@ -52,7 +52,7 @@ Mandate a prefix to categorize the change. PR titles **MUST** include one of the
 - `chore`: (Routine tasks, maintenance)
 
 ### Mandatory Format
-- **Imperative Tense**: Use `Update`, not `Updated`; `Fix`, not `Fixed`.
+- **Imperative Tense**: Use `Update`, not `Updated`; `Fix`, not `Fixed` for the **entire message** (header and body).
 - **Subject Length**: Keep the header under 50 characters.
 - **Issue Reference (Recommended)**: Link to its GitHub Issue using `#123` or `fixes #123` if one exists.
 

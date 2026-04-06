@@ -94,7 +94,7 @@ Run commands from repo root unless noted.
 - `.cursor/rules/git-powershell.mdc` + `.agent/workflows/git-commands.md`:
   - In PowerShell, chain commands with `;` (not `&&`).
   - Prefer `git commit -am` for tracked-file-only commits; use `git add` first for new files.
-  - **Commit/PR Standards**: Follow **Conventional Commits** (e.g., `feat:`, `fix:`) and use **Imperative Tense** (e.g., `Update`, not `Updated`).
+  - **Commit/PR Standards**: Follow **Conventional Commits** (e.g., `feat:`, `fix:`) and use **Imperative Tense** (e.g., `Update`, not `Updated`) for the **entire message** (header and body).
   - **Issue Reference**: Link GitHub Issues with `#123` or `fixes #123` where applicable.
   - **GitHub Enforcement**: PR titles are strictly linted via `.github/workflows/lint-pr.yml`.
 - `.cursor/rules/sonarqube-workflow.mdc` + `.agent/workflows/sonarqube-review.md`:
@@ -106,3 +106,5 @@ Run commands from repo root unless noted.
   - Use `gh run list/watch` to inspect deployment runs when needed.
 - `.agent/workflows/peer-review.md`:
   - Defines a full peer-review sequence (code/UX/accessibility/Sonar/build verification) for deep audit tasks.
+- `.agent/workflows/feature-tracking.md`:
+  - **MANDATORY**: Running trace document (`/docs/traces/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`).
