@@ -28,6 +28,7 @@ jobs:
           if [[ -n $(git status --porcelain docs/traces/) ]]; then
             git add docs/traces/
             git commit -m "chore: Cleanup feature trace documents from main"
+            git pull --rebase origin main
             git push
           else
             echo "No trace files to clean up."
