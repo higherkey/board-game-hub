@@ -271,7 +271,7 @@ public class GameHubTests
         // Arrange
         var vote = new UndoVote { InitiatorName = "P1" };
         var room = new Room { Code = "TEST", CurrentVote = vote };
-        _mockRoomService.Setup(r => r.RequestUndo("TEST", "conn1")).Returns(room);
+        _mockRoomService.Setup(r => r.RequestUndo("TEST", "conn1")).ReturnsAsync(room);
 
         // Act
         await _sut.RequestUndo("TEST");
@@ -286,7 +286,7 @@ public class GameHubTests
         // Arrange
         var vote = new UndoVote { InitiatorName = "P1" };
         var room = new Room { Code = "TEST", CurrentVote = vote };
-        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).Returns(room);
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(room);
 
         // Act
         await _sut.SubmitUndoVote("TEST", true);
@@ -300,7 +300,7 @@ public class GameHubTests
     {
         // Arrange
         var room = new Room { Code = "TEST", CurrentVote = null };
-        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).Returns(room);
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(room);
 
         // Act
         await _sut.SubmitUndoVote("TEST", true);

@@ -32,8 +32,8 @@ public interface IRoomService
     Room? VoteNextGame(string code, string playerId, GameType vote);
     
     // Undo System
-    Room? RequestUndo(string code, string connectionId);
-    Room? SubmitUndoVote(string code, string connectionId, bool vote);
+    Task<Room?> RequestUndo(string code, string connectionId);
+    Task<Room?> SubmitUndoVote(string code, string connectionId, bool vote);
 
     // Stats & Helpers
     List<string> ValidateRooms(List<string> codes);

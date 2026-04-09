@@ -446,27 +446,27 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         
-        // Apply settings if provided (Start of Game)
-        if (settings != null)
-        {
-            room.Settings = settings;
-            room.RoundNumber = 0;
-            // Reset Total Scores on new game
-            foreach(var p in room.Players) p.Score = 0;
-        }
-
-        room.RoundNumber++;
-        room.State = GameState.Playing;
-        room.IsPaused = false;
-        room.TimeRemainingWhenPaused = null;
-        
-        // Reset Round Data
-        room.PlayerAnswers.Clear();
-        room.RoundScores.Clear();
-
         await room.StateLock.WaitAsync();
         try
         {
+            // Apply settings if provided (Start of Game)
+            if (settings != null)
+            {
+                room.Settings = settings;
+                room.RoundNumber = 0;
+                // Reset Total Scores on new game
+                foreach(var p in room.Players) p.Score = 0;
+            }
+
+            room.RoundNumber++;
+            room.State = GameState.Playing;
+            room.IsPaused = false;
+            room.TimeRemainingWhenPaused = null;
+            
+            // Reset Round Data
+            room.PlayerAnswers.Clear();
+            room.RoundScores.Clear();
+
             var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
             if (service != null)
             {
@@ -565,11 +565,6 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
 
-        if (actionType != "SUBMIT_STROKE") 
-        {
-            SaveState(room);
-        }
-
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         if (service != null)
         {
@@ -579,6 +574,11 @@ public class RoomService : IRoomService
             await room.StateLock.WaitAsync();
             try
             {
+                if (actionType != "SUBMIT_STROKE") 
+                {
+                    SaveStateLocked(room);
+                }
+
                 success = await service.HandleAction(room, action, connectionId);
             }
             finally
@@ -773,8 +773,9 @@ public class RoomService : IRoomService
     }
 
     // --- UNDO SYSTEM ---
+    // Note: All Save/Undo methods MUST be called within a room.StateLock context.
 
-    private void SaveState(Room room)
+    private void SaveStateLocked(Room room)
     {
         // Snapshot the State, RoundNumber, and GameData
         // We serialize the specific properties relevant to gameplay restore
@@ -811,82 +812,98 @@ public class RoomService : IRoomService
         }
     }
 
-    public Room? RequestUndo(string code, string connectionId)
+    public async Task<Room?> RequestUndo(string code, string connectionId)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         
-        // If no history, can't undo
-        if (room.StateHistory.Count == 0) return null;
-
-        var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
-        if (player == null) return null;
-
-        // 1. Host Only Mode (or Host is requesting)
-        if (room.UndoSettings.HostOnly || player.IsHost)
+        await room.StateLock.WaitAsync();
+        try
         {
-             // Host can bypass vote? Or if HostOnly is TRUE.
-             // If HostOnly=True and Player isn't Host -> Deny.
-             if (room.UndoSettings.HostOnly && !player.IsHost) return null;
+            // If no history, can't undo
+            if (room.StateHistory.Count == 0) return null;
 
-             return PerformUndo(code); 
-        }
+            var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+            if (player == null) return null;
 
-        // 2. Default Voting Mode (and player is not host, or Voting is ON)
-        if (room.UndoSettings.AllowVoting)
-        {
-            // Start a Vote
-            room.CurrentVote = new UndoVote
+            // 1. Host Only Mode (or Host is requesting)
+            if (room.UndoSettings.HostOnly || player.IsHost)
             {
-                InitiatorId = connectionId,
-                InitiatorName = player.Name,
-                CreatedAt = DateTime.UtcNow
-            };
-            // Implicit "Yes" from initiator
-            room.CurrentVote.Votes[connectionId] = true;
-            
-            _gameStateManager.MarkDirty(room.Code);
-            NotifyStatsChanged();
-            return room; // Caller will broadcast "UndoVoteStarted"
+                 // Host can bypass vote? Or if HostOnly is TRUE.
+                 // If HostOnly=True and Player isn't Host -> Deny.
+                 if (room.UndoSettings.HostOnly && !player.IsHost) return null;
+
+                 return PerformUndoLocked(room); 
+            }
+
+            // 2. Default Voting Mode (and player is not host, or Voting is ON)
+            if (room.UndoSettings.AllowVoting)
+            {
+                // Start a Vote
+                room.CurrentVote = new UndoVote
+                {
+                    InitiatorId = connectionId,
+                    InitiatorName = player.Name,
+                    CreatedAt = DateTime.UtcNow
+                };
+                // Implicit "Yes" from initiator
+                room.CurrentVote.Votes[connectionId] = true;
+                
+                _gameStateManager.MarkDirty(room.Code);
+                NotifyStatsChanged();
+                return room; // Caller will broadcast "UndoVoteStarted"
+            }
+        }
+        finally
+        {
+            room.StateLock.Release();
         }
 
         return null;
     }
 
-    public Room? SubmitUndoVote(string code, string connectionId, bool vote)
+    public async Task<Room?> SubmitUndoVote(string code, string connectionId, bool vote)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        if (room.CurrentVote == null) return null;
-
-        room.CurrentVote.Votes[connectionId] = vote;
         
-        // Check for Majority
-        var totalPlayers = room.Players.Count;
-        var castVotes = room.CurrentVote.Votes.Count;
-        var yesVotes = room.CurrentVote.Votes.Values.Count(v => v);
-
-        // If simple majority reached ( > 50% of TOTAL players)
-        if (yesVotes > totalPlayers / 2.0)
+        await room.StateLock.WaitAsync();
+        try
         {
-            room.CurrentVote = null; // Vote passed
-            return PerformUndo(code);
-        }
-        
-        // If impossible to win (No votes >= 50%)
-        // or everyone voted
-        if (castVotes == totalPlayers)
-        {
-            // Vote Finished, failed
-            room.CurrentVote = null;
-        }
+            if (room.CurrentVote == null) return null;
 
-        _gameStateManager.MarkDirty(room.Code);
-        NotifyStatsChanged();
-        return room;
+            room.CurrentVote.Votes[connectionId] = vote;
+            
+            // Check for Majority
+            var totalPlayers = room.Players.Count;
+            var castVotes = room.CurrentVote.Votes.Count;
+            var yesVotes = room.CurrentVote.Votes.Values.Count(v => v);
+
+            // If simple majority reached ( > 50% of TOTAL players)
+            if (yesVotes > totalPlayers / 2.0)
+            {
+                room.CurrentVote = null; // Vote passed
+                return PerformUndoLocked(room);
+            }
+            
+            // If impossible to win (No votes >= 50%)
+            // or everyone voted
+            if (castVotes == totalPlayers)
+            {
+                // Vote Finished, failed
+                room.CurrentVote = null;
+            }
+
+            _gameStateManager.MarkDirty(room.Code);
+            NotifyStatsChanged();
+            return room;
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
     }
 
-    private Room? PerformUndo(string code)
+    private Room? PerformUndoLocked(Room currentRoom)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var currentRoom)) return null;
         if (currentRoom.StateHistory.Count == 0) return null;
 
         var snapshot = currentRoom.StateHistory.Pop();
@@ -896,21 +913,7 @@ public class RoomService : IRoomService
             var oldState = JsonSerializer.Deserialize<Room>(snapshot, options);
             
             if (oldState == null) return null;
-
-            // RESTORE CRITICAL STATE
-            // We want to keep the *current* network connections if possible, 
-            // OR we assume the snapshot Players are the same people. 
-            // The safest bet for "Game State" undo is to restore GameData, State, RoundNumber, Scores.
-            // But KEEP the current Players list (so nobody gets kicked out connectivity-wise).
-            // BUT, if the undo involves "Undo Player Joining", then we SHOULD restore Players list.
-            // Given the complexity, let's restore EVERYTHING but try to merge ConnectionIds?
-            // Actually, for a MVP local/friends game, restoring the whole object is fine. 
-            // If a player joined AFTER the snapshot, and we undo, they effectively "un-join" in logic,
-            // but their socket is still connected. They might get an error next time they try to act.
-            // That's acceptable for "Undo". 
             
-            var existingPlayers = currentRoom.Players; // Keep ref to current sockets
-
             // Overwrite properties
             currentRoom.GameType = oldState.GameType;
             currentRoom.State = oldState.State;
@@ -920,8 +923,6 @@ public class RoomService : IRoomService
             currentRoom.PlayerAnswers = oldState.PlayerAnswers;
             
             // Re-assign generic GameData requires careful deserialization if it became JsonElement
-            // The JsonSerializer might have turned `object` GameData into `JsonElement`.
-            // We need to re-deserialize it to the specific type (JustOneState, ScatterbrainState, etc.).
             if (currentRoom.GameData is JsonElement jsonElement)
             {
                  var service = _gameServices.FirstOrDefault(s => s.GameType == currentRoom.GameType);
@@ -937,7 +938,7 @@ public class RoomService : IRoomService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Undo Failed: {ex.Message}");
+            _logger.LogError(ex, "Undo Failed for room {RoomCode}", currentRoom.Code);
             return null;
         }
     }

@@ -149,4 +149,67 @@ public class GameStateManagerTests
                  It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task MarkDirty_ConcurrentCalls_ShouldNotThrow()
+    {
+        // Arrange
+        var room = new Room { Code = "CONC1" };
+        _manager.TrackRoom(room);
+        var tasks = new List<Task>();
+        int callCount = 100;
+
+        // Act & Assert
+        for (int i = 0; i < callCount; i++)
+        {
+            int index = i;
+            tasks.Add(Task.Run(() => _manager.MarkDirty("CONC1", $"Member{index}")));
+        }
+
+        await Task.WhenAll(tasks);
+        
+        // Verify DirtyMembers has correct count (using reflection since internal)
+        var dirtyMembers = room.DirtyMembers;
+        dirtyMembers.Count.Should().Be(callCount + 1); // +1 for the "ALL" member added in TrackRoom
+    }
+
+    [Fact]
+    public async Task GameTick_ExtractionWhileAdding_ShouldBeConsistent()
+    {
+        // Arrange
+        var room = new Room { Code = "EXTRACT1" };
+        _manager.TrackRoom(room);
+        bool running = true;
+
+        // Start a background task that keeps adding dirty members
+        var adderTask = Task.Run(async () => {
+            int i = 0;
+            while (running)
+            {
+                _manager.MarkDirty("EXTRACT1", $"Member{i++}");
+                if (i % 10 == 0) await Task.Delay(1); // Yield lightly
+            }
+        });
+
+        // Act - Run multiple ticks
+        try
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                await InvokeGameTickAsync();
+                await Task.Delay(10);
+            }
+        }
+        finally
+        {
+            running = false;
+            await adderTask;
+        }
+
+        // Assert - If we reached here without exception, it's a pass.
+        // Collection modification exceptions were the primary target of #85.
+        _mockClientProxy.Verify(
+            c => c.SendCoreAsync("RoomStatePatch", It.IsAny<object[]>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce());
+    }
 }

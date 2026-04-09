@@ -220,7 +220,7 @@ public class GameHub : Hub
 
     public async Task RequestUndo(string roomCode)
     {
-        var room = _roomService.RequestUndo(roomCode, Context.ConnectionId);
+        var room = await _roomService.RequestUndo(roomCode, Context.ConnectionId);
         if (room != null)
         {
             // If room returned, check if Vote started or Undo happened
@@ -239,7 +239,7 @@ public class GameHub : Hub
 
     public async Task SubmitUndoVote(string roomCode, bool vote)
     {
-        var room = _roomService.SubmitUndoVote(roomCode, Context.ConnectionId, vote);
+        var room = await _roomService.SubmitUndoVote(roomCode, Context.ConnectionId, vote);
         if (room != null)
         {
             if (room.CurrentVote == null)
