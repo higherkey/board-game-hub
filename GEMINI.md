@@ -20,7 +20,7 @@ Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angula
 - **Issue Reference:** Link GitHub Issues with `#123` or `fixes #123` where applicable.
 - **Enforcement:** PR titles are strictly linted via GitHub Actions.
 - **Staging:** Do not stage or commit unless explicitly requested.
-- **Feature Tracking:** MANDATORY running trace document in `/docs/traces/` for all **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`) per `.agent/workflows/feature-tracking.md`.
+- **Feature Tracking**: MANDATORY running trace document in `/docs/traces/` for all **prefixed branches**. **Strictly follow the "Finalization Process" (Section 5) in [.agent/workflows/feature-tracking.md](file:///c:/Programming/board%20game%20hub/.agent/workflows/feature-tracking.md) before any commit.**
 
 ### Local Environment
 - **Dependencies:** Use `docker compose up -d postgres pgadmin` for the database.
