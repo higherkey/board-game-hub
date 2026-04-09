@@ -1,27 +1,48 @@
-# Frontend
+# Board Game Hub - Frontend
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+This directory contains the Angular 18 client application for the Board Game Hub platform.
 
-## Development server
+## 🏛️ Architecture
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+The frontend is built with **Angular 18** using **Standalone Components**. It is designed to handle two distinct roles: **Table** and **Hand**.
 
-## Code scaffolding
+### Core Concepts
+- **Table vs Hand Routing**: The application uses the `isScreen` flag from the player's room state to choose between a shared "Table" view (for TVs/shared screens) and a private "Hand" view (for mobile devices).
+- **`SignalRService`**: The central transport layer. It manages the real-time connection to the backend and acts as the source of truth for game and room state streams.
+- **Game Registry**: The `frontend/src/app/features/games/game.registry.ts` file is the entry point for all games. It maps `GameType` to the appropriate Table and Hand components.
+- **Styling**: Uses **Bootstrap 5** and custom **SCSS** with a focus on responsive, mobile-first design for the "Hand" role.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## 🛠️ Local Development
 
-## Build
+### Prerequisites
+- Node.js (v18+)
+- Angular CLI
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+### Setup
+1. **Install Dependencies**:
+   ```powershell
+   npm install
+   ```
+2. **Run Dev Server**:
+   ```powershell
+   npm start
+   ```
+   Navigate to `http://localhost:4200/`. The app will reload automatically on source changes.
 
-## Running unit tests
+## 🧪 Testing
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+### Unit Tests
+Execute unit tests via **Karma**:
+```powershell
+npm test
+```
 
-## Running end-to-end tests
+### End-to-End Tests
+Execute Playwright tests (specifically for the Babble game suite):
+```powershell
+npm run test:babble
+```
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+## 🏗️ Code Scaffolding
+Run `ng generate component component-name` to generate a new component.
 
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

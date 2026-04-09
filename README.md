@@ -1,19 +1,48 @@
 # Board Game Hub
 
-Welcome to the Board Game Hub project! This repository contains the source code for a web-based board game platform.
+**Bringing people together through shared screens and personal devices.**
 
-## Project Structure
+Board Game Hub is a multiplayer board game platform designed for "Table" (shared screen) and "Hand" (personal device) gameplay. It bridges the gap between digital and physical play by allowing players to use their phones as controllers while a central screen (TV or laptop) serves as the game board.
 
-- **frontend**: The Angular-based user interface.
-- **backend**: The .NET-based server API.
+## 🚀 Tech Stack
 
-## Getting Started
+- **Frontend**: Angular 18 (Standalone Components, RxJS, SignalR Client)
+- **Backend**: ASP.NET Core 8 Web API
+- **Real-time**: SignalR (WebSockets)
+- **Database**: PostgreSQL (EF Core)
+- **Styling**: Bootstrap 5 + custom SCSS
 
-Please refer to the specific README files in the `frontend` and `backend` directories for detailed setup and running instructions.
+## 🎮 Platform Concept (Table vs Hand)
 
-## Platform Terms (Table vs Hand)
-The shared glossary for common UI concepts like **Table** and **Hand** lives in `docs/platform-glossary.md`.
+The platform distinguishes between two roles:
+- **Table**: The shared display (e.g., a TV). Optimized for large text and shared game state. Join with `Player.isScreen === true`.
+- **Hand**: The personal controller (e.g., a phone). Used for private input and individual actions. Join with `Player.isScreen === false`.
 
-## License
+For more details, see the [Platform Glossary](file:///c:/Programming/board%20game%20hub/docs/platform-glossary.md).
 
-This project is proprietary and closed source. All rights reserved.
+## 🧩 Game Plugin Model
+
+Board Game Hub is designed to be extensible. New games can be added by implementing a backend `IGameService` and registering a frontend component.
+Current games include:
+- **Scatterbrain**: A fast-paced word game.
+- **Clover-Minded**: A cooperative clue-giving game.
+
+## 🛠️ Project Structure
+
+- **[/frontend](file:///c:/Programming/board%20game%20hub/frontend)**: Angular client application.
+- **[/backend](file:///c:/Programming/board%20game%20hub/backend)**: .NET Core API and SignalR hubs.
+- **[/docs](file:///c:/Programming/board%20game%20hub/docs)**: Technical documentation and architecture plans.
+
+## 🤝 Contributing
+
+We welcome contributions of all kinds! Whether you want to add a new game, improve the platform core, or polish the UX, we'd love to have you.
+
+- **Human-only?** No problem. Please ensure you maintain a manual work trace in `docs/traces/` for your feature branch.
+- **Using AI?** We have established AI workflows in `.agent/workflows` to help you move faster.
+
+Please read **[CONTRIBUTING.md](file:///c:/Programming/board%20game%20hub/CONTRIBUTING.md)** for developer workflow standards and legal terms.
+
+## ⚖️ License
+
+This project is **Source-Available and Proprietary**. You are free to view and contribute to the source code, but commercial use is restricted. See [CONTRIBUTING.md](file:///c:/Programming/board%20game%20hub/CONTRIBUTING.md) for details.
+
