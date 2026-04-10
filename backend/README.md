@@ -25,11 +25,36 @@ The backend is built with **ASP.NET Core 8** and uses **SignalR** for real-time 
    ```powershell
    docker compose up -d postgres pgadmin
    ```
-2. **Run API**:
+2. **Apply Migrations**: Migrations are **not** applied automatically at startup. Run the migration script manually after any model change:
+   ```powershell
+   .\backend\migrate-db.ps1
+   ```
+3. **Run API**:
    ```powershell
    dotnet watch run --project backend/BoardGameHub.Api
    ```
-   *Note: Database migrations are applied automatically on startup.*
+
+## 🗄️ Database Migrations
+
+> **Important for contributors and agents alike.**
+
+Migrations are managed **out-of-band** from the API startup process.
+
+| Context | Command |
+|---|---|
+| Add a new migration | `dotnet ef migrations add <Name> --project backend/BoardGameHub.Api` |
+| Apply locally | `.\backend\migrate-db.ps1` |
+| Apply in CI/CD | Automatic — see below |
+
+### How CI/CD applies migrations
+
+On every push to `main` or `dev`, the backend deployment workflow (`.github/workflows/deploy-backend-azure.yml`) does the following **before** deploying the new container:
+
+1. Generates a self-contained **EF Core Migration Bundle** (`efbundle`) from all migrations in source.
+2. Runs the bundle against the target Supabase database using the branch-appropriate connection string.
+3. Only then deploys the new container image.
+
+This guarantees the schema is always up-to-date before new code runs. The `efbundle` binary is a transient build artifact — **do not commit it**.
 
 ## 🧪 Testing
 

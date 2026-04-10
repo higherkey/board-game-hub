@@ -25,6 +25,7 @@ Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angula
 ### Local Environment
 - **Dependencies:** Use `docker compose up -d postgres pgadmin` for the database.
 - **Startup:** Use `.\dev-start-dev.ps1` to launch the full development environment with hot reload.
+- **Database Migrations:** `db.Database.Migrate()` has been **removed** from `Program.cs`. Migrations are NOT applied at startup. After any model change, apply manually: `backend/migrate-db.ps1`.
 - **Backend Tests:** `dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj`
 - **Frontend Tests:** `npm --prefix frontend test` (Karma) and `npm --prefix frontend run test:babble` (Playwright).
 
@@ -36,6 +37,7 @@ Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angula
 ### Deployment
 - **Production:** Triggered by pushes to `main`.
 - **Workflows:** Located in `.github/workflows/`. Use `gh run list` and `gh run watch` to monitor deployments.
+- **Database Migrations (CI/CD):** On every push to `main` or `dev`, the backend workflow automatically builds an EF Core Migration Bundle and applies it to the target database **before** the new container is deployed. Do not commit `efbundle` or `efbundle.exe`. **Never re-add `db.Database.Migrate()` to `Program.cs`.**
 - **Secrets:** Never print or log GitHub secrets or environment variables.
 
 ## 3. Engineering Standards
