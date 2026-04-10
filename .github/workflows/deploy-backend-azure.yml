@@ -34,20 +34,21 @@ jobs:
           password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
 
       - name: Build and Push Docker Image
+        id: build_image
         run: |
           TAG=${{ github.ref_name }}
           IMAGE_NAME=${{ env.REGISTRY }}/board-game-hub-api:$TAG
           docker build -t $IMAGE_NAME -f backend/Dockerfile backend/
           docker push $IMAGE_NAME
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Determine Secrets
         id: determine_secrets
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-             echo "DB_CONNECTION=${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}" >> $GITHUB_ENV
+             echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "dev" ]]; then
-             echo "DB_CONNECTION=${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}" >> $GITHUB_ENV
+             echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}" >> "$GITHUB_OUTPUT"
           else
              echo "Error: Branch '${{ github.ref_name }}' is not supported for backend deployment."
              exit 1
@@ -59,7 +60,6 @@ jobs:
           acrName: boardgamehubacr
           containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-api' || 'board-game-hub-api-dev' }}
           resourceGroup: board-game-hub-rg
-          imageToDeploy: ${{ env.IMAGE_NAME }}
+          imageToDeploy: ${{ steps.build_image.outputs.image_name }}
           targetPort: 8080
-          secrets: "db-connection=${{ env.DB_CONNECTION }}"
-          environmentVariables: "ConnectionStrings__DefaultConnection=secretref:db-connection"
+          environmentVariables: "ConnectionStrings__DefaultConnection=${{ steps.determine_secrets.outputs.db_connection }}"

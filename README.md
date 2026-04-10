@@ -33,6 +33,14 @@ Current games include:
 - **[/backend](file:///c:/Programming/board%20game%20hub/backend)**: .NET Core API and SignalR hubs.
 - **[/docs](file:///c:/Programming/board%20game%20hub/docs)**: Technical documentation and architecture plans.
 
+## 🚢 Deployment & Database Migrations
+
+Deployments to `dev` and `main` are triggered automatically via GitHub Actions (`.github/workflows/`).
+
+**Database schema changes are applied automatically during deployment** using EF Core Migration Bundles — the schema is always updated *before* the new container starts. Developers should **never** apply migrations by re-adding `db.Database.Migrate()` to startup code.
+
+For full details on local and CI/CD migration workflows, see the [Backend README](file:///c:/Programming/board%20game%20hub/backend/README.md#-database-migrations).
+
 ## 🤝 Contributing
 
 We welcome contributions of all kinds! Whether you want to add a new game, improve the platform core, or polish the UX, we'd love to have you.

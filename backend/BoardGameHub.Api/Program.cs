@@ -175,10 +175,6 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (db.Database.IsRelational())
-    {
-        db.Database.Migrate();
-    }
     
     // Seed Roles and Admin User
     await DbInitializer.SeedAsync(scope.ServiceProvider);

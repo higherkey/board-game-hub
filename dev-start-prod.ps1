@@ -36,6 +36,26 @@ Write-Host "--- 1) Launching Database Dependencies ---" -ForegroundColor Cyan
 Set-Location "$ProjectRoot"
 docker compose up -d postgres pgadmin
 
+Write-Host "Waiting for database to be fully ready..." -ForegroundColor Yellow
+Start-Sleep -Seconds 3
+
+Write-Host "--- 1.5) Generating and Applying EF Migration Bundle ---" -ForegroundColor Cyan
+# This mirrors our GitHub Actions CI/CD deployment step
+dotnet ef migrations bundle --project backend/BoardGameHub.Api/BoardGameHub.Api.csproj --startup-project backend/BoardGameHub.Api/BoardGameHub.Api.csproj --self-contained --output efbundle.exe --force
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Migration bundle generation failed! Aborting startup."
+    Read-Host "Press Enter to exit..."
+    exit 1
+}
+
+Write-Host "Applying bundled migrations to local database..." -ForegroundColor Yellow
+.\efbundle.exe --connection "Host=localhost;Database=BoardGameHub;Username=postgres;Password=password"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Applying migrations failed! Aborting startup."
+    Read-Host "Press Enter to exit..."
+    exit 1
+}
+
 Write-Host "--- 2) Launching Backend Container Build & Run ---" -ForegroundColor Cyan
 $BackendScript = @"
 cd '$BackendDir'
