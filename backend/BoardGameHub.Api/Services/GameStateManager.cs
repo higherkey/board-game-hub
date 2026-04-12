@@ -85,27 +85,15 @@ public class GameStateManager
         {
             if (_activeRooms.TryGetValue(roomCode, out var room))
             {
-                // We don't lock here to avoid deadlock risks if caller already has lock?
-                // But DirtyMembers is not thread safe? 
-                // Actually HashSet isn't thread safe. 
-                // Caller (RoomService) SHOULD have locked the StateLock.
-                // But MarkDirty might be called from outside lock?
-                // Let's rely on RoomService protecting this.
-                lock(room.DirtyMembers) 
-                {
-                    room.DirtyMembers.Add(member);
-                }
+                room.DirtyMembers.TryAdd(member, 0);
             }
         }
         else
         {
-             // Null member -> Force full diff? 
+             // Null member -> Force full diff
              if (_activeRooms.TryGetValue(roomCode, out var room))
              {
-                 lock(room.DirtyMembers)
-                 {
-                     room.DirtyMembers.Add("ALL");
-                 }
+                 room.DirtyMembers.TryAdd("ALL", 0);
              }
         }
     }
@@ -129,12 +117,14 @@ public class GameStateManager
 
                 _dirtyRooms.TryRemove(roomCode, out _);
 
-                // Check Dirty Members
-                HashSet<string> dirtyMembers;
-                lock (liveRoom.DirtyMembers)
+                // Check Dirty Members - Extract and clear atomically
+                var dirtyMembers = new HashSet<string>();
+                foreach (var key in liveRoom.DirtyMembers.Keys)
                 {
-                    dirtyMembers = new HashSet<string>(liveRoom.DirtyMembers);
-                    liveRoom.DirtyMembers.Clear();
+                    if (liveRoom.DirtyMembers.TryRemove(key, out _))
+                    {
+                        dirtyMembers.Add(key);
+                    }
                 }
 
                 // If no specific members tracked, OR "ALL" is present, do Full Diff

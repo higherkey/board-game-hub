@@ -106,7 +106,7 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public void StartGame_ShouldSetState_AndInvokeGameService()
+    public async Task StartGame_ShouldSetState_AndInvokeGameService()
     {
         // Arrange
         var room = _sut.CreateRoom("host1", "Host", true, GameType.Scatterbrain);
@@ -116,7 +116,7 @@ public class RoomServiceTests
         _gameServices.Add(mockService.Object);
 
         // Act
-        _sut.StartGame(room.Code, new GameSettings { TimerDurationSeconds = 60 });
+        await _sut.StartGame(room.Code, new GameSettings { TimerDurationSeconds = 60 });
 
         // Assert
         room.State.Should().Be(GameState.Playing);
@@ -257,7 +257,7 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public void RequestUndo_ShouldStartVote_WhenNonHostRequests()
+    public async Task RequestUndo_ShouldStartVote_WhenNonHostRequests()
     {
         // Arrange
         var room = _sut.CreateRoom("host1", "Host", true);
@@ -266,7 +266,7 @@ public class RoomServiceTests
         _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
 
         // Act
-        var result = _sut.RequestUndo(room.Code, "conn2");
+        var result = await _sut.RequestUndo(room.Code, "conn2");
 
         // Assert
         result.Should().NotBeNull();
@@ -275,7 +275,7 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public void SubmitUndoVote_ShouldRevertStateOnSuccess()
+    public async Task SubmitUndoVote_ShouldRevertStateOnSuccess()
     {
         // Arrange
         var room = _sut.CreateRoom("host1", "Host", true);
@@ -283,10 +283,10 @@ public class RoomServiceTests
         _sut.JoinRoom(room.Code, "conn3", "Player3"); // 3 players total, need 2 votes for majority (> 50% of 3 is 1.5 -> 2)
         room.StateHistory.Push("{}");
         _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
-        _sut.RequestUndo(room.Code, "conn2"); // Initiator conn2 votes Yes automatically
+        await _sut.RequestUndo(room.Code, "conn2"); // Initiator conn2 votes Yes automatically
 
         // Act
-        var result = _sut.SubmitUndoVote(room.Code, "conn3", true); // Second Yes vote -> Majority reached
+        var result = await _sut.SubmitUndoVote(room.Code, "conn3", true); // Second Yes vote -> Majority reached
 
         // Assert
         result.Should().NotBeNull();
@@ -319,42 +319,42 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public void RequestUndo_HostOnly_ShouldPerformUndoImmediately()
+    public async Task RequestUndo_HostOnly_ShouldPerformUndoImmediately()
     {
         var room = _sut.CreateRoom("host1", "Host", true);
         room.StateHistory.Push("{}");
         _sut.UpdateUndoSettings(room.Code, new UndoSettings { HostOnly = true });
 
-        var result = _sut.RequestUndo(room.Code, "host1");
+        var result = await _sut.RequestUndo(room.Code, "host1");
 
         result.Should().NotBeNull();
         room.StateHistory.Count.Should().Be(0);
     }
 
     [Fact]
-    public void RequestUndo_HostOnly_NonHost_ShouldReturnNull()
+    public async Task RequestUndo_HostOnly_NonHost_ShouldReturnNull()
     {
         var room = _sut.CreateRoom("host1", "Host", true);
         _sut.JoinRoom(room.Code, "conn2", "Player2");
         room.StateHistory.Push("{}");
         _sut.UpdateUndoSettings(room.Code, new UndoSettings { HostOnly = true });
 
-        var result = _sut.RequestUndo(room.Code, "conn2");
+        var result = await _sut.RequestUndo(room.Code, "conn2");
 
         result.Should().BeNull();
         room.StateHistory.Count.Should().Be(1);
     }
 
     [Fact]
-    public void SubmitUndoVote_ShouldCloseVoteOnTotalCastWithoutMajority()
+    public async Task SubmitUndoVote_ShouldCloseVoteOnTotalCastWithoutMajority()
     {
         var room = _sut.CreateRoom("host1", "Host", true);
         _sut.JoinRoom(room.Code, "conn2", "Player2"); // 2 players total. Majority needed: > 2/2 = 1 (so 2).
         room.StateHistory.Push("{}");
         _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
-        _sut.RequestUndo(room.Code, "conn2"); // conn2 says Yes
+        await _sut.RequestUndo(room.Code, "conn2"); // conn2 says Yes
         
-        var result = _sut.SubmitUndoVote(room.Code, "host1", false); // host1 says No. 1 Yes, 1 No. 
+        var result = await _sut.SubmitUndoVote(room.Code, "host1", false); // host1 says No. 1 Yes, 1 No. 
 
         result.Should().NotBeNull();
         result!.CurrentVote.Should().BeNull(); // Closed because everyone voted
@@ -382,5 +382,56 @@ public class RoomServiceTests
         await _sut.SubmitAction(room.Code, "conn1", "SUBMIT_STROKE", null);
 
         room.StateHistory.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task StartGame_Concurrency_ShouldSerializeMutations()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("CONC_START", "Host", true, GameType.Scatterbrain);
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
+        // Simulate a delay in StartRound to increase race window
+        mockService.Setup(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()))
+            .Returns(async () => await Task.Delay(50));
+        _gameServices.Add(mockService.Object);
+
+        // Act - Call StartGame twice simultaneously
+        // First call passes settings (resets game), second call passes null (increments round)
+        var t1 = _sut.StartGame(room.Code, new GameSettings());
+        var t2 = _sut.StartGame(room.Code, null);
+
+        await Task.WhenAll(t1, t2);
+
+        // Assert
+        room.RoundNumber.Should().Be(2); // Exactly 2 rounds incremented
+        mockService.Verify(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task RequestUndo_ConcurrentVotes_ShouldHandleMajorityCorrectly()
+    {
+        // Arrange
+        var room = _sut.CreateRoom("CONC_UNDO", "Host", true);
+        _sut.JoinRoom(room.Code, "p2", "Player2");
+        _sut.JoinRoom(room.Code, "p3", "Player3");
+        _sut.JoinRoom(room.Code, "p4", "Player4");
+        _sut.JoinRoom(room.Code, "p5", "Player5"); // 5 players total, majority (> 2.5) is 3 votes
+        
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+
+        // Act - Start undo and cast multiple votes rapidly
+        await _sut.RequestUndo(room.Code, "p2"); // Vote 1 (Yes)
+        
+        var t1 = _sut.SubmitUndoVote(room.Code, "p3", true); // Vote 2 (Yes)
+        var t2 = _sut.SubmitUndoVote(room.Code, "p4", true); // Vote 3 (Yes) -> Majority!
+        var t3 = _sut.SubmitUndoVote(room.Code, "p5", true); // Vote 4 (Yes) -> Should be ignored as finished
+
+        await Task.WhenAll(t1, t2, t3);
+
+        // Assert
+        room.StateHistory.Count.Should().Be(0); // Successfully reverted
+        room.CurrentVote.Should().BeNull(); // Closed
     }
 }

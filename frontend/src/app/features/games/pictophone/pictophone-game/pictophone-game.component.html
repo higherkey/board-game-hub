@@ -10,7 +10,7 @@
 
             <!-- TIMER & ADMIN -->
             <div class="d-flex align-items-center gap-3">
-                <div *ngIf="room.roundEndTime && state.phase !== 'Reveal'"
+                <div *ngIf="room?.roundEndTime && state.phase !== 'Reveal'"
                     class="d-flex align-items-center gap-2 px-3 py-1 rounded-pill border"
                     [class.bg-danger-subtle]="(timeLeft$ | async)! < 10"
                     [class.text-danger]="(timeLeft$ | async)! < 10">
@@ -19,11 +19,11 @@
                 </div>
 
                 <div *ngIf="isHost && state.phase !== 'Reveal'" class="btn-group">
-                    <button class="btn btn-outline-secondary btn-sm" (click)="pauseGame()" *ngIf="!room.isPaused"
+                    <button class="btn btn-outline-secondary btn-sm" (click)="pauseGame()" *ngIf="!room?.isPaused"
                         title="Pause">
                         <i class="bi bi-pause-fill"></i>
                     </button>
-                    <button class="btn btn-outline-success btn-sm" (click)="resumeGame()" *ngIf="room.isPaused"
+                    <button class="btn btn-outline-success btn-sm" (click)="resumeGame()" *ngIf="room?.isPaused"
                         title="Resume">
                         <i class="bi bi-play-fill"></i>
                     </button>

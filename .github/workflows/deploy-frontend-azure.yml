@@ -33,6 +33,7 @@ jobs:
           password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
 
       - name: Build and Push Docker Image
+        id: build_image
         run: |
           TAG=${{ github.ref_name }}
           if [ "$TAG" = "main" ]; then
@@ -43,7 +44,7 @@ jobs:
           IMAGE_NAME=${{ env.REGISTRY }}/board-game-hub-frontend:$TAG
           docker build --build-arg CONFIGURATION=$BUILD_CONFIG -t $IMAGE_NAME -f frontend/Dockerfile frontend/
           docker push $IMAGE_NAME
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v1
@@ -52,5 +53,5 @@ jobs:
           # Deploy main -> 'board-game-hub-frontend', dev -> 'board-game-hub-frontend-dev'
           containerAppName: ${{ github.ref_name == 'main' && 'board-game-hub-frontend' || 'board-game-hub-frontend-dev' }}
           resourceGroup: board-game-hub-rg
-          imageToDeploy: ${{ env.IMAGE_NAME }}
+          imageToDeploy: ${{ steps.build_image.outputs.image_name }}
           targetPort: 8080
