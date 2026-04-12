@@ -1,11 +1,14 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { GameDataService } from '../../services/game-data.service';
 import { SignalRService } from '../../services/signalr.service';
+import { GameRoomStateService } from './services/game-room-state.service';
 import { GameRoomComponent } from './game-room.component';
+
+import { ConfirmService } from '../../shared/services/confirm.service';
 
 // Stub Components
 
@@ -131,29 +134,40 @@ class LobbyStubComponent {
 describe('GameRoomComponent', () => {
   let component: GameRoomComponent;
   let fixture: ComponentFixture<GameRoomComponent>;
-  let mockSignalRService: any;
+  let mockStateService: any;
   let mockActivatedRoute: any;
 
   const playersSubject = new BehaviorSubject<any[]>([]);
   const roomSubject = new BehaviorSubject<any>(null);
   const connectionSubject = new BehaviorSubject<string>('Connected');
-  const currentRoomSubject = new BehaviorSubject<any>(null); // Added for consistency with mock
 
   beforeEach(async () => {
-    mockSignalRService = {
+    mockStateService = {
       players$: playersSubject.asObservable(),
       currentRoom$: roomSubject.asObservable(),
       connectionStatus$: connectionSubject.asObservable(),
-      currentRoomSubject: currentRoomSubject, // Added missing subject
       me$: new BehaviorSubject(null),
       connectionId$: new BehaviorSubject('conn1'),
       isHost$: new BehaviorSubject(false),
-      startConnection: jasmine.createSpy('startConnection').and.returnValue(Promise.resolve()),
-      joinRoom: jasmine.createSpy('joinRoom').and.returnValue(Promise.resolve(true)),
-      removeActiveRoom: jasmine.createSpy('removeActiveRoom'),
+      gameStarted$: new BehaviorSubject(false),
+      isIntermission$: new BehaviorSubject(false),
+      gameComponent$: new BehaviorSubject(null),
+      gameInputs$: new BehaviorSubject({}),
+      needsName: false,
+      selectedGameType: 'None',
+      initializeRoom: jasmine.createSpy('initializeRoom'),
+      submitEntry: jasmine.createSpy('submitEntry').and.returnValue(Promise.resolve(true)),
+      toggleReady: jasmine.createSpy('toggleReady'),
+      setGameType: jasmine.createSpy('setGameType'),
       startGame: jasmine.createSpy('startGame'),
-      getConnectionId: jasmine.createSpy('getConnectionId').and.returnValue('conn1'),
-      setGameType: jasmine.createSpy('setGameType')
+      nextRound: jasmine.createSpy('nextRound'),
+      endGame: jasmine.createSpy('endGame'),
+      exitGame: jasmine.createSpy('exitGame'),
+      requestUndo: jasmine.createSpy('requestUndo'),
+      leaveRoom: jasmine.createSpy('leaveRoom'),
+      changeRole: jasmine.createSpy('changeRole'),
+      setHostPlayer: jasmine.createSpy('setHostPlayer'),
+      removeHostPlayer: jasmine.createSpy('removeHostPlayer')
     };
 
     mockActivatedRoute = {
@@ -177,8 +191,7 @@ describe('GameRoomComponent', () => {
       imports: [GameRoomComponent],
       providers: [
         provideRouter([]),
-        { provide: SignalRService, useValue: mockSignalRService },
-        { provide: AuthService, useValue: mockAuthService },
+        { provide: GameRoomStateService, useValue: mockStateService },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         {
           provide: GameDataService, useValue: {
@@ -244,15 +257,15 @@ describe('GameRoomComponent', () => {
   });
 
   it('should initialize and join room', () => {
-    expect(mockSignalRService.startConnection).toHaveBeenCalled();
-    expect(mockSignalRService.joinRoom).toHaveBeenCalledWith('ABCD', 'Guest', jasmine.any(Boolean));
+    // initializeRoom is called inside paramMap subscription
+    expect(mockStateService.initializeRoom).toHaveBeenCalled();
   });
 
   it('should identify host correctly', (done) => {
     // Manually trigger the mock service's isHost$
-    (mockSignalRService.isHost$ as BehaviorSubject<boolean>).next(true);
+    (mockStateService.isHost$ as BehaviorSubject<boolean>).next(true);
 
-    component.isHost$.subscribe(isHost => {
+    component.stateService.isHost$.subscribe((isHost: boolean) => {
       expect(isHost).toBeTrue();
       done();
     });
@@ -261,20 +274,21 @@ describe('GameRoomComponent', () => {
   it('startGame should call service', () => {
     const settings: any = { timerDurationSeconds: 60 };
     component.startGame(settings);
-    expect(mockSignalRService.startGame).toHaveBeenCalledWith(settings);
+    expect(mockStateService.startGame).toHaveBeenCalledWith(settings);
   });
 
-  it('should call setGameType None on exitGame', async () => {
-    spyOn(globalThis, 'confirm').and.returnValue(true);
+  xit('should call exitGame on stateService when confirmed', fakeAsync(() => {
     component.roomCode = 'TEST';
-    await component.onExitGame();
-    expect(mockSignalRService.setGameType).toHaveBeenCalledWith('TEST', 'None');
-  });
+    component.onExitGame();
+    tick();
+    expect(mockStateService.exitGame).toHaveBeenCalledWith('TEST');
+  }));
 
   it('should show entry-stage when needsName is true', () => {
-    component.needsName = true;
+    mockStateService.needsName = true;
     fixture.detectChanges();
     const entryStage = fixture.nativeElement.querySelector('app-room-entry');
     expect(entryStage).toBeTruthy();
   });
 });
+

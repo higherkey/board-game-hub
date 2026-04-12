@@ -3,38 +3,38 @@
     <app-room-header
         [isBigScreen]="isBigScreen"
         [roomCode]="roomCode"
-        [isLobby]="(currentRoom$ | async)?.gameType === 'None'"
-        [gameDisplayName]="getCurrentGameDisplayName((currentRoom$ | async)?.gameType)"
+        [isLobby]="(stateService.currentRoom$ | async)?.gameType === 'None'"
+        [gameDisplayName]="getCurrentGameDisplayName((stateService.currentRoom$ | async)?.gameType)"
         [videoChatReady]="videoChatReady"
         [isVideoActive]="isVideoActive"
-        [gameStarted]="(gameStarted$ | async) ?? false"
-        [currentRound]="(currentRoom$ | async)?.roundNumber || 1"
-        [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
-        [session]="session$ | async"
-        [showUndoButton]="(gameStarted$ | async) !== null && (gameStarted$ | async) !== false && (currentRoom$ | async)?.gameType !== 'Babble'"
+        [gameStarted]="(stateService.gameStarted$ | async) ?? false"
+        [currentRound]="(stateService.currentRoom$ | async)?.roundNumber || 1"
+        [totalRounds]="(stateService.currentRoom$ | async)?.totalRounds || (stateService.currentRoom$ | async)?.settings?.totalRounds || 5"
+        [session]="stateService.session$ | async"
+        [showUndoButton]="(stateService.gameStarted$ | async) !== null && (stateService.gameStarted$ | async) !== false && (stateService.currentRoom$ | async)?.gameType !== 'Babble'"
         (leaveRoom)="leaveRoom()"
         (startVideoChat)="videoChat?.joinVideo()"
         (requestUndo)="requestUndo()"
     ></app-room-header>
 
     <!-- UNDO TOAST OVERLAY -->
-    <app-undo-toast *ngIf="(currentRoom$ | async)?.currentVote" [vote]="(currentRoom$ | async)?.currentVote"
-        [currentUserId]="getMyConnectionId((currentRoom$ | async)?.players)"
-        [totalPlayers]="(currentRoom$ | async)?.players?.length || 0">
+    <app-undo-toast *ngIf="(stateService.currentRoom$ | async)?.currentVote" [vote]="(stateService.currentRoom$ | async)?.currentVote"
+        [currentUserId]="(stateService.connectionId$ | async) || ''"
+        [totalPlayers]="(stateService.currentRoom$ | async)?.players?.length || 0">
     </app-undo-toast>
 
     <!-- 2. MAIN BODY (Sidebar + Content) -->
     <div class="row flex-grow-1 g-3 position-relative section-container" [class.transitions-enabled]="enableTransitions">
         <!-- PLAYER SIDEBAR (Hidden during entry stage) -->
-        <div *ngIf="!needsName" class="col-md-4 col-lg-3 d-md-flex flex-column flex-grow-1 sidebar-panel"
+        <div *ngIf="!stateService.needsName" class="col-md-4 col-lg-3 d-md-flex flex-column flex-grow-1 sidebar-panel"
             [class.is-collapsed]="isSidebarCollapsed" [class.d-flex]="mobileView === 'players'"
             [class.d-none]="mobileView !== 'players'">
 
             <app-room-sidebar
-                [currentRoom]="currentRoom$ | async"
-                [players]="getPlayers(players$ | async)"
-                [tables]="getTables(players$ | async)"
-                [connectionId]="(connectionId$ | async) || ''"
+                [currentRoom]="stateService.currentRoom$ | async"
+                [players]="getPlayers(stateService.players$ | async)"
+                [tables]="getTables(stateService.players$ | async)"
+                [connectionId]="(stateService.connectionId$ | async) || ''"
                 (toggleSidebar)="toggleSidebar()"
                 (changeRole)="changeRole($event)"
                 (setHostPlayer)="onSetHostPlayer($event)"
@@ -49,7 +49,7 @@
 
         <!-- MAIN GAME STAGE -->
         <div class="main-stage-panel d-md-flex flex-column flex-grow-1 px-0"
-            [ngClass]="needsName ? 'col-12' : (isSidebarCollapsed ? 'col-md-12' : 'col-md-8 col-lg-9')" 
+            [ngClass]="stateService.needsName ? 'col-12' : (isSidebarCollapsed ? 'col-md-12' : 'col-md-8 col-lg-9')" 
             [class.d-flex]="mobileView === 'game'"
             [class.mobile-hidden]="mobileView !== 'game'" [class.has-docked-top]="videoLayout === 'docked-top'"
             [class.has-docked-bottom]="videoLayout === 'docked-bottom'"
@@ -74,26 +74,26 @@
                 <div class="flex-grow-1 d-flex flex-column">
 
                     <!-- ENTRY STAGE (Name / Room Creation) -->
-                    <app-room-entry *ngIf="needsName" class="flex-grow-1"
+                    <app-room-entry *ngIf="stateService.needsName" class="flex-grow-1"
                         [isCreating]="isCreating"
-                        [isGuest]="!!(session$ | async)?.isGuest"
+                        [isGuest]="!!(stateService.session$ | async)?.isGuest"
                         [initialName]="promptPlayerName"
                         (submitEntry)="submitEntry($event)"
                         (login)="goToLogin()">
                     </app-room-entry>
 
                     <!-- LOBBY STATE (Host Only Controls & Player Read-Only View) -->
-                    <ng-container *ngIf="!needsName && !(gameStarted$ | async)">
+                    <ng-container *ngIf="!stateService.needsName && !(stateService.gameStarted$ | async)">
                         <div class="row w-100 justify-content-center m-0">
                             <div class="col-12 px-0" style="max-width: 1200px;">
                                 <!-- Host Only Controls -->
-                                <div class="w-100" *ngIf="isHost$ | async">
+                                <div class="w-100" *ngIf="stateService.isHost$ | async">
                                     <app-host-settings [roomCode]="roomCode"
-                                        [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                                        [players]="(players$ | async) || []" [isHost]="true"
-                                        [meReady]="(me$ | async)?.isReady || false"
-                                        [isScreen]="(me$ | async)?.isScreen || false"
-                                        [isHostOverride]="(currentRoom$ | async)?.isHostOverride || false"
+                                        [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
+                                        [players]="(stateService.players$ | async) || []" [isHost]="true"
+                                        [meReady]="(stateService.me$ | async)?.isReady || false"
+                                        [isScreen]="(stateService.me$ | async)?.isScreen || false"
+                                        [isHostOverride]="(stateService.currentRoom$ | async)?.isHostOverride || false"
                                         (gameStart)="startGame($event)"
                                         (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
                                         (toggleReady)="toggleReady($event)">
@@ -101,97 +101,82 @@
                                 </div>
 
                                 <!-- Player Read-Only View -->
-                                <div class="w-100" *ngIf="!(isHost$ | async)">
-                                    <app-player-settings [roomCode]="roomCode" [room]="currentRoom$ | async"
-                                        [selectedGame]="selectedGame" [meReady]="(me$ | async)?.isReady || false"
-                                        [isScreen]="(me$ | async)?.isScreen || false" (toggleReady)="toggleReady($event)">
+                                <div class="w-100" *ngIf="!(stateService.isHost$ | async)">
+                                    <app-player-settings [roomCode]="roomCode" [room]="stateService.currentRoom$ | async"
+                                        [selectedGame]="selectedGame" [meReady]="(stateService.me$ | async)?.isReady || false"
+                                        [isScreen]="(stateService.me$ | async)?.isScreen || false" (toggleReady)="toggleReady($event)">
                                     </app-player-settings>
                                 </div>
                             </div>
                         </div>
                     </ng-container>
-        </div>
-        <!-- ACTIVE GAME STATE -->
-        <div *ngIf="!needsName && (gameStarted$ | async)" class="h-100 w-100 fade-in position-relative d-flex flex-column">
-
-            <div class="flex-grow-1 position-relative overflow-hidden">
-                <ng-container *ngIf="gameComponent" 
-                              [ngComponentOutlet]="gameComponent" 
-                              [ngComponentOutletInputs]="gameInputs">
-                </ng-container>
-
-                <!-- Fallback removed: All games should have explicit components now -->
-                <div *ngIf="!gameComponent"
-                    class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
-                    <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
-                    <p>Game component not found for {{ (currentRoom$ | async)?.gameType }}</p>
                 </div>
             </div>
+            <!-- ACTIVE GAME STATE -->
+            <div *ngIf="!stateService.needsName && (stateService.gameStarted$ | async)" class="h-100 w-100 fade-in position-relative d-flex flex-column">
 
-            <!-- INTERMISSION SETTINGS BAR (Host Only - Desktop) -->
-            <div *ngIf="(isIntermission$ | async) && (isHost$ | async)"
-                class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 shadow-lg border-top border-secondary d-none d-md-block"
-                style="background-color: var(--surface-card); box-shadow: 0 -5px 20px rgba(0,0,0,0.3) !important;">
-                <div class="container-fluid d-flex align-items-center justify-content-center">
-                    <app-host-settings [roomCode]="roomCode" [compactMode]="true" [isIntermission]="true"
-                        [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                        [currentRound]="(currentRoom$ | async)?.roundNumber || 0"
-                        [totalRounds]="(currentRoom$ | async)?.totalRounds || (currentRoom$ | async)?.settings?.totalRounds || 5"
-                        [players]="(players$ | async) || []"
-                        (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)">
-                    </app-host-settings>
-                </div>
-            </div>
+                <div class="flex-grow-1 position-relative overflow-hidden">
+                    <ng-container *ngIf="stateService.gameComponent$ | async as component" 
+                                  [ngComponentOutlet]="component" 
+                                  [ngComponentOutletInputs]="(stateService.gameInputs$ | async) || {}">
+                    </ng-container>
 
-            <!-- HOST CONTROLS (Mobile Only - Bottom of Game View) -->
-            <div class="d-md-none bg-surface border-top border-pink p-3" *ngIf="(isHost$ | async)">
-                 <!-- Toggle for Host Controls if they take up too much space? For now, just show them as requested -->
-                 <details class="mb-2">
-                    <summary class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
-                        <i class="bi bi-star-fill"></i> Host Controls
-                    </summary>
-                    <div class="mt-3 card shadow-sm border-warning">
-                        <div class="card-body p-3">
-                            <!-- Dynamic Host Controls from Active Game -->
-                            <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-3 border-bottom pb-3">
-                                <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
-                            </div>
-
-                            <app-host-settings [roomCode]="roomCode" [compactMode]="true"
-                                [currentGameType]="(currentRoom$ | async)?.gameType || ''"
-                                [meReady]="(me$ | async)?.isReady || false" [isHost]="(isHost$ | async) || false"
-                                [isScreen]="(me$ | async)?.isScreen || false"
-                                [isHostOverride]="(currentRoom$ | async)?.isHostOverride || false"
-                                (gameStart)="startGame($event)"
-                                (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
-                                (toggleReady)="toggleReady($event)">
-                            </app-host-settings>
-                        </div>
+                    <!-- Fallback removed: All games should have explicit components now -->
+                    <div *ngIf="!(stateService.gameComponent$ | async)"
+                        class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
+                        <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+                        <p>Game component not found for {{ (stateService.currentRoom$ | async)?.gameType }}</p>
                     </div>
-                 </details>
+                </div>
+
+                <!-- INTERMISSION SETTINGS BAR (Host Only - Desktop) -->
+                <div *ngIf="(stateService.isIntermission$ | async) && (stateService.isHost$ | async)"
+                    class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 shadow-lg border-top border-secondary d-none d-md-block"
+                    style="background-color: var(--surface-card); box-shadow: 0 -5px 20px rgba(0,0,0,0.3) !important;">
+                    <div class="container-fluid d-flex align-items-center justify-content-center">
+                        <app-host-settings [roomCode]="roomCode" [compactMode]="true" [isIntermission]="true"
+                            [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
+                            [currentRound]="(stateService.currentRoom$ | async)?.roundNumber || 0"
+                            [totalRounds]="(stateService.currentRoom$ | async)?.totalRounds || (stateService.currentRoom$ | async)?.settings?.totalRounds || 5"
+                            [players]="(stateService.players$ | async) || []"
+                            (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)">
+                        </app-host-settings>
+                    </div>
+                </div>
+
+                <!-- HOST CONTROLS (Mobile Only - Bottom of Game View) -->
+                <div class="d-md-none bg-surface border-top border-pink p-3" *ngIf="(stateService.isHost$ | async)">
+                     <!-- Toggle for Host Controls if they take up too much space? For now, just show them as requested -->
+                     <details class="mb-2">
+                        <summary class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-star-fill"></i> Host Controls
+                        </summary>
+                        <div class="mt-3 card shadow-sm border-warning">
+                            <div class="card-body p-3">
+                                <!-- Dynamic Host Controls from Active Game -->
+                                <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-3 border-bottom pb-3">
+                                    <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
+                                </div>
+
+                                <app-host-settings [roomCode]="roomCode" [compactMode]="true"
+                                    [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
+                                    [meReady]="(stateService.me$ | async)?.isReady || false" [isHost]="(stateService.isHost$ | async) || false"
+                                    [isScreen]="(stateService.me$ | async)?.isScreen || false"
+                                    [isHostOverride]="(stateService.currentRoom$ | async)?.isHostOverride || false"
+                                    (gameStart)="startGame($event)"
+                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
+                                    (toggleReady)="toggleReady($event)">
+                                </app-host-settings>
+                            </div>
+                        </div>
+                     </details>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- PLAYER VIEW -->
-    <ng-template #playerView>
-        <div class="d-flex flex-column justify-content-center h-100">
-            <!-- Dynamic Game Component -->
-            <ng-container *ngIf="gameComponent">
-                <ng-container *ngComponentOutlet="gameComponent; inputs: gameInputs"></ng-container>
-            </ng-container>
-
-            <div *ngIf="!gameComponent"
-                class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
-                <p>Game component not found.</p>
-            </div>
-        </div>
-    </ng-template>
-
 </div>
 
 <!-- 3. MOBILE TAB BAR (Small Screens Only) -->
-<app-mobile-tab-bar *ngIf="!needsName" [activeTab]="mobileView" [isHost]="(isHost$ | async) || false"
+<app-mobile-tab-bar *ngIf="!stateService.needsName" [activeTab]="mobileView" [isHost]="(stateService.isHost$ | async) || false"
     (tabChange)="setMobileView($event)">
 </app-mobile-tab-bar>
-
