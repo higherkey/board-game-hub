@@ -54,6 +54,20 @@ jobs:
              exit 1
           fi
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Apply Database Migrations
+        run: |
+          dotnet ef migrations bundle --project backend/BoardGameHub.Api --force
+          ./efbundle --connection "${{ steps.determine_secrets.outputs.db_connection }}"
+
+
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v1
         with:
