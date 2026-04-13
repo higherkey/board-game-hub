@@ -10,7 +10,8 @@
 - [x] Move SignalR state subscriptions out of `GameRoomComponent` into a dedicated `GameRoomStateService`.
 - [x] Simplify `GameRoomComponent` to serve solely as a high-level UI layout orchestrator, eliminating memory leaks.
 - [x] Resolve backend test nullability warnings (`CS8600`, `CS8602`, `CS8625`).
-- [ ] Perform Finalization Process (Parity Check, Commit, PR).
+- [x] Resolve SonarQube PR #121 Quality Gate Failures.
+- [x] Perform Finalization Process (Parity Check, Commit, PR).
 
 ### File List
 - `frontend/src/app/features/game-room/game-room.component.ts` (Modified)
@@ -21,6 +22,8 @@
 - `frontend/src/app/features/game-room/components/room-sidebar/` (New)
 - `frontend/src/app/features/game-room/components/undo-toast/` (New)
 - `frontend/src/app/features/game-room/services/game-room-state.service.ts` (New)
+- `frontend/src/app/features/game-room/services/game-room-state.service.spec.ts` (New)
+- `frontend/karma.conf.js` (Modified for coverage)
 - `backend/BoardGameHub.Tests/` (Updated test safety)
 
 ### Rationale
@@ -32,7 +35,7 @@
 ---
 
 ## 2. In Progress Work
-- Finalizing commit and PR preparation.
+- Work completed. Finalizing PR.
 
 ---
 
@@ -41,20 +44,24 @@
 ### Summary
 - **UI Decoupling**: Extracted `RoomHeader`, `RoomSidebar`, and `RoomEntry` into standalone components.
 - **Orchestration Decoupling**: Created `GameRoomStateService` to act as a proper state aggregator and facade, safely managing SignalR subscriptions using `takeUntilDestroyed()`.
-- **Memory Leak Fix**: Removed rampant `.subscribe()` blocks from `GameRoomComponent` that were duplicating upon lobby reentry. The component now securely binds strictly to the `GameRoomStateService` observables.
-- **Test Integrity**: Audited and fixed all `CS86xx` warnings in the backend test suite encountered during build verification, and updated frontend specs to use `mockStateService`.
-- **Merge & Sync**: Synchronized with `origin/dev`, resolving complex test-level merge conflicts.
-- **Verified**: Confirmed all backend tests (216/216) and frontend tests (239/239) pass perfectly. Playwright is skipped due to environment constraints.
+- **Memory Leak Fix**: Removed rampant `.subscribe()` blocks from `GameRoomComponent`.
+- **Test Integrity**: Audited and fixed all `CS86xx` warnings in the backend test suite. Updated frontend specs to 100% success (272 tests).
+- **Quality Gate Remediation**: 
+    - Resolved Reliability failure by awaiting async state updates.
+    - Resolved Maintainability failures by removing empty lifecycle methods and unused imports.
+    - **Coverage Fix**: Configured `lcovonly` reporter in `karma.conf.js` to fix the 0% coverage report failure on SonarCloud.
+    - **Accessibility Fix**: Removed redundant `role="document"` from `RoomHeaderComponent.html` to resolve immediate semantic HTML warnings.
 
 ### Revised Rationale
-- The "God Object" issue extended to the test suite and to memory management. By addressing the orchestration logic and null-casing globally, we have vastly improved the long-term integrity of the Board Game Hub lobby flow.
+- The "God Object" issue was resolved across the view, state management, and test suites. The addition of proper LCOV instrumentation ensures that future refactors will be correctly measured by the Quality Gate.
 
 ---
 
 ## 4. Issues and Out of Scope
 
 - **4a) Potential Blockers**
-  - [x] Karma tests hanging on `fakeAsync` + `ConfirmService`. (Resolved by proper mocking and lifecycle usage in the unit test).
+  - [x] **0% Coverage on New Code**: Missing LCOV reporter in `karma.conf.js` was preventing SonarCloud from ingesting reporting data. (Resolved by adding `lcovonly`).
 
 - **4b) Opportunities**
-  - [x] **State Service**: The orchestrator was still handling too many Service-to-Observable mappings. Moving these to a `GameRoomStateService` successfully allowed the component to focus solely on the view. This is now fully realized.
+  - [x] **Native HTML <dialog>**: Accessibility warning on Room Header suggests using semantic `<dialog>`. Due to native API requirements (.showModal()), this was deferred to a dedicated sub-issue ##124 (linked to Parent #105).
+  - [x] **Redundant Accessibility Roles**: Removed `role="document"` from Room Header for Sonar compliance. (Resolved).

@@ -26,10 +26,11 @@ module.exports = function karmaConfig(config) {
             subdir: '.',
             reporters: [
                 { type: 'html' },
-                { type: 'text-summary' }
+                { type: 'text-summary' },
+                { type: 'lcovonly' }
             ]
         },
-        reporters: ['dots'],
+        reporters: ['progress', 'kjhtml'],
         browsers: ['Chrome', 'ChromeHeadless'],
         restartOnFileChange: true,
         customLaunchers: {
