@@ -11,7 +11,12 @@ description: Full Senior Peer Review and Code Quality Audit
    - Memory leaks and lifecycle management
    - Performance bottlenecks
 
-2. **Immersion & UX Review** — Evaluate:
+2. **Audit Test Quality** — Refer to the `/testing-workflow`:
+   - Verify that all newly introduced logic has adequate unit test coverage.
+   - Confirm that all backend and frontend tests are passing.
+   - Look for opportunities to strengthen existing test suites.
+
+3. **Immersion & UX Review** — Evaluate:
    - Animation timing and feel between Table and Hand devices
    - Real-world physical gameplay metaphors (e.g. dealing, placing, lifting cards)
    - Synchronization gaps where experience breaks immersion

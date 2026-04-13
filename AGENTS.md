@@ -114,5 +114,7 @@ Run commands from repo root unless noted.
   - Use `gh run list/watch` to inspect deployment runs when needed.
 - `.agent/workflows/peer-review.md`:
   - Defines a full peer-review sequence (code/UX/accessibility/Sonar/build verification) for deep audit tasks.
+- `.agent/workflows/testing-workflow.md`:
+  - Dictates the monorepo approach to unit testing, execution verification, and coverage requirements.
 - `.agent/workflows/feature-tracking.md`:
   - **MANDATORY**: Running trace document (`/docs/traces/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`).
