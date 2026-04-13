@@ -1,10 +1,10 @@
 import { inject, Injectable, DestroyRef, Type } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BehaviorSubject, map, Observable, take } from 'rxjs';
+import { BehaviorSubject, map } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
-import { GameDataService, GameDefinition } from '../../../services/game-data.service';
-import { GameSettings, Player, Room, SignalRService } from '../../../services/signalr.service';
+import { GameDataService } from '../../../services/game-data.service';
+import { GameSettings, Room, SignalRService } from '../../../services/signalr.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { GAME_REGISTRY } from '../../games/game.registry';
@@ -94,9 +94,12 @@ export class GameRoomStateService {
 
     const gameConfig = this.getGameConfig(room.gameType);
     if (gameConfig) {
-      const component = gameConfig.playerComponent 
-        ? (isScreen ? gameConfig.hostComponent : gameConfig.playerComponent)
-        : gameConfig.hostComponent;
+      let component;
+      if (gameConfig.playerComponent) {
+        component = isScreen ? gameConfig.hostComponent : gameConfig.playerComponent;
+      } else {
+        component = gameConfig.hostComponent;
+      }
       this._gameComponent.next(component);
     } else {
       this._gameComponent.next(null);
@@ -193,17 +196,17 @@ export class GameRoomStateService {
     }
   }
 
-  setGameType(roomCode: string, gameType: string) {
+  async setGameType(roomCode: string, gameType: string) {
     try {
-      this.signalRService.setGameType(roomCode, gameType);
+      await this.signalRService.setGameType(roomCode, gameType);
     } catch (err) {
       this.logger.error('Failed to set game type', err);
     }
   }
 
-  startGame(settings: GameSettings) {
+  async startGame(settings: GameSettings) {
     try {
-      this.signalRService.startGame(settings);
+      await this.signalRService.startGame(settings);
     } catch (err) {
       this.logger.error('Failed to start game', err);
       this.toastService.showError('Failed to start game.');
