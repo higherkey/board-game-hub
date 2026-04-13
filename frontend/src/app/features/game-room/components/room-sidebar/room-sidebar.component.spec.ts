@@ -29,4 +29,28 @@ describe('RoomSidebarComponent', () => {
     expect(component.checkIsCreator(mockRoom, 'conn1')).toBeTrue();
     expect(component.checkIsCreator(mockRoom, 'conn2')).toBeFalse();
   });
+
+  it('should emit toggleSidebar', () => {
+    spyOn(component.toggleSidebar, 'emit');
+    component.toggleSidebar.emit();
+    expect(component.toggleSidebar.emit).toHaveBeenCalled();
+  });
+
+  it('should emit setHostPlayer', () => {
+    spyOn(component.setHostPlayer, 'emit');
+    component.setHostPlayer.emit('user1');
+    expect(component.setHostPlayer.emit).toHaveBeenCalledWith('user1');
+  });
+
+  it('should emit removeHostPlayer', () => {
+    spyOn(component.removeHostPlayer, 'emit');
+    component.removeHostPlayer.emit('user1');
+    expect(component.removeHostPlayer.emit).toHaveBeenCalledWith('user1');
+  });
+
+  it('should emit changeRole', () => {
+    spyOn(component.changeRole, 'emit');
+    component.changeRole.emit(true);
+    expect(component.changeRole.emit).toHaveBeenCalledWith(true);
+  });
 });

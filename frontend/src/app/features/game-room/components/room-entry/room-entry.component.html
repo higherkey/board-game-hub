@@ -15,7 +15,7 @@
 
         <div class="mb-3 text-start">
             <label for="playerNameInput" class="form-label fw-bold text-secondary">Your Display Name</label>
-            <input id="playerNameInput" type="text" 
+            <input #playerNameInput id="playerNameInput" type="text" 
                 class="form-control form-control-lg fw-bold subtle-placeholder"
                 [class.is-invalid]="showNameError"
                 [(ngModel)]="promptPlayerName" (keyup.enter)="onSubmit()"

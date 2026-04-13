@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -19,6 +19,8 @@ export class RoomEntryComponent implements OnInit {
   @Output() submitEntry = new EventEmitter<{ name: string, joinType: 'player' | 'table', isPublic: boolean }>();
   @Output() login = new EventEmitter<void>();
 
+  @ViewChild('playerNameInput') playerNameInput!: ElementRef<HTMLInputElement>;
+
   private readonly toastService = inject(ToastService);
 
   promptPlayerName = '';
@@ -35,8 +37,7 @@ export class RoomEntryComponent implements OnInit {
       this.showNameError = true;
       this.toastService.showError('Please enter a display name to continue.');
       setTimeout(() => {
-        const input = document.getElementById('playerNameInput');
-        if (input) input.focus();
+        this.playerNameInput?.nativeElement.focus();
       });
       return;
     }

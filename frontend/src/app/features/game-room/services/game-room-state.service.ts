@@ -137,13 +137,19 @@ export class GameRoomStateService {
   private autoJoin(roomCode: string, name: string) {
     const currentRoom = this.signalRService.currentRoomSubject.value;
     if (currentRoom?.code !== roomCode) {
-      this.signalRService.joinRoom(roomCode, name, false).then(success => {
-        if (!success) {
-          this.toastService.showError(`Room ${roomCode} not found or no longer active.`);
-          this.signalRService.removeActiveRoom(roomCode);
+      this.signalRService.joinRoom(roomCode, name, false)
+        .then(success => {
+          if (!success) {
+            this.toastService.showError(`Room ${roomCode} not found or no longer active.`);
+            this.signalRService.removeActiveRoom(roomCode);
+            this.router.navigate(['/games']);
+          }
+        })
+        .catch(err => {
+          this.logger.error(`[GameRoomStateService] Auto-join failed for ${roomCode}`, err);
+          this.toastService.showError('Failed to join room automatically.');
           this.router.navigate(['/games']);
-        }
-      });
+        });
     }
   }
 
@@ -151,8 +157,8 @@ export class GameRoomStateService {
     this.authService.setGuestName(entryData.name);
     const isScreen = entryData.joinType === 'table';
 
-    if (isCreating) {
-      try {
+    try {
+      if (isCreating) {
         const newCode = await this.signalRService.createRoom(
           entryData.name,
           entryData.isPublic,
@@ -163,31 +169,45 @@ export class GameRoomStateService {
         this.signalRService.updateIsHostStatus();
         this.router.navigate(['/game', newCode]);
         return true;
-      } catch (err) {
-        this.logger.error('Failed to create room', err);
-        this.toastService.showError('Failed to create room.');
-        return false;
+      } else {
+        this.logger.info(`User submitting entry to join room: ${roomCode}`);
+        await this.signalRService.joinRoom(roomCode, entryData.name, isScreen);
+        return true;
       }
-    } else {
-      this.logger.info(`User submitting entry to join room: ${roomCode}`);
-      await this.signalRService.joinRoom(roomCode, entryData.name, isScreen);
-      return true;
+    } catch (err) {
+      this.logger.error(`Failed to ${isCreating ? 'create' : 'join'} room`, err);
+      this.toastService.showError(`Failed to ${isCreating ? 'create' : 'join'} room. Please try again.`);
+      return false;
     }
   }
 
   // Facade methods for game actions
   async toggleReady(roomCode: string, forcedState?: boolean) {
     if (roomCode) {
-      await this.signalRService.toggleReady(roomCode, forcedState);
+      try {
+        await this.signalRService.toggleReady(roomCode, forcedState);
+      } catch (err) {
+        this.logger.error('Failed to toggle ready', err);
+        this.toastService.showError('Communication error. Please try again.');
+      }
     }
   }
 
   setGameType(roomCode: string, gameType: string) {
-    this.signalRService.setGameType(roomCode, gameType);
+    try {
+      this.signalRService.setGameType(roomCode, gameType);
+    } catch (err) {
+      this.logger.error('Failed to set game type', err);
+    }
   }
 
   startGame(settings: GameSettings) {
-    this.signalRService.startGame(settings);
+    try {
+      this.signalRService.startGame(settings);
+    } catch (err) {
+      this.logger.error('Failed to start game', err);
+      this.toastService.showError('Failed to start game.');
+    }
   }
 
   async nextRound(settings: GameSettings) {
@@ -195,45 +215,74 @@ export class GameRoomStateService {
       await this.signalRService.updateSettings(settings);
       await this.signalRService.nextRound();
     } catch (err) {
-      this.toastService.showError('Failed to start next round');
       this.logger.error('Next round failed', err);
+      this.toastService.showError('Failed to start next round');
     }
   }
 
   async endGame() {
-    await this.signalRService.endGame();
+    try {
+      await this.signalRService.endGame();
+    } catch (err) {
+      this.logger.error('Failed to end game', err);
+    }
   }
 
   async exitGame(roomCode: string) {
     if (roomCode) {
-      await this.signalRService.setGameType(roomCode, 'None');
+      try {
+        await this.signalRService.setGameType(roomCode, 'None');
+      } catch (err) {
+        this.logger.error('Failed to exit game', err);
+      }
     }
   }
 
   async requestUndo() {
-    this.signalRService.requestUndo();
+    try {
+      await this.signalRService.requestUndo();
+    } catch (err) {
+      this.logger.error('Failed to request undo', err);
+    }
   }
 
   async leaveRoom(roomCode: string) {
-    if (roomCode) {
-      await this.signalRService.leaveRoom(roomCode);
+    try {
+      if (roomCode) {
+        await this.signalRService.leaveRoom(roomCode);
+      }
+    } catch (err) {
+      this.logger.error('Failed to leave room', err);
+    } finally {
+      this.router.navigate(['/games']);
     }
-    this.router.navigate(['/games']);
   }
 
   async changeRole(isScreen: boolean) {
-    await this.signalRService.changeRole(isScreen);
-  }
-
-  setHostPlayer(roomCode: string, targetId: string) {
-    if (roomCode) {
-      this.signalRService.setHostPlayer(roomCode, targetId);
+    try {
+      await this.signalRService.changeRole(isScreen);
+    } catch (err) {
+      this.logger.error('Failed to change role', err);
     }
   }
 
-  removeHostPlayer(roomCode: string, targetId: string) {
+  async setHostPlayer(roomCode: string, targetId: string) {
     if (roomCode) {
-      this.signalRService.removeHostPlayer(roomCode, targetId);
+      try {
+        await this.signalRService.setHostPlayer(roomCode, targetId);
+      } catch (err) {
+        this.logger.error('Failed to set host player', err);
+      }
+    }
+  }
+
+  async removeHostPlayer(roomCode: string, targetId: string) {
+    if (roomCode) {
+      try {
+        await this.signalRService.removeHostPlayer(roomCode, targetId);
+      } catch (err) {
+        this.logger.error('Failed to remove host player', err);
+      }
     }
   }
 }

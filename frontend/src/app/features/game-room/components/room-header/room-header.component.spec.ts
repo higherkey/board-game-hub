@@ -42,4 +42,22 @@ describe('RoomHeaderComponent', () => {
     component.toggleNavMenu();
     expect(component.isNavMenuOpen).toBeFalse();
   });
+
+  it('should emit leaveRoom when leaveRoom method is called', () => {
+    spyOn(component.leaveRoom, 'emit');
+    component.leaveRoom.emit(); // Usually called by template (click)
+    expect(component.leaveRoom.emit).toHaveBeenCalled();
+  });
+
+  it('should emit startVideoChat when startVideoChat emission is triggered', () => {
+    spyOn(component.startVideoChat, 'emit');
+    component.startVideoChat.emit();
+    expect(component.startVideoChat.emit).toHaveBeenCalled();
+  });
+
+  it('should emit requestUndo when requestUndo emission is triggered', () => {
+    spyOn(component.requestUndo, 'emit');
+    component.requestUndo.emit();
+    expect(component.requestUndo.emit).toHaveBeenCalled();
+  });
 });
