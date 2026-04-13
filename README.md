@@ -41,14 +41,21 @@ Deployments to `dev` and `main` are triggered automatically via GitHub Actions (
 
 For full details on local and CI/CD migration workflows, see the [Backend README](file:///c:/Programming/board%20game%20hub/backend/README.md#-database-migrations).
 
+## ✅ Testing & Quality
+
+Board Game Hub maintains mission-critical stability through a standardized testing methodology:
+- **Comprehensive Testing**: All features are validated with .NET unit tests (Backend) and Karma/Jasmine specs (Frontend). See our [.agent/workflows/testing-workflow.md](.agent/workflows/testing-workflow.md) for full standards.
+- **Peer Review**: Every significant change undergoes a senior-level code and UX audit.
+- **Future Ready**: We are currently preparing for additional E2E coverage via Playwright.
+
 ## 🤝 Contributing
 
 We welcome contributions of all kinds! Whether you want to add a new game, improve the platform core, or polish the UX, we'd love to have you.
 
 - **Human-only?** No problem. Please ensure you maintain a manual work trace in `docs/traces/` for your feature branch.
-- **Using AI?** We have established AI workflows in `.agent/workflows` to help you move faster.
+- **Using AI?** We have established AI workflows in `.agent/workflows` to help you move faster. Mandatory tracking and testing standards apply to all AI-assisted work.
 
-Please read **[CONTRIBUTING.md](file:///c:/Programming/board%20game%20hub/CONTRIBUTING.md)** for developer workflow standards and legal terms.
+Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for developer workflow standards and legal terms.
 
 ## ⚖️ License
 
