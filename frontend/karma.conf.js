@@ -19,18 +19,19 @@ module.exports = function karmaConfig(config) {
             clearContext: false // leave Jasmine Spec Runner output visible in browser
         },
         jasmineHtmlReporter: {
-            suppressAll: true // removes the duplicated traces
+            suppressAll: true
         },
         coverageReporter: {
             dir: require('path').join(__dirname, './coverage/frontend'),
             subdir: '.',
             reporters: [
                 { type: 'html' },
-                { type: 'text-summary' },
-                { type: 'lcovonly' }
+                { type: 'lcovonly', file: 'lcov.info' },
+                { type: 'text-summary' }
             ]
         },
-        reporters: ['progress', 'kjhtml'],
+
+        reporters: ['progress', 'kjhtml', 'coverage'],
         browsers: ['Chrome', 'ChromeHeadless'],
         restartOnFileChange: true,
         customLaunchers: {

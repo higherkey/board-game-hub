@@ -37,6 +37,9 @@ Execute unit tests via **Karma**:
 npm test
 ```
 
+### Coverage Tracking
+For CI/CD scanning, tests are run with `--code-coverage` to generate an `lcov.info` report. This report is ingested by the **SonarScanner for .NET** during our centralized GitHub Actions run (`.github/workflows/sonar.yml`). You can find full details about our Unified Monorepo SonarCloud architecture in the [project root testing workflow](../.agent/workflows/testing-workflow.md).
+
 ### End-to-End Tests
 Execute Playwright tests (specifically for the Babble game suite):
 ```powershell

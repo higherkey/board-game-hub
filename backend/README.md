@@ -63,5 +63,8 @@ We use **xUnit** for our test suite. To run all backend tests:
 dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj
 ```
 
+### Coverage Tracking
+For CI/CD scanning, tests are run with `/p:CollectCoverage=true` to generate OpenCover XML reports. These reports are ingested by the **SonarScanner for .NET** during our centralized GitHub Actions run (`.github/workflows/sonar.yml`). You can find full details about our Unified Monorepo SonarCloud architecture in the [project root testing workflow](../.agent/workflows/testing-workflow.md).
+
 ## 🔐 Authentication
 The API uses **JWT-based authentication** integrated with **ASP.NET Core Identity**. Tokens are passed via the SignalR `access_token` query parameter during the negotiation phase.

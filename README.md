@@ -45,6 +45,7 @@ For full details on local and CI/CD migration workflows, see the [Backend README
 
 Board Game Hub maintains mission-critical stability through a standardized testing methodology:
 - **Comprehensive Testing**: All features are validated with .NET unit tests (Backend) and Karma/Jasmine specs (Frontend). See our [.agent/workflows/testing-workflow.md](.agent/workflows/testing-workflow.md) for full standards.
+- **SonarCloud Monorepo Analysis**: We utilize a **Unified Monorepo Architecture** via `dotnet-sonarscanner`. This ensures accurate Roslyn-based analysis for C# and single-pane-of-glass coverage reports. *Note: Automatic Analysis in SonarCloud must remain disabled to prevent scanning conflicts.*
 - **Peer Review**: Every significant change undergoes a senior-level code and UX audit.
 - **Future Ready**: We are currently preparing for additional E2E coverage via Playwright.
 

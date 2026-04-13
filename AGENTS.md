@@ -106,7 +106,8 @@ Run commands from repo root unless noted.
   - **Issue Reference**: Link GitHub Issues with `#123` or `fixes #123` where applicable.
   - **GitHub Enforcement**: PR titles are strictly linted via `.github/workflows/lint-pr.yml`.
 - `.cursor/rules/sonarqube-workflow.mdc` + `.agent/workflows/sonarqube-review.md`:
-  - Use `sonar-scanner` only to run/upload analysis.
+  - Enforces the **Unified Monorepo Architecture**: Use `dotnet-sonarscanner` within `.github/workflows/sonar.yml` to sequence backend/frontend analysis.
+  - **CRITICAL**: SonarCloud "Automatic Analysis" must remain OFF to prevent pipeline overriding and 0% coverage bugs.
   - Use Sonar Web API/MCP/UI for gates/issues/hotspots/transitions.
   - Use `gh` for GitHub/CI context, not as a Sonar client.
 - `.cursor/agents/deploy.md`:

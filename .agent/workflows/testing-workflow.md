@@ -47,12 +47,23 @@ Run these commands from the repository root:
 
 ---
 
-## 3. Coverage Requirements
+## 3. Coverage Requirements & SonarCloud Analysis
 
-For every new feature or significant refactor, coverage MUST be evaluated:
+For every new feature or significant refactor, coverage MUST be evaluated. We enforce a Unified Monorepo SonarCloud architecture to ensure single-pane-of-glass quality gates.
+
+### 3a. SonarCloud Architecture
+We use the **SonarScanner for .NET** (`dotnet-sonarscanner`) via the `.github/workflows/sonar.yml` pipeline instead of the generic SonarCloud Action. This "scanner sandwich" architecture is mandatory for accurate C# code analysis within a monorepo:
+1. `dotnet sonarscanner begin`: Initializes analysis, setting paths to both backend (OpenCover) and frontend (LCOV) coverages.
+2. `npm run test` & `dotnet build` & `dotnet test`: Execution and compilation phases.
+3. `dotnet sonarscanner end`: Wraps the compiler output and ships the unified report.
+
+> [!WARNING]
+> **Automatic Analysis MUST remain OFF** in the SonarCloud UI (Administration -> Analysis Method). If Automatic Analysis is enabled, it will override our CI pipeline, run a shallow generic scan, and erroneously report 0% coverage across the repository.
+
+### 3b. Local Coverage Evaluation
 - **Adequacy**: Ensure all newly introduced critical logic paths are exercised by tests.
 - **Regression**: Verify that existing functionality remains covered and unbroken.
-- **Tools**: Use `sonar-scanner` or IDE-integrated coverage tools to identify gaps if requested by the USER.
+- **Tools**: Use `sonar-scanner` locally or IDE-integrated coverage tools to identify gaps if requested by the USER.
 
 ---
 
