@@ -81,7 +81,9 @@ All three modes can be triggered **manually by the USER at any time**.
 
 Follow this sequence exactly when concluding work on a branch:
 
-1.  **Final Verification**: Run builds and tests. Ensure the code is 100% ready.
+1.  **Verification & Testing**: 
+    - Execute the `/testing-workflow` to ensure all backend and frontend tests pass and coverage is adequate.
+    - Ensure the code is 100% ready and meets all engineering standards.
 2.  **Issue Triage (4a & 4b)**: Present all items in Section 4 to the USER. 
     - **Blocker Protocol**: If a 4a item is converted to an issue, establish a formal **Blocker** relationship using GraphQL (see Section 8).
     - **Hierarchy Protocol**: If a 4b item is converted to a sub-issue, establish a formal **Parent** relationship.
@@ -91,10 +93,14 @@ Follow this sequence exactly when concluding work on a branch:
     git diff --name-only <target-branch>
     ```
 4.  **Functional Walkthrough**: Present a demo (build output, screenshots, recordings, or written summary).
-5.  **Confirm with USER**: Receive **EXPLICIT approval** to commit.
-    - **Rejection/Feedback**: If the USER requests changes or rework during the walkthrough or confirmation step, you MUST return to the active development phase. Update the **Planned Work** (Section 1) and **TODO List** to reflect the new requirements, then repeat the finalization sequence once the new work is complete.
-6.  **Final Commit**: Run `git commit` to seal the code and finalized trace document together.
-7.  **Create Pull Request**: Run `gh pr create`. Link to the parent issue and the trace document.
+5.  **Senior Peer Review**: Run the `/peer-review` workflow. This is the final quality gate.
+6.  **Confirm with USER**: Receive **EXPLICIT approval** to commit.
+7.  **Self-Referential Correction**: If any stage above reveals missing coverage, bugs, or architectural issues:
+    - You MUST return to the active development phase (Section 2/3). 
+    - Update the **Planned Work** (Section 1) and **TODO List** to reflect the new requirements.
+    - Re-run the finalization sequence from step 1 once the new work is complete.
+8.  **Final Commit**: Run `git commit` to seal the code and finalized trace document together.
+9.  **Create Pull Request**: Run `gh pr create`. Link to the parent issue and the trace document.
 
 ---
 
