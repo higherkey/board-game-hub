@@ -52,13 +52,16 @@ jobs:
             /o:"higherkey" \
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
-            /d:sonar.javascript.lcov.reportPaths="frontend/coverage/frontend/lcov.info" \
+            /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/coverage.opencover.xml" \
+            /d:sonar.javascript.lcov.reportPaths="${{ github.workspace }}/frontend/coverage/frontend/lcov.info" \
             /d:sonar.sources="backend/BoardGameHub.Api,frontend/src" \
-            /d:sonar.exclusions="**/node_modules/**,**/obj/**,**/bin/**,**/*.spec.ts,backend/BoardGameHub.Tests/**"
+            /d:sonar.exclusions="**/node_modules/**,**/obj/**,**/bin/**,**/*.spec.ts,backend/BoardGameHub.Tests/**" \
+            /d:sonar.projectBaseDir="${{ github.workspace }}"
 
       - name: Run Frontend Tests & Coverage
-        run: npm --prefix frontend test -- --code-coverage --no-watch --no-progress --browsers=ChromeHeadless
+        run: |
+          npm --prefix frontend test -- --code-coverage --no-watch --no-progress --browsers=ChromeHeadless
+          sed -i 's|SF:src/|SF:frontend/src/|g' frontend/coverage/frontend/lcov.info
 
       - name: Build Backend (Required for accurate C# analysis)
         run: dotnet build backend/BoardGameHub.sln --no-restore
@@ -69,7 +72,7 @@ jobs:
             --no-build \
             /p:CollectCoverage=true \
             /p:CoverletOutputFormat=opencover \
-            /p:CoverletOutput=../../coverage.opencover.xml
+            /p:CoverletOutput="${{ github.workspace }}/coverage.opencover.xml"
 
       - name: End Sonar Analysis
         env:
