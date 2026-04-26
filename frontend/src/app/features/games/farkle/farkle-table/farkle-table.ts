@@ -1,7 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room } from '../../../../services/signalr.service';
-import { GameShellInputs } from '../../../../core/platform/table-hand.types';
 
 @Component({
   selector: 'app-farkle-table',

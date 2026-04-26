@@ -1,6 +1,6 @@
 <div class="farkle-table-container" *ngIf="state">
   <!-- Sidebar Scoreboard -->
-  <div class="scoreboard" role="region" aria-label="Scoreboard">
+  <section class="scoreboard" aria-label="Scoreboard">
     <div class="scoreboard-header">Scoreboard</div>
     <div class="player-row" *ngFor="let p of getPlayerList(state.playerStates)"
          [class.active]="p.playerId === state.activePlayerId"
@@ -9,7 +9,7 @@
       <div class="player-score">{{ p.totalScore | number }}</div>
       <div class="last-turn" *ngIf="p.lastTurnScore > 0">+{{ p.lastTurnScore }}</div>
     </div>
-  </div>
+  </section>
 
   <!-- Main Game Area -->
   <div class="main-area">

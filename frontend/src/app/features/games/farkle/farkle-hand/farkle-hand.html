@@ -1,7 +1,7 @@
 <div class="farkle-hand-container" *ngIf="state">
   <!-- Status Bar -->
-  <div class="status-bar" [class.active]="myConnectionId === state.activePlayerId"
-       role="status" aria-label="Current turn status">
+  <output class="status-bar" [class.active]="myConnectionId === state.activePlayerId"
+       aria-label="Current turn status">
     <div class="player-info">
       <span class="label">Current Player:</span>
       <span class="value">{{ state.playerStates[state.activePlayerId]?.playerName || 'Unknown' }}</span>
@@ -11,12 +11,12 @@
       <span class="value">{{ state.currentTurnScore }}</span>
     </div>
     <button class="rules-btn" (click)="toggleScoringAid()" aria-label="View scoring guide">?</button>
-  </div>
+  </output>
 
   <!-- Scoring Aid Overlay -->
-  <div class="scoring-aid-overlay" *ngIf="showScoringAid" (click)="toggleScoringAid()"
-       role="dialog" aria-label="Scoring guide" aria-modal="true">
-    <div class="scoring-aid-content" (click)="$event.stopPropagation()">
+  <dialog class="scoring-aid-overlay" [open]="showScoringAid" (click)="toggleScoringAid()" (keydown.escape)="toggleScoringAid()"
+       aria-label="Scoring guide">
+    <div class="scoring-aid-content" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
       <h3>Scoring Guide</h3>
       <ul>
         <li><span>1s</span> <span>100 pts</span></li>
@@ -31,29 +31,27 @@
       </ul>
       <button class="close-btn" (click)="toggleScoringAid()">Got it</button>
     </div>
-  </div>
+  </dialog>
 
   <!-- Dice Area -->
-  <div class="dice-grid" role="group" aria-label="Dice">
-    <div *ngFor="let die of state.dice; let i = index" 
+  <fieldset class="dice-grid" aria-label="Dice">
+    <button *ngFor="let die of state.dice; let i = index" 
          class="die-wrapper"
          [class.held]="die.isHeld"
          [class.reserved]="die.isReserved"
          [class.available]="!die.isHeld && !die.isReserved"
-         role="button"
          [tabindex]="die.isHeld ? -1 : 0"
          [attr.aria-label]="'Die showing ' + die.value + (die.isHeld ? ', banked' : die.isReserved ? ', selected' : ', available')"
          [attr.aria-pressed]="die.isReserved"
-         (click)="toggleDie(i)"
-         (keydown.enter)="toggleDie(i)"
-         (keydown.space)="$event.preventDefault(); toggleDie(i)">
+         [disabled]="die.isHeld"
+         (click)="toggleDie(i)">
       <div class="die" [attr.data-value]="die.value" aria-hidden="true">
         <div class="pip" *ngFor="let p of [].constructor(die.value)"></div>
       </div>
       <div class="status-indicator" *ngIf="die.isHeld">Banked</div>
       <div class="status-indicator" *ngIf="die.isReserved">Selected</div>
-    </div>
-  </div>
+    </button>
+  </fieldset>
 
   <!-- Controls -->
   <div class="controls" *ngIf="myConnectionId === state.activePlayerId">

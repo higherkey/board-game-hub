@@ -1,7 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService, Room } from '../../../../services/signalr.service';
-import { GameShellInputs } from '../../../../core/platform/table-hand.types';
 
 export enum FarklePhase {
   Rolling = 'Rolling',
@@ -57,7 +56,7 @@ export class FarkleHandComponent {
     return this.room?.gameData as FarkleState;
   }
 
-  constructor(private signalRService: SignalRService) {}
+  constructor(private readonly signalRService: SignalRService) {}
 
   roll(): void {
     this.signalRService.sendGameAction('ROLL', {});
