@@ -1,0 +1,65 @@
+<div class="farkle-table-container" *ngIf="state">
+  <!-- Sidebar Scoreboard -->
+  <div class="scoreboard" role="region" aria-label="Scoreboard">
+    <div class="scoreboard-header">Scoreboard</div>
+    <div class="player-row" *ngFor="let p of getPlayerList(state.playerStates)"
+         [class.active]="p.playerId === state.activePlayerId"
+         [attr.aria-label]="p.playerName + ': ' + p.totalScore + ' points' + (p.playerId === state.activePlayerId ? ', current player' : '')">
+      <div class="player-name">{{ p.playerName }}</div>
+      <div class="player-score">{{ p.totalScore | number }}</div>
+      <div class="last-turn" *ngIf="p.lastTurnScore > 0">+{{ p.lastTurnScore }}</div>
+    </div>
+  </div>
+
+  <!-- Main Game Area -->
+  <div class="main-area">
+    <div class="header">
+      <div class="current-turn-info">
+        <span class="active-player-name">{{ state.playerStates[state.activePlayerId]?.playerName }}'s Turn</span>
+        <span class="turn-score" *ngIf="state.currentTurnScore > 0">Current Score: {{ state.currentTurnScore }}</span>
+      </div>
+    </div>
+
+    <!-- Dice Tray with Perspective -->
+    <div class="dice-tray-wrapper">
+      <div class="dice-tray">
+        <div *ngFor="let die of state.dice" 
+             class="die-3d" 
+             [class.held]="die.isHeld" 
+             [class.reserved]="die.isReserved"
+             [attr.data-value]="die.value">
+          <div class="die-face">
+            <div class="pip" *ngFor="let p of [].constructor(die.value)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay Announcements -->
+    <div class="announcement-overlay" *ngIf="state.phase === 'Farkled'"
+         role="alert" aria-live="assertive">
+      <div class="farkle-burst">FARKLE!</div>
+    </div>
+    
+    <div class="announcement-overlay" *ngIf="state.phase === 'GameOver'"
+         role="alert" aria-live="assertive">
+      <div class="winner-burst">WINNER: {{ state.playerStates[state.winningPlayerId!]?.playerName }}</div>
+    </div>
+  </div>
+
+  <!-- Permanent Scoring Aid Sidebar -->
+  <div class="scoring-guide">
+    <div class="guide-header">Scoring Guide</div>
+    <div class="guide-list">
+      <div class="guide-item"><span>1s</span> <span>100 pts</span></div>
+      <div class="guide-item"><span>5s</span> <span>50 pts</span></div>
+      <div class="guide-item"><span>Three 1s</span> <span>1000 pts</span></div>
+      <div class="guide-item"><span>Three of a Kind</span> <span>Value × 100</span></div>
+      <div class="guide-item"><span>Four of a Kind</span> <span>2 × (3 of a kind)</span></div>
+      <div class="guide-item"><span>Five of a Kind</span> <span>4 × (3 of a kind)</span></div>
+      <div class="guide-item"><span>Six of a Kind</span> <span>8 × (3 of a kind)</span></div>
+      <div class="guide-item"><span>Straight (1-6)</span> <span>1500 pts</span></div>
+      <div class="guide-item"><span>Three Pairs</span> <span>1500 pts</span></div>
+    </div>
+  </div>
+</div>

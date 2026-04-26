@@ -1,0 +1,91 @@
+<div class="farkle-hand-container" *ngIf="state">
+  <!-- Status Bar -->
+  <div class="status-bar" [class.active]="myConnectionId === state.activePlayerId"
+       role="status" aria-label="Current turn status">
+    <div class="player-info">
+      <span class="label">Current Player:</span>
+      <span class="value">{{ state.playerStates[state.activePlayerId]?.playerName || 'Unknown' }}</span>
+    </div>
+    <div class="score-info">
+      <span class="label">Turn Score:</span>
+      <span class="value">{{ state.currentTurnScore }}</span>
+    </div>
+    <button class="rules-btn" (click)="toggleScoringAid()" aria-label="View scoring guide">?</button>
+  </div>
+
+  <!-- Scoring Aid Overlay -->
+  <div class="scoring-aid-overlay" *ngIf="showScoringAid" (click)="toggleScoringAid()"
+       role="dialog" aria-label="Scoring guide" aria-modal="true">
+    <div class="scoring-aid-content" (click)="$event.stopPropagation()">
+      <h3>Scoring Guide</h3>
+      <ul>
+        <li><span>1s</span> <span>100 pts</span></li>
+        <li><span>5s</span> <span>50 pts</span></li>
+        <li><span>Three 1s</span> <span>1000 pts</span></li>
+        <li><span>Three of a Kind</span> <span>Value &times; 100</span></li>
+        <li><span>Four of a Kind</span> <span>2 &times; (3 of a kind)</span></li>
+        <li><span>Five of a Kind</span> <span>4 &times; (3 of a kind)</span></li>
+        <li><span>Six of a Kind</span> <span>8 &times; (3 of a kind)</span></li>
+        <li><span>Straight (1-6)</span> <span>1500 pts</span></li>
+        <li><span>Three Pairs</span> <span>1500 pts</span></li>
+      </ul>
+      <button class="close-btn" (click)="toggleScoringAid()">Got it</button>
+    </div>
+  </div>
+
+  <!-- Dice Area -->
+  <div class="dice-grid" role="group" aria-label="Dice">
+    <div *ngFor="let die of state.dice; let i = index" 
+         class="die-wrapper"
+         [class.held]="die.isHeld"
+         [class.reserved]="die.isReserved"
+         [class.available]="!die.isHeld && !die.isReserved"
+         role="button"
+         [tabindex]="die.isHeld ? -1 : 0"
+         [attr.aria-label]="'Die showing ' + die.value + (die.isHeld ? ', banked' : die.isReserved ? ', selected' : ', available')"
+         [attr.aria-pressed]="die.isReserved"
+         (click)="toggleDie(i)"
+         (keydown.enter)="toggleDie(i)"
+         (keydown.space)="$event.preventDefault(); toggleDie(i)">
+      <div class="die" [attr.data-value]="die.value" aria-hidden="true">
+        <div class="pip" *ngFor="let p of [].constructor(die.value)"></div>
+      </div>
+      <div class="status-indicator" *ngIf="die.isHeld">Banked</div>
+      <div class="status-indicator" *ngIf="die.isReserved">Selected</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls" *ngIf="myConnectionId === state.activePlayerId">
+    <!-- aria-live announces phase changes to screen readers -->
+    <div aria-live="assertive" aria-atomic="true" class="sr-only">
+      <ng-container [ngSwitch]="state.phase">
+        <span *ngSwitchCase="'Farkled'">Farkle! Your turn is over.</span>
+        <span *ngSwitchCase="'Rolling'">Dice are rolling.</span>
+        <span *ngSwitchCase="'Banked'">Points banked.</span>
+      </ng-container>
+    </div>
+    <ng-container [ngSwitch]="state.phase">
+      <div *ngSwitchCase="'Picking'" class="button-group">
+        <button class="btn roll" (click)="roll()">Roll Again</button>
+        <button class="btn bank" [disabled]="state.currentTurnScore === 0" (click)="bank()">Bank Points</button>
+      </div>
+      
+      <div *ngSwitchCase="'Rolling'" class="phase-msg">
+        <span class="rolling-text">Dice are rolling...</span>
+      </div>
+
+      <div *ngSwitchCase="'Farkled'" class="phase-msg farkle">
+        <span class="farkle-text">FARKLE!</span>
+      </div>
+
+      <div *ngSwitchCase="'Banked'" class="phase-msg banked">
+        <span class="banked-text">Banking points...</span>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="not-my-turn" *ngIf="myConnectionId !== state.activePlayerId">
+    Waiting for {{ state.playerStates[state.activePlayerId]?.playerName }}...
+  </div>
+</div>
