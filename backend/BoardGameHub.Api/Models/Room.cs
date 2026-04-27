@@ -1,6 +1,7 @@
 namespace BoardGameHub.Api.Models;
 
 using BoardGameHub.Api.Services;
+using System.Collections.Concurrent;
 
 public class Player
 {
@@ -65,7 +66,7 @@ public class Room
 
     // Optimization: Track which top-level properties are dirty
     [System.Text.Json.Serialization.JsonIgnore]
-    public HashSet<string> DirtyMembers { get; set; } = new();
+    public ConcurrentDictionary<string, byte> DirtyMembers { get; } = new();
 }
 
 public class UndoSettings
@@ -123,5 +124,6 @@ public enum GameType
     NomDeCode = 13,
     Warships = 14,
     FourInARow = 15,
-    CloverMinded = 16
+    CloverMinded = 16,
+    Farkle = 17
 }

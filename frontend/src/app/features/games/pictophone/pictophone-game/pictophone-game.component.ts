@@ -16,7 +16,7 @@ import { PictophoneResultsComponent } from '../pictophone-results/pictophone-res
     styleUrls: ['./pictophone-game.component.scss']
 })
 export class PictophoneGameComponent {
-    @Input() room!: Room;
+    @Input() room?: Room;
     @Input() myConnectionId!: string;
     @Input() isHost: boolean = false;
     @Input() isCreator: boolean = false;
@@ -29,7 +29,7 @@ export class PictophoneGameComponent {
     constructor(private readonly signalR: SignalRService) {
         this.timeLeft$ = timer(0, 1000).pipe(
             map(() => {
-                if (!this.room?.roundEndTime || this.room.isPaused) return 0;
+                if (!this.room?.roundEndTime || this.room?.isPaused) return 0;
                 const end = new Date(this.room.roundEndTime).getTime();
                 const now = Date.now();
                 return Math.max(0, Math.ceil((end - now) / 1000));
@@ -62,14 +62,16 @@ export class PictophoneGameComponent {
     }
 
     onRevealNext() {
-        this.signalR.revealPictophoneNext(this.room.code);
+        if (this.room) this.signalR.revealPictophoneNext(this.room.code);
     }
 
     onStarPage(event: { bookIndex: number, pageIndex: number }) {
-        this.signalR.starPictophonePage(this.room.code, event.bookIndex, event.pageIndex);
+        if (this.room) this.signalR.starPictophonePage(this.room.code, event.bookIndex, event.pageIndex);
     }
 
     pauseGame() { this.signalR.pauseGame(); }
     resumeGame() { this.signalR.resumeGame(); }
-    forceNext() { this.signalR.forcePictophoneNext(this.room.code); }
+    forceNext() {
+        if (this.room) this.signalR.forcePictophoneNext(this.room.code);
+    }
 }

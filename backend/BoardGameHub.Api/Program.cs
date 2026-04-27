@@ -1,5 +1,6 @@
 using BoardGameHub.Api.Hubs;
 using BoardGameHub.Api.Services;
+using BoardGameHub.Api.Services.Games;
 using BoardGameHub.Api.Data;
 using BoardGameHub.Api.Models;
 using Microsoft.EntityFrameworkCore;
@@ -130,6 +131,7 @@ builder.Services.AddSingleton<IGameService, NomDeCodeService>();
 builder.Services.AddSingleton<IGameService, WarshipsGameService>();
 builder.Services.AddSingleton<IGameService, FourInARowGameService>();
 builder.Services.AddSingleton<IGameService, CloverMindedGameService>();
+builder.Services.AddSingleton<IGameService, FarkleService>();
 
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();
@@ -171,14 +173,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Apply database migrations automatically on startup for all environments
+// Initialize database: Seed roles and admin user (Migrations are managed out-of-band)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (db.Database.IsRelational())
-    {
-        db.Database.Migrate();
-    }
     
     // Seed Roles and Admin User
     await DbInitializer.SeedAsync(scope.ServiceProvider);

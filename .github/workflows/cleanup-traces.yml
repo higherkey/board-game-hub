@@ -1,0 +1,35 @@
+name: Cleanup Feature Traces
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove trace files
+        run: |
+          # Find all files in docs/traces/ except .gitkeep and remove them
+          find docs/traces/ -type f ! -name '.gitkeep' -delete
+          
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status --porcelain docs/traces/) ]]; then
+            git add docs/traces/
+            git commit -m "chore: Cleanup feature trace documents from main"
+            git pull --rebase origin main
+            git push
+          else
+            echo "No trace files to clean up."
+          fi

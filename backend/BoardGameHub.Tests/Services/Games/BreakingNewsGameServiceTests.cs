@@ -37,7 +37,7 @@ public class BreakingNewsGameServiceTests
         var room = CreateMockRoom(4); // 1 Anchor, 3 Writers
         await _service.StartRound(room, new GameSettings());
 
-        var state = (BreakingNewsState)room.GameData;
+        var state = (BreakingNewsState)room.GameData!;
         state.AnchorConnectionId.Should().Be("p1"); // 1 % 4 = 1
         state.ScriptTitle.Should().Be("The Weather Report");
         state.Slots.Should().HaveCount(4);
@@ -55,7 +55,7 @@ public class BreakingNewsGameServiceTests
     {
         var room = CreateMockRoom(4);
         await _service.StartRound(room, new GameSettings());
-        var state = (BreakingNewsState)room.GameData;
+        var state = (BreakingNewsState)room.GameData!;
 
         // Player p0 should own slot 0 (0 % 3 = 0, where writers are [p0, p2, p3])
         // Wait, let's check writers list: [p0, p2, p3] (because p1 is anchor)
@@ -74,7 +74,7 @@ public class BreakingNewsGameServiceTests
     {
         var room = CreateMockRoom(4);
         await _service.StartRound(room, new GameSettings());
-        var state = (BreakingNewsState)room.GameData;
+        var state = (BreakingNewsState)room.GameData!;
 
         var ownerId = state.SlotOwners[0];
         var nonOwnerId = "p1"; // Anchor

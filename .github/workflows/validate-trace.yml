@@ -1,0 +1,44 @@
+name: Validate Feature Trace Document
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  validate-trace:
+    name: Check for Work Trace Document
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for trace document
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          echo "PR branch: $BRANCH"
+
+          # Check if the branch has a conventional prefix
+          if echo "$BRANCH" | grep -qE '^(feat|fix|chore|refactor|docs|test|perf|build|ci|style)/'; then
+            # Normalize branch name: replace / and _ with -
+            TRACE_NAME=$(echo "$BRANCH" | sed 's/[/_ ]/-/g')
+            TRACE_PATH="docs/traces/${TRACE_NAME}-work-trace.md"
+            echo "Expected trace document: $TRACE_PATH"
+
+            if [ ! -f "$TRACE_PATH" ]; then
+              echo ""
+              echo "❌ MISSING TRACE DOCUMENT"
+              echo "Branch '$BRANCH' is a prefixed branch but no work trace was found."
+              echo "Expected: $TRACE_PATH"
+              echo ""
+              echo "Create the trace document before opening this PR."
+              echo "See .agent/workflows/feature-tracking.md for instructions."
+              exit 1
+            else
+              echo "✅ Trace document found: $TRACE_PATH"
+            fi
+          else
+            echo "ℹ️ Branch '$BRANCH' has no conventional prefix. Trace document not required."
+          fi

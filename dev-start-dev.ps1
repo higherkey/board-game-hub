@@ -36,6 +36,17 @@ Write-Host "--- 1) Launching Database Dependencies ---" -ForegroundColor Cyan
 Set-Location "$ProjectRoot"
 docker compose up -d postgres pgadmin
 
+Write-Host "Waiting for database to be fully ready..." -ForegroundColor Yellow
+Start-Sleep -Seconds 3
+
+Write-Host "--- 1.5) Applying Database Migrations ---" -ForegroundColor Cyan
+& ".\backend\migrate-db.ps1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Migrations failed! Aborting startup."
+    Read-Host "Press Enter to exit..."
+    exit 1
+}
+
 Write-Host "--- 2) Launching Backend (Hot Reload) ---" -ForegroundColor Cyan
 $BackendScript = @"
 cd '$BackendDir'
