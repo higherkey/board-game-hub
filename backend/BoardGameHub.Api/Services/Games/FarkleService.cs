@@ -9,7 +9,6 @@ public class FarkleService : IGameService
 {
     private readonly ILogger<FarkleService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly Random _random = new();
 
     public GameType GameType => GameType.Farkle;
 
@@ -181,7 +180,7 @@ public class FarkleService : IGameService
         state.Phase = FarklePhase.Rolling;
         foreach (var die in state.Dice.Where(d => !d.IsHeld))
         {
-            die.Value = _random.Next(1, 7);
+            die.Value = Random.Shared.Next(1, 7);
             die.IsReserved = false;
             die.IsScoring = false;
         }
@@ -288,7 +287,7 @@ public class FarkleService : IGameService
                 int baseVal = (i == 1) ? 1000 : i * 100;
                 int multiplier = counts[i] - 2; // 3->1, 4->2, 5->3, 6->4
                 // Many variants here. Let's use: 3=base, 4=base*2, 5=base*4, 6=base*8
-                score += baseVal * (int)Math.Pow(2, multiplier - 1);
+                score += baseVal * (1 << (multiplier - 1));
                 counts[i] = 0; // "Consume" these dice
             }
         }
