@@ -124,5 +124,6 @@ public enum GameType
     NomDeCode = 13,
     Warships = 14,
     FourInARow = 15,
-    CloverMinded = 16
+    CloverMinded = 16,
+    Farkle = 17
 }
