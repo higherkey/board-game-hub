@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../../../services/signalr.service';
 
@@ -14,7 +14,7 @@ export class UndoToastComponent {
   @Input() currentUserId: string = '';
   @Input() totalPlayers: number = 0;
 
-  constructor(private readonly signalR: SignalRService) { }
+  private readonly signalR = inject(SignalRService);
 
   get yesCount(): number {
     if (!this.vote?.votes) return 0;
@@ -27,6 +27,7 @@ export class UndoToastComponent {
   }
 
   get myVote(): boolean {
+    if (!this.vote?.votes || !this.currentUserId) return false;
     return this.vote.votes[this.currentUserId] === true;
   }
 
