@@ -30,11 +30,14 @@
   - Implemented backend `FarkleService` with standard scoring (1s, 5s, 3+ of a kind, straights, pairs) and thread-safe turn management using `IServiceProvider` for scoped lock acquisition.
   - Created `FarkleState` models and updated `AppDbContext` to move Farkle from `Backlog` to `Testing` status.
   - Applied EF migration `UpdateFarkleStatus` to sync the database.
-  - Developed a comprehensive unit test suite (`FarkleServiceTests.cs`) with 100% pass rate on scoring combinations.
+  - Developed a comprehensive unit test suite (`FarkleServiceTests.cs`) covering scoring and rule enforcement.
   - Built `FarkleTableComponent` with a 3D-perspective dice tray, permanent scoring guide, and accessibility landmarks.
   - Built `FarkleHandComponent` with dice selection logic, expandable rules overlay, and full ARIA/keyboard support.
+  - **Logic Refinement**: Enforced strict rules to prevent "free re-rolls" and "invalid selections" (all reserved dice must now score).
+  - **Scoring Reliability**: Optimized scoring prioritization (e.g., Six-of-a-kind over Three Pairs) and added a `getPips()` helper for stable frontend rendering.
   - Ensured both components comply with the `GameShellInputs` platform contract.
   - Verified stability via multiple rounds of senior peer review and build checks.
 
 # Issues and Out of Scope
-- **House Rules**: Advanced scoring variations (e.g., 3-triplets, 4-of-a-kind + pair) were deferred in favor of standard rules for the initial release.
+- **House Rules**: Advanced scoring variations were initially deferred, but Three Pairs logic was later refined to include 4-of-a-kind + pair as per standard play.
+- **Roll Animations**: High-fidelity dice roll animations are deferred in favor of core game logic stability.

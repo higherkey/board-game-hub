@@ -28,6 +28,10 @@ export class FarkleTableComponent {
     if (!playerStates) return [];
     return Object.values(playerStates).sort((a, b) => b.totalScore - a.totalScore);
   }
+
+  getPips(value: number): number[] {
+    return Array(value).fill(0);
+  }
 }
 
 interface FarklePlayerState {

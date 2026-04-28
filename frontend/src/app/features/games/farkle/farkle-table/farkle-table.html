@@ -29,7 +29,7 @@
              [class.reserved]="die.isReserved"
              [attr.data-value]="die.value">
           <div class="die-face">
-            <div class="pip" *ngFor="let p of [].constructor(die.value)"></div>
+            <div class="pip" *ngFor="let p of getPips(die.value)"></div>
           </div>
         </div>
       </div>

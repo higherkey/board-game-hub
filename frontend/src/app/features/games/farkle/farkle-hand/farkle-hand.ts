@@ -73,4 +73,8 @@ export class FarkleHandComponent {
   toggleScoringAid(): void {
     this.showScoringAid = !this.showScoringAid;
   }
+
+  getPips(value: number): number[] {
+    return Array(value).fill(0);
+  }
 }

@@ -46,7 +46,7 @@
          [disabled]="die.isHeld"
          (click)="toggleDie(i)">
       <div class="die" [attr.data-value]="die.value" aria-hidden="true">
-        <div class="pip" *ngFor="let p of [].constructor(die.value)"></div>
+        <div class="pip" *ngFor="let p of getPips(die.value)"></div>
       </div>
       <div class="status-indicator" *ngIf="die.isHeld">Banked</div>
       <div class="status-indicator" *ngIf="die.isReserved">Selected</div>
