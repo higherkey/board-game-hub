@@ -50,7 +50,8 @@
     - Resolved Reliability failure by awaiting async state updates.
     - Resolved Maintainability failures by removing empty lifecycle methods and unused imports.
     - **Coverage Fix**: Configured `lcovonly` reporter in `karma.conf.js` to fix the 0% coverage report failure on SonarCloud.
-    - **Accessibility Fix**: Removed redundant `role="document"` from `RoomHeaderComponent.html` to resolve immediate semantic HTML warnings.
+    - **Farkle Integration**: Merged `feat/farkle` into the refactored architecture. Verified that `FarkleTableComponent` and `FarkleHandComponent` correctly consume the `GameRoomStateService` facade and adhere to the `ngComponentOutlet` input pattern. Validated backend `FarkleService` logic and scoring via unit tests.
+- **Accessibility Fix**: Removed redundant `role="document"` from `RoomHeaderComponent.html` to resolve immediate semantic HTML warnings.
 
 ### Revised Rationale
 - The "God Object" issue was resolved across the view, state management, and test suites. The addition of proper LCOV instrumentation ensures that future refactors will be correctly measured by the Quality Gate.
