@@ -6,20 +6,7 @@ description: Best practices for running git commands
 
 Follow these rules every time you run a git command:
 
-## 1. Do NOT use `&&` to chain commands
-PowerShell does not support `&&` the same way bash does. Always use `;` to chain commands instead.
-
-**Bad:**
-```powershell
-git add . && git commit -m "message" && git push
-```
-
-**Good:**
-```powershell
-git add .; git commit -m "message"; git push
-```
-
-## 2. Prefer `git commit -am` over separate `git add` + `git commit`
+## 1. Prefer `git commit -am` over separate `git add` + `git commit`
 When staging and committing tracked files, combine the two steps into one using the `-am` flag.
 
 **Bad:**
@@ -33,6 +20,19 @@ git commit -am "message"
 ```
 
 > **Note:** `git commit -am` only stages **modified tracked files**. If there are **new untracked files** that need to be added, you must still run `git add <file>` separately before committing.
+
+## 2. Do NOT use `&&` to chain commands
+PowerShell does not support `&&` the same way bash does. Always use `;` to chain commands instead.
+
+**Bad:**
+```powershell
+git add . && git commit -m "message" && git push
+```
+
+**Good:**
+```powershell
+git add .; git commit -m "message"; git push
+```
 
 ## 3. Commit Message Standards
 
@@ -71,3 +71,6 @@ git commit -am "docs: Update README with deployment steps fixes #12"
 
 > [!IMPORTANT]
 > **Strict PR Enforcement**: Pull Request titles **MUST** follow the **Conventional Commits** format (e.g., `feat: Add room timer`) for the merge to be accepted.
+
+> [!TIP]
+> **Documentation Reference**: For a full list of commands and options, refer to the [gh CLI Manual](https://cli.github.com/manual/).
