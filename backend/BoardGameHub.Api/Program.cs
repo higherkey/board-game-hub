@@ -173,7 +173,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Apply database migrations automatically on startup for all environments
+// Initialize database: Seed roles and admin user (Migrations are managed out-of-band)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
