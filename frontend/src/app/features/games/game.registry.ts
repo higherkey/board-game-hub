@@ -13,6 +13,8 @@ import { WisecrackGameComponent } from './wisecrack/wisecrack-game/wisecrack-gam
 import { PictophoneGameComponent } from './pictophone/pictophone-game/pictophone-game.component';
 import { DeepfakeGameComponent } from './deepfake-game/deepfake-game/deepfake-game.component';
 import { SushiTrainComponent } from './sushi-train/sushi-train-game/sushi-train.component';
+import { FarkleTableComponent } from './farkle/farkle-table/farkle-table';
+import { FarkleHandComponent } from './farkle/farkle-hand/farkle-hand';
 
 // Clover-Minded
 import { CloverMindedTableComponent } from './clover-minded/clover-minded-table/clover-minded-table.component';
@@ -77,5 +79,9 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
     },
     'FourInARow': {
         hostComponent: FourInARowGameComponent
+    },
+    'Farkle': {
+        hostComponent: FarkleTableComponent,
+        playerComponent: FarkleHandComponent
     }
 };
