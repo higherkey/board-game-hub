@@ -9,8 +9,11 @@
   - [x] Create `FarkleHandComponent` (selection, actions).
   - [x] Register in `game.registry.ts`.
   - [x] Write unit tests for scoring logic.
-  - [x] Implement thread-safe auto-advance logic.
-  - [x] Update EF migrations for game seeding.
+  - [x] Implement high-fidelity 3D CSS dice (polished plastic, recessed pips).
+  - [x] Add player seating indicators with avatar highlighting.
+  - [x] Remove timer UI and logic from Farkle (set as NotApplicable).
+  - [x] Implement "Edge-of-Table" POV perspective for Hand view (50% baseline).
+  - [x] Create strategic roadmap for future 3D research (#137).
 
 - **File List**:
   - `backend/BoardGameHub.Api/Models/Room.cs`
@@ -20,24 +23,26 @@
   - `backend/BoardGameHub.Tests/Services/Games/FarkleServiceTests.cs`
   - `frontend/src/app/features/games/farkle/` (All files)
   - `frontend/src/app/features/games/game.registry.ts`
-  - `backend/BoardGameHub.Api/Migrations/*UpdateFarkleStatus*`
+  - `frontend/src/app/features/game-room/components/host-settings/host-settings.component.html`
 
-- **Rationale**: Full implementation of Farkle with synced perspective views, standard scoring, and platform-compliant components.
+- **Rationale**: Full implementation of Farkle with synced 3D perspective views, standard scoring, and platform-compliant components. Refined for "Better CSS 3D" visuals (zero-gap, correct geometry) and immersive POV gameplay.
 
 # Completed Work
 
 - **Summary**:
-  - Implemented backend `FarkleService` with standard scoring (1s, 5s, 3+ of a kind, straights, pairs) and thread-safe turn management using `IServiceProvider` for scoped lock acquisition.
-  - Created `FarkleState` models and updated `AppDbContext` to move Farkle from `Backlog` to `Testing` status.
-  - Applied EF migration `UpdateFarkleStatus` to sync the database.
-  - Developed a comprehensive unit test suite (`FarkleServiceTests.cs`) covering scoring and rule enforcement.
-  - Built `FarkleTableComponent` with a 3D-perspective dice tray, permanent scoring guide, and accessibility landmarks.
-  - Built `FarkleHandComponent` with dice selection logic, expandable rules overlay, and full ARIA/keyboard support.
-  - **Logic Refinement**: Enforced strict rules to prevent "free re-rolls" and "invalid selections" (all reserved dice must now score).
-  - **Scoring Reliability**: Optimized scoring prioritization (e.g., Six-of-a-kind over Three Pairs) and added a `getPips()` helper for stable frontend rendering.
-  - Ensured both components comply with the `GameShellInputs` platform contract.
-  - Verified stability via multiple rounds of senior peer review and build checks.
+  - **Core Logic**: Implemented `FarkleService` with full scoring rules (1s, 5s, combinations, straights) and thread-safe turn management.
+  - **Visual Overhaul**: Developed "Better CSS 3D" dice with **polished plastic material**, **recessed pips**, and **corrected geometry** (Opposite sides = 7).
+  - **Perspective & POV**: Created an immersive "Edge-of-Table" POV for the Hand view with a **50% screen baseline**, extending the table surface past the top of the screen.
+  - **Spatial Shared Screen**: Updated the Table view with a structured 3x2 dice tray and spatial "Player Seats" with active highlighting.
+  - **UX/Cleanup**: Removed the timer for Farkle, fixed scoring aid contrast (white-on-navy), and implemented scrollable rules containers for mobile.
+  - **Quality Assurance**: 15 backend tests and 11 frontend tests (FarkleTable/FarkleHand) passing 100%.
 
 # Issues and Out of Scope
-- **House Rules**: Advanced scoring variations were initially deferred, but Three Pairs logic was later refined to include 4-of-a-kind + pair as per standard play.
-- **Roll Animations**: High-fidelity dice roll animations are deferred in favor of core game logic stability.
+
+- **4a) Potential Blockers**:
+  - *None discovered*. All identified visual and logic issues were resolved during refinement.
+
+- **4b) Opportunities / Sub-Issues**:
+  - **Three.js Research (#137)**: Research high-fidelity WebGL/Three.js rendering for future physics-based rolling. (Deferred to Milestone 4).
+  - **AFK Timer**: Implementation of a global AFK timer for non-timed games. (Backlog).
+  - **House Rules Config**: Allow host to toggle specific scoring variants (e.g., "Must roll 500 to get on the board"). (Backlog).

@@ -1,0 +1,24 @@
+---
+description: Mandatory CSS engineering standards to ensure maintainability and proper cascading.
+globs: ["**/*.css", "**/*.scss", "**/*.less"]
+---
+
+# CSS Engineering Standards
+
+To ensure a maintainable and scalable codebase, all AI agents must follow these CSS standards:
+
+## 1. Avoid `!important`
+- **Rule**: NEVER use `!important` unless it is absolutely unavoidable (e.g., overriding 3rd party library styles that use inline styles).
+- **Rationale**: `!important` breaks the natural cascading of CSS, making it extremely difficult to debug and override styles later.
+- **Better Alternatives**:
+    - Increase selector specificity (e.g., use a parent class or ID).
+    - Reorganize the CSS to ensure the desired rule comes later in the cascade.
+    - Use CSS modules or scoped styles (if available in the framework).
+
+## 2. Specificity Management
+- Prioritize class-based selectors over ID-based selectors for styling.
+- Keep the selector depth shallow (ideally 3 levels or fewer).
+
+## 3. Modularity
+- Use meaningful, descriptive class names.
+- Group related styles together and use comments to demarcate sections.

@@ -74,6 +74,21 @@ export class FarkleHandComponent {
     this.showScoringAid = !this.showScoringAid;
   }
 
+  getGroupedDice(type: 'keeping' | 'reroll'): { die: FarkleDie, index: number }[] {
+    if (!this.state) return [];
+    return this.state.dice
+      .map((die, index) => ({ die, index }))
+      .filter(item => {
+        if (type === 'keeping') return item.die.isHeld || item.die.isReserved;
+        return !item.die.isHeld && !item.die.isReserved;
+      });
+  }
+
+  getRollCount(): number {
+    if (!this.state) return 0;
+    return this.state.dice.filter(d => !d.isHeld && !d.isReserved).length;
+  }
+
   getPips(value: number): number[] {
     return Array(value).fill(0);
   }

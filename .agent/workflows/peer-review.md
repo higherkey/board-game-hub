@@ -8,6 +8,7 @@ description: Full Senior Peer Review and Code Quality Audit
 1. **Code Review** — Systematically review all modified/new files for:
    - Bugs and race conditions
    - Best practices (SOLID, DRY, single-responsibility)
+   - CSS best practices (Avoid `!important`, prioritize specificity)
    - Memory leaks and lifecycle management
    - Performance bottlenecks
 

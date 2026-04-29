@@ -98,6 +98,11 @@ Run commands from repo root unless noted.
 - Active room/game runtime state is in-memory (`RoomService`/`GameStateManager`) and not fully persisted between process restarts.
 - **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-azure.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
 
+## Engineering Standards to honor
+- **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
+- **CSS Best Practices:** Avoid the use of `!important` at all costs. Prioritize CSS specificity, modularity, and proper cascading over forced overrides.
+- **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
+
 ## Existing AI/workflow guidance to honor
 - `.cursor/rules/git-powershell.mdc` + `.agent/workflows/git-commands.md`:
   - In PowerShell, chain commands with `;` (not `&&`).

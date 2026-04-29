@@ -2,7 +2,7 @@
   display: flex;
   height: 100vh;
   width: 100vw;
-  background: #0f0f1b;
+  background: var(--primary-dark, #002244);
   color: white;
   font-family: 'Outfit', sans-serif;
   overflow: hidden;
@@ -79,8 +79,8 @@
 
     .turn-score {
       font-size: 1.5rem;
-      color: #38b28a; // Darkened for better contrast
-      background: rgba(78, 204, 163, 0.15); // Increased background opacity
+      color: var(--accent, #38b2ac);
+      background: rgba(56, 178, 172, 0.1);
       padding: 0.5rem 1.5rem;
       border-radius: 50px;
       display: inline-block;
@@ -89,70 +89,167 @@
   }
 }
 
+.player-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  z-index: 10;
+
+  .player-seat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.4;
+    transition: all 0.5s ease;
+    transform: scale(0.8);
+
+    &.active {
+      opacity: 1;
+      transform: scale(1.1);
+      .seat-avatar {
+        box-shadow: 0 0 20px var(--accent, #38b2ac);
+        border-color: var(--accent, #38b2ac);
+      }
+      .seat-name { color: var(--accent, #38b2ac); font-weight: 800; }
+    }
+
+    .seat-avatar {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .seat-name {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  }
+}
+
 .dice-tray-wrapper {
   flex-grow: 1;
-  perspective: 1000px;
+  perspective: 2000px; /* High perspective for 3D depth */
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: -2rem;
 }
 
 .dice-tray {
-  width: 600px;
-  height: 400px;
-  background: radial-gradient(circle, #2d5a27 0%, #1e3d1a 100%); /* Green felt */
-  border: 20px solid #3d2b1f; /* Wood border */
+  width: 800px;
+  height: 480px;
+  background: radial-gradient(circle at 50% 50%, #2d5a27 0%, #1e3d1a 100%); /* Green felt */
+  border: 18px solid #3d2b1f; /* Wood border */
   border-radius: 40px;
   box-shadow: 
-    inset 0 0 50px rgba(0,0,0,0.5),
-    0 20px 50px rgba(0,0,0,0.8);
-  transform: rotateX(45deg);
-  display: flex;
-  flex-wrap: wrap;
+    inset 0 0 100px rgba(0,0,0,0.7),
+    0 40px 80px rgba(0,0,0,0.8);
+  transform: rotateX(40deg);
+  transform-style: preserve-3d;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   align-content: center;
-  justify-content: center;
-  gap: 30px;
+  justify-items: center;
+  gap: 60px;
   padding: 40px;
 }
 
-.die-3d {
-  width: 80px;
-  height: 80px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-  transform: rotateZ(5deg);
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.die-3d-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  transform-style: preserve-3d;
+  transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
   &.held {
-    opacity: 0.4;
-    transform: translateY(-50px) rotateX(-10deg);
+    opacity: 0.1;
+    transform: translateZ(-300px) rotateX(20deg);
   }
 
   &.reserved {
-    box-shadow: 0 0 20px #4ecca3;
-    border: 2px solid #4ecca3;
-  }
-
-  .die-face {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    padding: 12px;
-    gap: 6px;
-  }
-
-  .pip {
-    background: #1a1a2e;
-    border-radius: 50%;
-    width: 14px;
-    height: 14px;
-    justify-self: center;
-    align-self: center;
+    transform: translateZ(170px) translateY(-40px) rotateX(-10deg); /* Increased Z to sit on top */
+    .die-shadow { opacity: 0.2; transform: scale(0.8) translateZ(-170px); }
   }
 }
 
+.die-3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: translateZ(50px) rotateX(-10deg) rotateY(15deg); /* Lifted by half height (50px) to sit ON the felt */
+  transition: transform 0.6s ease;
+  background: #f0f0f0; /* Solid core to fill gaps */
+  border-radius: 14px;
+
+    .face {
+      position: absolute;
+      width: 102%; /* Slight overlap to hide corner gaps */
+      height: 102%;
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 14px;
+      gap: 8px;
+      box-shadow: 
+        inset 0 0 20px rgba(0,0,0,0.05),
+        inset 0 0 3px rgba(255,255,255,0.8);
+      backface-visibility: hidden;
+
+      &.top {
+        transform: rotateX(90deg) translateZ(50px);
+        background: #ffffff;
+      }
+      &.front  { transform: rotateX(0deg) translateZ(50px); background: #f9f9f9; }
+      &.back   { transform: rotateX(180deg) translateZ(50px); background: #f9f9f9; }
+      &.right  { transform: rotateY(90deg) translateZ(50px); background: #f2f2f2; }
+      &.left   { transform: rotateY(-90deg) translateZ(50px); background: #f2f2f2; }
+      &.bottom { transform: rotateX(-90deg) translateZ(50px); background: #ebebeb; }
+    }
+
+  .pip {
+    background: var(--primary-dark, #002244);
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    justify-self: center;
+    align-self: center;
+    box-shadow: 
+      inset 0 3px 4px rgba(0,0,0,0.4),
+      0 1px 2px rgba(255,255,255,0.3);
+  }
+}
+
+.die-shadow {
+  position: absolute;
+  top: 110%;
+  left: 10%;
+  width: 80%;
+  height: 20%;
+  background: rgba(0,0,0,0.4);
+  filter: blur(15px);
+  border-radius: 50%;
+  transform: translateZ(-50px);
+  transition: all 0.6s ease;
+}
+
 /* Same Pip Layouts as Hand */
+.die-3d .face.top[data-value="1"] .pip { grid-column: 2; grid-row: 2; }
 .die-3d[data-value="1"] .pip { grid-column: 2; grid-row: 2; }
 .die-3d[data-value="2"] .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
 .die-3d[data-value="2"] .pip:nth-child(2) { grid-column: 3; grid-row: 3; }
