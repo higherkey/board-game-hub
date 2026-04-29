@@ -85,7 +85,7 @@ Follow this sequence exactly when concluding work on a branch:
     - Execute the `/testing-workflow` to ensure all backend and frontend tests pass and coverage is adequate.
     - Ensure the code is 100% ready and meets all engineering standards.
 2.  **Issue Triage (4a & 4b)**: Present all items in Section 4 to the USER. 
-    - **Blocker Protocol**: If a 4a item is converted to an issue, establish a formal **Blocker** relationship using GraphQL (see Section 8).
+    - **Blocker Protocol**: If a 4a item is converted to an issue, establish a formal **Blocker** relationship using the REST API (see Section 8).
     - **Hierarchy Protocol**: If a 4b item is converted to a sub-issue, establish a formal **Parent** relationship.
     - Items must be acknowledged (accepted, deferred, or dismissed) before proceeding.
 3.  **Consolidate & Parity Check**: Run `/trace-consolidate`. Then run the following and compare to the File List in Section 1:
@@ -107,7 +107,7 @@ Follow this sequence exactly when concluding work on a branch:
 ## 6. Pre-Commit Checklist
 
 - [ ] All code-related items in Section 1 TODO are checked off (`[x]`).
-- [ ] Section 4 items have been triaged and formal relationships established via GraphQL.
+- [ ] Section 4 items have been triaged and formal relationships established via REST (see Section 8).
 - [ ] `git diff` matches the File List in Section 1.
 - [ ] Functional Walkthrough provided.
 - [ ] USER has given **EXPLICIT approval** to commit.
@@ -121,39 +121,8 @@ Trace documents are removed from `main` automatically by `.github/workflows/clea
 
 ---
 
-## 8. Technical Guide: Formal Relationship Management (GraphQL)
+## 8. Technical Guide: Formal Relationship Management (REST)
 
-Since the standard `gh issue` CLI does not yet formally support hierarchies or blockers, agents MUST use GraphQL to establish relationships. Establishing a relationship on one side automatically sets the inverse (e.g., setting a child's parent sets the parent's sub-issue).
+Since the standard `gh issue` CLI does not yet formally support hierarchies or blockers, agents MUST use the REST API to establish relationships.
 
-### A) Retrieve Global Node IDs
-```powershell
-gh api graphql -f query='
-  query($owner: String!, $repo: String!, $number: Int!) {
-    repository(owner: $owner, name: $repo) {
-      issue(number: $number) { id }
-    }
-  }' -F owner='higherkey' -F repo='board-game-hub' -F number=[ISSUE_NUMBER]
-```
-
-### B) Establish Formal Parent/Sub-issue Relationship
-```powershell
-gh api graphql -f query='
-  mutation($parent: ID!, $subIssue: ID!) {
-    addSubIssue(input: {issueId: $parent, subIssueId: $subIssue}) {
-      issue { number }
-      subIssue { number }
-    }
-  }' -f parent='[PARENT_NODE_ID]' -f subIssue='[CHILD_NODE_ID]'
-```
-
-### C) Establish Formal Blocker Relationship
-Adding a "Blocked By" relationship on the current issue automatically adds "Blocking" to the target.
-```powershell
-gh api graphql -f query='
-  mutation($current: ID!, $blocker: ID!) {
-    addTrackedIssue(input: {issueId: $current, trackedIssueId: $blocker}) {
-      issue { number }
-      trackedIssue { number }
-    }
-  }' -f current='[CURRENT_ISSUE_ID]' -f blocker='[BLOCKER_ISSUE_ID]'
-```
+Follow the specialized workflow: **[.agent/workflows/github-relationship-management.md](file:///c:/Programming/board%20game%20hub/.agent/workflows/github-relationship-management.md)**

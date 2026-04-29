@@ -1,0 +1,96 @@
+<header *ngIf="!isBigScreen"
+    class="game-room-header px-4 py-2 mb-2 mb-md-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
+    
+    <!-- Mobile Left: Hamburger Menu -->
+    <div class="d-md-none">
+        <button class="btn btn-link text-white p-0" (click)="toggleNavMenu()" title="Room Menu">
+            <i class="bi bi-list fs-3"></i>
+        </button>
+    </div>
+
+    <!-- Desktop Left: Navigation & Room Actions -->
+    <div class="d-none d-md-flex align-items-center gap-3">
+        <a routerLink="/" class="btn btn-outline-secondary btn-sm" title="Home (Keep Connected)">
+            <i class="bi bi-house-door-fill"></i>
+        </a>
+        <button class="btn btn-pink btn-sm fw-bold d-flex align-items-center" (click)="leaveRoom.emit()"
+            title="Leave Table & Room">
+            <i class="bi bi-box-arrow-left me-1"></i>
+            <span>{{ isBigScreen ? 'QUIT ROOM' : 'QUIT' }}</span>
+        </button>
+        
+        <!-- Video Chat Toggle (Desktop) -->
+        <button class="btn btn-outline-light btn-sm" (click)="startVideoChat.emit()"
+            *ngIf="videoChatReady && !isVideoActive" title="Start Video">
+            <i class="bi bi-camera-video"></i>
+        </button>
+
+        <!-- Undo Button -->
+        <button class="btn btn-pink btn-sm"
+            *ngIf="showUndoButton" (click)="requestUndo.emit()"
+            title="Request Undo">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+    </div>
+
+    <div class="room-info-container d-flex align-items-center gap-2 gap-sm-3 ms-1 ms-sm-2 ps-2 ps-sm-3">
+        <div class="d-flex align-items-baseline">
+            <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline"
+                style="font-size: 0.65rem; color: var(--text-light);">ROOM</span>
+            <span class="font-monospace room-code-display">{{ roomCode }}</span>
+        </div>
+        <div class="text-white game-title-badge fw-bold text-uppercase"
+            [class.is-lobby]="isLobby">
+            {{ gameDisplayName }}
+        </div>
+    </div>
+
+    <!-- Right: Mobile Video & Desktop Profile -->
+    <div class="d-flex align-items-center gap-2 gap-md-3">
+        <!-- Video Chat Toggle (Mobile) -->
+        <button class="btn btn-outline-light btn-sm d-md-none" (click)="startVideoChat.emit()"
+            *ngIf="videoChatReady && !isVideoActive" title="Start Video">
+            <i class="bi bi-camera-video"></i>
+        </button>
+
+        <!-- Round Indicator (Middle) -->
+        <div *ngIf="gameStarted"
+            class="badge bg-dark border border-secondary text-light ms-3 px-3 py-2 d-none d-md-block">
+            ROUND {{ currentRound }} / {{ totalRounds }}
+        </div>
+
+        <!-- Profile (Desktop Only) -->
+        <div class="d-none d-md-flex">
+            <app-user-profile-dropdown [session]="session"></app-user-profile-dropdown>
+        </div>
+    </div>
+
+    <!-- NAV MENU OVERLAY (Mobile Only) -->
+    <div class="nav-menu-overlay d-md-none" role="dialog" tabindex="-1" [class.open]="isNavMenuOpen"
+        (click)="toggleNavMenu()" (keydown.escape)="toggleNavMenu()">
+        <div class="nav-menu-content p-3 d-flex flex-column gap-3"
+            (click)="$event.stopPropagation()" (keydown.escape)="toggleNavMenu()">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4 class="mb-0 text-white fw-bold">Room Menu</h4>
+                <button class="btn-close btn-close-white" (click)="toggleNavMenu()"></button>
+            </div>
+
+            <div class="menu-actions d-flex flex-column gap-3">
+                <a routerLink="/" class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleNavMenu()">
+                    <i class="bi bi-house-door-fill fs-4"></i>
+                    <span class="fw-bold">Go Home</span>
+                </a>
+                
+                <button class="btn btn-lg btn-pink w-100 d-flex align-items-center gap-3 py-3" (click)="leaveRoom.emit()">
+                    <i class="bi bi-box-arrow-left fs-4"></i>
+                    <span class="fw-bold">Quit Room</span>
+                </button>
+
+                <div class="mt-4 pt-4 border-top border-secondary">
+                    <div class="small text-uppercase text-white-50 mb-3 fw-bold ls-wide">Profile</div>
+                    <app-user-profile-dropdown [session]="session" [compactMode]="false" menuAlign="start"></app-user-profile-dropdown>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
