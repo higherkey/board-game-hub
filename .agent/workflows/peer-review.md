@@ -8,6 +8,7 @@ description: Full Senior Peer Review and Code Quality Audit
 1. **Code Review** — Systematically review all modified/new files for:
    - Bugs and race conditions
    - Best practices (SOLID, DRY, single-responsibility)
+   - CSS best practices (Avoid `!important`, prioritize specificity)
    - Memory leaks and lifecycle management
    - Performance bottlenecks
 
@@ -58,11 +59,10 @@ description: Full Senior Peer Review and Code Quality Audit
    npm run build -- --configuration=development 2>&1 | Select-String "error TS|compiled" | Select-Object -Last 10
    ```
 
-7. **Issue Creation** — For any large or systemic issues not immediately fixable, create a GitHub issue:
-   ```
-   gh issue create --title "<title>" --body "<body>"
-   ```
-   > Note: `gh issue create` may hang if run interactively. Best to include both `--title` and `--body` flags to avoid prompts.
+7. **Issue Creation** — For any large or systemic issues not immediately fixable, follow the specialized workflow: **[/create-github-issue.md](file:///c:/Programming/board%20game%20hub/.agent/workflows/create-github-issue.md)**.
+   - [Documentation: Pull Request Reviews](https://docs.github.com/en/rest/pulls/reviews?apiVersion=2026-03-10)
+   - [Documentation: Pull Request Comments](https://docs.github.com/en/rest/pulls/comments?apiVersion=2026-03-10)
+   - [Documentation: Pull Requests Main](https://docs.github.com/en/rest/pulls/pulls?apiVersion=2026-03-10)
 
 8. **Task Closure** — Update `walkthrough.md` and `peer_review_audit.md` in the brain artifacts directory with:
    - Summary of all findings
