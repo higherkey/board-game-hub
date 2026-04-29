@@ -20,17 +20,33 @@
       </div>
     </div>
 
+    <!-- Player Indicators (Seats around the table) -->
+    <div class="player-indicators">
+      <div *ngFor="let p of getPlayerList(state.playerStates)" 
+           class="player-seat"
+           [class.active]="p.playerId === state.activePlayerId">
+        <div class="seat-avatar">{{ p.playerName[0] }}</div>
+        <div class="seat-name">{{ p.playerName }}</div>
+      </div>
+    </div>
+
     <!-- Dice Tray with Perspective -->
     <div class="dice-tray-wrapper">
       <div class="dice-tray">
         <div *ngFor="let die of state.dice" 
-             class="die-3d" 
+             class="die-3d-container" 
              [class.held]="die.isHeld" 
-             [class.reserved]="die.isReserved"
-             [attr.data-value]="die.value">
-          <div class="die-face">
-            <div class="pip" *ngFor="let p of [].constructor(die.value)"></div>
+             [class.reserved]="die.isReserved">
+          <div class="die-3d" [attr.data-value]="die.value">
+            <!-- Opposite sides add up to 7 -->
+            <div class="face top"><div class="pip" *ngFor="let p of getPips(die.value)"></div></div>
+            <div class="face bottom"><div class="pip" *ngFor="let p of getPips(7 - die.value)"></div></div>
+            <div class="face front"><div class="pip" *ngFor="let p of getPips((die.value % 6) + 1)"></div></div>
+            <div class="face back"><div class="pip" *ngFor="let p of getPips(7 - ((die.value % 6) + 1))"></div></div>
+            <div class="face right"><div class="pip" *ngFor="let p of getPips(((die.value + 1) % 6) + 1)"></div></div>
+            <div class="face left"><div class="pip" *ngFor="let p of getPips(7 - (((die.value + 1) % 6) + 1))"></div></div>
           </div>
+          <div class="die-shadow"></div>
         </div>
       </div>
     </div>

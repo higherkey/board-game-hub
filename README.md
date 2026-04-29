@@ -1,6 +1,8 @@
 # Board Game Hub
 
-**Bringing people together through shared screens and personal devices.**
+> Bringing people together through shared screens and personal devices.
+
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=flat-square)](https://board-game-hub-alpha.vercel.app/)
 
 Board Game Hub is a multiplayer board game platform designed for "Table" (shared screen) and "Hand" (personal device) gameplay. It bridges the gap between digital and physical play by allowing players to use their phones as controllers while a central screen (TV or laptop) serves as the game board.
 

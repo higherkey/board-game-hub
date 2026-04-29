@@ -18,40 +18,55 @@
        aria-label="Scoring guide">
     <div class="scoring-aid-content" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
       <h3>Scoring Guide</h3>
-      <ul>
-        <li><span>1s</span> <span>100 pts</span></li>
-        <li><span>5s</span> <span>50 pts</span></li>
-        <li><span>Three 1s</span> <span>1000 pts</span></li>
-        <li><span>Three of a Kind</span> <span>Value &times; 100</span></li>
-        <li><span>Four of a Kind</span> <span>2 &times; (3 of a kind)</span></li>
-        <li><span>Five of a Kind</span> <span>4 &times; (3 of a kind)</span></li>
-        <li><span>Six of a Kind</span> <span>8 &times; (3 of a kind)</span></li>
-        <li><span>Straight (1-6)</span> <span>1500 pts</span></li>
-        <li><span>Three Pairs</span> <span>1500 pts</span></li>
-      </ul>
+      <div class="rules-scroll-container">
+        <ul>
+          <li><span>1s</span> <span>100 pts</span></li>
+          <li><span>5s</span> <span>50 pts</span></li>
+          <li><span>Three 1s</span> <span>1000 pts</span></li>
+          <li><span>Three of a Kind</span> <span>Value &times; 100</span></li>
+          <li><span>Four of a Kind</span> <span>2 &times; (3 of a kind)</span></li>
+          <li><span>Five of a Kind</span> <span>4 &times; (3 of a kind)</span></li>
+          <li><span>Six of a Kind</span> <span>8 &times; (3 of a kind)</span></li>
+          <li><span>Straight (1-6)</span> <span>1500 pts</span></li>
+          <li><span>Three Pairs</span> <span>1500 pts</span></li>
+        </ul>
+      </div>
       <button class="close-btn" (click)="toggleScoringAid()">Got it</button>
     </div>
   </dialog>
 
-  <!-- Dice Area -->
-  <fieldset class="dice-grid" aria-label="Dice">
-    <button *ngFor="let die of state.dice; let i = index" 
-         class="die-wrapper"
-         [class.held]="die.isHeld"
-         [class.reserved]="die.isReserved"
-         [class.available]="!die.isHeld && !die.isReserved"
-         [tabindex]="die.isHeld ? -1 : 0"
-         [attr.aria-label]="'Die showing ' + die.value + (die.isHeld ? ', banked' : die.isReserved ? ', selected' : ', available')"
-         [attr.aria-pressed]="die.isReserved"
-         [disabled]="die.isHeld"
-         (click)="toggleDie(i)">
-      <div class="die" [attr.data-value]="die.value" aria-hidden="true">
-        <div class="pip" *ngFor="let p of [].constructor(die.value)"></div>
-      </div>
-      <div class="status-indicator" *ngIf="die.isHeld">Banked</div>
-      <div class="status-indicator" *ngIf="die.isReserved">Selected</div>
-    </button>
-  </fieldset>
+  <div class="dice-tray-area">
+    <div class="dice-felt">
+      <fieldset class="dice-grid" aria-label="Dice">
+        <button *ngFor="let die of state.dice; let i = index" 
+             class="die-3d-container"
+             [class.held]="die.isHeld"
+             [class.reserved]="die.isReserved"
+             [class.rolling]="state.phase === 'Rolling'"
+             [tabindex]="die.isHeld ? -1 : 0"
+             [attr.aria-label]="'Die showing ' + die.value"
+             [disabled]="die.isHeld"
+             (click)="toggleDie(i)">
+          
+          <div class="die-3d" [attr.data-value]="die.value">
+            <!-- Opposite sides add up to 7 -->
+            <div class="face top"><div class="pip" *ngFor="let p of getPips(die.value)"></div></div>
+            <div class="face bottom"><div class="pip" *ngFor="let p of getPips(7 - die.value)"></div></div>
+            <div class="face front"><div class="pip" *ngFor="let p of getPips((die.value % 6) + 1)"></div></div>
+            <div class="face back"><div class="pip" *ngFor="let p of getPips(7 - ((die.value % 6) + 1))"></div></div>
+            <div class="face right"><div class="pip" *ngFor="let p of getPips(((die.value + 1) % 6) + 1)"></div></div>
+            <div class="face left"><div class="pip" *ngFor="let p of getPips(7 - (((die.value + 1) % 6) + 1))"></div></div>
+          </div>
+          
+          <div class="die-shadow"></div>
+          
+          <!-- Absolute positioned labels to prevent layout shift -->
+          <div class="status-indicator banked" *ngIf="die.isHeld">Banked</div>
+          <div class="status-indicator keeping" *ngIf="die.isReserved">Keep</div>
+        </button>
+      </fieldset>
+    </div>
+  </div>
 
   <!-- Controls -->
   <div class="controls" *ngIf="myConnectionId === state.activePlayerId">
@@ -65,8 +80,10 @@
     </div>
     <ng-container [ngSwitch]="state.phase">
       <div *ngSwitchCase="'Picking'" class="button-group">
-        <button class="btn roll" (click)="roll()">Roll Again</button>
-        <button class="btn bank" [disabled]="state.currentTurnScore === 0" (click)="bank()">Bank Points</button>
+        <button class="btn roll" (click)="roll()">
+          {{ getRollCount() > 0 ? 'Roll ' + getRollCount() + ' Dice' : 'Roll Again' }}
+        </button>
+        <button class="btn bank" [disabled]="state.currentTurnScore === 0" (click)="bank()">Stop & Bank</button>
       </div>
       
       <div *ngSwitchCase="'Rolling'" class="phase-msg">

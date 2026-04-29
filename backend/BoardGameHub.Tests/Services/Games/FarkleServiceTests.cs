@@ -106,4 +106,84 @@ public class FarkleServiceTests
         state.PlayerStates["p1"].TotalScore.Should().Be(100);
         state.ActivePlayerId.Should().NotBe("p1"); // Should have advanced
     }
+
+    [Fact]
+    public async Task HandleAction_Roll_RequiresScoringDie()
+    {
+        // Arrange
+        var room = new Room();
+        var state = new FarkleState { Phase = FarklePhase.Picking, ActivePlayerId = "p1" };
+        // Dice: all 2s (non-scoring if only one is picked)
+        state.Dice = Enumerable.Range(0, 6).Select(_ => new FarkleDie { Value = 2 }).ToList();
+        room.GameData = state;
+        var action = new GameAction("ROLL", null);
+
+        // Act 1: Try to roll with nothing picked
+        var result1 = await _service.HandleAction(room, action, "p1");
+
+        // Act 2: Try to roll with a non-scoring die picked
+        state.Dice[0].IsReserved = true;
+        var result2 = await _service.HandleAction(room, action, "p1");
+
+        // Assert
+        result1.Should().BeFalse("Should not be able to roll without picking a scoring die");
+        result2.Should().BeFalse("Should not be able to roll with only a non-scoring die picked");
+    }
+
+    [Fact]
+    public async Task HandleAction_Roll_HandlesHotDice()
+    {
+        // Arrange
+        var room = new Room();
+        var state = new FarkleState { Phase = FarklePhase.Picking, ActivePlayerId = "p1" };
+        // All 1s, 5 already held, 1 reserved.
+        state.Dice = new List<FarkleDie>
+        {
+            new FarkleDie { Value = 1, IsHeld = true },
+            new FarkleDie { Value = 1, IsHeld = true },
+            new FarkleDie { Value = 1, IsHeld = true },
+            new FarkleDie { Value = 1, IsHeld = true },
+            new FarkleDie { Value = 1, IsHeld = true },
+            new FarkleDie { Value = 1, IsReserved = true }
+        };
+        room.GameData = state;
+        var action = new GameAction("ROLL", null);
+
+        // Act
+        var result = await _service.HandleAction(room, action, "p1");
+
+        // Assert
+        result.Should().BeTrue();
+        state.Dice.All(d => !d.IsHeld).Should().BeTrue("All dice should be reset (Hot Dice)");
+        state.Phase.Should().BeOneOf(FarklePhase.Rolling, FarklePhase.Picking, FarklePhase.Farkled);
+    }
+
+    [Fact]
+    public async Task HandleAction_Roll_RejectsNonScoringSelection()
+    {
+        // Arrange
+        var room = new Room();
+        var state = new FarkleState { Phase = FarklePhase.Picking, ActivePlayerId = "p1" };
+        // Dice: [1, 2, 2, 2, 3, 4]
+        // Selection: [1, 2] -> 100 points, but 2 is non-scoring.
+        state.Dice = new List<FarkleDie>
+        {
+            new FarkleDie { Value = 1 },
+            new FarkleDie { Value = 2 },
+            new FarkleDie { Value = 2 },
+            new FarkleDie { Value = 2 },
+            new FarkleDie { Value = 3 },
+            new FarkleDie { Value = 4 }
+        };
+        room.GameData = state;
+        var action = new GameAction("ROLL", null);
+
+        // Act
+        state.Dice[0].IsReserved = true; // The 1
+        state.Dice[1].IsReserved = true; // The 2
+        var result = await _service.HandleAction(room, action, "p1");
+
+        // Assert
+        result.Should().BeFalse("Should not be able to roll if the selection contains non-scoring dice");
+    }
 }

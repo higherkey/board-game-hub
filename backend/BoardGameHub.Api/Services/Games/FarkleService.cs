@@ -94,23 +94,13 @@ public class FarkleService : IGameService
 
         // Must have selected at least one NEW scoring die since the last roll
         var newlyReserved = state.Dice.Where(d => !d.IsHeld && d.IsReserved).ToList();
-        if (!newlyReserved.Any() && state.Dice.Any(d => !d.IsHeld))
-        {
-            // First roll of turn doesn't require this, but state starts in "Rolling" or we handle it
-            // Actually, if all dice are available (start of turn), we can roll.
-            bool isStartOfTurn = state.Dice.All(d => !d.IsHeld && !d.IsReserved);
-            if (!isStartOfTurn) return false; 
-        }
+        if (!newlyReserved.Any()) return false; // No free re-rolls
 
-        // Calculate score of newly reserved dice and add to turn score
-        int additionalScore = CalculateDiceScore(newlyReserved.Select(d => d.Value).ToList());
-        if (additionalScore == 0 && state.Dice.Any(d => !d.IsHeld)) 
-        {
-             // If they try to roll but haven't picked scoring dice (and it's not the first roll)
-             if (state.Dice.Any(d => d.IsReserved || d.IsHeld)) return false;
-        }
+        // Every die picked must contribute to the score
+        var scoringResult = CalculateDetailedScore(newlyReserved.Select(d => d.Value).ToList());
+        if (scoringResult.DiceUsed != newlyReserved.Count) return false;
 
-        state.CurrentTurnScore += additionalScore;
+        state.CurrentTurnScore += scoringResult.Score;
 
         // Move reserved to held
         foreach (var die in state.Dice.Where(d => d.IsReserved))
@@ -135,12 +125,12 @@ public class FarkleService : IGameService
 
         // Calculate score of currently reserved dice
         var newlyReserved = state.Dice.Where(d => !d.IsHeld && d.IsReserved).ToList();
-        int additionalScore = CalculateDiceScore(newlyReserved.Select(d => d.Value).ToList());
+        var scoringResult = CalculateDetailedScore(newlyReserved.Select(d => d.Value).ToList());
         
-        // Basic Farkle rule: you must be able to score at least 500 (or 300) to "get on the board" 
-        // but let's keep it simple for now.
+        // Every die picked must contribute to the score
+        if (scoringResult.DiceUsed != newlyReserved.Count) return false;
         
-        state.CurrentTurnScore += additionalScore;
+        state.CurrentTurnScore += scoringResult.Score;
         
         if (state.CurrentTurnScore == 0) return false; // Can't bank 0 (unless Farkled, but that's automatic)
 
@@ -187,15 +177,15 @@ public class FarkleService : IGameService
 
         // Check for Farkle
         var availableDiceValues = state.Dice.Where(d => !d.IsHeld).Select(d => d.Value).ToList();
-        int possibleScore = CalculateDiceScore(availableDiceValues);
+        var possibleScore = CalculateDetailedScore(availableDiceValues);
 
-        if (possibleScore == 0)
+        if (possibleScore.Score == 0)
         {
             state.Phase = FarklePhase.Farkled;
             state.CurrentTurnScore = 0;
             
             // Auto-advance after 3 seconds so players can see the "FARKLE!" animation
-            var roomCode = state.RoomCode; // We'll need to add this to the state
+            var roomCode = state.RoomCode; 
             _ = Task.Run(async () => {
                 await Task.Delay(3000);
                 await ExecuteAutoAdvance(roomCode);
@@ -204,9 +194,6 @@ public class FarkleService : IGameService
         else
         {
             state.Phase = FarklePhase.Picking;
-            // Mark which dice ARE part of a scoring combination to help the user
-            // This is actually tricky because a die might be part of multiple combos.
-            // For now, let's just let the user pick and we validate on Bank/Roll.
         }
     }
 
@@ -262,44 +249,56 @@ public class FarkleService : IGameService
         state.Dice = Enumerable.Range(0, 6).Select(_ => new FarkleDie()).ToList();
     }
 
+    public record ScoringResult(int Score, int DiceUsed);
+
     public static int CalculateDiceScore(List<int> dice)
     {
-        if (dice == null || !dice.Any()) return 0;
+        return CalculateDetailedScore(dice).Score;
+    }
 
-        int score = 0;
+    public static ScoringResult CalculateDetailedScore(List<int> dice)
+    {
+        if (dice == null || !dice.Any()) return new ScoringResult(0, 0);
+
         var counts = new int[7];
         foreach (var d in dice) counts[d]++;
 
-        // 1. Check for 1-6 straight
+        // 1. Check for 1-6 straight (1500 pts)
         if (counts[1] == 1 && counts[2] == 1 && counts[3] == 1 && counts[4] == 1 && counts[5] == 1 && counts[6] == 1)
-            return 1500;
+            return new ScoringResult(1500, 6);
 
-        // 2. Check for 3 pairs
-        int pairs = 0;
-        for (int i = 1; i <= 6; i++) if (counts[i] == 2) pairs++;
-        if (pairs == 3) return 1500;
-
-        // 3. Check for triplets and above
+        // 2. Calculate Triplet-based score (base for most variants)
+        int tripletScore = 0;
+        int tripletDiceUsed = 0;
+        var tripletCounts = (int[])counts.Clone();
         for (int i = 1; i <= 6; i++)
         {
-            if (counts[i] >= 3)
+            if (tripletCounts[i] >= 3)
             {
                 int baseVal = (i == 1) ? 1000 : i * 100;
-                int multiplier = counts[i] - 2; // 3->1, 4->2, 5->3, 6->4
-                // Many variants here. Let's use: 3=base, 4=base*2, 5=base*4, 6=base*8
-                score += baseVal * (1 << (multiplier - 1));
-                counts[i] = 0; // "Consume" these dice
+                int multiplier = tripletCounts[i] - 2; // 3->1, 4->2, 5->3, 6->4
+                tripletScore += baseVal * (1 << (multiplier - 1));
+                tripletDiceUsed += tripletCounts[i];
+                tripletCounts[i] = 0;
             }
         }
+        // Add remaining 1s and 5s
+        tripletScore += tripletCounts[1] * 100;
+        tripletDiceUsed += tripletCounts[1];
+        tripletScore += tripletCounts[5] * 50;
+        tripletDiceUsed += tripletCounts[5];
 
-        // 4. Check for remaining 1s and 5s
-        score += counts[1] * 100;
-        score += counts[5] * 50;
+        // 3. Check for Three Pairs (1500 pts)
+        // Note: 4-of-a-kind and a pair counts as 3 pairs in most standard rules.
+        int totalPairs = 0;
+        for (int i = 1; i <= 6; i++) totalPairs += counts[i] / 2;
 
-        // IMPORTANT: In Farkle, every die used in the score MUST be part of a scoring combination.
-        // If the user selects dice that DON'T score, the whole selection might be invalid depending on house rules.
-        // For simplicity, we just return the score of whatever can be scored.
-        
-        return score;
+        if (totalPairs == 3)
+        {
+            // Return higher of 3-pairs or triplet-based score (triplets can be higher, e.g. six 1s)
+            if (1500 > tripletScore) return new ScoringResult(1500, 6);
+        }
+
+        return new ScoringResult(tripletScore, tripletDiceUsed);
     }
 }
