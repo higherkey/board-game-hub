@@ -20,16 +20,19 @@
       <h3>Scoring Guide</h3>
       <div class="rules-scroll-container">
         <ul>
-          <li><span>1s</span> <span>100 pts</span></li>
-          <li><span>5s</span> <span>50 pts</span></li>
-          <li><span>Three 1s</span> <span>1000 pts</span></li>
-          <li><span>Three of a Kind</span> <span>Value &times; 100</span></li>
-          <li><span>Four of a Kind</span> <span>2 &times; (3 of a kind)</span></li>
-          <li><span>Five of a Kind</span> <span>4 &times; (3 of a kind)</span></li>
-          <li><span>Six of a Kind</span> <span>8 &times; (3 of a kind)</span></li>
+          <li><span>Single 1</span> <span>100 pts</span></li>
+          <li><span>Single 5</span> <span>50 pts</span></li>
+          <li><span>Three 1s</span> <span>300 pts</span></li>
+          <li><span>Three of a Kind (2-6)</span> <span>Value &times; 100</span></li>
+          <li><span>Four of any number</span> <span>1000 pts</span></li>
+          <li><span>Five of any number</span> <span>2000 pts</span></li>
+          <li><span>Six of any number</span> <span>3000 pts</span></li>
           <li><span>Straight (1-6)</span> <span>1500 pts</span></li>
           <li><span>Three Pairs</span> <span>1500 pts</span></li>
+          <li><span>Four with a Pair</span> <span>1500 pts</span></li>
+          <li><span>Two Triplets</span> <span>2500 pts</span></li>
         </ul>
+        <p class="small text-muted mt-2 mb-0"><em>Note: First score entered on Score Pad requires 500+ pts.</em></p>
       </div>
       <button class="close-btn" (click)="toggleScoringAid()">Got it</button>
     </div>
