@@ -1,1 +1,26 @@
-/* Component styles defined in the parent game-room layout. */
+.player-list-card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.score-circle {
+    width: 28px;
+    height: 28px;
+    background-color: #6c757d; // Gray background
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.border-bottom-light {
+    border-bottom: 1px solid var(--bg-surface-2);
+}
+
+.bg-accent {
+    background-color: var(--accent);
+}

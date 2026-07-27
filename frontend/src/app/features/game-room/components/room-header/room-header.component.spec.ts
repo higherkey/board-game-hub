@@ -60,4 +60,26 @@ describe('RoomHeaderComponent', () => {
     component.requestUndo.emit();
     expect(component.requestUndo.emit).toHaveBeenCalled();
   });
+
+  it('should apply the .game-room-header class to the root header element to ensure styles are applied', () => {
+    const headerElement = fixture.nativeElement.querySelector('header');
+    expect(headerElement).toBeTruthy();
+    expect(headerElement.classList.contains('game-room-header')).toBeTrue();
+  });
+
+  it('should hide the room info container when roomCode is CREATE to prevent UI clutter', () => {
+    component.roomCode = 'CREATE';
+    fixture.detectChanges();
+    const infoContainer = fixture.nativeElement.querySelector('.room-info-container');
+    expect(infoContainer).toBeFalsy();
+  });
+
+  it('should display the room info container for normal room codes', () => {
+    component.roomCode = 'ABCDEF';
+    fixture.detectChanges();
+    const infoContainer = fixture.nativeElement.querySelector('.room-info-container');
+    expect(infoContainer).toBeTruthy();
+    const roomCodeDisplay = fixture.nativeElement.querySelector('.room-code-display');
+    expect(roomCodeDisplay.textContent.trim()).toBe('ABCDEF');
+  });
 });

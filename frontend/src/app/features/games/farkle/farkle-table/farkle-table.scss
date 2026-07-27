@@ -194,33 +194,33 @@
   background: #f0f0f0; /* Solid core to fill gaps */
   border-radius: 14px;
 
-    .face {
-      position: absolute;
-      width: 102%; /* Slight overlap to hide corner gaps */
-      height: 102%;
-      background: #ffffff;
-      border: 1px solid rgba(0,0,0,0.05);
-      border-radius: 14px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      padding: 14px;
-      gap: 8px;
-      box-shadow: 
-        inset 0 0 20px rgba(0,0,0,0.05),
-        inset 0 0 3px rgba(255,255,255,0.8);
-      backface-visibility: hidden;
+  .face {
+    position: absolute;
+    width: 102%; /* Slight overlap to hide corner gaps */
+    height: 102%;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 14px;
+    gap: 8px;
+    box-shadow: 
+      inset 0 0 20px rgba(0,0,0,0.05),
+      inset 0 0 3px rgba(255,255,255,0.8);
+    backface-visibility: hidden;
 
-      &.top {
-        transform: rotateX(90deg) translateZ(50px);
-        background: #ffffff;
-      }
-      &.front  { transform: rotateX(0deg) translateZ(50px); background: #f9f9f9; }
-      &.back   { transform: rotateX(180deg) translateZ(50px); background: #f9f9f9; }
-      &.right  { transform: rotateY(90deg) translateZ(50px); background: #f2f2f2; }
-      &.left   { transform: rotateY(-90deg) translateZ(50px); background: #f2f2f2; }
-      &.bottom { transform: rotateX(-90deg) translateZ(50px); background: #ebebeb; }
+    &.top {
+      transform: rotateX(90deg) translateZ(50px);
+      background: #ffffff;
     }
+    &.front  { transform: rotateX(0deg) translateZ(50px); background: #f9f9f9; }
+    &.back   { transform: rotateX(180deg) translateZ(50px); background: #f9f9f9; }
+    &.right  { transform: rotateY(90deg) translateZ(50px); background: #f2f2f2; }
+    &.left   { transform: rotateY(-90deg) translateZ(50px); background: #f2f2f2; }
+    &.bottom { transform: rotateX(-90deg) translateZ(50px); background: #ebebeb; }
+  }
 
   .pip {
     background: var(--primary-dark, #002244);

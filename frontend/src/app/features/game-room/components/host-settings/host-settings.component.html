@@ -150,21 +150,21 @@
                             {{ meta.label }}
                         </label>
 
-                            <div *ngIf="meta.type === 'select'" class="select-wrapper">
-                                <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]"
-                                    class="form-select form-select-sm">
-                                    <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}
-                                    </option>
-                                </select>
-                            </div>
+                        <div *ngIf="meta.type === 'select'" class="select-wrapper">
+                            <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]"
+                                class="form-select form-select-sm">
+                                <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
 
-                            <input *ngIf="meta.type === 'number'" [id]="'host-' + meta.id" type="number"
-                                class="form-control form-control-sm" [(ngModel)]="settings[meta.id]">
+                        <input *ngIf="meta.type === 'number'" [id]="'host-' + meta.id" type="number"
+                            class="form-control form-control-sm" [(ngModel)]="settings[meta.id]">
 
-                            <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch m-0">
-                                <input class="form-check-input" type="checkbox" [id]="'host-' + meta.id"
-                                    [(ngModel)]="settings[meta.id]">
-                            </div>
+                        <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" [id]="'host-' + meta.id"
+                                [(ngModel)]="settings[meta.id]">
+                        </div>
                     </div>
                 </div>
 
