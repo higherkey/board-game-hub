@@ -3,14 +3,15 @@
     
     <!-- Mobile Left: Hamburger Menu -->
     <div class="d-md-none">
-        <button class="btn btn-link text-white p-0" (click)="toggleNavMenu()" title="Room Menu">
+        <button class="btn btn-link text-white p-0" (click)="toggleNavMenu()" title="Room Menu"
+            aria-label="Open Room Menu" [attr.aria-expanded]="isNavMenuOpen">
             <i class="bi bi-list fs-3"></i>
         </button>
     </div>
 
     <!-- Desktop Left: Navigation & Room Actions -->
     <div class="d-none d-md-flex align-items-center gap-3">
-        <a routerLink="/" class="btn btn-outline-secondary btn-sm" title="Home (Keep Connected)">
+        <a routerLink="/" class="btn btn-outline-secondary btn-sm" title="Home (Keep Connected)" aria-label="Home">
             <i class="bi bi-house-door-fill"></i>
         </a>
         <button class="btn btn-pink btn-sm fw-bold d-flex align-items-center" (click)="leaveRoom.emit()"
@@ -21,19 +22,19 @@
         
         <!-- Video Chat Toggle (Desktop) -->
         <button class="btn btn-outline-light btn-sm" (click)="startVideoChat.emit()"
-            *ngIf="videoChatReady && !isVideoActive" title="Start Video">
+            *ngIf="videoChatReady && !isVideoActive" title="Start Video" aria-label="Start Video">
             <i class="bi bi-camera-video"></i>
         </button>
 
         <!-- Undo Button -->
         <button class="btn btn-pink btn-sm"
             *ngIf="showUndoButton" (click)="requestUndo.emit()"
-            title="Request Undo">
+            title="Request Undo" aria-label="Request Undo">
             <i class="bi bi-arrow-counterclockwise"></i>
         </button>
     </div>
 
-    <div class="room-info-container d-flex align-items-center gap-2 gap-sm-3 ms-1 ms-sm-2 ps-2 ps-sm-3">
+    <div class="room-info-container d-flex align-items-center gap-2 gap-sm-3 ms-1 ms-sm-2 ps-2 ps-sm-3" *ngIf="roomCode !== 'CREATE'">
         <div class="d-flex align-items-baseline">
             <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline"
                 style="font-size: 0.65rem; color: var(--text-light);">ROOM</span>
@@ -49,7 +50,7 @@
     <div class="d-flex align-items-center gap-2 gap-md-3">
         <!-- Video Chat Toggle (Mobile) -->
         <button class="btn btn-outline-light btn-sm d-md-none" (click)="startVideoChat.emit()"
-            *ngIf="videoChatReady && !isVideoActive" title="Start Video">
+            *ngIf="videoChatReady && !isVideoActive" title="Start Video" aria-label="Start Video">
             <i class="bi bi-camera-video"></i>
         </button>
 
@@ -66,13 +67,13 @@
     </div>
 
     <!-- NAV MENU OVERLAY (Mobile Only) -->
-    <div class="nav-menu-overlay d-md-none" role="dialog" tabindex="-1" [class.open]="isNavMenuOpen"
+    <div class="nav-menu-overlay d-md-none" role="dialog" aria-modal="true" aria-label="Room Menu Navigation" tabindex="-1" [class.open]="isNavMenuOpen"
         (click)="toggleNavMenu()" (keydown.escape)="toggleNavMenu()">
         <div class="nav-menu-content p-3 d-flex flex-column gap-3"
             (click)="$event.stopPropagation()" (keydown.escape)="toggleNavMenu()">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h4 class="mb-0 text-white fw-bold">Room Menu</h4>
-                <button class="btn-close btn-close-white" (click)="toggleNavMenu()"></button>
+                <button class="btn-close btn-close-white" (click)="toggleNavMenu()" aria-label="Close Room Menu"></button>
             </div>
 
             <div class="menu-actions d-flex flex-column gap-3">

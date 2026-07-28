@@ -130,12 +130,18 @@ public class FarkleService : IGameService
         // Every die picked must contribute to the score
         if (scoringResult.DiceUsed != newlyReserved.Count) return false;
         
-        state.CurrentTurnScore += scoringResult.Score;
-        
-        if (state.CurrentTurnScore == 0) return false; // Can't bank 0 (unless Farkled, but that's automatic)
+        int potentialTurnScore = state.CurrentTurnScore + scoringResult.Score;
+        if (potentialTurnScore == 0) return false; // Can't bank 0
 
         if (state.PlayerStates.TryGetValue(state.ActivePlayerId, out var pState))
         {
+            // Official Rule: First score entered on Score Pad must be at least 500 points
+            if (pState.TotalScore == 0 && potentialTurnScore < 500)
+            {
+                return false;
+            }
+
+            state.CurrentTurnScore = potentialTurnScore;
             pState.TotalScore += state.CurrentTurnScore;
             pState.LastTurnScore = state.CurrentTurnScore;
             
@@ -262,43 +268,94 @@ public class FarkleService : IGameService
 
         var counts = new int[7];
         foreach (var d in dice) counts[d]++;
+        int totalDice = dice.Count;
 
-        // 1. Check for 1-6 straight (1500 pts)
-        if (counts[1] == 1 && counts[2] == 1 && counts[3] == 1 && counts[4] == 1 && counts[5] == 1 && counts[6] == 1)
-            return new ScoringResult(1500, 6);
+        // Check 6-dice special combinations first
+        int best6Score = 0;
+        if (totalDice == 6)
+        {
+            // 1-6 straight (1,500 pts)
+            if (counts[1] == 1 && counts[2] == 1 && counts[3] == 1 && counts[4] == 1 && counts[5] == 1 && counts[6] == 1)
+                best6Score = Math.Max(best6Score, 1500);
 
-        // 2. Calculate Triplet-based score (base for most variants)
-        int tripletScore = 0;
-        int tripletDiceUsed = 0;
-        var tripletCounts = (int[])counts.Clone();
+            // Two triplets (2,500 pts)
+            int tripletsCount = 0;
+            for (int i = 1; i <= 6; i++) if (counts[i] == 3) tripletsCount++;
+            if (tripletsCount == 2)
+                best6Score = Math.Max(best6Score, 2500);
+
+            // Four of any number with a pair (1,500 pts)
+            bool hasFour = false, hasPair = false;
+            for (int i = 1; i <= 6; i++)
+            {
+                if (counts[i] == 4) hasFour = true;
+                if (counts[i] == 2) hasPair = true;
+            }
+            if (hasFour && hasPair)
+                best6Score = Math.Max(best6Score, 1500);
+
+            // Three pairs (1,500 pts)
+            int totalPairs = 0;
+            for (int i = 1; i <= 6; i++) totalPairs += counts[i] / 2;
+            if (totalPairs == 3)
+                best6Score = Math.Max(best6Score, 1500);
+
+            // Six of any number (3,000 pts)
+            if (counts.Any(c => c == 6))
+                best6Score = Math.Max(best6Score, 3000);
+        }
+
+        // Standard combination scoring
+        int score = 0;
+        int usedDice = 0;
+        var remCounts = (int[])counts.Clone();
+
         for (int i = 1; i <= 6; i++)
         {
-            if (tripletCounts[i] >= 3)
+            if (remCounts[i] >= 6)
             {
-                int baseVal = (i == 1) ? 1000 : i * 100;
-                int multiplier = tripletCounts[i] - 2; // 3->1, 4->2, 5->3, 6->4
-                tripletScore += baseVal * (1 << (multiplier - 1));
-                tripletDiceUsed += tripletCounts[i];
-                tripletCounts[i] = 0;
+                score += 3000;
+                usedDice += 6;
+                remCounts[i] -= 6;
+            }
+            else if (remCounts[i] == 5)
+            {
+                score += 2000;
+                usedDice += 5;
+                remCounts[i] -= 5;
+            }
+            else if (remCounts[i] == 4)
+            {
+                score += 1000;
+                usedDice += 4;
+                remCounts[i] -= 4;
+            }
+            else if (remCounts[i] == 3)
+            {
+                int tripletVal = (i == 1) ? 300 : i * 100;
+                score += tripletVal;
+                usedDice += 3;
+                remCounts[i] -= 3;
             }
         }
-        // Add remaining 1s and 5s
-        tripletScore += tripletCounts[1] * 100;
-        tripletDiceUsed += tripletCounts[1];
-        tripletScore += tripletCounts[5] * 50;
-        tripletDiceUsed += tripletCounts[5];
 
-        // 3. Check for Three Pairs (1500 pts)
-        // Note: 4-of-a-kind and a pair counts as 3 pairs in most standard rules.
-        int totalPairs = 0;
-        for (int i = 1; i <= 6; i++) totalPairs += counts[i] / 2;
-
-        if (totalPairs == 3)
+        // Add singles (1s = 100 pts, 5s = 50 pts)
+        if (remCounts[1] > 0)
         {
-            // Return higher of 3-pairs or triplet-based score (triplets can be higher, e.g. six 1s)
-            if (1500 > tripletScore) return new ScoringResult(1500, 6);
+            score += remCounts[1] * 100;
+            usedDice += remCounts[1];
+        }
+        if (remCounts[5] > 0)
+        {
+            score += remCounts[5] * 50;
+            usedDice += remCounts[5];
         }
 
-        return new ScoringResult(tripletScore, tripletDiceUsed);
+        if (totalDice == 6 && best6Score > score)
+        {
+            return new ScoringResult(best6Score, 6);
+        }
+
+        return new ScoringResult(score, usedDice);
     }
 }

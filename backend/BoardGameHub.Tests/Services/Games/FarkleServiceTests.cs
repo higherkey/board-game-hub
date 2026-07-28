@@ -22,15 +22,18 @@ public class FarkleServiceTests
     }
 
     [Theory]
-    [InlineData(new int[] { 1, 1, 1, 2, 3, 4 }, 1000)] // Three 1s
-    [InlineData(new int[] { 5, 5, 5, 2, 3, 4 }, 500)]  // Three 5s
-    [InlineData(new int[] { 2, 2, 2, 3, 4, 6 }, 200)]  // Three 2s
-    [InlineData(new int[] { 1, 5, 2, 3, 4, 2 }, 150)]  // A 1 and a 5 (no straight)
+    [InlineData(new int[] { 1, 1, 1, 2, 3, 4 }, 300)]  // Three 1s = 300
+    [InlineData(new int[] { 5, 5, 5, 2, 3, 4 }, 500)]  // Three 5s = 500
+    [InlineData(new int[] { 2, 2, 2, 3, 4, 6 }, 200)]  // Three 2s = 200
+    [InlineData(new int[] { 1, 5, 2, 3, 4, 2 }, 150)]  // A 1 and a 5 = 150
     [InlineData(new int[] { 2, 3, 4, 6, 2, 3 }, 0)]    // No score
-    [InlineData(new int[] { 1, 2, 3, 4, 5, 6 }, 1500)] // Straight
-    [InlineData(new int[] { 2, 2, 3, 3, 4, 4 }, 1500)] // Three pairs
-    [InlineData(new int[] { 1, 1, 1, 1, 2, 3 }, 2000)] // Four 1s
-    [InlineData(new int[] { 5, 5, 5, 5, 5, 2 }, 2000)] // Five 5s
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 6 }, 1500)] // Straight = 1500
+    [InlineData(new int[] { 2, 2, 3, 3, 4, 4 }, 1500)] // Three pairs = 1500
+    [InlineData(new int[] { 1, 1, 1, 1, 2, 3 }, 1000)] // Four of any number = 1000
+    [InlineData(new int[] { 5, 5, 5, 5, 5, 2 }, 2000)] // Five of any number = 2000
+    [InlineData(new int[] { 6, 6, 6, 6, 6, 6 }, 3000)] // Six of any number = 3000
+    [InlineData(new int[] { 2, 2, 2, 4, 4, 4 }, 2500)] // Two triplets = 2500
+    [InlineData(new int[] { 3, 3, 3, 3, 6, 6 }, 1500)] // Four of any number with a pair = 1500
     public void CalculateDiceScore_ReturnsCorrectScore(int[] dice, int expectedScore)
     {
         var result = FarkleService.CalculateDiceScore(dice.ToList());
@@ -79,21 +82,21 @@ public class FarkleServiceTests
     }
 
     [Fact]
-    public async Task HandleAction_Bank_Works()
+    public async Task HandleAction_Bank_WorksWhenMeetingOpeningThreshold()
     {
-        // Arrange
+        // Arrange (Three 5s = 500 pts, meeting the 500-pt opening threshold)
         var room = new Room();
         var state = new FarkleState { Phase = FarklePhase.Picking, ActivePlayerId = "p1" };
         state.PlayerStates["p1"] = new FarklePlayerState { PlayerId = "p1", TotalScore = 0 };
         state.PlayerStates["p2"] = new FarklePlayerState { PlayerId = "p2", TotalScore = 0 };
         state.Dice = new List<FarkleDie> 
         { 
-            new FarkleDie { Value = 1, IsReserved = true }, 
+            new FarkleDie { Value = 5, IsReserved = true }, 
+            new FarkleDie { Value = 5, IsReserved = true }, 
+            new FarkleDie { Value = 5, IsReserved = true }, 
             new FarkleDie { Value = 2 }, 
             new FarkleDie { Value = 3 }, 
-            new FarkleDie { Value = 4 }, 
-            new FarkleDie { Value = 5 }, 
-            new FarkleDie { Value = 6 } 
+            new FarkleDie { Value = 4 } 
         };
         room.GameData = state;
         var action = new GameAction("BANK", null);
@@ -103,8 +106,35 @@ public class FarkleServiceTests
 
         // Assert
         result.Should().BeTrue();
-        state.PlayerStates["p1"].TotalScore.Should().Be(100);
+        state.PlayerStates["p1"].TotalScore.Should().Be(500);
         state.ActivePlayerId.Should().NotBe("p1"); // Should have advanced
+    }
+
+    [Fact]
+    public async Task HandleAction_Bank_RejectsFirstBankUnder500Points()
+    {
+        // Arrange (Single 1 = 100 pts, which is under the 500-pt opening threshold for a player with 0 total score)
+        var room = new Room();
+        var state = new FarkleState { Phase = FarklePhase.Picking, ActivePlayerId = "p1" };
+        state.PlayerStates["p1"] = new FarklePlayerState { PlayerId = "p1", TotalScore = 0 };
+        state.Dice = new List<FarkleDie> 
+        { 
+            new FarkleDie { Value = 1, IsReserved = true }, 
+            new FarkleDie { Value = 2 }, 
+            new FarkleDie { Value = 3 }, 
+            new FarkleDie { Value = 4 }, 
+            new FarkleDie { Value = 6 }, 
+            new FarkleDie { Value = 6 } 
+        };
+        room.GameData = state;
+        var action = new GameAction("BANK", null);
+
+        // Act
+        var result = await _service.HandleAction(room, action, "p1");
+
+        // Assert
+        result.Should().BeFalse("First bank must be at least 500 points to get on the score pad");
+        state.PlayerStates["p1"].TotalScore.Should().Be(0);
     }
 
     [Fact]
