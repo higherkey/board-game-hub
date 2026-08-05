@@ -100,7 +100,6 @@ Run commands from repo root unless noted.
 
 ## Engineering Standards to honor
 - **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
-- **CSS Best Practices:** Avoid the use of `!important` at all costs. Prioritize CSS specificity, modularity, and proper cascading over forced overrides.
 - **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
 
 ## Existing AI/workflow guidance to honor

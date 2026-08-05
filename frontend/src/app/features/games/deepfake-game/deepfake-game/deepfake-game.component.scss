@@ -1,3 +1,5 @@
+@use '../animations';
+
 .deepfake-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -158,19 +160,7 @@
     animation: pulse-border 2s infinite;
 }
 
-@keyframes pulse-border {
-    0% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-    }
 
-    70% {
-        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    }
-}
 
 .turn-toast {
     position: absolute;
@@ -188,25 +178,7 @@
     animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes bounceIn {
-    0% {
-        transform: translateX(-50%) scale(0.3);
-        opacity: 0;
-    }
 
-    50% {
-        transform: translateX(-50%) scale(1.05);
-        opacity: 1;
-    }
-
-    70% {
-        transform: translateX(-50%) scale(0.9);
-    }
-
-    100% {
-        transform: translateX(-50%) scale(1);
-    }
-}
 
 canvas {
     width: 100%;

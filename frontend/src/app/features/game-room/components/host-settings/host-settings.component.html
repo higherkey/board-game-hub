@@ -2,7 +2,7 @@
     <!-- COMPACT MODE: Single Row (Used in Intermission or mobile host tab) -->
     <div *ngIf="compactMode" class="compact-row d-flex align-items-center gap-3 flex-wrap">
         <!-- Game Selection (Searchable) -->
-        <div class="compact-item flex-grow-1 position-relative" style="min-width: 200px;">
+        <div class="compact-item flex-grow-1 position-relative compact-item-min-width">
             <app-game-combobox
                 [(ngModel)]="selectedGameType"
                 [options]="availableGames"
@@ -17,21 +17,21 @@
         <div *ngIf="selectedGame?.timerType !== 0" class="compact-item d-flex align-items-center gap-2">
             <i class="bi bi-clock text-secondary"></i>
             <input type="number" [(ngModel)]="settings.timerDurationSeconds"
-                class="form-control form-control-sm text-center" style="width: 50px;" title="Seconds">
+                class="form-control form-control-sm text-center w-50px" title="Seconds">
         </div>
 
         <!-- Rounds Setting (Compact) -->
         <div class="compact-item d-flex align-items-center gap-2">
             <i class="bi bi-hash text-secondary"></i>
             <input type="number" [(ngModel)]="settings.totalRounds" min="1" max="50"
-                class="form-control form-control-sm text-center" style="width: 50px;" title="Total Rounds">
+                class="form-control form-control-sm text-center w-50px" title="Total Rounds">
         </div>
 
         <!-- Start Button -->
         <div class="compact-item">
             <button type="button" class="btn fw-bold" (click)="startGame($event)" [disabled]="selectedGameType === 'None'"
                 [ngClass]="(isIntermission && currentRound >= (settings.totalRounds || 5)) ? 'btn-danger' : 'btn-primary'"
-                style="border: none;"
+                class="border-none"
                 [style.background]="(isIntermission && currentRound >= (settings.totalRounds || 5)) ? '' : 'linear-gradient(135deg, var(--secondary) 0%, var(--accent-dark) 100%)'">
 
                 <ng-container *ngIf="!isIntermission; else intermissionBtn">
@@ -58,7 +58,7 @@
 
                 <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
                     <div class="qr-box bg-white p-2 rounded shadow-sm flex-shrink-0">
-                        <img [src]="getQrCodeUrl()" alt="Room QR Code" style="width: 100px; height: 100px;">
+                        <img [src]="getQrCodeUrl()" alt="Room QR Code" class="qr-img">
                     </div>
                     <div class="room-code-badge flex-grow-1 h-100 d-flex flex-column justify-content-center">
                         <div class="x-small text-muted text-uppercase fw-bold ls-wide">Room Code</div>
@@ -131,14 +131,13 @@
                     <div *ngIf="selectedGame?.timerType !== 0" class="setting-group flex-grow-1">
                         <label for="timerDuration" class="x-small fw-bold text-uppercase d-block mb-1">Timer (Sec)</label>
                         <input id="timerDuration" type="number" min="0" max="600"
-                                class="form-control form-control-sm text-center"
-                                [(ngModel)]="settings.timerDurationSeconds" style="max-width: 80px;">
+                                class="form-control form-control-sm text-center max-w-80px"
+                                [(ngModel)]="settings.timerDurationSeconds">
                     </div>
                     <div class="setting-group flex-grow-1">
                         <label for="totalRounds" class="x-small fw-bold text-uppercase d-block mb-1">Rounds</label>
                         <input id="totalRounds" type="number" min="1" max="50"
-                                class="form-control form-control-sm text-center" [(ngModel)]="settings.totalRounds"
-                                style="max-width: 80px;">
+                                class="form-control form-control-sm text-center max-w-80px" [(ngModel)]="settings.totalRounds">
                     </div>
                 </div>
 
@@ -150,21 +149,21 @@
                             {{ meta.label }}
                         </label>
 
-                            <div *ngIf="meta.type === 'select'" class="select-wrapper">
-                                <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]"
-                                    class="form-select form-select-sm">
-                                    <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}
-                                    </option>
-                                </select>
-                            </div>
+                        <div *ngIf="meta.type === 'select'" class="select-wrapper">
+                            <select [id]="'host-' + meta.id" [(ngModel)]="settings[meta.id]"
+                                class="form-select form-select-sm">
+                                <option *ngFor="let opt of meta.options" [ngValue]="opt.value">{{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
 
-                            <input *ngIf="meta.type === 'number'" [id]="'host-' + meta.id" type="number"
-                                class="form-control form-control-sm" [(ngModel)]="settings[meta.id]">
+                        <input *ngIf="meta.type === 'number'" [id]="'host-' + meta.id" type="number"
+                            class="form-control form-control-sm" [(ngModel)]="settings[meta.id]">
 
-                            <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch m-0">
-                                <input class="form-check-input" type="checkbox" [id]="'host-' + meta.id"
-                                    [(ngModel)]="settings[meta.id]">
-                            </div>
+                        <div *ngIf="meta.type === 'checkbox'" class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" [id]="'host-' + meta.id"
+                                [(ngModel)]="settings[meta.id]">
+                        </div>
                     </div>
                 </div>
 

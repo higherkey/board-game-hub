@@ -1,6 +1,6 @@
 # Board Game Hub
 
-> Bringing people together through shared screens and personal devices.
+> Connecting people and making them feel as close as possible no matter where they are in the world.
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/richardlitt/standard-readme)
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=flat-square)](https://board-game-hub-alpha.vercel.app/)
@@ -14,7 +14,7 @@
 [![SignalR](https://img.shields.io/badge/SignalR-Active-orange?style=flat-square&logo=signalr)](#)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg?style=flat-square)](LICENSE)
 
-Board Game Hub is a multiplayer board game platform designed for "Table" (shared screen) and "Hand" (personal device) gameplay. It bridges the gap between digital and physical play by allowing players to use their phones as controllers while a central screen (TV or laptop) serves as the game board.
+Board Game Hub is a multiplayer board game platform created by [eight1five design](https://eight1fivedesign.com). Designed for "Table" (shared screen) and "Hand" (personal device) gameplay, its mission is to bring people together and make them feel right in the same room — no matter where they are in the world.
 
 ## Table of Contents
 
@@ -26,7 +26,7 @@ Board Game Hub is a multiplayer board game platform designed for "Table" (shared
 
 ## Background
 
-Board Game Hub is designed to be highly extensible and supports real-time multiplayer coordination using WebSockets (SignalR) and a shared-screen dynamic.
+Board Game Hub was built on the core belief that technology should bring people closer together, not pull them apart. By combining a central shared display with individual mobile controllers, Board Game Hub recreates the warmth, laughter, and intimacy of physical game night across any distance.
 
 ### Platform Concept (Table vs Hand)
 

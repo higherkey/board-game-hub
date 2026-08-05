@@ -24,9 +24,9 @@
     </app-undo-toast>
 
     <!-- 2. MAIN BODY (Sidebar + Content) -->
-    <div class="row flex-grow-1 g-3 position-relative section-container" [class.transitions-enabled]="enableTransitions">
+    <div class="d-flex flex-grow-1 position-relative section-container" [class.transitions-enabled]="enableTransitions">
         <!-- PLAYER SIDEBAR (Hidden during entry stage) -->
-        <div *ngIf="!stateService.needsName" class="col-md-4 col-lg-3 d-md-flex flex-column flex-grow-1 sidebar-panel"
+        <div *ngIf="!stateService.needsName" class="d-md-flex flex-column sidebar-panel"
             [class.is-collapsed]="isSidebarCollapsed" [class.d-flex]="mobileView === 'players'"
             [class.d-none]="mobileView !== 'players'">
 
@@ -49,25 +49,24 @@
 
         <!-- MAIN GAME STAGE -->
         <div class="main-stage-panel d-md-flex flex-column flex-grow-1 px-0"
-            [ngClass]="stateService.needsName ? 'col-12' : (isSidebarCollapsed ? 'col-md-12' : 'col-md-8 col-lg-9')" 
+            [ngClass]="{'w-100': stateService.needsName || isSidebarCollapsed}" 
             [class.d-flex]="mobileView === 'game'"
             [class.mobile-hidden]="mobileView !== 'game'" [class.has-docked-top]="videoLayout === 'docked-top'"
-            [class.has-docked-bottom]="videoLayout === 'docked-bottom'"
-            style="min-height: 0;">
+            [class.has-docked-bottom]="videoLayout === 'docked-bottom'">
 
-            <div class="main-stage flex-grow-1 bg-surface-2 rounded-4 position-relative d-flex flex-column" style="min-height: 0;">
+            <div class="main-stage flex-grow-1 bg-surface-2 position-relative d-flex flex-column">
                 <!-- Floating Sidebar Expand (Desktop Only, only if collapsed) -->
                 <button
-                    class="btn btn-dark btn-sm position-absolute top-0 start-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none"
+                    class="btn btn-dark btn-sm position-absolute top-0 start-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none floating-btn"
                     [class.d-md-block]="isSidebarCollapsed" (click)="toggleSidebar()"
-                    style="z-index: 1000; width: 32px; height: 32px; padding: 0;" title="Expand Sidebar">
+                    title="Expand Sidebar">
                     <i class="bi bi-chevron-right"></i>
                 </button>
 
                 <!-- Floating Big Screen Toggle (Desktop Only) -->
                 <button
-                    class="btn btn-dark btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none d-md-block"
-                    (click)="toggleBigScreen($event)" style="z-index: 1000; width: 32px; height: 32px; padding: 0;"
+                    class="btn btn-dark btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none d-md-block floating-btn"
+                    (click)="toggleBigScreen($event)"
                     title="{{ isBigScreen ? 'Exit Big Screen (Shift+F)' : 'Big Screen Mode (Shift+F)' }}">
                     <i class="bi" [class.bi-fullscreen]="!isBigScreen" [class.bi-fullscreen-exit]="isBigScreen"></i>
                 </button>
@@ -84,10 +83,10 @@
 
                     <!-- LOBBY STATE (Host Only Controls & Player Read-Only View) -->
                     <ng-container *ngIf="!stateService.needsName && !(stateService.gameStarted$ | async)">
-                        <div class="row w-100 justify-content-center m-0">
-                            <div class="col-12 px-0" style="max-width: 1200px;">
+                        <div class="row w-100 justify-content-center m-0 h-100 flex-grow-1">
+                            <div class="col-12 px-0 h-100 d-flex flex-column lobby-container-max">
                                 <!-- Host Only Controls -->
-                                <div class="w-100" *ngIf="stateService.isHost$ | async">
+                                <div class="w-100 h-100 d-flex flex-column" *ngIf="stateService.isHost$ | async">
                                     <app-host-settings [roomCode]="roomCode"
                                         [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
                                         [players]="(stateService.players$ | async) || []" [isHost]="true"
@@ -101,7 +100,7 @@
                                 </div>
 
                                 <!-- Player Read-Only View -->
-                                <div class="w-100" *ngIf="!(stateService.isHost$ | async)">
+                                <div class="w-100 h-100 d-flex flex-column" *ngIf="!(stateService.isHost$ | async)">
                                     <app-player-settings [roomCode]="roomCode" [room]="stateService.currentRoom$ | async"
                                         [selectedGame]="selectedGame" [meReady]="(stateService.me$ | async)?.isReady || false"
                                         [isScreen]="(stateService.me$ | async)?.isScreen || false" (toggleReady)="toggleReady($event)">
@@ -131,8 +130,7 @@
 
                 <!-- INTERMISSION SETTINGS BAR (Host Only - Desktop) -->
                 <div *ngIf="(stateService.isIntermission$ | async) && (stateService.isHost$ | async)"
-                    class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 shadow-lg border-top border-secondary d-none d-md-block"
-                    style="background-color: var(--surface-card); box-shadow: 0 -5px 20px rgba(0,0,0,0.3) !important;">
+                    class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 border-top border-secondary d-none d-md-block intermission-bar-style">
                     <div class="container-fluid d-flex align-items-center justify-content-center">
                         <app-host-settings [roomCode]="roomCode" [compactMode]="true" [isIntermission]="true"
                             [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"

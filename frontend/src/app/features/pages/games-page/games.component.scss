@@ -1,10 +1,9 @@
 .filter-card {
-    border-radius: 1.5rem;
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
     overflow: hidden;
 
-    // Fix for sticky overlap - ensure it sticks below the header
     position: sticky;
     top: 2rem;
     z-index: 900;
@@ -12,6 +11,7 @@
 
 .filter-header {
     user-select: none;
+    min-block-size: 44px;
 
     &.cursor-pointer {
         cursor: pointer;
@@ -30,8 +30,8 @@
 
         &.show {
             display: block;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-            padding-top: 1rem;
+            border-block-start: 1px solid var(--border-color);
+            padding-block-start: 1rem;
         }
     }
 }
@@ -43,7 +43,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--secondary);
-    margin-bottom: 0.5rem;
+    margin-block-end: 0.5rem;
 }
 
 .tag-cloud {
@@ -53,56 +53,75 @@
 }
 
 .btn-tag {
-    background: #f0f2f5;
-    border: 1px solid transparent;
-    border-radius: 0.75rem;
-    padding: 0.25rem 0.75rem;
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.85rem;
     font-size: 0.8rem;
-    font-weight: 500;
-    color: #495057;
-    transition: all 0.2s ease;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+    min-inline-size: 44px;
+    min-block-size: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
-        background: #e9ecef;
+        background: color-mix(in oklch, var(--bg-surface-2) 80%, black);
+        transform: translate(-1px, -1px);
+        box-shadow: var(--shadow-sm);
     }
 
     &.active {
         background: var(--primary);
-        color: white;
-        box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3);
+        color: var(--text-on-primary);
+        border-color: var(--primary);
+        box-shadow: var(--shadow-sm);
     }
 }
 
+/* Container Query Context for Game Card Grid */
+.col-game-card {
+    container-type: inline-size;
+    container-name: game-card;
+}
+
 .glass-card {
-    border-radius: 1.5rem;
-    background: #ffffff;
-    border: 1px solid rgba(0, 51, 102, 0.05);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
 
-    // Constraint to prevent cards from getting too huge on 4K
-    max-width: 380px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
+    max-inline-size: 100%;
+    margin-inline: auto;
+    inline-size: 100%;
 
     &:hover {
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.12) !important;
-        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow-md);
+        transform: translate(-2px, -2px);
     }
 }
 
 .game-card {
-    min-height: 200px; // Shorter baseline for flat layout
+    min-block-size: 200px;
+}
+
+/* Container Query Breakpoint Adaptation */
+@container game-card (inline-size >= 320px) {
+    .game-card .card-body {
+        padding: 1.25rem !important;
+    }
 }
 
 .game-icon-bg {
-    width: 48px;
-    height: 48px;
+    inline-size: 48px;
+    block-size: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem; // Larger emoji since it has no background
+    font-size: 2.5rem;
     flex-shrink: 0;
     transition: transform 0.2s ease;
 }
@@ -112,33 +131,45 @@
 
     &:hover {
         h5 {
-            color: var(--accent, #6610f2) !important;
-            text-decoration: underline !important;
+            color: var(--accent);
+            text-decoration: underline;
         }
     }
 }
 
 .status-pill {
-    padding: 0.2rem 0.6rem;
+    padding: 0.25rem 0.6rem;
     font-size: 0.65rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-radius: 2rem;
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 
     &[data-status="Deployed"] {
-        background: rgba(25, 135, 84, 0.15);
-        color: #0f5132;
+        background: oklch(92% 0.05 145);
+        color: oklch(35% 0.15 145);
+        border: 1px solid oklch(80% 0.10 145);
     }
 
     &[data-status="Testing"] {
-        background: rgba(255, 193, 7, 0.2);
-        color: #664d03;
+        background: oklch(94% 0.06 80);
+        color: oklch(40% 0.16 80);
+        border: 1px solid oklch(82% 0.12 80);
+    }
+
+    &[data-status="InDevelopment"] {
+        background: oklch(92% 0.07 40);
+        color: oklch(45% 0.18 40);
+        border: 1px solid oklch(80% 0.14 40);
     }
 
     &[data-status="Backlog"] {
-        background: rgba(108, 117, 125, 0.15);
-        color: #212529;
+        background: oklch(92% 0.02 250);
+        color: oklch(45% 0.04 250);
+        border: 1px solid oklch(82% 0.03 250);
     }
 }
 
@@ -147,30 +178,31 @@
         display: flex;
         align-items: center;
         gap: 0.4rem;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.85rem;
+        color: var(--text-secondary);
 
         i {
             font-size: 0.9rem;
-            opacity: 0.6;
+            color: var(--accent);
         }
     }
 }
 
 .action-btn {
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     letter-spacing: 0.05em;
-    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.2);
+    box-shadow: var(--shadow-sm);
 
     &:hover {
-        box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
+        box-shadow: var(--shadow-md);
     }
 }
 
 .empty-state {
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 2rem;
-    border: 2px dashed rgba(0, 0, 0, 0.05);
+    background: var(--bg-surface-2);
+    border-radius: var(--radius-md);
+    border: 2px dashed var(--border-color);
 }
 
 // Dark mode support if available
@@ -194,7 +226,7 @@
     .input-group-text,
     .form-control,
     .form-select {
-        background-color: #252530 !important;
+        background-color: #252530;
         color: white;
     }
 

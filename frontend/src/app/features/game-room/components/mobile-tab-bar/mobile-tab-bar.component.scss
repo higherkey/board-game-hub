@@ -1,11 +1,11 @@
 .mobile-tab-bar {
     background: rgba(30, 30, 40, 0.95);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: env(safe-area-inset-bottom, 10px) !important;
+    padding-bottom: env(safe-area-inset-bottom, 10px);
     z-index: 1050;
     /* Above modals if needed, but usually below */
     height: 50px;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .nav-btn {
