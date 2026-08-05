@@ -1,38 +1,106 @@
 <div class="container pb-5">
-    <app-page-header title="How to Play" subtitle="Turn your smartphone into the ultimate game controller.">
+    <app-page-header title="About BoardGameHub" subtitle="Connecting people and making them feel right at the same table, no matter where they are in the world.">
     </app-page-header>
 
-    <div class="row align-items-center mb-5">
+    <!-- Mission & Soul Banner -->
+    <div class="card bg-surface border-0 shadow-sm p-4 p-md-5 mb-5 text-center rounded-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 rounded-pill mb-3">
+                    <i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i> Our Mission
+                </span>
+                <h2 class="display-6 fw-bold text-primary mb-3">Distance disappears at the game table</h2>
+                <p class="text-secondary fs-5 lead mb-4">
+                    Board Game Hub was born out of a simple, powerful vision by 
+                    <a href="https://eight1fivedesign.com" target="_blank" rel="noopener" class="text-decoration-none fw-semibold">eight1five design</a>: 
+                    to bring friends, families, and communities together across any distance. Whether you're across the street or across oceans, 
+                    we turn digital screens into shared living rooms.
+                </p>
+                <div class="row g-4 text-start mt-2">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start">
+                            <div class="p-3 bg-primary-subtle text-primary rounded-3 me-3">
+                                <i class="bi bi-globe-americas fs-3" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-primary mb-1">Bridge Distances</h5>
+                                <p class="text-muted small mb-0">Feel present together through seamless real-time interaction.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start">
+                            <div class="p-3 bg-accent-subtle text-accent rounded-3 me-3">
+                                <i class="bi bi-people-fill fs-3" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-primary mb-1">Shared Hearth</h5>
+                                <p class="text-muted small mb-0">Gather everyone around one shared display screen.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start">
+                            <div class="p-3 bg-success-subtle text-success rounded-3 me-3">
+                                <i class="bi bi-phone-vibrate fs-3" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-primary mb-1">Personal Hand</h5>
+                                <p class="text-muted small mb-0">Every player's phone becomes their private, personal controller.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <h3 class="text-primary fw-bold text-center mb-4">How Table vs. Hand Works</h3>
+
+    <div class="row align-items-center mb-5 g-4">
         <div class="col-md-6 order-md-2">
-            <div class="p-5 bg-surface rounded shadow-sm text-center">
-                <i class="bi bi-tv display-1 text-primary"></i>
+            <div class="p-5 bg-surface rounded-4 shadow-sm text-center border">
+                <i class="bi bi-tv display-1 text-primary" aria-hidden="true"></i>
+                <div class="mt-3">
+                    <span class="badge bg-secondary text-white">The Table Role</span>
+                </div>
             </div>
         </div>
         <div class="col-md-6 order-md-1">
-            <h3 class="text-primary">1. Host on the Big Screen</h3>
+            <h4 class="text-primary fw-bold">1. Host on the Big Screen</h4>
             <p class="text-secondary fs-5">
-                Open BoardGameHub on your laptop, TV, or tablet. create a room to get a unique 4-letter code.
-                This screen will show the main game board, timer, and results.
+                Open BoardGameHub on your TV, laptop, or tablet. Create a room to get a unique 4-letter code. 
+                This screen acts as the <strong>Table</strong> — displaying public scores, game boards, timers, and shared moments that everyone watches together.
             </p>
         </div>
     </div>
 
-    <div class="row align-items-center mb-5">
+    <div class="row align-items-center mb-5 g-4">
         <div class="col-md-6">
-            <div class="p-5 bg-surface rounded shadow-sm text-center">
-                <i class="bi bi-phone display-1 text-accent"></i>
+            <div class="p-5 bg-surface rounded-4 shadow-sm text-center border">
+                <i class="bi bi-phone display-1 text-accent" aria-hidden="true"></i>
+                <div class="mt-3">
+                    <span class="badge bg-secondary text-white">The Hand Role</span>
+                </div>
             </div>
         </div>
         <div class="col-md-6">
-            <h3 class="text-primary">2. Join on your Phone</h3>
+            <h4 class="text-primary fw-bold">2. Join on Your Phone</h4>
             <p class="text-secondary fs-5">
-                Players scan a QR code or go to the site and enter the room code.
-                Their phone becomes their private controller for answering questions, drawing, or voting.
+                Players scan the room's QR code or type in the room code on their smartphones. 
+                Your phone acts as your <strong>Hand</strong> — your private, personal controller for entering secret clues, drawing, voting, and making your moves.
             </p>
         </div>
     </div>
 
-    <div class="text-center mt-5">
-        <a routerLink="/" class="btn btn-primary btn-lg">Get Started</a>
+    <!-- Call To Action -->
+    <div class="text-center mt-5 p-4 rounded-4 bg-surface shadow-sm border">
+        <h4 class="fw-bold text-primary mb-2">Ready to bring everyone together?</h4>
+        <p class="text-muted mb-4">Host a room now or explore our growing library of multiplayer games.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a routerLink="/play" class="btn btn-primary btn-lg px-4">Start Playing</a>
+            <a routerLink="/games" class="btn btn-outline-primary btn-lg px-4">Browse Games</a>
+        </div>
     </div>
 </div>

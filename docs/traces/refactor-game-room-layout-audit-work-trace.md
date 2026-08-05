@@ -26,6 +26,12 @@
   - Absorbed "How It Works" 3-step walkthrough from the About page into a full-bleed Neobrutalist step card section (`.hiw-section`).
   - Added 4-card Featured Games preview grid linking directly to the game library.
   - Removed ~220 lines of dead SCSS legacy code from `home-page.component.scss`.
+- **About Page Redesign & Platform Documentation Update**:
+  - Updated `README.md` tagline and background section to articulate Board Game Hub's mission and vision of connecting people across physical distance.
+  - Added a foundational **Mission & Vision** section to `docs/platform-glossary.md` contextualizing Table vs. Hand roles.
+  - Re-architected `about.component.html` with a Mission Hero banner ("Distance disappears at the game table"), three core pillars (*Bridge Distances*, *Shared Hearth*, *Personal Hand*), a 2-step Table vs. Hand guide, and CTAs to `/play` and `/games`.
+  - Added unit specs in `about.component.spec.ts` asserting mission copy, eight1five studio link, and Table vs. Hand role badges.
+  - Passed accessibility audit (PR-001 heading hierarchy & PR-002 icon `aria-hidden` attributes).
 - **Verification & Quality Audits**: Passed full design review (`/design-review`), plan review (`/plan-review`), fresh-eyes peer review (`/peer-review`), Angular production build (`ng build`), and 290 Karma unit tests (`290 / 290 SUCCESS`).
 
 ## 4) Finalization Check
@@ -33,4 +39,5 @@
 - [x] Build verified clean (`ng build`).
 - [x] Unit tests verified (Karma 290/290).
 - [x] Design & Plan reviews passed.
+
 
