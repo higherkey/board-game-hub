@@ -288,6 +288,21 @@ p {
   --bs-btn-hover-border-color: var(--contrast-pink-hover);
 }
 
+.btn-outline-primary {
+  --bs-btn-color: var(--primary);
+  --bs-btn-bg: var(--bg-surface);
+  --bs-btn-border-color: var(--primary);
+  --bs-btn-hover-color: var(--text-on-primary);
+  --bs-btn-hover-bg: var(--primary);
+  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-active-color: var(--text-on-primary);
+  --bs-btn-active-bg: var(--primary-dark);
+  --bs-btn-active-border-color: var(--primary-dark);
+  background-color: var(--bg-surface);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
 .btn:hover {
   box-shadow: var(--shadow-md);
 }
