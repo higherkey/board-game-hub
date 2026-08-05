@@ -289,12 +289,11 @@ p {
 }
 
 .btn:hover {
-  transform: translate(-2px, -2px);
   box-shadow: var(--shadow-md);
 }
 
 .btn:active {
-  transform: translate(1px, 1px);
+  transform: translateY(1px);
   box-shadow: var(--shadow-sm);
 }
 
