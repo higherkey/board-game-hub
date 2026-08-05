@@ -99,7 +99,7 @@
             <ng-container *ngIf="!isLoading">
                 <!-- Games Grid -->
                 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4 g-4">
-                    <div class="col" *ngFor="let game of filteredGames">
+                    <div class="col col-game-card" *ngFor="let game of filteredGames">
                         <div class="card h-100 game-card glass-card " [class.deployed]="game.status === 'Deployed'"
                             [class.testing]="game.status === 'Testing'"
                             [class.in-development]="game.status === 'InDevelopment'"
@@ -114,6 +114,11 @@
                                         </h5>
                                         <span *ngIf="game.status !== 'Deployed'" class="badge status-pill mt-1"
                                             [attr.data-status]="game.status">
+                                            <i class="bi" [ngClass]="{
+                                                'bi-tools': game.status === 'InDevelopment',
+                                                'bi-bug-fill': game.status === 'Testing',
+                                                'bi-archive-fill': game.status === 'Backlog'
+                                            }"></i>
                                             {{ game.status === 'Testing' ? 'In Testing' : (game.status ===
                                             'InDevelopment' ? 'In Dev' : game.status) }}
                                         </span>

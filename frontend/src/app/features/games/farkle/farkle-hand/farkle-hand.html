@@ -47,6 +47,7 @@
              [class.reserved]="die.isReserved"
              [class.rolling]="state.phase === 'Rolling'"
              [tabindex]="die.isHeld ? -1 : 0"
+             [attr.aria-pressed]="die.isHeld || die.isReserved"
              [attr.aria-label]="'Die showing ' + die.value"
              [disabled]="die.isHeld"
              (click)="toggleDie(i)">

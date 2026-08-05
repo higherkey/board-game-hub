@@ -1,20 +1,178 @@
-<div class="row align-items-center justify-content-center min-vh-75 text-center">
-    <div class="col-lg-8">
-        <h1 class="hero-title mb-4">
-            PLAY <br>
-            <span class="text-primary">CONNECTED</span>
+<!-- ===================================================
+     HERO SECTION
+     =================================================== -->
+<section class="hero-section">
+    <div class="hero-content text-center">
+        <span class="beta-chip">
+            <i class="bi bi-stars" aria-hidden="true"></i> Beta &mdash; Thanks for playing &amp; helping us improve!
+        </span>
+        <h1 class="hero-title">
+            BRING GAME NIGHT<br>
+            <span class="hero-accent">ONLINE</span>
         </h1>
-        <p class="lead hero-caption text-secondary mb-5" style="font-weight: 500;">
-            Your digital realm for physical fun. Join, play, and connect with board gamers worldwide.
-            <span class="badge bg-primary rounded-pill text-white px-3 py-2 text-wrap lh-base fw-normal d-inline-block" style="max-width: 100%;">
-                <i class="bi bi-stars"></i> We're currently in Beta! Thanks for playing and helping us improve.
-            </span>
+        <p class="hero-subtitle">
+            Host on your TV or laptop. Join on your phone. Zero setup, zero downloads.
         </p>
-        <div class="d-flex gap-4 justify-content-center flex-wrap">
-            <button routerLink="/play" class="btn btn-primary btn-lg px-5 hero-btn">Play Now</button>
-            <button routerLink="/about" class="btn btn-lg btn-outline-primary px-5 hero-btn" style="border-width: 2px;">
-                How It Works
+        <div class="hero-ctas">
+            <button routerLink="/play" class="btn btn-primary btn-lg">
+                <i class="bi bi-play-circle-fill me-2" aria-hidden="true"></i>Create a Room
+            </button>
+            <button routerLink="/play" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-door-open-fill me-2" aria-hidden="true"></i>Join a Room
             </button>
         </div>
     </div>
-</div>
+
+    <!-- Platform Concept Diagram — illustrates Table vs Hand mechanic -->
+    <div class="platform-diagram" aria-hidden="true" role="img">
+        <!-- Table Screen (TV/Laptop) -->
+        <div class="diagram-device">
+            <div class="device-frame tv-frame">
+                <div class="device-screen">
+                    <div class="screen-label">THE TABLE</div>
+                    <div class="screen-board">
+                        <div class="board-row">
+                            <div class="board-cell"></div>
+                            <div class="board-cell is-active"></div>
+                            <div class="board-cell"></div>
+                        </div>
+                        <div class="board-timer">&#9203; 00:23</div>
+                    </div>
+                </div>
+                <div class="tv-stand"></div>
+            </div>
+            <div class="device-label">Laptop, TV, or Tablet</div>
+        </div>
+
+        <!-- Animated Room Code Connector -->
+        <div class="diagram-connector">
+            <div class="connector-code">ABCD</div>
+            <div class="connector-dots">
+                <div class="connector-dot dot-1"></div>
+                <div class="connector-dot dot-2"></div>
+                <div class="connector-dot dot-3"></div>
+            </div>
+            <div class="connector-label">Room Code</div>
+        </div>
+
+        <!-- Hand Screen (Phone) -->
+        <div class="diagram-device">
+            <div class="device-frame phone-frame">
+                <div class="phone-notch"></div>
+                <div class="device-screen phone-screen">
+                    <div class="screen-label">YOUR HAND</div>
+                    <div class="hand-actions">
+                        <div class="hand-btn">Answer</div>
+                        <div class="hand-btn is-active">Vote</div>
+                    </div>
+                </div>
+            </div>
+            <div class="device-label">Phone or Browser</div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================================================
+     HOW IT WORKS SECTION  (absorbed from About page)
+     =================================================== -->
+<section class="hiw-section" aria-labelledby="hiw-heading">
+    <div class="hiw-inner">
+        <div class="section-header text-center">
+            <h2 class="section-title" id="hiw-heading">How It Works</h2>
+            <p class="section-subtitle">Three steps from zero to playing</p>
+        </div>
+
+        <div class="steps-grid">
+            <!-- Step 1 -->
+            <div class="step-card">
+                <div class="step-num" aria-hidden="true">01</div>
+                <div class="step-icon step-icon--primary">
+                    <i class="bi bi-display" aria-hidden="true"></i>
+                </div>
+                <h3 class="step-title">Host on the Big Screen</h3>
+                <p class="step-desc">
+                    Open BoardGameHub on your TV, laptop, or tablet. Pick a game and create a room &mdash;
+                    you&rsquo;ll get a unique 4-letter code to share with players.
+                </p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-card">
+                <div class="step-num" aria-hidden="true">02</div>
+                <div class="step-icon step-icon--accent">
+                    <i class="bi bi-phone" aria-hidden="true"></i>
+                </div>
+                <h3 class="step-title">Join on Your Phone</h3>
+                <p class="step-desc">
+                    Players visit the site and enter the room code. No app download needed &mdash;
+                    your phone becomes your private game controller instantly.
+                </p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-card">
+                <div class="step-num" aria-hidden="true">03</div>
+                <div class="step-icon step-icon--pink">
+                    <i class="bi bi-controller" aria-hidden="true"></i>
+                </div>
+                <h3 class="step-title">Play Together, In Sync</h3>
+                <p class="step-desc">
+                    The TV shows the shared game board. Each player sees their private hand on their phone.
+                    Real-time, synchronized, zero lag.
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button routerLink="/play" class="btn btn-primary btn-lg px-5">
+                Get Started &mdash; It&rsquo;s Free
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- ===================================================
+     GAMES PREVIEW SECTION
+     =================================================== -->
+<section class="games-preview-section" aria-labelledby="games-preview-heading">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <h2 class="section-title mb-0" id="games-preview-heading">Featured Games</h2>
+        <a routerLink="/games" class="btn btn-sm btn-outline-primary">
+            View All <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+        </a>
+    </div>
+    <div class="games-preview-grid">
+        <a routerLink="/games" class="preview-card text-decoration-none">
+            <span class="preview-icon" aria-hidden="true">&#128483;&#65039;</span>
+            <div class="preview-info">
+                <span class="preview-name">Babble</span>
+                <span class="preview-meta">Word Game &middot; 3&ndash;8 Players</span>
+            </div>
+            <i class="bi bi-arrow-right preview-arrow" aria-hidden="true"></i>
+        </a>
+        <a routerLink="/games" class="preview-card text-decoration-none">
+            <span class="preview-icon" aria-hidden="true">&#127922;</span>
+            <div class="preview-info">
+                <span class="preview-name">Farkle</span>
+                <span class="preview-meta">Dice Game &middot; 2&ndash;6 Players</span>
+            </div>
+            <i class="bi bi-arrow-right preview-arrow" aria-hidden="true"></i>
+        </a>
+        <a routerLink="/games" class="preview-card text-decoration-none">
+            <span class="preview-icon" aria-hidden="true">&#128240;</span>
+            <div class="preview-info">
+                <span class="preview-name">Breaking News</span>
+                <span class="preview-meta">Party Game &middot; 3&ndash;10 Players</span>
+            </div>
+            <i class="bi bi-arrow-right preview-arrow" aria-hidden="true"></i>
+        </a>
+        <a routerLink="/games" class="preview-card text-decoration-none">
+            <span class="preview-icon" aria-hidden="true">&#129504;</span>
+            <div class="preview-info">
+                <span class="preview-name">Great Minds</span>
+                <span class="preview-meta">Trivia &middot; 2&ndash;8 Players</span>
+            </div>
+            <i class="bi bi-arrow-right preview-arrow" aria-hidden="true"></i>
+        </a>
+    </div>
+</section>
