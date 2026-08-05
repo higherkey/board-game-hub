@@ -259,12 +259,25 @@ p {
 }
 
 .btn-primary {
+  --bs-btn-color: var(--text-on-primary);
   --bs-btn-bg: var(--primary);
   --bs-btn-border-color: var(--primary);
-  --bs-btn-hover-bg: var(--primary-hover);
-  --bs-btn-hover-border-color: var(--primary-hover);
+  --bs-btn-hover-color: var(--primary);
+  --bs-btn-hover-bg: var(--bg-surface);
+  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-active-color: var(--text-on-primary);
   --bs-btn-active-bg: var(--primary-dark);
   --bs-btn-active-border-color: var(--primary-dark);
+  background-color: var(--primary);
+  color: var(--text-on-primary);
+  border: 2px solid var(--primary);
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    background-color: var(--bg-surface);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
 }
 
 .btn-secondary {
@@ -301,6 +314,13 @@ p {
   background-color: var(--bg-surface);
   color: var(--primary);
   border: 2px solid var(--primary);
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    background-color: var(--primary);
+    color: var(--text-on-primary);
+    border-color: var(--primary);
+  }
 }
 
 .btn:hover {
