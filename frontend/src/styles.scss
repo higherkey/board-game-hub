@@ -262,21 +262,21 @@ p {
   --bs-btn-color: var(--text-on-primary);
   --bs-btn-bg: var(--primary);
   --bs-btn-border-color: var(--primary);
-  --bs-btn-hover-color: var(--primary);
-  --bs-btn-hover-bg: var(--bg-surface);
-  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-hover-color: var(--text-on-primary);
+  --bs-btn-hover-bg: var(--primary-hover);
+  --bs-btn-hover-border-color: var(--primary-hover);
   --bs-btn-active-color: var(--text-on-primary);
   --bs-btn-active-bg: var(--primary-dark);
   --bs-btn-active-border-color: var(--primary-dark);
   background-color: var(--primary);
   color: var(--text-on-primary);
   border: 2px solid var(--primary);
-  transition: all 0.2s ease-in-out;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
-    background-color: var(--bg-surface);
-    color: var(--primary);
-    border-color: var(--primary);
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: var(--text-on-primary);
   }
 }
 
@@ -305,21 +305,21 @@ p {
   --bs-btn-color: var(--primary);
   --bs-btn-bg: var(--bg-surface);
   --bs-btn-border-color: var(--primary);
-  --bs-btn-hover-color: var(--text-on-primary);
-  --bs-btn-hover-bg: var(--primary);
-  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-hover-color: var(--primary-dark);
+  --bs-btn-hover-bg: var(--bg-surface-2);
+  --bs-btn-hover-border-color: var(--primary-dark);
   --bs-btn-active-color: var(--text-on-primary);
   --bs-btn-active-bg: var(--primary-dark);
   --bs-btn-active-border-color: var(--primary-dark);
   background-color: var(--bg-surface);
   color: var(--primary);
   border: 2px solid var(--primary);
-  transition: all 0.2s ease-in-out;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
-    background-color: var(--primary);
-    color: var(--text-on-primary);
-    border-color: var(--primary);
+    background-color: var(--bg-surface-2);
+    color: var(--primary-dark);
+    border-color: var(--primary-dark);
   }
 }
 
