@@ -323,6 +323,35 @@ p {
   }
 }
 
+.btn-outline-secondary {
+  --bs-btn-color: var(--text-primary);
+  --bs-btn-bg: var(--bg-surface);
+  --bs-btn-border-color: var(--border-color);
+  --bs-btn-hover-color: var(--primary);
+  --bs-btn-hover-bg: var(--bg-surface-2);
+  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-active-color: var(--text-on-primary);
+  --bs-btn-active-bg: var(--primary);
+  --bs-btn-active-border-color: var(--primary);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--text-primary);
+  font-weight: 700;
+
+  &:hover {
+    background-color: var(--bg-surface-2);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+}
+
+.btn-check:checked + .btn-outline-secondary {
+  background-color: var(--primary) !important;
+  color: var(--text-on-primary) !important;
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-sm);
+}
+
 .btn:hover {
   box-shadow: var(--shadow-md);
 }

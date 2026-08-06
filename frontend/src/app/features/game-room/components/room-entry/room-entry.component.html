@@ -29,28 +29,28 @@
 
         <div class="mb-3 text-start mt-4">
             <label for="joinPlayer" id="joinAsLabel"
-                class="form-label fw-bold text-secondary mb-3">Join As:</label>
+                class="form-label fw-bold text-primary mb-3">Join As:</label>
             <div class="d-flex gap-2 gap-sm-3" role="radiogroup" aria-labelledby="joinAsLabel">
                 <div class="flex-grow-1">
                     <input type="radio" class="btn-check" name="joinType" id="joinPlayer"
                         value="player" [(ngModel)]="joinType">
                     <label
-                        class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-1"
+                        class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center gap-1 join-type-card"
                         for="joinPlayer">
-                        <i class="bi bi-phone-fill fs-4"></i>
-                        <span class="fw-bold small">PLAYER</span>
-                        <small class="opacity-75" style="font-size: 0.65rem;">Use your mobile phone</small>
+                        <i class="bi bi-phone-fill fs-3"></i>
+                        <span class="fw-bold fs-6">PLAYER</span>
+                        <small class="fw-bold text-secondary" style="font-size: 0.7rem;">Use your mobile phone</small>
                     </label>
                 </div>
                 <div class="flex-grow-1">
                     <input type="radio" class="btn-check" name="joinType" id="joinTable"
                         value="table" [(ngModel)]="joinType">
                     <label
-                        class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center gap-1"
+                        class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center gap-1 join-type-card"
                         for="joinTable">
-                        <i class="bi bi-display-fill fs-4"></i>
-                        <span class="fw-bold small">TABLE</span>
-                        <small class="opacity-75" style="font-size: 0.65rem;">Shared screen / TV</small>
+                        <i class="bi bi-display-fill fs-3"></i>
+                        <span class="fw-bold fs-6">TABLE</span>
+                        <small class="fw-bold text-secondary" style="font-size: 0.7rem;">Shared screen / TV</small>
                     </label>
                 </div>
             </div>

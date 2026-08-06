@@ -1,1 +1,17 @@
-/* Component styles defined in the parent game-room layout. */
+.join-type-card {
+    border-width: 2px;
+    border-radius: var(--radius-md, 8px);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-check:checked + .join-type-card {
+    background-color: var(--primary, #1e3a8a) !important;
+    color: #ffffff !important;
+    border-color: var(--primary, #1e3a8a) !important;
+    box-shadow: var(--shadow-md, 4px 4px 0px rgba(0, 0, 0, 0.2)) !important;
+    transform: translateY(-2px);
+
+    small {
+        color: rgba(255, 255, 255, 0.95) !important;
+    }
+}
