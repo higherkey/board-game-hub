@@ -15,3 +15,24 @@
         color: rgba(255, 255, 255, 0.95) !important;
     }
 }
+
+.display-name-input {
+    border: 2px solid var(--primary, #1e3a8a) !important;
+    background-color: #ffffff !important;
+    color: var(--text-primary, #0f172a) !important;
+    font-size: 1.2rem !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: var(--radius-md, 8px) !important;
+    transition: all 0.2s ease !important;
+
+    &::placeholder {
+        color: #64748b !important;
+        font-weight: 600 !important;
+        opacity: 0.9 !important;
+    }
+
+    &:focus {
+        border-color: var(--contrast-pink, #ff4081) !important;
+        box-shadow: 0 0 0 4px rgba(255, 64, 129, 0.2) !important;
+    }
+}

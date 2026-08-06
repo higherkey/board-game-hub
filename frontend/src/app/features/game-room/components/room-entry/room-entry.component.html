@@ -13,18 +13,24 @@
                 (click)="goToLogin()">Login</button>
         </div>
 
-        <div class="mb-3 text-start">
-            <label for="playerNameInput" class="form-label fw-bold text-secondary">Your Display Name</label>
+        <div class="mb-4 text-start display-name-group">
+            <label for="playerNameInput" class="form-label fw-bold text-primary fs-5 d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-person-bounding-box text-pink fs-4"></i>
+                <span>Your Display Name</span>
+            </label>
             <input #playerNameInput id="playerNameInput" type="text" 
-                class="form-control form-control-lg fw-bold subtle-placeholder"
+                class="form-control form-control-lg fw-bold display-name-input shadow-sm"
                 [class.is-invalid]="showNameError"
                 [(ngModel)]="promptPlayerName" (keyup.enter)="onSubmit()"
                 (input)="showNameError = false"
                 placeholder="e.g. Captain Awesome" autofocus>
-            <div *ngIf="showNameError" class="invalid-feedback fw-bold">
+            <div *ngIf="showNameError" class="invalid-feedback fw-bold fs-6">
                 Please enter a name to join.
             </div>
-            <p class="text-muted small mt-1" *ngIf="!showNameError">This is how other players will see you.</p>
+            <p class="text-secondary small mt-1 fw-bold d-flex align-items-center gap-1" *ngIf="!showNameError">
+                <i class="bi bi-info-circle text-primary"></i>
+                <span>This is how other players will see you.</span>
+            </p>
         </div>
 
         <div class="mb-3 text-start mt-4">

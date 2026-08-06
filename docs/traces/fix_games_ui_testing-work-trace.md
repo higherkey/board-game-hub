@@ -6,6 +6,7 @@
 - [x] Merge latest `refactor/game-room-layout-audit` into `fix_games_ui_testing`.
 - [x] Run live dual-device browser audit using `/browser` tools (Table host + Hand mobile view in isolated context).
 - [x] Fix mobile in-game vertical spacing bug (`*ngIf` on `.main-stage`).
+- [x] Make "Your Display Name" section prominent with 20px label, pink icon, 2px solid navy input border, and bold hint text.
 - [x] Refactor "Join As" buttons with high-contrast `.join-type-card` choices.
 - [x] Global high-contrast sweep for `.btn-outline-secondary` in `styles.scss`.
 - [x] Create `DeviceService` for automatic User-Agent and viewport detection.
@@ -41,13 +42,14 @@
   - `frontend/src/app/features/games/babble/babble-game/babble.component.html`
 
 ### Rationale
-Deliver a high-contrast, beautiful mobile and desktop gameplay experience with clear controls, high-contrast buttons, and un-cluttered screen.
+Deliver a high-contrast, prominent, beautiful mobile and desktop gameplay experience.
 
 ## 2) In Progress Work
-- All site-wide contrast audits, Join As button refactors, and test suites complete.
+- Display Name prominence refactor, contrast audits, and test suites complete.
 
 ## 3) Completed Work
-- Refactored Join As buttons in `room-entry.component.html` to high-contrast `.join-type-card.btn-outline-primary` (solid deep navy background with pure white text when selected).
+- Refactored "Your Display Name" section in `room-entry.component.html` & `.scss` with 20px primary label, pink person icon, 2px solid navy input border (`oklch 0.28 0.11 250`), 1.2rem font size, and glowing pink focus ring.
+- Refactored Join As buttons to high-contrast `.join-type-card.btn-outline-primary` (solid deep navy background with pure white text when selected).
 - Added global high-contrast rules for `.btn-outline-secondary` in `styles.scss`.
 - Created `DeviceService` (`device.service.ts`) for automatic User-Agent and viewport detection.
 - Fixed Found Words header contrast in `babble.component.scss` (`#ffffff !important` with text shadow).
@@ -57,7 +59,7 @@ Deliver a high-contrast, beautiful mobile and desktop gameplay experience with c
 - Redesigned `<app-mobile-tab-bar>` with 3px pink top border and active pink pills.
 - Verified backend xUnit test suite: 235 / 235 tests passed.
 - Verified frontend Karma unit test suite: 293 / 293 tests passed.
-- Production build (`ng build`) completed in 6.6s.
+- Production build (`ng build`) completed in 6.5s.
 
 ## 4) Issues and Out of Scope
 ### 4a) Potential Blockers
