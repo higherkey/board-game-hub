@@ -16,6 +16,8 @@ import { RoomHeaderComponent } from './components/room-header/room-header.compon
 import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.component';
 import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 import { GameRoomStateService } from './services/game-room-state.service';
+import { DeviceService } from '../../services/device.service';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-game-room',
@@ -38,6 +40,7 @@ import { GameRoomStateService } from './services/game-room-state.service';
   styleUrls: ['./game-room.component.scss']
 })
 export class GameRoomComponent implements OnInit, AfterViewInit {
+  readonly deviceService = inject(DeviceService);
   roomCode = '';
   isCreating = false;
   promptPlayerName = '';
@@ -204,7 +207,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     });
     this.gameDataService.refreshGames();
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isMobile = this.deviceService.isMobileValue;
     this.stateService.isScreen = !isMobile;
     this.stateService.needsName = true;
   }

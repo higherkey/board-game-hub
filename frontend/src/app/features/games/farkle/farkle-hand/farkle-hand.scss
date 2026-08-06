@@ -9,6 +9,10 @@
   color: white;
   font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
+
+  @media (max-width: 767.98px) {
+    padding: 0.5rem;
+  }
 }
 
 .sr-only {
