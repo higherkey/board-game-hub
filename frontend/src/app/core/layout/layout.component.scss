@@ -75,7 +75,7 @@
 
     .logo-text {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.5rem;
+        font-size: 1.35rem;
         font-weight: 800;
         letter-spacing: -0.02em;
         color: var(--primary);
@@ -83,8 +83,21 @@
         white-space: nowrap;
 
         @media (max-width: 992px) {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
         }
+    }
+
+    .logo-beta-tag {
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--primary);
+        background: rgba(0, 51, 102, 0.08);
+        border: 1px solid rgba(0, 51, 102, 0.15);
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        transform: translateY(-6px);
     }
 
     .mobile-toggle {
@@ -308,6 +321,24 @@
                 
                 &:hover {
                     text-decoration: underline;
+                }
+            }
+
+            .footer-beta-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0.3rem 0.75rem;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 0.78rem;
+                font-weight: 600;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+                .text-pink {
+                    color: #ff4081;
                 }
             }
         }
