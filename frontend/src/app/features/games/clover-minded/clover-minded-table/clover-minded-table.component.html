@@ -39,25 +39,67 @@
         </div>
 
         <div class="grid">
-            <!-- Board -->
-            <div class="board-wrap">
-                <div class="clover-board">
-                    <div class="center-disk"></div>
+            <div class="clover-board-container">
+                <!-- 4 Outer Edge Clue Zones -->
+                <div class="outer-clue-badge clue-top">
+                    <span class="clue-label">TOP CLUE</span>
+                    <span class="clue-value">{{ s.currentClues?.[0] || '...' }}</span>
+                </div>
+                <div class="outer-clue-badge clue-right">
+                    <span class="clue-label">RIGHT CLUE</span>
+                    <span class="clue-value">{{ s.currentClues?.[1] || '...' }}</span>
+                </div>
+                <div class="outer-clue-badge clue-bottom">
+                    <span class="clue-label">BOTTOM CLUE</span>
+                    <span class="clue-value">{{ s.currentClues?.[2] || '...' }}</span>
+                </div>
+                <div class="outer-clue-badge clue-left">
+                    <span class="clue-label">LEFT CLUE</span>
+                    <span class="clue-value">{{ s.currentClues?.[3] || '...' }}</span>
+                </div>
 
-                    <div class="leaf" [class]="'leaf-' + idx"
-                         *ngFor="let idx of [0,1,2,3]">
-                        <div class="clue-zone">
-                            <div class="clue-title">Clue {{ idx + 1 }}</div>
-                            <div class="clue-word">{{ s.currentClues?.[idx] || '...' }}</div>
-                            <div class="pair" *ngIf="getPairWords(idx) as pair">
-                                {{ pair[0] }} + {{ pair[1] }}
-                            </div>
-                        </div>
-                        <div class="leaf-card" *ngIf="getSlotCard(idx) as card">
+                <!-- 2x2 Square Board Grid -->
+                <div class="clover-grid-2x2">
+                    <div class="grid-slot slot-0">
+                        <div class="slot-badge">Slot 1</div>
+                        <div class="slot-card" *ngIf="getSlotCard(0) as card">
                             <app-keyword-card-3d
                                 [card]="card"
-                                [rotation]="s.slots?.[idx]?.rotation || 0"
-                                [sizePx]="90"
+                                [rotation]="s.slots?.[0]?.rotation || 0"
+                                [sizePx]="110"
+                                [placed]="true">
+                            </app-keyword-card-3d>
+                        </div>
+                    </div>
+                    <div class="grid-slot slot-1">
+                        <div class="slot-badge">Slot 2</div>
+                        <div class="slot-card" *ngIf="getSlotCard(1) as card">
+                            <app-keyword-card-3d
+                                [card]="card"
+                                [rotation]="s.slots?.[1]?.rotation || 0"
+                                [sizePx]="110"
+                                [placed]="true">
+                            </app-keyword-card-3d>
+                        </div>
+                    </div>
+                    <div class="grid-slot slot-2">
+                        <div class="slot-badge">Slot 3</div>
+                        <div class="slot-card" *ngIf="getSlotCard(2) as card">
+                            <app-keyword-card-3d
+                                [card]="card"
+                                [rotation]="s.slots?.[2]?.rotation || 0"
+                                [sizePx]="110"
+                                [placed]="true">
+                            </app-keyword-card-3d>
+                        </div>
+                    </div>
+                    <div class="grid-slot slot-3">
+                        <div class="slot-badge">Slot 4</div>
+                        <div class="slot-card" *ngIf="getSlotCard(3) as card">
+                            <app-keyword-card-3d
+                                [card]="card"
+                                [rotation]="s.slots?.[3]?.rotation || 0"
+                                [sizePx]="110"
                                 [placed]="true">
                             </app-keyword-card-3d>
                         </div>
