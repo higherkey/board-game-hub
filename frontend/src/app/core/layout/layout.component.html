@@ -1,6 +1,6 @@
 <div class="app-shell">
     <!-- HEADER -->
-    <header *ngIf="!(isGameRoom$ | async)" class="main-header" role="banner">
+    <header *ngIf="!(isGameRoom$ | async)" class="main-header" [class.scrolled]="isScrolled" role="banner">
         <div class="header-container">
             <div class="d-flex align-items-center header-left-group">
                 <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation">

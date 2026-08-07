@@ -18,6 +18,22 @@
         z-index: 1050; /* Higher than content to prevent overlap */
         box-shadow: var(--shadow-sm);
         transform: translateZ(0); /* Fix Safari sticky backdrop-filter bug causing overlap */
+        transition: height 0.25s cubic-bezier(0.4, 0.0, 0.2, 1), box-shadow 0.25s ease, background-color 0.25s ease;
+
+        &.scrolled {
+            height: calc(var(--header-height) * 0.82);
+            box-shadow: var(--shadow-md);
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid rgba(0, 51, 102, 0.18);
+
+            .logo-text {
+                font-size: 1.18rem;
+            }
+
+            .logo-beta-tag {
+                transform: translateY(-4px);
+            }
+        }
 
         @media (max-width: 992px) {
             padding: 0 1.25rem;
