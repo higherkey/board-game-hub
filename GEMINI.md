@@ -44,8 +44,8 @@ Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angula
 
 - **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
 - **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
-- **Validation:** Every change requires verification. Run `dotnet build` for backend and `npm run build` (dev config) for frontend to ensure no regressions.
-- **Peer Review:** Follow the full audit sequence (Code, UX, Accessibility, Sonar, Build) for significant PRs or features.
+- **Validation:** Every change requires verification. Run `dotnet build` for backend and `npm run build` (dev config) for frontend. Follow the `.agent/workflows/testing-workflow.md` for standardized test execution and coverage verification.
+- **Peer Review:** Follow the full audit sequence (Code, UX, Accessibility, Sonar, Build) defined in `.agent/workflows/peer-review.md`. This includes a mandatory Test Quality Audit.
 
 ## 4. Tool-Specific Instructions
 

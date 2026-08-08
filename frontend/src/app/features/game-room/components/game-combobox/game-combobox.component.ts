@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, forwardRef, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, ElementRef, ViewChild, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { GameDefinition } from '../../../../services/game-data.service';
@@ -17,7 +17,7 @@ import { GameDefinition } from '../../../../services/game-data.service';
         }
     ]
 })
-export class GameComboboxComponent implements ControlValueAccessor, OnInit, AfterViewInit, OnDestroy {
+export class GameComboboxComponent implements ControlValueAccessor, OnInit {
     @Input() options: GameDefinition[] = [];
     @Input() disabled = false;
     @Input() placeholder = 'Select a game...';
@@ -45,13 +45,6 @@ export class GameComboboxComponent implements ControlValueAccessor, OnInit, Afte
         this.filterOptions();
     }
 
-    ngAfterViewInit() {
-        document.addEventListener('pointerup', this.onBackgroundClick);
-    }
-
-    ngOnDestroy() {
-        document.removeEventListener('pointerup', this.onBackgroundClick);
-    }
 
     // ControlValueAccessor implementation
     writeValue(value: string): void {
@@ -147,7 +140,7 @@ export class GameComboboxComponent implements ControlValueAccessor, OnInit, Afte
     toggle() {
         if (this.isOpen) this.close();
         else this.open();
-        this.inputEle.nativeElement.focus();
+        this.inputEle?.nativeElement.focus();
     }
 
     selectOption(option: GameDefinition) {
@@ -178,10 +171,11 @@ export class GameComboboxComponent implements ControlValueAccessor, OnInit, Afte
         this.onTouch();
     }
 
-    onBackgroundClick = (event: PointerEvent) => {
+    @HostListener('document:pointerup', ['$event'])
+    onBackgroundClick(event: PointerEvent) {
         const target = event.target as HTMLElement;
-        if (!this.inputEle.nativeElement.contains(target) &&
-            !this.buttonEle.nativeElement.contains(target) &&
+        if (!this.inputEle?.nativeElement.contains(target) &&
+            !this.buttonEle?.nativeElement.contains(target) &&
             (!this.listboxEle || !this.listboxEle.nativeElement.contains(target))) {
             this.close();
         }

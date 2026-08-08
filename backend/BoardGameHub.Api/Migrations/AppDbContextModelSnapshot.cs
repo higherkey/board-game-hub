@@ -381,7 +381,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 1,
                             Name = "Farkle",
-                            Status = 3,
+                            Status = 1,
                             Tags = "Dice,Party,Luck",
                             TimerType = 0
                         },

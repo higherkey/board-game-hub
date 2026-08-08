@@ -32,7 +32,13 @@ export class LayoutComponent {
    );
 
    mobileMenuOpen = false;
+   isScrolled = false;
    isBackendPort = globalThis.location.port !== '4200';
+
+   @HostListener('window:scroll', [])
+   onWindowScroll() {
+      this.isScrolled = window.scrollY > 20;
+   }
 
    toggleMobileMenu() {
       this.mobileMenuOpen = !this.mobileMenuOpen;

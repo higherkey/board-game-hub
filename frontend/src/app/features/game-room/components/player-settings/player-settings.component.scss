@@ -1,7 +1,10 @@
 .player-settings-panel {
     max-width: 900px;
-    margin: 0 auto;
+    margin: 0.5rem auto;
     background: #ffffff;
+    border-radius: var(--radius-lg, 12px);
+    border: 1px solid var(--border-color, #eee);
+    box-shadow: var(--shadow-sm, 2px 2px 0px rgba(0, 0, 0, 0.05));
 }
 
 .group-label {
@@ -57,6 +60,6 @@
 @media (max-width: 767.98px) {
     .col-md-4 {
         border-bottom: 1px solid var(--border-color);
-        border-right: none !important;
+        border-right: none;
     }
 }

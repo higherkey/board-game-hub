@@ -160,7 +160,7 @@ public class AppDbContext : IdentityDbContext<User>
 
             // Backlog (Conceptual Games)
             new GameDefinition { 
-                Id = "Farkle", Name = "Farkle", Icon = "🎲", Description = "Push your luck with six dice to score 10,000 points!", Status = GameStatus.Backlog,
+                Id = "Farkle", Name = "Farkle", Icon = "🎲", Description = "Push your luck with six dice to score 10,000 points!", Status = GameStatus.Testing,
                 MinPlayers = 1, MaxPlayers = 8, Complexity = 1, AveragePlayTime = 20, Tags = "Dice,Party,Luck",
                 TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
             },

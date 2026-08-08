@@ -98,6 +98,10 @@ Run commands from repo root unless noted.
 - Active room/game runtime state is in-memory (`RoomService`/`GameStateManager`) and not fully persisted between process restarts.
 - **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-azure.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
 
+## Engineering Standards to honor
+- **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
+- **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
+
 ## Existing AI/workflow guidance to honor
 - `.cursor/rules/git-powershell.mdc` + `.agent/workflows/git-commands.md`:
   - In PowerShell, chain commands with `;` (not `&&`).
@@ -114,5 +118,7 @@ Run commands from repo root unless noted.
   - Use `gh run list/watch` to inspect deployment runs when needed.
 - `.agent/workflows/peer-review.md`:
   - Defines a full peer-review sequence (code/UX/accessibility/Sonar/build verification) for deep audit tasks.
+- `.agent/workflows/testing-workflow.md`:
+  - Dictates the monorepo approach to unit testing, execution verification, and coverage requirements.
 - `.agent/workflows/feature-tracking.md`:
   - **MANDATORY**: Running trace document (`/docs/traces/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`).

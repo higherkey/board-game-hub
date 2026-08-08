@@ -37,8 +37,9 @@ public class UniversalTranslatorServiceTests
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
 
-        var state = (UniversalTranslatorState)room.GameData;
-        state.Roles.Should().HaveCount(3);
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        state!.Roles.Should().HaveCount(3);
         state.Roles.Values.Should().Contain(UniversalTranslatorRole.MainComputer);
         state.Roles.Values.Should().Contain(UniversalTranslatorRole.J);
         state.Roles.Values.Should().Contain(UniversalTranslatorRole.Crew);
@@ -51,8 +52,9 @@ public class UniversalTranslatorServiceTests
         var room = CreateMockRoom(4);
         await _service.StartRound(room, new GameSettings());
 
-        var state = (UniversalTranslatorState)room.GameData;
-        state.Roles.Should().HaveCount(4);
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        state!.Roles.Should().HaveCount(4);
         state.Roles.Values.Should().Contain(UniversalTranslatorRole.MainComputer);
         state.Roles.Values.Should().Contain(UniversalTranslatorRole.J);
         state.Roles.Values.Should().Contain(UniversalTranslatorRole.Empath);
@@ -64,8 +66,9 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(4);
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
-        var computerId = state.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        var computerId = state!.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
         var word = state.WordChoices.First();
 
         var success = await _service.PickWord(room, computerId, word);
@@ -81,7 +84,8 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(3); // Computer, J, Crew
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
         var computerId = state.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
         state.Phase = UniversalTranslatorPhase.Day;
 
@@ -97,7 +101,8 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(4); // Computer, J, Empath, Crew
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
         var computerId = state.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
         state.Phase = UniversalTranslatorPhase.Day;
 
@@ -111,8 +116,9 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(4);
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
-        var computerId = state.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        var computerId = state!.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
         state.Phase = UniversalTranslatorPhase.Day;
         state.TokenLimits["So Close"] = 1;
 
@@ -128,8 +134,9 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(4); // 1 MC, 3 Voters (J, Empath, Crew)
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
-        state.Phase = UniversalTranslatorPhase.VotingForJ;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        state!.Phase = UniversalTranslatorPhase.VotingForJ;
 
         var jId = state.Roles.First(r => r.Value == UniversalTranslatorRole.J).Key;
         var empathId = state.Roles.First(r => r.Value == UniversalTranslatorRole.Empath).Key;
@@ -149,8 +156,9 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(4);
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
-        state.Phase = UniversalTranslatorPhase.JGuessingEmpath;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        state!.Phase = UniversalTranslatorPhase.JGuessingEmpath;
 
         var jId = state.Roles.First(r => r.Value == UniversalTranslatorRole.J).Key;
         var empathId = state.Roles.First(r => r.Value == UniversalTranslatorRole.Empath).Key;
@@ -175,8 +183,9 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
-        state.Phase = UniversalTranslatorPhase.Day;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        state!.Phase = UniversalTranslatorPhase.Day;
         var computerId = state.Roles.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
         var payload = JsonSerializer.SerializeToElement(new { token = "Yes" });
         var action = new GameAction("SUBMIT_TOKEN", payload);
@@ -191,8 +200,9 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData;
-        state.Phase = UniversalTranslatorPhase.VotingForJ;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        state!.Phase = UniversalTranslatorPhase.VotingForJ;
         var jId = state.Roles.First(r => r.Value == UniversalTranslatorRole.J).Key;
         var crewId = state.Roles.First(r => r.Value == UniversalTranslatorRole.Crew).Key;
         var payload = JsonSerializer.SerializeToElement(new { accusedId = crewId });
@@ -208,8 +218,9 @@ public class UniversalTranslatorServiceTests
     {
         var room = CreateMockRoom(3);
         await _service.StartRound(room, new GameSettings());
-        var state = (UniversalTranslatorState)room.GameData!;
-        var computerId = state.Roles!.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
+        var state = room.GameData as UniversalTranslatorState;
+        state.Should().NotBeNull();
+        var computerId = state!.Roles!.First(r => r.Value == UniversalTranslatorRole.MainComputer).Key;
         var word = state.WordChoices!.First();
         var payload = JsonSerializer.SerializeToElement(new { word });
         var action = new GameAction("PICK_WORD", payload);

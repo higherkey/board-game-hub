@@ -62,11 +62,12 @@ public class WisecrackGameServiceTests
         };
         await _sut.StartRound(room, new GameSettings());
         var state = room.GameData as WisecrackState;
+        state.Should().NotBeNull();
         
         // 2 Players -> 2 Prompts assignment.
         // Expected Answers: Count * 2 = 4 (Each player answers 2 prompts).
         // Wait, players need to know WHICH prompts to answer.
-        var a1 = state.Assignments[0];
+        var a1 = state!.Assignments[0];
         var a2 = state.Assignments[1];
         // p1 is assigned to a1 and a2 (if circular)?
         // p1 & p2 are in a1.

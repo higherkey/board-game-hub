@@ -25,11 +25,11 @@ public class AuthControllerTests
     public AuthControllerTests()
     {
         var store = new Mock<IUserStore<User>>();
-        _mockUserManager = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+        _mockUserManager = new Mock<UserManager<User>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
         var contextAccessor = new Mock<IHttpContextAccessor>();
         var claimsFactory = new Mock<IUserClaimsPrincipalFactory<User>>();
-        _mockSignInManager = new Mock<SignInManager<User>>(_mockUserManager.Object, contextAccessor.Object, claimsFactory.Object, null, null, null, null);
+        _mockSignInManager = new Mock<SignInManager<User>>(_mockUserManager.Object, contextAccessor.Object, claimsFactory.Object, null!, null!, null!, null!);
 
         _mockConfig = new Mock<IConfiguration>();
         _mockConfig.Setup(c => c["Jwt:Key"]).Returns("SuperSecretKeyForTestingTheJwtTokenGeneration123!");

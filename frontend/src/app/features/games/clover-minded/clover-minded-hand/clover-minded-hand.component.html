@@ -21,28 +21,45 @@
             <!-- CLUE WRITING -->
             <div *ngIf="s.phase === phases.ClueWriting" class="clue-phase">
                 <div class="hint" *ngIf="!isSubmitted(s)">
-                    Look at your 4 pairs and write one single-word clue for each.
-                    (Compounds/proper nouns/numbers are allowed.)
+                    Look at your 4 outer edge pairs and write one single-word clue for each!
+                </div>
+
+                <!-- Visual 2x2 Clover Board -->
+                <div class="prep-board-wrap">
+                    <div class="prep-clover-board">
+                        <div class="prep-grid-2x2">
+                            <div class="grid-slot" *ngFor="let idx of [0,1,2,3]">
+                                <app-keyword-card-3d
+                                    *ngIf="getPrepCardForSlot(s, idx) as card"
+                                    [card]="card"
+                                    [rotation]="getPrepCardRotation(s, idx)"
+                                    [sizePx]="90"
+                                    [placed]="true">
+                                </app-keyword-card-3d>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="clue-zones">
                     <div class="clue-zone" *ngFor="let idx of [0,1,2,3]">
-                        <div class="clue-zone-title">Pair {{ idx + 1 }}</div>
-                        <div class="pair">
-                            {{ getMyPair(s, idx)?.[0] }} <span class="plus">+</span>
-                            {{ getMyPair(s, idx)?.[1] }}
+                        <div class="clue-zone-header d-flex justify-content-between align-items-center">
+                            <span class="clue-zone-title fw-bold">Clue {{ idx + 1 }}</span>
+                            <span class="pair-words badge bg-dark text-info">
+                                {{ getMyPair(s, idx)?.[0] }} + {{ getMyPair(s, idx)?.[1] }}
+                            </span>
                         </div>
 
                         <input class="clue-input" type="text"
                             [(ngModel)]="draftClues[idx]"
                             [disabled]="isSubmitted(s)"
-                            placeholder="Type your clue…"
+                            placeholder="Type your clue word…"
                             (keyup.enter)="submitCluesIfReady(s)">
                     </div>
                 </div>
 
                 <div class="submission-confirmation" *ngIf="isSubmitted(s)">
-                    <span class="check">✓</span> Submitted successfully.
+                    <span class="check">✓</span> Submitted successfully. Waiting for other players...
                 </div>
 
                 <button class="primary-btn"
@@ -62,24 +79,26 @@
                 <div class="resolution-grid" *ngIf="!isSpectator(s)">
                     <div class="pool-panel">
                         <div class="panel-title">
-                            Center Cards (drag to board)
+                            Center Cards (Tap to Select or Drag)
                         </div>
 
                         <div class="pool-cards">
                             <div class="pool-card-slot" 
                                 *ngFor="let c of s.pool"
+                                [class.selected]="selectedCardId === c.id"
                                 [class.dragging]="draggedCardId === c.id"
                                 [class.occupied]="isOccupiedByOthers(s, c.id)">
                                 
                                 <button class="pool-card"
+                                    (click)="selectPoolCard(c.id)"
                                     (touchstart)="onCardTouchStart($event, c.id)"
                                     (touchmove)="onCardTouchMove($event)"
                                     (touchend)="onCardTouchEnd($event)">
                                     <app-keyword-card-3d
                                         [card]="c"
                                         [rotation]="0"
-                                        [interactive]="false"
-                                        [sizePx]="62">
+                                        [interactive]="true"
+                                        [sizePx]="75">
                                     </app-keyword-card-3d>
                                 </button>
                                 <div class="occupied-indicator" *ngIf="isOccupiedByOthers(s, c.id)">
@@ -90,13 +109,14 @@
                     </div>
 
                     <div class="clover-panel">
-                        <div class="panel-title">Your Board</div>
+                        <div class="panel-title">Clover Board</div>
                         <div class="slot-grid">
                             <div class="slot"
                                 *ngFor="let idx of [0,1,2,3]"
                                 [id]="'slot-' + idx"
                                 [class.filled]="s.slots?.[idx]?.cardId"
-                                [class.drag-over]="isDragging && currentHoverSlot === idx">
+                                [class.drag-over]="isDragging && currentHoverSlot === idx"
+                                (click)="onSlotClick(idx)">
 
                                 <div class="slot-title">Slot {{ idx + 1 }}</div>
 
@@ -104,19 +124,18 @@
                                     <app-keyword-card-3d
                                         [card]="card"
                                         [rotation]="s.slots?.[idx]?.rotation || 0"
-                                        [sizePx]="84"
+                                        [sizePx]="90"
                                         [placed]="true">
                                     </app-keyword-card-3d>
                                 </div>
 
                                 <div class="slot-empty" *ngIf="!getSlotCard(s, idx)">
-                                    Drop here
+                                    {{ selectedCardId ? 'Tap to Place' : 'Drop / Tap' }}
                                 </div>
 
                                 <div class="slot-actions" *ngIf="s.slots?.[idx]?.cardId">
                                     <button class="mini-btn"
-                                        (click)="rotateSlot(idx); $event.stopPropagation()"
-                                        [disabled]="!canRotateSlot(s, idx)">
+                                        (click)="rotateSlot(idx); $event.stopPropagation()">
                                         Rotate
                                     </button>
                                     <button class="mini-btn ghost"
