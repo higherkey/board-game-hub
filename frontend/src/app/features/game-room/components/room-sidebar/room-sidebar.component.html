@@ -1,5 +1,5 @@
 <!-- TABLES SECTION -->
-<div class="card bg-surface shadow-sm border-0 flex-shrink-0 overflow-hidden" style="max-height: 40%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+<div class="card bg-surface shadow-sm border-0 flex-shrink-0 overflow-hidden table-card">
     <div class="card-header bg-secondary text-white py-2 border-bottom-0 d-flex justify-content-between align-items-center">
         <small class="fw-bold text-uppercase spacing-wide">Tables ({{ tables.length }})</small>
         <button type="button" class="btn btn-link btn-sm text-white p-0 d-none d-md-block"
@@ -14,9 +14,8 @@
             <span class="text-truncate fw-bold text-primary">{{ s.name || 'Table' }}</span>
             <!-- CREATOR INDICATOR (Tables) -->
             <i *ngIf="checkIsCreator(currentRoom, s.connectionId)" 
-               class="bi bi-person-badge-fill text-info"
-               title="Room Creator"
-               style="filter: drop-shadow(0 0 2px rgba(0, 150, 255, 0.5));"></i>
+               class="bi bi-person-badge-fill text-info glow-blue"
+               title="Room Creator"></i>
             <div class="ms-auto d-flex align-items-center gap-2">
                 <span *ngIf="s.isHost" class="badge bg-warning text-dark x-small fw-bold">HOST</span>
                 <i *ngIf="s.isHost" class="bi bi-patch-check-fill text-warning" title="Room Host"></i>
@@ -44,39 +43,34 @@
 </div>
 
 <!-- PLAYERS SECTION -->
-<div class="card bg-surface shadow-sm border-0 flex-grow-1 player-list-card overflow-hidden" style="border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(255,255,255,0.1);">
-    <div class="card-header bg-primary text-white py-2 border-bottom-0 d-flex justify-content-between align-items-center"
-        style="background-color: var(--brand-blue) !important;">
+<div class="card bg-surface shadow-sm border-0 flex-grow-1 player-list-card overflow-hidden d-flex flex-column player-card">
+    <div class="card-header text-white py-2 border-bottom-0 d-flex justify-content-between align-items-center bg-brand-blue">
         <small class="fw-bold text-uppercase spacing-wide">Players ({{ players.length }})</small>
     </div>
     <div class="sidebar-scroll overflow-auto flex-grow-1">
         <ul class="list-group list-group-flush small">
             <li class="list-group-item d-flex align-items-center border-bottom-light py-2"
                 *ngFor="let p of players" [class.border-success]="p.isReady"
-                [class.border-start]="p.isReady" style="border-left-width: 4px !important;">
+                [class.border-start]="p.isReady" [class.thick-border-left]="p.isReady">
                 <div class="position-relative me-2">
-                    <img [src]="p.avatarUrl || '/assets/avatars/default.png'" alt=""
-                        class="rounded-circle border border-white shadow-sm"
-                        style="width: 24px; height: 24px;">
+                    <img [src]="p.avatarUrl || '/assets/avatars/default.webp'" alt=""
+                        class="rounded-circle border border-white shadow-sm avatar-sm">
                     <div *ngIf="p.isReady"
-                        class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-white"
-                        style="width: 8px; height: 8px;"></div>
+                        class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-white status-dot"></div>
                 </div>
                 <div class="flex-grow-1 text-truncate">
                     <div class="d-flex align-items-center gap-1">
                         <span class="fw-bold text-primary">{{ p.name }}</span>
                         <!-- CREATOR INDICATOR -->
                         <i *ngIf="checkIsCreator(currentRoom, p.connectionId)" 
-                           class="bi bi-person-badge-fill text-info ms-1" 
-                           title="Room Creator"
-                           style="filter: drop-shadow(0 0 2px rgba(0, 150, 255, 0.5));"></i>
+                           class="bi bi-person-badge-fill text-info ms-1 glow-blue" 
+                           title="Room Creator"></i>
                         
                         <!-- HOST BADGE (If host but NOT creator) -->
                         <span *ngIf="p.isHost && !checkIsCreator(currentRoom, p.connectionId)" 
-                              class="badge bg-warning text-dark x-small fw-bold p-1"
-                              style="font-size: 0.5rem;">HOST</span>
+                              class="badge bg-warning text-dark x-small fw-bold p-1 font-micro">HOST</span>
                     </div>
-                    <div class="x-small text-muted text-uppercase ls-wide" style="font-size: 0.6rem;">
+                    <div class="x-small text-muted text-uppercase ls-wide font-xxs">
                         {{ p.userId ? 'User' : 'Guest' }}
                     </div>
                 </div>
@@ -88,20 +82,20 @@
                     <button *ngIf="checkIsCreator(currentRoom, connectionId) && !p.isHost && !checkIsCreator(currentRoom, p.connectionId)"
                         class="btn btn-xs btn-outline-warning rounded-circle p-1 text-warning border-warning"
                         (click)="setHostPlayer.emit(p.connectionId)" title="Set as Host">
-                        <i class="bi bi-star" style="font-size: 0.75rem;"></i>
+                        <i class="bi bi-star font-xs"></i>
                     </button>
                     <!-- REMOVE HOST (Creator only, for non-creator hosts) -->
                     <button *ngIf="checkIsCreator(currentRoom, connectionId) && p.isHost && !checkIsCreator(currentRoom, p.connectionId)"
                         class="btn btn-xs btn-outline-danger rounded-circle p-1 text-danger border-danger"
                         (click)="removeHostPlayer.emit(p.connectionId)" title="Remove Host">
-                        <i class="bi bi-star-fill" style="font-size: 0.75rem;"></i>
+                        <i class="bi bi-star-fill font-xs"></i>
                     </button>
                     <button *ngIf="p.connectionId === connectionId"
                         class="btn btn-xs btn-outline-secondary rounded-circle p-1"
                         (click)="changeRole.emit(true)" title="Switch to Table Role">
-                        <i class="bi bi-display" style="font-size: 0.75rem;"></i>
+                        <i class="bi bi-display font-xs"></i>
                     </button>
-                    <span class="badge rounded-pill bg-primary text-white border border-white-50 px-2 py-1" style="font-size: 0.7rem;">
+                    <span class="badge rounded-pill bg-primary text-white border border-white-50 px-2 py-1 font-sm-badge">
                         {{ p.score || 0 }}
                     </span>
                 </div>

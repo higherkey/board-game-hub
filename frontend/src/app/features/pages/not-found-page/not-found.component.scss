@@ -138,7 +138,7 @@
     }
 
     .not-found-card {
-        padding: var(--space-lg) !important;
+        padding: var(--space-lg);
         clip-path: polygon(15px 0, 100% 0,
                 100% calc(100% - 15px), calc(100% - 15px) 100%,
                 0 100%, 0 15px);

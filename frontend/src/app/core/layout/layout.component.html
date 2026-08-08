@@ -53,9 +53,44 @@
 
     <!-- FOOTER -->
     <footer *ngIf="!(isGameRoom$ | async)" class="main-footer" role="contentinfo">
-        <div class="footer-content d-flex justify-content-center align-items-center gap-3 opacity-75 flex-wrap">
-            <app-logo [size]="24" class="text-secondary"></app-logo>
-            <p class="m-0">&copy; 2026 BoardGameHub. <span class="text-accent">Play Connected.</span> <span class="ms-2">| &nbsp;We're currently in Beta!</span></p>
+        <div class="footer-container">
+            <div class="footer-col col-brand">
+                <div class="d-flex align-items-center mb-2">
+                    <app-logo [size]="32" class="text-white"></app-logo>
+                    <div class="ms-2 fw-bold text-white fs-5">BoardGameHub</div>
+                </div>
+                <p class="tagline text-accent fw-semibold mb-2">Play Connected.</p>
+                <p class="description">Your home for playing board games with friends and family across screens and devices.</p>
+            </div>
+            
+            <div class="footer-col col-nav">
+                <h4 class="col-title">Platform</h4>
+                <nav class="footer-nav">
+                    <a routerLink="/">Home</a>
+                    <a routerLink="/play">Play</a>
+                    <a routerLink="/games">Games</a>
+                    <a routerLink="/social">Social</a>
+                </nav>
+            </div>
+            
+            <div class="footer-col col-legal">
+                <h4 class="col-title">Legal</h4>
+                <nav class="footer-nav">
+                    <a routerLink="/privacy-policy">Privacy Policy</a>
+                    <a routerLink="/terms-of-service">Terms of Service</a>
+                    <a routerLink="/data-privacy">Data Privacy</a>
+                </nav>
+            </div>
+            
+            <div class="footer-col col-studio">
+                <h4 class="col-title">Studio</h4>
+                <p class="mb-2">A product of <a href="https://eight1fivedesign.com" target="_blank" rel="noopener" class="studio-link">eight1five design</a></p>
+                <p class="mb-2"><span class="badge bg-secondary text-white rounded-pill">BETA</span> Status</p>
+                <p class="mb-0"><a href="https://github.com/boardgamehub" target="_blank" rel="noopener" class="github-link"><i class="bi bi-github"></i> GitHub</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="m-0">&copy; 2026 BoardGameHub. All rights reserved.</p>
         </div>
     </footer>
 </div>

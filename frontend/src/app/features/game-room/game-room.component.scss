@@ -30,7 +30,7 @@
     box-shadow: none;
 
     &:hover {
-        color: var(--primary) !important;
+        color: var(--primary);
         transform: scale(1.1);
         box-shadow: none;
     }
@@ -78,10 +78,12 @@
     transition: none; // Disable by default
     display: flex;
     flex-direction: column;
+    min-height: 0;
 
     .main-stage {
         overflow: hidden; // Default for desktop (internal scroll)
-        border-radius: 1.5rem !important; // Softer corners (approx rounded-4)
+        border-radius: 1.5rem; // Softer corners (approx rounded-4)
+        min-height: 0;
 
         // The lobby div inside needs to scroll on desktop
         .w-100.d-flex.flex-column.align-items-center {
@@ -102,61 +104,61 @@
             }
 
             @media (max-width: 767.98px) {
-                padding-top: 0.25rem !important;
+                padding-top: 0.25rem;
                 
                 .card {
-                    margin-top: 0 !important;
-                    border-radius: 1rem !important;
-                    border: none !important;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+                    margin-top: 0;
+                    border-radius: 1rem;
+                    border: none;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
                 }
 
                 .alert {
-                    padding: 0.5rem 0.75rem !important;
+                    padding: 0.5rem 0.75rem;
                     font-size: 0.8rem;
                     
                     .btn {
-                        padding: 0.2rem 0.6rem !important;
-                        font-size: 0.75rem !important;
+                        padding: 0.2rem 0.6rem;
+                        font-size: 0.75rem;
                     }
                 }
 
                 h3 {
-                    font-size: 1.25rem !important;
-                    margin-bottom: 0.75rem !important;
+                    font-size: 1.25rem;
+                    margin-bottom: 0.75rem;
                 }
 
                 .form-label {
-                    font-size: 0.85rem !important;
-                    margin-bottom: 0.25rem !important;
+                    font-size: 0.85rem;
+                    margin-bottom: 0.25rem;
                 }
 
                 .form-control-lg {
-                    padding: 0.5rem 0.75rem !important;
-                    font-size: 1rem !important;
+                    padding: 0.5rem 0.75rem;
+                    font-size: 1rem;
                 }
 
                 .btn-outline-secondary {
-                    padding: 0.6rem !important;
+                    padding: 0.6rem;
                     
                     i {
-                        font-size: 1.5rem !important;
+                        font-size: 1.5rem;
                     }
 
                     span {
-                        font-size: 0.75rem !important;
+                        font-size: 0.75rem;
                     }
                     
                     small {
-                        font-size: 0.6rem !important;
+                        font-size: 0.6rem;
                         display: block;
                         margin-top: 0.1rem;
                     }
                 }
 
                 .btn-primary.w-100 {
-                    padding: 0.75rem !important;
-                    font-size: 1.1rem !important;
+                    padding: 0.75rem;
+                    font-size: 1.1rem;
                 }
             }
         }
@@ -171,14 +173,14 @@
     }
 
     @media (max-width: 767.98px) {
-        flex: 1 1 auto !important; 
-        height: 100% !important;
+        flex: 1 1 auto;
+        height: 100%;
         min-height: 0;
 
         .main-stage {
-            overflow: hidden !important; 
-            height: 100% !important;
-            min-height: 0 !important;
+            overflow: hidden;
+            height: 100%;
+            min-height: 0;
         }
     }
 }
@@ -188,15 +190,17 @@
     flex-grow: 1;
     min-height: 0; // CRITICAL: Allows flex container to shrink below content size and enables scrolling inside
     display: flex;
+    gap: 1rem;
+    align-items: stretch;
     overflow-y: hidden; // Default for desktop
 
-    padding-left: var(--side-padding);
-    padding-right: var(--side-padding);
-    padding-top: 0.5rem;
+    // padding-left: var(--side-padding);
+    // padding-right: var(--side-padding);
+    // padding-top: 0.5rem;
     padding-bottom: 0;
 
     @media (max-width: 767.98px) {
-        display: flex !important;
+        display: flex;
         flex-direction: column;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
@@ -205,12 +209,28 @@
     }
 }
 
+.floating-btn {
+    z-index: 1000;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+}
+
+.lobby-container-max {
+    max-width: 1200px;
+}
+
+.intermission-bar-style {
+    background-color: var(--surface-card);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+}
+
 
 
 // Responsive utilities
 @media (max-width: 767.98px) {
     .mobile-hidden {
-        display: none !important;
+        display: none;
     }
 
 
@@ -228,11 +248,21 @@
     }
 
     &.is-collapsed {
-        width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
+        width: 0;
+        padding: 0;
+        margin: 0;
         opacity: 0;
         pointer-events: none;
+    }
+
+    @media (min-width: 768px) {
+        flex: 0 0 320px;
+        max-width: 320px;
+    }
+
+    @media (min-width: 992px) {
+        flex: 0 0 350px;
+        max-width: 350px;
     }
 
     @media (max-width: 767.98px) {
@@ -249,7 +279,7 @@
     background: white;
     z-index: 1050;
     max-height: 400px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     animation: slideDown 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
 
     .dropdown-item {
@@ -291,7 +321,7 @@
 
 .subtle-placeholder {
     &::placeholder {
-        color: #d1d5db !important; // Light gray (Tailwind gray-300 equiv)
+        color: #d1d5db; // Light gray (Tailwind gray-300 equiv)
         font-weight: normal;
         opacity: 0.8;
     }

@@ -3,7 +3,7 @@
 
     &:hover {
         transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
 }
 
@@ -13,5 +13,9 @@ h3,
 h4,
 h5,
 h6 {
-    font-weight: 800 !important;
+    font-weight: 800;
+}
+
+.border-dashed {
+    border-bottom-style: dashed;
 }

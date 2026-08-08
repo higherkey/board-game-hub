@@ -1,8 +1,8 @@
 <header *ngIf="!isBigScreen"
-    class="game-room-header px-4 py-2 mb-2 mb-md-3 rounded-3 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
+    class="game-room-header px-4 py-2 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
     
     <!-- Mobile Left: Hamburger Menu -->
-    <div class="d-md-none">
+    <div class="d-md-none header-section-left">
         <button class="btn btn-link text-white p-0" (click)="toggleNavMenu()" title="Room Menu"
             aria-label="Open Room Menu" [attr.aria-expanded]="isNavMenuOpen">
             <i class="bi bi-list fs-3"></i>
@@ -10,7 +10,7 @@
     </div>
 
     <!-- Desktop Left: Navigation & Room Actions -->
-    <div class="d-none d-md-flex align-items-center gap-3">
+    <div class="d-none d-md-flex header-section-left gap-3">
         <a routerLink="/" class="btn btn-outline-secondary btn-sm" title="Home (Keep Connected)" aria-label="Home">
             <i class="bi bi-house-door-fill"></i>
         </a>
@@ -34,20 +34,22 @@
         </button>
     </div>
 
-    <div class="room-info-container d-flex align-items-center gap-2 gap-sm-3 ms-1 ms-sm-2 ps-2 ps-sm-3" *ngIf="roomCode !== 'CREATE'">
-        <div class="d-flex align-items-baseline">
-            <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline"
-                style="font-size: 0.65rem; color: var(--text-light);">ROOM</span>
-            <span class="font-monospace room-code-display">{{ roomCode }}</span>
-        </div>
-        <div class="text-white game-title-badge fw-bold text-uppercase"
-            [class.is-lobby]="isLobby">
-            {{ gameDisplayName }}
+    <!-- Center: Room Info & Game Title Badge -->
+    <div class="header-section-center">
+        <div class="room-info-container d-flex align-items-center gap-2 gap-sm-3" *ngIf="roomCode !== 'CREATE'">
+            <div class="d-flex align-items-baseline">
+                <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline room-info-label">ROOM</span>
+                <span class="font-monospace room-code-display">{{ roomCode }}</span>
+            </div>
+            <div class="text-white game-title-badge fw-bold text-uppercase"
+                [class.is-lobby]="isLobby">
+                {{ gameDisplayName }}
+            </div>
         </div>
     </div>
 
     <!-- Right: Mobile Video & Desktop Profile -->
-    <div class="d-flex align-items-center gap-2 gap-md-3">
+    <div class="header-section-right gap-2 gap-md-3">
         <!-- Video Chat Toggle (Mobile) -->
         <button class="btn btn-outline-light btn-sm d-md-none" (click)="startVideoChat.emit()"
             *ngIf="videoChatReady && !isVideoActive" title="Start Video" aria-label="Start Video">
@@ -61,7 +63,7 @@
         </div>
 
         <!-- Profile (Desktop Only) -->
-        <div class="d-none d-md-flex">
+        <div class="d-none d-md-flex align-items-center header-profile">
             <app-user-profile-dropdown [session]="session"></app-user-profile-dropdown>
         </div>
     </div>

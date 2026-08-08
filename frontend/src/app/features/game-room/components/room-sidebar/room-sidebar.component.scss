@@ -1,3 +1,12 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    width: 100%;
+}
+
 .player-list-card {
     border: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -23,4 +32,55 @@
 
 .bg-accent {
     background-color: var(--accent);
+}
+
+.table-card {
+    max-height: 40%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.glow-blue {
+    filter: drop-shadow(0 0 2px rgba(0, 150, 255, 0.5));
+}
+
+.player-card {
+    min-height: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.bg-brand-blue {
+    background-color: var(--brand-blue);
+}
+
+.thick-border-left {
+    border-left-width: 4px;
+}
+
+.avatar-sm {
+    width: 24px;
+    height: 24px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+}
+
+.font-xs {
+    font-size: 0.75rem;
+}
+
+.font-xxs {
+    font-size: 0.6rem;
+}
+
+.font-micro {
+    font-size: 0.5rem;
+}
+
+.font-sm-badge {
+    font-size: 0.7rem;
 }

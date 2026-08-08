@@ -2,6 +2,10 @@
 
 These terms apply **across games** in this codebase. Game-specific rules live under each game’s feature folder (for example `frontend/src/app/features/games/<game>/README.md`).
 
+## Mission & Vision
+
+Board Game Hub exists to **connect people and make them feel as close as possible no matter where they are in the world**. By separating shared public interactions ("Table") from private individual actions ("Hand"), the platform recreates the organic feel of sitting around the same living room game table.
+
 ## Roles and devices
 
 | Term | Meaning |
