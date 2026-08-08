@@ -32,9 +32,10 @@
                     <i class="bi bi-star-fill"></i>
                 </button>
                 <button *ngIf="s.connectionId === connectionId"
-                    class="btn btn-xs btn-outline-secondary rounded-circle p-1 text-white border-white-50"
+                    class="btn btn-sm btn-dark text-white fw-bold shadow-sm d-inline-flex align-items-center gap-1 px-2 py-1"
                     (click)="changeRole.emit(false)" title="Switch to Player Role">
-                    <i class="bi bi-person-fill"></i>
+                    <i class="bi bi-phone-fill text-warning"></i>
+                    <span class="x-small">HAND</span>
                 </button>
             </div>
         </li>
@@ -91,9 +92,10 @@
                         <i class="bi bi-star-fill font-xs"></i>
                     </button>
                     <button *ngIf="p.connectionId === connectionId"
-                        class="btn btn-xs btn-outline-secondary rounded-circle p-1"
+                        class="btn btn-sm btn-primary text-white fw-bold shadow-sm d-inline-flex align-items-center gap-1 px-2 py-1"
                         (click)="changeRole.emit(true)" title="Switch to Table Role">
-                        <i class="bi bi-display font-xs"></i>
+                        <i class="bi bi-display-fill text-info"></i>
+                        <span class="x-small">TABLE</span>
                     </button>
                     <span class="badge rounded-pill bg-primary text-white border border-white-50 px-2 py-1 font-sm-badge">
                         {{ p.score || 0 }}

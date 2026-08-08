@@ -1,4 +1,4 @@
-<div class="container-fluid d-flex flex-column h-100">
+<div class="container-fluid p-0 d-flex flex-column h-100">
     <!-- 1. HEADER (Top Bar) -->
     <app-room-header
         [isBigScreen]="isBigScreen"
@@ -54,7 +54,7 @@
             [class.mobile-hidden]="mobileView !== 'game'" [class.has-docked-top]="videoLayout === 'docked-top'"
             [class.has-docked-bottom]="videoLayout === 'docked-bottom'">
 
-            <div class="main-stage flex-grow-1 bg-surface-2 position-relative d-flex flex-column">
+            <div *ngIf="stateService.needsName || !(stateService.gameStarted$ | async)" class="main-stage flex-grow-1 bg-surface-2 position-relative d-flex flex-column">
                 <!-- Floating Sidebar Expand (Desktop Only, only if collapsed) -->
                 <button
                     class="btn btn-dark btn-sm position-absolute top-0 start-0 m-2 rounded-circle shadow opacity-50 hover-opacity-100 d-none floating-btn"
@@ -143,7 +143,7 @@
                 </div>
 
                 <!-- HOST CONTROLS (Mobile Only - Bottom of Game View) -->
-                <div class="d-md-none bg-surface border-top border-pink p-3" *ngIf="(stateService.isHost$ | async)">
+                <div class="d-md-none bg-surface border-top border-pink p-1 px-2" *ngIf="(stateService.isHost$ | async)">
                      <!-- Toggle for Host Controls if they take up too much space? For now, just show them as requested -->
                      <details class="mb-2">
                         <summary class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2">

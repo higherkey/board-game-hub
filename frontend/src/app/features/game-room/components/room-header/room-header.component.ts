@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { UserProfileDropdownComponent } from '../../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
+import { DeviceService } from '../../../../services/device.service';
 
 @Component({
   selector: 'app-room-header',
@@ -11,6 +12,7 @@ import { UserProfileDropdownComponent } from '../../../../shared/components/user
   styleUrls: ['./room-header.component.scss']
 })
 export class RoomHeaderComponent {
+  readonly deviceService = inject(DeviceService);
   @Input() isBigScreen = false;
   @Input() roomCode = '';
   @Input() gameDisplayName = 'Lobby';

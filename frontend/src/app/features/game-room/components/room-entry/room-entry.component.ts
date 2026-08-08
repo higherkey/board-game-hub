@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { RouterModule } from '@angular/router';
 
+import { DeviceService } from '../../../../services/device.service';
+
 @Component({
   selector: 'app-room-entry',
   standalone: true,
@@ -22,6 +24,7 @@ export class RoomEntryComponent implements OnInit {
   @ViewChild('playerNameInput') playerNameInput!: ElementRef<HTMLInputElement>;
 
   private readonly toastService = inject(ToastService);
+  private readonly deviceService = inject(DeviceService);
 
   promptPlayerName = '';
   joinType: 'player' | 'table' | null = null;
@@ -30,6 +33,9 @@ export class RoomEntryComponent implements OnInit {
 
   ngOnInit() {
     this.promptPlayerName = this.initialName;
+    if (!this.joinType) {
+      this.joinType = this.deviceService.isMobileValue ? 'player' : 'table';
+    }
   }
 
   onSubmit() {

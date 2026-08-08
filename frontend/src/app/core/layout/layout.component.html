@@ -1,6 +1,6 @@
 <div class="app-shell">
     <!-- HEADER -->
-    <header *ngIf="!(isGameRoom$ | async)" class="main-header" role="banner">
+    <header *ngIf="!(isGameRoom$ | async)" class="main-header" [class.scrolled]="isScrolled" role="banner">
         <div class="header-container">
             <div class="d-flex align-items-center header-left-group">
                 <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation">
@@ -8,10 +8,10 @@
                 </button>
 
                 <a class="logo-container d-flex align-items-center" routerLink="/" (click)="closeMobileMenu()" aria-label="Go to Home">
-                    <app-logo [size]="40" class="text-primary"></app-logo>
+                    <app-logo [size]="36" class="text-primary"></app-logo>
                     <div class="logo-text ms-2 d-none d-sm-block">BoardGame<span class="text-primary">Hub</span></div>
                     <div class="logo-text ms-2 d-sm-none">BG<span class="text-primary">H</span></div>
-                    <span class="badge bg-primary text-white ms-2 rounded-pill shadow-sm" style="font-size: 0.65rem; transform: translateY(-8px);">BETA</span>
+                    <span class="logo-beta-tag ms-2">BETA</span>
                 </a>
             </div>
 
@@ -85,7 +85,12 @@
             <div class="footer-col col-studio">
                 <h4 class="col-title">Studio</h4>
                 <p class="mb-2">A product of <a href="https://eight1fivedesign.com" target="_blank" rel="noopener" class="studio-link">eight1five design</a></p>
-                <p class="mb-2"><span class="badge bg-secondary text-white rounded-pill">BETA</span> Status</p>
+                <div class="mb-3">
+                    <span class="footer-beta-chip">
+                        <i class="bi bi-stars text-pink" aria-hidden="true"></i>
+                        v1.0.0-beta.1 &bull; Public Beta
+                    </span>
+                </div>
                 <p class="mb-0"><a href="https://github.com/boardgamehub" target="_blank" rel="noopener" class="github-link"><i class="bi bi-github"></i> GitHub</a></p>
             </div>
         </div>

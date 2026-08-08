@@ -81,8 +81,10 @@
     min-height: 0;
 
     .main-stage {
-        overflow: hidden; // Default for desktop (internal scroll)
-        border-radius: 1.5rem; // Softer corners (approx rounded-4)
+        overflow: hidden;
+        border-radius: var(--radius-lg, 12px);
+        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+        box-shadow: var(--shadow-sm, 2px 2px 0px rgba(0, 0, 0, 0.2));
         min-height: 0;
 
         // The lobby div inside needs to scroll on desktop
@@ -99,8 +101,8 @@
             @media (min-width: 768px) {
                 overflow-y: auto;
                 align-items: flex-start;
-                padding-top: 2rem;
-                padding-bottom: 2rem;
+                padding-top: 0.75rem;
+                padding-bottom: 1rem;
             }
 
             @media (max-width: 767.98px) {
@@ -108,9 +110,9 @@
                 
                 .card {
                     margin-top: 0;
-                    border-radius: 1rem;
-                    border: none;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                    border-radius: var(--radius-lg, 12px);
+                    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+                    box-shadow: var(--shadow-md, 4px 4px 0px rgba(0, 0, 0, 0.15));
                 }
 
                 .alert {
@@ -190,13 +192,11 @@
     flex-grow: 1;
     min-height: 0; // CRITICAL: Allows flex container to shrink below content size and enables scrolling inside
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
     align-items: stretch;
     overflow-y: hidden; // Default for desktop
 
-    // padding-left: var(--side-padding);
-    // padding-right: var(--side-padding);
-    // padding-top: 0.5rem;
+    padding-top: 0;
     padding-bottom: 0;
 
     @media (max-width: 767.98px) {

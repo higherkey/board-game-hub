@@ -82,9 +82,9 @@ public class CloverMindedGameService : IGameService
         var pairWords = new string[4][];
         for (var i = 0; i < 4; i++)
         {
-            var (a, b) = CloverGeometry.PairEdgeIndices(i);
-            var wA = GetWord(cards[perm[i]], rot[i], a);
-            var wB = GetWord(cards[perm[(i + 1) % 4]], rot[(i + 1) % 4], b);
+            var (slotA, slotB, edgeA, edgeB) = CloverGeometry.PairEdgeAndSlotIndices(i);
+            var wA = GetWord(cards[perm[slotA]], rot[slotA], edgeA);
+            var wB = GetWord(cards[perm[slotB]], rot[slotB], edgeB);
             pairWords[i] = new[] { wA, wB };
         }
 
@@ -206,7 +206,6 @@ public class CloverMindedGameService : IGameService
         state.CurrentSpectatorId = specId;
         state.ResolutionAttempt = 1;
         state.Phase = CloverMindedPhase.Resolution.ToString();
-        // Reset per Hand for this spectator's resolution attempt.
         state.RotationCardIdByPlayerThisAttempt = state.ParticipantIds.ToDictionary(id => id, _ => (string?)null);
 
         if (!_privateClues.TryGetValue(room.Code, out var clueMap) || !clueMap.TryGetValue(specId, out var clueArr))
@@ -298,7 +297,6 @@ public class CloverMindedGameService : IGameService
         state.Slots[slotIndex].CardId = null;
         state.Slots[slotIndex].Rotation = 0;
 
-        // Auto-release if it was cleared
         if (!string.IsNullOrEmpty(cardId))
         {
             state.CardOccupants?.TryRemove(cardId, out _);
@@ -309,7 +307,6 @@ public class CloverMindedGameService : IGameService
 
     private bool TryRotateSlot(Room room, CloverMindedState state, string connectionId, JsonElement payload)
     {
-        if (!room.Settings.CloverAllowPerPlayerSingleCardRotation) return false;
         if (state.Phase != CloverMindedPhase.Resolution.ToString() &&
             state.Phase != CloverMindedPhase.ResolutionSecond.ToString()) return false;
 
@@ -317,22 +314,13 @@ public class CloverMindedGameService : IGameService
         if (p == null || p.IsScreen) return false;
         if (connectionId == state.CurrentSpectatorId) return false;
 
-        if (state.RotationCardIdByPlayerThisAttempt == null)
-            state.RotationCardIdByPlayerThisAttempt = new Dictionary<string, string?>();
-
         if (!payload.TryGetProperty("slotIndex", out var si) || si.ValueKind != JsonValueKind.Number) return false;
         var slotIndex = si.GetInt32();
         if (slotIndex is < 0 or > 3 || state.Slots == null) return false;
         var slot = state.Slots[slotIndex];
         if (string.IsNullOrEmpty(slot.CardId)) return false;
 
-        // Enforce: once a Hand rotates one card in this attempt, they may only rotate that same card.
-        state.RotationCardIdByPlayerThisAttempt.TryGetValue(connectionId, out var usedCardId);
-        if (!string.IsNullOrEmpty(usedCardId) && usedCardId != slot.CardId)
-            return false;
-
         slot.Rotation = (slot.Rotation + 1) % 4;
-        state.RotationCardIdByPlayerThisAttempt[connectionId] = slot.CardId;
         return true;
     }
 
@@ -363,47 +351,42 @@ public class CloverMindedGameService : IGameService
 
         if (allCorrect)
         {
-            var add = state.ResolutionAttempt == 1 ? 6 : CountCorrect(state.Slots, sol);
+            var add = state.ResolutionAttempt == 1 ? 6 : 4;
             state.TotalScore += add;
             state.LastResult = state.ResolutionAttempt == 1
                 ? $"Perfect! +{add} points."
-                : $"Second attempt. +{add} points.";
+                : $"Second attempt successful! +{add} points.";
             AdvanceSpectator(room, state);
             return true;
         }
 
         if (state.ResolutionAttempt == 1)
         {
-            // Rulebook: the Spectator removes incorrect cards from the middle.
-            // We model this by removing wrong card IDs from `state.Pool` before attempt 2.
-            var wrongCardIds = new List<string>();
+            // Official rules: Spectator removes incorrect cards from the board.
+            // Correct cards remain locked in place.
             for (var i = 0; i < 4; i++)
             {
                 if (wrong[i])
                 {
-                    if (state.Slots[i].CardId != null)
-                        wrongCardIds.Add(state.Slots[i].CardId!);
+                    var cardId = state.Slots[i].CardId;
                     state.Slots[i].CardId = null;
                     state.Slots[i].Rotation = 0;
+                    if (!string.IsNullOrEmpty(cardId))
+                    {
+                        state.CardOccupants?.TryRemove(cardId, out _);
+                    }
                 }
-            }
-
-            wrongCardIds = wrongCardIds.Distinct().ToList();
-            if (state.Pool != null && wrongCardIds.Count > 0)
-            {
-                state.Pool = state.Pool.Where(c => !wrongCardIds.Contains(c.Id)).ToList();
             }
 
             state.ResolutionAttempt = 2;
             state.Phase = CloverMindedPhase.ResolutionSecond.ToString();
-            state.LastResult = "Some cards were wrong — one more try.";
-            state.RotationCardIdByPlayerThisAttempt = state.ParticipantIds.ToDictionary(id => id, _ => (string?)null);
+            state.LastResult = "Some cards were wrong — incorrect cards cleared. One more try!";
             return true;
         }
 
         var partial = CountCorrect(state.Slots, sol);
         state.TotalScore += partial;
-        state.LastResult = $"Final attempt scored +{partial} points.";
+        state.LastResult = $"Attempt 2 finished. Scored +{partial} points.";
         AdvanceSpectator(room, state);
         return true;
     }
@@ -446,14 +429,24 @@ public class CloverMindedGameService : IGameService
     }
 }
 
-internal static class CloverGeometry
+public static class CloverGeometry
 {
-    /// <summary>Local edge indices for pair between slot i and (i+1)%4.</summary>
-    public static (int edgeOnSlotI, int edgeOnSlotIp1) PairEdgeIndices(int i)
+    /// <summary>
+    /// For outer edge pair i (0=Top, 1=Right, 2=Bottom, 3=Left),
+    /// returns (slotA, slotB, edgeA, edgeB).
+    /// Slot 0: Top-Left, Slot 1: Top-Right, Slot 2: Bottom-Left, Slot 3: Bottom-Right.
+    /// Edge indices: 0: Top, 1: Right, 2: Bottom, 3: Left.
+    /// </summary>
+    public static (int slotA, int slotB, int edgeA, int edgeB) PairEdgeAndSlotIndices(int i)
     {
-        var edgeA = new[] { 1, 2, 3, 0 };
-        var edgeB = new[] { 0, 0, 2, 3 };
-        return (edgeA[i], edgeB[i]);
+        return i switch
+        {
+            0 => (0, 1, 0, 0), // Top edge: Slot 0 Top + Slot 1 Top
+            1 => (1, 3, 1, 1), // Right edge: Slot 1 Right + Slot 3 Right
+            2 => (3, 2, 2, 2), // Bottom edge: Slot 3 Bottom + Slot 2 Bottom
+            3 => (2, 0, 3, 3), // Left edge: Slot 2 Left + Slot 0 Left
+            _ => (0, 1, 0, 0)
+        };
     }
 }
 
