@@ -9,12 +9,12 @@
 .current-word {
     transform: scale(1.1);
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    color: white !important;
+    color: white;
 }
 
 /* Specific text-muted override just in case */
 .text-muted {
-    color: #6c757d !important;
+    color: #6c757d;
     opacity: 0.5;
 }
 

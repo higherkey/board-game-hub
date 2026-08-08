@@ -1,39 +1,57 @@
-.mobile-tab-bar {
-    background: rgba(30, 30, 40, 0.95);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: env(safe-area-inset-bottom, 10px) !important;
+:host {
+    display: block;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 1050;
-    /* Above modals if needed, but usually below */
-    height: 50px;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.mobile-tab-bar {
+    background: oklch(22% 0.10 250);
+    border-top: 3px solid var(--contrast-pink, #ff4081);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.45);
+    padding: 0.35rem 0.75rem;
+    padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 8px));
+    height: auto;
+    min-height: 56px;
+    gap: 0.5rem;
 }
 
 .nav-btn {
-    text-decoration: none;
-    color: rgba(255, 255, 255, 0.5);
-    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-pill, 9999px);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     flex: 1;
-    border-radius: 0;
+    cursor: pointer;
+    outline: none;
 
     &:hover {
-        color: rgba(255, 255, 255, 0.8);
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.1);
     }
 
     &.active {
-        color: var(--contrast-pink); // Use the pink accent
+        background: var(--contrast-pink, #ff4081);
+        color: #ffffff;
+        box-shadow: var(--shadow-sm, 2px 2px 0px rgba(0, 0, 0, 0.25));
+        transform: translateY(-2px);
 
-        .icon-wrapper {
-            transform: translateY(-2px);
-            filter: drop-shadow(0 0 8px rgba(255, 105, 180, 0.4));
+        i {
+            transform: scale(1.1);
         }
     }
-}
 
-.icon-wrapper {
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
+    i {
+        transition: transform 0.2s ease;
+    }
 
-span {
-    font-size: 0.7rem;
-    letter-spacing: 0.5px;
+    span {
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
 }

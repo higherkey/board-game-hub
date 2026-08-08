@@ -53,4 +53,9 @@ describe('RoomSidebarComponent', () => {
     component.changeRole.emit(true);
     expect(component.changeRole.emit).toHaveBeenCalledWith(true);
   });
+
+  it('should apply the .player-list-card class to the main players container', () => {
+    const playerListCard = fixture.nativeElement.querySelector('.player-list-card');
+    expect(playerListCard).toBeTruthy();
+  });
 });

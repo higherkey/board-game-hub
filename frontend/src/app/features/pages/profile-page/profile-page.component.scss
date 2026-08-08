@@ -3,16 +3,16 @@
     height: 32px;
     cursor: pointer;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    border: 2px solid transparent !important;
+    border: 2px solid transparent;
 
     &:hover {
         transform: scale(1.1);
-        box-shadow: 0 .25rem .5rem rgba(0,0,0,.15)!important;
+        box-shadow: 0 .25rem .5rem rgba(0,0,0,.15);
     }
 
     &.active-swatch {
         transform: scale(1.15);
-        border: 2px solid #333 !important;
-        box-shadow: 0 .25rem .5rem rgba(0,0,0,.15)!important;
+        border: 2px solid #333;
+        box-shadow: 0 .25rem .5rem rgba(0,0,0,.15);
     }
 }

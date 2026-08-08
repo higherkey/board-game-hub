@@ -4,10 +4,13 @@
  * It does not affect the site's functionality and can be safely ignored.
  */
 
+@use "bootstrap/scss/bootstrap";
+
 /* Fonts */
 @font-face {
   font-family: 'Outfit';
-  src: url('/assets/fonts/outfit-300.ttf') format('truetype');
+  src: url('/assets/fonts/outfit-300.woff2') format('woff2'),
+       url('/assets/fonts/outfit-300.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
   font-display: block;
@@ -15,7 +18,8 @@
 
 @font-face {
   font-family: 'Outfit';
-  src: url('/assets/fonts/outfit-400.ttf') format('truetype');
+  src: url('/assets/fonts/outfit-400.woff2') format('woff2'),
+       url('/assets/fonts/outfit-400.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: block;
@@ -23,7 +27,8 @@
 
 @font-face {
   font-family: 'Outfit';
-  src: url('/assets/fonts/outfit-600.ttf') format('truetype');
+  src: url('/assets/fonts/outfit-600.woff2') format('woff2'),
+       url('/assets/fonts/outfit-600.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
   font-display: block;
@@ -31,7 +36,8 @@
 
 @font-face {
   font-family: 'Outfit';
-  src: url('/assets/fonts/outfit-800.ttf') format('truetype');
+  src: url('/assets/fonts/outfit-800.woff2') format('woff2'),
+       url('/assets/fonts/outfit-800.ttf') format('truetype');
   font-weight: 800;
   font-style: normal;
   font-display: block;
@@ -39,172 +45,152 @@
 
 @font-face {
   font-family: 'Quicksand';
-  src: url('/assets/fonts/quicksand-300.ttf') format('truetype');
+  src: url('/assets/fonts/quicksand-300.woff2') format('woff2'),
+       url('/assets/fonts/quicksand-300.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Quicksand';
-  src: url('/assets/fonts/quicksand-400.ttf') format('truetype');
+  src: url('/assets/fonts/quicksand-400.woff2') format('woff2'),
+       url('/assets/fonts/quicksand-400.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Quicksand';
-  src: url('/assets/fonts/quicksand-500.ttf') format('truetype');
+  src: url('/assets/fonts/quicksand-500.woff2') format('woff2'),
+       url('/assets/fonts/quicksand-500.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Quicksand';
-  src: url('/assets/fonts/quicksand-600.ttf') format('truetype');
+  src: url('/assets/fonts/quicksand-600.woff2') format('woff2'),
+       url('/assets/fonts/quicksand-600.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Quicksand';
-  src: url('/assets/fonts/quicksand-700.ttf') format('truetype');
+  src: url('/assets/fonts/quicksand-700.woff2') format('woff2'),
+       url('/assets/fonts/quicksand-700.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 /* Global Design System - Physical/Paper Theme */
 
 :root {
-  /* Color Palette */
-  --bg-base: #f7f3e8;
-  /* Warm Tan / Paper */
-  --bg-surface: #ffffff;
-  /* Clean Card */
-  --bg-surface-2: #eaddcf;
-  /* Darker Tan for inputs/borders */
+  /* OKLCH Perceptually Uniform Color Palette */
+  --brand-hue-primary: 250; /* Navy Spectrum */
+  --brand-hue-accent: 190;  /* Teal Spectrum */
+  --brand-hue-pink: 350;    /* Hot Pink Spectrum */
 
-  --text-primary: #2d3748;
-  /* Soft Black */
-  --text-secondary: #718096;
-  /*
-   * THEME: Digital Parchment + Low Poly
-   * - Warm, tactile base
-   * - Geometric, sharp accents
-   */
+  /* Base OKLCH Brand Tokens */
+  --primary: oklch(28% 0.11 var(--brand-hue-primary));
+  --primary-light: oklch(38% 0.13 var(--brand-hue-primary));
+  --primary-dark: oklch(18% 0.09 var(--brand-hue-primary));
 
-  /* Brand Colors */
-  --primary: #003366;
-  /* Navy Blue (Logo) */
-  --primary-light: #004d99;
-  --primary-dark: #002244;
+  --accent: oklch(68% 0.14 var(--brand-hue-accent));
+  --accent-light: oklch(88% 0.08 var(--brand-hue-accent));
+  --accent-dark: oklch(48% 0.12 var(--brand-hue-accent));
 
-  --accent: #38b2ac;
-  /* Teal (Logo Base) */
-  --accent-light: #81e6d9;
-  --accent-dark: #2c7a7b;
+  --secondary: var(--accent);
+  --neutral: oklch(42% 0.04 250);
+  --success: oklch(62% 0.16 145);
+  --warning: oklch(72% 0.17 80);
+  --danger: oklch(58% 0.22 25);
+  --contrast-pink: oklch(62% 0.25 var(--brand-hue-pink));
+  --brand-blue: oklch(60% 0.18 250);
 
-  --secondary: #38b2ac;
-  /* Teal (Formerly Accent) */
-  --neutral: #4a5568;
-  /* Blue-Grey (Backgrounds/Borders) */
-  --success: #38a169;
-  --warning: #d69e2e;
-  --danger: #e53e3e;
-  --contrast-pink: #ff2d92;
-  /* Vibrant Hot Pink */
-  --brand-blue: #3b82f6;
-  /* Vibrant Light Blue */
+  /* Derived Interactive States via CSS color-mix() in OKLCH */
+  --primary-hover: color-mix(in oklch, var(--primary) 85%, black);
+  --accent-hover: color-mix(in oklch, var(--accent) 85%, black);
+  --contrast-pink-hover: color-mix(in oklch, var(--contrast-pink) 85%, black);
 
-  /* Backgrounds (Parchment) */
-  --bg-base: #fdf5e6;
-  /* Warm Parchment */
-  --bg-surface: #ffffff;
-  /* Clean White Card */
-  --bg-surface-2: #fffaf0;
-  /* Lighter Tan */
-  --bg-overlay: rgba(255, 255, 255, 0.85);
-  /* Glass effect */
+  /* Background Tokens (Digital Parchment Theme) */
+  --bg-base: oklch(97% 0.02 85);       /* Warm Parchment */
+  --bg-surface: oklch(100% 0 0);        /* Pure White Surface */
+  --bg-surface-2: oklch(94% 0.03 85);    /* Muted Tan for inputs/borders */
+  --bg-overlay: oklch(100% 0 0 / 0.85);
 
-  /* Typography (Neutral Palette) */
-  --text-primary: #002244;
-  /* Dark Navy (Primary) */
-  --text-secondary: #718096;
-  /* Neutral Grey (Secondary) */
-  --text-light: #a0aec0;
-  /* Light Grey (Subtext) */
-  --text-on-primary: #ffffff;
+  /* Typography Tokens (Neutral Hierarchy) */
+  --text-primary: oklch(20% 0.08 var(--brand-hue-primary));
+  --text-secondary: oklch(50% 0.04 250);
+  --text-light: oklch(68% 0.03 250);
+  --text-on-primary: oklch(100% 0 0);
 
   /* UI Elements */
-  --border-color: #e2e8f0;
+  --border-color: oklch(88% 0.02 250);
   --radius-sm: 4px;
-  /* Sharper corners for "cut" look */
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-pill: 9999px;
 
-  /* Shadows (Sharp/Cut) */
-  --shadow-sm: 2px 2px 0px rgba(0, 34, 68, 0.05);
-  --shadow-md: 4px 4px 0px rgba(0, 34, 68, 0.05);
-  --shadow-lg: 8px 8px 0px rgba(0, 34, 68, 0.05);
-  --shadow-inner: inset 2px 2px 4px rgba(0, 0, 0, 0.05);
+  /* Neobrutalist Hard Offset Shadows */
+  --shadow-sm: 2px 2px 0px oklch(20% 0.08 var(--brand-hue-primary) / 0.2);
+  --shadow-md: 4px 4px 0px oklch(20% 0.08 var(--brand-hue-primary) / 0.25);
+  --shadow-lg: 6px 6px 0px oklch(20% 0.08 var(--brand-hue-primary) / 0.3);
+  --shadow-inner: inset 2px 2px 4px oklch(0% 0 0 / 0.1);
 
-  /* Spacing */
+  /* Spacing & Layout Tokens (Logical Dimensions) */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2.5rem;
-  --header-height: 80px;
+  --header-height: 72px;
 
   @media (max-width: 992px) {
     --space-lg: 1rem;
     --space-xl: 1.5rem;
-    --header-height: 60px;
+    --header-height: 54px;
   }
 
-  /* Bootstrap Variable Overrides (Bridge) */
+  /* Bootstrap Variable Bridge */
   --bs-primary: var(--primary);
   --bs-secondary: var(--secondary);
   --bs-success: var(--success);
   --bs-info: var(--accent);
-  /* Map Accent to Info */
   --bs-warning: var(--warning);
   --bs-danger: var(--danger);
   --bs-body-bg: var(--bg-base);
   --bs-body-color: var(--text-primary);
-
-  /* Fonts */
-  --bs-body-font-family: 'Quicksand',
-  sans-serif;
+  --bs-body-font-family: 'Quicksand', sans-serif;
 }
 
-/* Base Reset & Typography */
+/* Base Reset & Fluid Typography */
 html,
 body {
-  height: 100%;
-  min-height: 100vh;
-  /* Mobile viewport fix */
-  min-height: 100dvh;
+  block-size: 100%;
+  min-block-size: 100vh;
+  min-block-size: 100dvh;
   position: relative;
   overflow-x: hidden;
 }
 
-/* 
- * Performance Fix: Use fixed pseudo-element instead of background-attachment: fixed
- * This avoids repaints on scroll.
- */
+body {
+  font-family: 'Quicksand', sans-serif;
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+
 body::before {
   content: "";
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
   z-index: -1;
   background-image: url('assets/background-poly.svg');
   background-size: cover;
@@ -212,106 +198,225 @@ body::before {
   pointer-events: none;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+/* Fluid Headings & Text Balancing */
+h1, h2, h3, h4, h5, h6,
+.display-1, .display-2, .display-3, .display-4, .display-5 {
   font-family: 'Outfit', sans-serif;
-  font-weight: 500;
-  color: var(--brand-blue);
-  letter-spacing: -0.01em;
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+  margin-block-start: 0.25rem;
+  margin-block-end: 0.5rem;
+  text-wrap: balance;
+}
+
+h1, .display-4 {
+  font-size: clamp(2rem, 3.5vw + 1rem, 3.5rem);
+}
+
+h2, .display-5 {
+  font-size: clamp(1.5rem, 2.5vw + 0.75rem, 2.5rem);
+}
+
+h3 {
+  font-size: clamp(1.25rem, 1.5vw + 0.5rem, 1.75rem);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* WCAG 2.2 High-Contrast Focus Visible Ring */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 /* Utilities */
 .text-accent {
-  color: var(--accent) !important;
+  color: var(--accent);
 }
 
 .bg-surface {
   background-color: var(--bg-surface);
 }
 
-/* Bootstrap Component Customizations */
-
-/* Buttons - Sharp and Physical */
+/* Buttons - Sharp, Tactile, and Accessible */
 .btn {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
-  border-width: 2px;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-primary {
+  --bs-btn-color: var(--text-on-primary);
   --bs-btn-bg: var(--primary);
   --bs-btn-border-color: var(--primary);
-  --bs-btn-hover-bg: var(--primary-light);
-  --bs-btn-hover-border-color: var(--primary-light);
+  --bs-btn-hover-color: var(--text-on-primary);
+  --bs-btn-hover-bg: var(--primary-hover);
+  --bs-btn-hover-border-color: var(--primary-hover);
+  --bs-btn-active-color: var(--text-on-primary);
   --bs-btn-active-bg: var(--primary-dark);
   --bs-btn-active-border-color: var(--primary-dark);
+  background-color: var(--primary);
+  color: var(--text-on-primary);
+  border: 2px solid var(--primary);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: var(--text-on-primary);
+  }
 }
 
 .btn-secondary {
-  --bs-btn-color: #ffffff;
+  --bs-btn-color: var(--text-on-primary);
   --bs-btn-bg: var(--secondary);
   --bs-btn-border-color: var(--secondary);
-  --bs-btn-hover-color: #ffffff;
-  --bs-btn-hover-bg: var(--accent-dark);
-  --bs-btn-hover-border-color: var(--accent-dark);
-  --bs-btn-active-color: #ffffff;
+  --bs-btn-hover-color: var(--text-on-primary);
+  --bs-btn-hover-bg: var(--accent-hover);
+  --bs-btn-hover-border-color: var(--accent-hover);
+  --bs-btn-active-color: var(--text-on-primary);
   --bs-btn-active-bg: var(--accent-dark);
   --bs-btn-active-border-color: var(--accent-dark);
 }
 
 .btn-pink {
-  --bs-btn-color: #ffffff;
+  --bs-btn-color: var(--text-on-primary);
   --bs-btn-bg: var(--contrast-pink);
   --bs-btn-border-color: var(--contrast-pink);
-  --bs-btn-hover-color: #ffffff;
-  --bs-btn-hover-bg: #e62883;
-  --bs-btn-hover-border-color: #e62883;
-  --bs-btn-active-color: #ffffff;
-  --bs-btn-active-bg: #cc2475;
-  --bs-btn-active-border-color: #cc2475;
+  --bs-btn-hover-color: var(--text-on-primary);
+  --bs-btn-hover-bg: var(--contrast-pink-hover);
+  --bs-btn-hover-border-color: var(--contrast-pink-hover);
 }
 
-.text-pink {
-  color: var(--contrast-pink) !important;
-}
-
-.border-pink {
-  border-color: var(--contrast-pink) !important;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Cards - Physical Look */
-.card {
+.btn-outline-primary {
+  --bs-btn-color: var(--primary);
+  --bs-btn-bg: var(--bg-surface);
+  --bs-btn-border-color: var(--primary);
+  --bs-btn-hover-color: var(--primary-dark);
+  --bs-btn-hover-bg: var(--bg-surface-2);
+  --bs-btn-hover-border-color: var(--primary-dark);
+  --bs-btn-active-color: var(--text-on-primary);
+  --bs-btn-active-bg: var(--primary-dark);
+  --bs-btn-active-border-color: var(--primary-dark);
   background-color: var(--bg-surface);
-  border: 1px solid rgba(0, 51, 102, 0.05);
-  border-radius: var(--radius-md);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    background-color: var(--bg-surface-2);
+    color: var(--primary-dark);
+    border-color: var(--primary-dark);
+  }
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--primary);
+  --bs-btn-bg: oklch(100% 0 0 / 0.85);
+  --bs-btn-border-color: var(--primary);
+  --bs-btn-hover-color: var(--text-on-primary);
+  --bs-btn-hover-bg: var(--primary);
+  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-active-color: var(--text-on-primary);
+  --bs-btn-active-bg: var(--primary-dark);
+  --bs-btn-active-border-color: var(--primary-dark);
+  background-color: oklch(100% 0 0 / 0.85);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    background-color: var(--primary);
+    color: var(--text-on-primary);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.btn-check:checked + .btn-outline-secondary {
+  background-color: var(--primary) !important;
+  color: var(--text-on-primary) !important;
+  border-color: var(--primary) !important;
   box-shadow: var(--shadow-sm);
 }
 
+.btn:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Small Button Scale Variant */
+.btn-sm {
+  min-inline-size: 32px;
+  min-block-size: 32px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* WCAG 2.2 Prefers-Reduced-Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.text-pink {
+  color: var(--contrast-pink);
+}
+
+.border-pink {
+  border-color: var(--contrast-pink);
+}
+
+/* Cards - Neobrutalist Hard Edge & Shadow */
+.card {
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
 /* Inputs */
-.form-control {
+.form-control, .form-select {
   background-color: var(--bg-surface);
   border: 2px solid var(--bg-surface-2);
   color: var(--text-primary);
   border-radius: var(--radius-sm);
+  min-block-size: 44px;
 }
 
-.form-control:focus {
+.form-control:focus, .form-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 0.25rem rgba(44, 122, 123, 0.25);
+  box-shadow: 0 0 0 0.25rem oklch(68% 0.14 var(--brand-hue-accent) / 0.25);
 }
 
 .form-check-input:checked {
@@ -324,7 +429,7 @@ h6 {
   background-color: var(--bg-surface);
   border: 4px solid var(--primary);
   border-radius: var(--radius-md);
-  box-shadow: 10px 10px 0px var(--primary);
+  box-shadow: var(--shadow-lg);
 
   /* Physical theme "cut" look */
   clip-path: polygon(15px 0, 100% 0,
@@ -333,14 +438,13 @@ h6 {
 }
 
 .modal-backdrop {
-  background-color: #002244;
-  opacity: 0.8 !important;
-  /* Force opacity override */
+  background-color: oklch(18% 0.09 var(--brand-hue-primary));
+  opacity: 0.8;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
+  inline-size: 10px;
 }
 
 ::-webkit-scrollbar-track {

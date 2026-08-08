@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://boardgamehub.com/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://boardgamehub.com/play</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://boardgamehub.com/games</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://boardgamehub.com/about</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://boardgamehub.com/social</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://boardgamehub.com/privacy-policy</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://boardgamehub.com/terms-of-service</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://boardgamehub.com/data-privacy</loc>
+    <priority>0.5</priority>
+  </url>
+</urlset>

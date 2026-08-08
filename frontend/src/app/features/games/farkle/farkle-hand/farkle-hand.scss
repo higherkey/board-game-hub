@@ -1,3 +1,5 @@
+@use '../farkle-shared-dice';
+
 .farkle-hand-container {
   display: flex;
   flex-direction: column;
@@ -7,6 +9,10 @@
   color: white;
   font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
+
+  @media (max-width: 767.98px) {
+    padding: 0.5rem;
+  }
 }
 
 .sr-only {
@@ -111,15 +117,14 @@
   align-self: flex-end;
 }
 
+
 .die-3d-container {
-  position: relative;
   width: 64px;
   height: 64px;
   background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
-  transform-style: preserve-3d;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
   &:hover:not(:disabled) {
@@ -143,31 +148,14 @@
 }
 
 .die-3d {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
   transform: translateZ(32px) rotateX(-15deg) rotateY(15deg); /* Lifted */
   transition: transform 0.4s ease;
-  background: #f0f0f0; /* Off-white for more realism */
   border-radius: 12px;
 
   .face {
-    position: absolute;
-    width: 102%; /* Slightly more overlap to kill gaps */
-    height: 102%;
-    background: #ffffff;
-    border: 1px solid rgba(0,0,0,0.05);
     border-radius: 12px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
     padding: 8px;
     gap: 4px;
-    box-shadow: 
-      inset 0 0 15px rgba(0,0,0,0.05), /* Subtle inner glow */
-      inset 0 0 2px rgba(255,255,255,0.8); /* Edge highlight */
-    backface-visibility: hidden;
 
     &.front  { transform: rotateX(0deg) translateZ(32px); }
     &.back   { transform: rotateX(180deg) translateZ(32px); background: #f9f9f9; }
@@ -178,15 +166,8 @@
   }
 
   .pip {
-    background: var(--primary-dark, #002244);
-    border-radius: 50%;
     width: 10px;
     height: 10px;
-    justify-self: center;
-    align-self: center;
-    box-shadow: 
-      inset 0 2px 3px rgba(0,0,0,0.4), /* Recessed look */
-      0 1px 1px rgba(255,255,255,0.3); /* Slight rim highlight */
   }
 }
 
@@ -231,29 +212,6 @@
   }
 }
 
-/* Pip Layouts */
-.die-3d .face[data-value="1"] .pip { grid-column: 2; grid-row: 2; }
-.die-3d[data-value="1"] .pip { grid-column: 2; grid-row: 2; }
-.die-3d[data-value="2"] .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
-.die-3d[data-value="2"] .pip:nth-child(2) { grid-column: 3; grid-row: 3; }
-.die-3d[data-value="3"] .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
-.die-3d[data-value="3"] .pip:nth-child(2) { grid-column: 2; grid-row: 2; }
-.die-3d[data-value="3"] .pip:nth-child(3) { grid-column: 3; grid-row: 3; }
-.die-3d[data-value="4"] .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
-.die-3d[data-value="4"] .pip:nth-child(2) { grid-column: 3; grid-row: 1; }
-.die-3d[data-value="4"] .pip:nth-child(3) { grid-column: 1; grid-row: 3; }
-.die-3d[data-value="4"] .pip:nth-child(4) { grid-column: 3; grid-row: 3; }
-.die-3d[data-value="5"] .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
-.die-3d[data-value="5"] .pip:nth-child(2) { grid-column: 3; grid-row: 1; }
-.die-3d[data-value="5"] .pip:nth-child(3) { grid-column: 2; grid-row: 2; }
-.die-3d[data-value="5"] .pip:nth-child(4) { grid-column: 1; grid-row: 3; }
-.die-3d[data-value="5"] .pip:nth-child(5) { grid-column: 3; grid-row: 3; }
-.die-3d[data-value="6"] .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
-.die-3d[data-value="6"] .pip:nth-child(2) { grid-column: 1; grid-row: 2; }
-.die-3d[data-value="6"] .pip:nth-child(3) { grid-column: 1; grid-row: 3; }
-.die-3d[data-value="6"] .pip:nth-child(4) { grid-column: 3; grid-row: 1; }
-.die-3d[data-value="6"] .pip:nth-child(5) { grid-column: 3; grid-row: 2; }
-.die-3d[data-value="6"] .pip:nth-child(6) { grid-column: 3; grid-row: 3; }
 
 @keyframes roll-animation {
   0% { transform: rotateX(0deg) rotateY(0deg); }
@@ -297,8 +255,8 @@
       &:disabled {
         opacity: 0.3;
         cursor: not-allowed;
-        transform: none !important;
-        box-shadow: none !important;
+        transform: none;
+        box-shadow: none;
       }
 
       &:active:not(:disabled) {

@@ -32,6 +32,9 @@ export const routes: Routes = [
             { path: 'about', loadComponent: () => import('./features/pages/about-page/about.component').then(m => m.AboutComponent), title: 'About' },
             { path: 'login', component: AuthComponent, title: 'Login' },
             { path: 'register', loadComponent: () => import('./features/pages/register-page/register.component').then(m => m.RegisterComponent), title: 'Register' },
+            { path: 'privacy-policy', loadComponent: () => import('./features/pages/privacy-policy/privacy-policy').then(m => m.PrivacyPolicy), title: 'Privacy Policy' },
+            { path: 'terms-of-service', loadComponent: () => import('./features/pages/terms-of-service/terms-of-service').then(m => m.TermsOfService), title: 'Terms of Service' },
+            { path: 'data-privacy', loadComponent: () => import('./features/pages/data-privacy/data-privacy').then(m => m.DataPrivacy), title: 'Data Privacy' },
             { path: 'game/:code', component: GameRoomComponent, title: 'Game Room' },
             { path: 'video-popout/:code', loadComponent: () => import('./features/game-room/components/video-chat/video-popout/video-popout.component').then(m => m.VideoPopoutComponent), title: 'Video Chat' },
             { path: 'not-found', component: NotFoundComponent, title: '404 - Page Not Found' }
