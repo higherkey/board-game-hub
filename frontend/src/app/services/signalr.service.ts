@@ -561,6 +561,20 @@ export class SignalRService {
     }
   }
 
+  public async validateRoomCode(code: string): Promise<boolean> {
+    if (!code || code.trim().length !== 4) return false;
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
+    try {
+      const validCodes: string[] = await this.hubConnection.invoke('ValidateRooms', [code.trim().toUpperCase()]);
+      return !!(validCodes && validCodes.length > 0 && validCodes.includes(code.trim().toUpperCase()));
+    } catch (err) {
+      console.error('Failed to validate room code', err);
+      return false;
+    }
+  }
+
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
     if (this.hubConnection.state !== HubConnectionState.Connected) {
       await this.startConnection();

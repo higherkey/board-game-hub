@@ -20,7 +20,7 @@
 }
 
 .hero-content {
-    max-inline-size: 680px;
+    max-inline-size: 1100px;
     margin-inline: auto;
     padding-inline: var(--space-md);
     text-align: center;
@@ -47,15 +47,15 @@
     &::after {
         content: '';
         position: absolute;
-        bottom: 0.05em;
-        left: -5%;
-        width: 110%;
-        height: 0.78em;
+        top: 50%;
+        left: -2%;
+        width: 105%;
+        height: 0.6em;
         background: var(--accent);
         opacity: 0.4;
         z-index: -1;
         border-radius: 0;
-        transform: skewX(-12deg);
+        transform: translateY(-50%) skewX(-12deg);
     }
 }
 
@@ -88,246 +88,1271 @@
 
 .hero-ctas {
     display: flex;
-    gap: 1rem;
+    gap: 1.25rem;
     justify-content: center;
+    align-items: center;
     flex-wrap: wrap;
     margin-block-end: 0;
 
-    .btn {
+    .hero-create-btn {
         font-size: 1rem;
-        min-block-size: 52px;
-        padding-inline: 2rem;
+        min-height: 52px;
+        padding-inline: 1.85rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        border-radius: var(--radius-md);
     }
 }
-
-// ---- PLATFORM CONCEPT DIAGRAM --------------------------------
-// CSS-illustrated diagram showing the Table vs Hand mechanic.
-// TV/laptop on left, animated room code in centre, phone on right.
-
-.platform-diagram {
-    display: flex;
+.hero-join-pill {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: clamp(1.5rem, 5vw, 4rem);
-    padding-block: 3rem;
-    max-inline-size: 860px;
-    margin-inline: auto;
+    background: transparent;
+    border: none;
+    padding: 0;
+    position: relative;
+    border-radius: var(--radius-md);
 
-    @media (max-width: 600px) {
-        flex-direction: column;
-        gap: 1.25rem;
-        padding-block: 2rem;
+    &.is-expanded {
+        .join-left-action {
+            border-color: var(--primary-dark);
+        }
+
+        .join-input-expand {
+            max-width: 140px;
+            opacity: 1;
+            padding-inline: 0.25rem;
+            border-color: var(--primary-dark);
+        }
+
+        .join-cap-btn {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary-dark);
+            animation: none;
+        }
+    }
+
+    &.has-error {
+        .join-left-action, .join-input-expand, .join-cap-btn {
+            border-color: oklch(0.55 0.22 25);
+        }
+    }
+
+    .join-left-action {
+        background: oklch(100% 0 0 / 0.95);
+        border: 2px solid var(--primary);
+        border-radius: var(--radius-md) 0 0 var(--radius-md);
+        color: var(--primary);
+        font-weight: 800;
+        font-size: 1rem;
+        padding: 0.6rem 1.1rem 0.6rem 1.3rem;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 52px;
+        transition: background 0.2s ease, border-color 0.2s ease;
+
+        &:hover {
+            color: var(--primary-dark);
+            background: oklch(97% 0.01 230);
+            border-color: var(--primary-dark);
+        }
+    }
+
+    .join-input-expand {
+        display: flex;
+        align-items: center;
+        background: oklch(100% 0 0 / 0.95);
+        border-top: 2px solid var(--primary);
+        border-bottom: 2px solid var(--primary);
+        border-left: none;
+        border-right: none;
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        min-height: 52px;
+        transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.25s ease,
+                    padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+        .join-divider {
+            width: 1px;
+            height: 22px;
+            background: rgba(0, 51, 102, 0.25);
+            flex-shrink: 0;
+            margin-right: 0.4rem;
+        }
+
+        .join-code-input {
+            border: none;
+            background: transparent;
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--primary);
+            width: 95px;
+            text-align: center;
+            outline: none;
+
+            &::placeholder {
+                color: var(--text-secondary);
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                font-size: 0.78rem;
+                opacity: 0.65;
+            }
+        }
+    }
+
+    // Fixed-width wrapper prevents the outer CTA row from shifting width!
+    .join-cap-wrap {
+        position: relative;
+        width: 46px;
+        min-height: 52px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        overflow: visible; // Allows cap button to expand rightward cleanly!
+
+        .join-cap-btn {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 46px;
+            min-height: 44px; // Slightly smaller height than the 52px main button!
+            height: 44px;
+            background: oklch(96% 0.01 230);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            border-left: none; // Connected to left button/input!
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            font-weight: 800;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 0.5rem;
+            white-space: nowrap;
+            z-index: 2;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+            &:hover, &.is-active {
+                background: var(--primary);
+                color: #fff;
+                border-color: var(--primary-dark);
+            }
+
+            &:hover {
+                animation-play-state: paused;
+            }
+
+            &.bounce-echo {
+                animation: custom-bezier-loop 4s cubic-bezier(.25, -0.07, .45, 1.27) infinite;
+            }
+
+            .cap-icon-wrap {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.15rem;
+
+                .alpha-icon {
+                    font-size: 1rem;
+                    opacity: 0.85;
+                }
+
+                .arrow-icon {
+                    font-size: 1.25rem;
+                }
+            }
+        }
     }
 }
 
-.diagram-device {
+// Single custom cubic-bezier(.25, -0.07, .45, 1.27) loop (forward expansion & backward return)
+@keyframes custom-bezier-loop {
+    0% {
+        width: 46px;
+    }
+    // Forward expansion right (with anticipate dip & top overshoot)
+    5% {
+        width: 52px;
+    }
+    // Backward return left (with anticipate dip & bottom overshoot)
+    10% {
+        width: 46px;
+    }
+    // Forward expansion right (with anticipate dip & top overshoot)
+    15% {
+        width: 48px;
+    }
+    // Backward return left (with anticipate dip & bottom overshoot)
+    20% {
+        width: 46px;
+    }
+    // Resting pause until next loop
+    100% {
+        width: 46px;
+    }
+}
+
+.hero-code-error {
+    color: oklch(0.45 0.2 25);
+    background: oklch(0.97 0.04 25);
+    border: 1.5px solid oklch(0.85 0.12 25);
+    padding: 0.4rem 1.1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    margin-inline: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+
+.shared-qr-matrix {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5px;
+    width: 24px;
+    height: 24px;
+    aspect-ratio: 1 / 1;
+    background: #fff;
+    padding: 2px;
+    border-radius: 2px;
+    position: relative;
+    box-shadow: 0 0 2px rgba(0,0,0,0.15);
+
+    &.mini {
+        width: 16px;
+        height: 16px;
+        padding: 1px;
+        gap: 1px;
+
+        .qr-finder {
+            width: 6px;
+            height: 6px;
+            border-width: 1px;
+
+            &::after {
+                width: 2.5px;
+                height: 2.5px;
+            }
+
+            &.finder-tl { top: 1px; left: 1px; }
+            &.finder-tr { top: 1px; right: 1px; }
+            &.finder-bl { bottom: 1px; left: 1px; }
+        }
+    }
+
+    .qr-cell {
+        background: #fff;
+        &.dark { background: #000; }
+
+        &.cell-br1 { position: absolute; bottom: 3px; right: 3px; width: 3px; height: 3px; background: #000; }
+        &.cell-br2 { position: absolute; bottom: 7px; right: 3px; width: 3px; height: 3px; background: #000; }
+    }
+
+    .qr-finder {
+        border: 1.5px solid #000;
+        border-radius: 1px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 9px;
+        height: 9px;
+
+        &::after {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: #000;
+            border-radius: 0.5px;
+        }
+
+        &.finder-tl { position: absolute; top: 1.5px; left: 1.5px; }
+        &.finder-tr { position: absolute; top: 1.5px; right: 1.5px; }
+        &.finder-bl { position: absolute; bottom: 1.5px; left: 1.5px; }
+    }
+}
+
+/// ---- UNIFIED HERO SHOWCASE STAGE ---------------------------------
+
+.hero-showcase-container {
     display: flex;
     flex-direction: column;
+    gap: 2.5rem;
     align-items: center;
-    gap: 0.75rem;
-    flex-shrink: 0;
-}
-
-.device-frame {
-    border: 3px solid var(--primary);
-    background: var(--bg-surface);
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
+    width: 100%;
     position: relative;
 }
 
-.tv-frame {
-    width: clamp(175px, 27vw, 255px);
-    height: clamp(108px, 17vw, 152px);
-    border-radius: var(--radius-md);
-}
-
-.tv-stand {
-    position: absolute;
-    bottom: -1px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 28%;
-    height: 5px;
-    background: var(--primary);
-}
-
-.phone-frame {
-    width: clamp(62px, 10vw, 92px);
-    height: clamp(112px, 18vw, 162px);
-    border-radius: 16px;
-}
-
-.phone-notch {
-    width: 30%;
-    height: 6px;
-    background: var(--primary);
-    border-radius: 0 0 4px 4px;
-    margin-inline: auto;
-    margin-block-end: 0.2rem;
-}
-
-.device-screen {
-    padding: 0.6rem 0.75rem;
+.unified-showcase-stage {
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    block-size: 100%;
-}
-
-.phone-screen {
-    padding: 0.35rem 0.55rem;
-}
-
-.screen-label {
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.52rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-secondary);
-    border-block-end: 1px solid var(--border-color);
-    padding-block-end: 0.3rem;
-    text-align: center;
-}
-
-.screen-board {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    justify-content: center;
-    flex: 1;
-}
-
-.board-row {
-    display: flex;
-    gap: 0.3rem;
-    justify-content: center;
-}
-
-.board-cell {
-    width: 20px;
-    height: 13px;
-    background: var(--bg-surface-2);
-    border-radius: 3px;
-    border: 1px solid var(--border-color);
-
-    &.is-active {
-        background: var(--accent);
-        border-color: var(--accent-dark);
-        animation: cellPulse 2.2s ease-in-out infinite;
-    }
-}
-
-.board-timer {
-    font-family: 'Outfit', monospace;
-    font-size: 0.58rem;
-    font-weight: 700;
-    text-align: center;
-    color: var(--text-secondary);
-}
-
-.hand-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    flex: 1;
-    justify-content: center;
-}
-
-.hand-btn {
-    text-align: center;
-    padding: 0.3rem;
-    background: var(--bg-surface-2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 0.5rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-
-    &.is-active {
-        background: var(--primary);
-        color: var(--text-on-primary);
-        border-color: var(--primary-dark);
-        animation: cellPulse 2.2s ease-in-out infinite 0.7s;
-    }
-}
-
-.device-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-align: center;
-    letter-spacing: 0.02em;
-}
-
-// Animated connector showing code transfer between devices
-.diagram-connector {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0;
+    justify-content: center;
+    gap: 1.5rem;
+    position: relative;
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    background: var(--bg-surface-2);
+    border: 1.5px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
 
-    @media (max-width: 600px) {
-        flex-direction: row;
-        gap: 1rem;
+    @media (max-width: 768px) {
+        position: sticky;
+        top: 1rem;
+        z-index: 20;
+        box-shadow: var(--shadow-lg);
+        transform: scale(0.95);
+        margin-inline: auto;
+        padding: 0.75rem 1rem;
     }
 }
 
-.connector-code {
-    font-family: 'Outfit', sans-serif;
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
-    font-weight: 900;
-    letter-spacing: 0.3em;
-    color: var(--primary);
+// Shared Phone Frame in Showcase Stage (Invisible during Step 1)
+.showcase-phone {
+    width: 86px;
+    height: 142px;
+    border-radius: 14px;
     background: var(--bg-surface);
-    border: 2px dashed var(--accent);
-    padding: 0.4rem 0.7rem;
-    border-radius: var(--radius-sm);
+    position: relative;
+    overflow: hidden;
     box-shadow: var(--shadow-sm);
-    animation: codeFloat 3s ease-in-out infinite;
-}
-
-.connector-dots {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    block-size: 50px;
-    justify-content: center;
+    z-index: 2;
+    animation: phoneVisibilityTimeline 12s ease-in-out infinite;
 
-    @media (max-width: 600px) {
-        flex-direction: row;
-        inline-size: 50px;
-        block-size: auto;
+    &.phone-navy { border: 2.5px solid var(--primary); }
+    &.phone-teal { border: 2.5px solid var(--accent); }
+
+    .phone-notch-bar {
+        width: 28px;
+        height: 4px;
+        border-radius: 0 0 3px 3px;
+        margin-inline: auto;
+        z-index: 10;
+    }
+
+    &.phone-navy .phone-notch-bar { background: var(--primary); }
+    &.phone-teal .phone-notch-bar { background: var(--accent); }
+
+    .phone-display {
+        flex: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+    }
+
+    // Phone Stage 1: QR Scanner (Phone Navy)
+    .qr-viewfinder {
+        width: 50px;
+        height: 50px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 5px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: var(--bg-surface-2);
+        animation: p1ScannerFade 12s ease-in-out infinite;
+    }
+
+    .camera-reticle-box {
+        position: absolute;
+        inset: 6px;
+        border: 1.5px solid var(--accent);
+        border-radius: 3px;
+        animation: cameraReticlePulse 1.2s ease-in-out infinite alternate;
+    }
+
+    // Phone Stage 1: Code Typist (Phone Teal)
+    .code-type-stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        animation: p2TypistFade 12s ease-in-out infinite;
+    }
+
+    .phone-text-box {
+        width: 64px;
+        height: 22px;
+        border: 1.5px solid var(--accent);
+        border-radius: 4px;
+        background: var(--bg-surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding-inline: 6px;
+    }
+
+    .typed-code {
+        font-family: 'Outfit', monospace;
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--contrast-pink);
+        letter-spacing: 0.08em;
+        display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        animation: codeTextTyping 12s ease-in-out infinite;
+    }
+
+    .type-cursor {
+        width: 1.5px;
+        height: 11px;
+        background: var(--accent);
+        margin-left: 1px;
+        animation: cursorBlink 0.7s steps(2, start) infinite;
+    }
+
+    .phone-join-btn {
+        background: var(--accent);
+        color: #fff;
+        font-size: 0.52rem;
+        font-weight: 800;
+        padding: 3px 10px;
+        border-radius: 3px;
+        animation: phoneBtnPress 12s ease-in-out infinite;
+    }
+
+    // Phone Stage 2: Mobile Lobby (Navigated)
+    .hand-lobby-stage {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 22px 6px 8px 6px;
+        justify-content: space-between;
+        background: var(--bg-surface);
+
+        .mobile-lobby-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--primary);
+            color: #fff;
+            padding: 4px 6px 3px 6px;
+            z-index: 5;
+        }
+
+        .m-room-code {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 900;
+            color: var(--contrast-pink);
+            letter-spacing: 0.06em;
+        }
+
+        .m-qr-badge {
+            // Fades out when game starts (Step 3, ~60%)
+            animation: qrBadgeFade 12s ease-in-out infinite;
+        }
+
+        .mobile-player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 18px;
+
+            .m-player-row {
+                height: 14px;
+                border-radius: 3px;
+                background: var(--bg-surface-2);
+                border: 1px solid var(--border-color);
+                display: flex;
+                align-items: center;
+                padding-inline: 4px;
+                font-size: 0.62rem;
+                color: var(--primary);
+
+                &.p1-row { animation: p1RowFade 12s ease-in-out infinite; }
+                &.p2-row { color: var(--accent); animation: p2RowFade 12s ease-in-out infinite; }
+            }
+        }
+    }
+
+    // Navy phone lobby fade (appears first as P1 joins)
+    &.phone-navy .hand-lobby-stage { animation: p1LobbyFade 12s ease-in-out infinite; }
+    // Teal phone lobby fade (appears later as P2 joins)
+    &.phone-teal .hand-lobby-stage { animation: p2LobbyFade 12s ease-in-out infinite; }
+
+    // Phone Stage 3: Hand Controller Tile Cards
+    .hand-controller-stage {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-surface);
+
+        animation: handCardStageFade 12s ease-in-out infinite;
+
+        .hand-tile-card {
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &.card-p1 { background: var(--primary); animation: phone1Tap 12s ease-in-out infinite; }
+            &.card-p2 { background: var(--accent); animation: phone2Tap 12s ease-in-out infinite; }
+
+            .h-tile-inner {
+                width: 9px;
+                height: 9px;
+                background: #fff;
+                border-radius: 1.5px;
+            }
+        }
     }
 }
 
-.connector-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
+// Central TV Monitor Display Wrapper
+.showcase-tv-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
 
-    &.dot-1 { animation: dotPulse 1.2s ease-in-out infinite 0s; }
-    &.dot-2 { animation: dotPulse 1.2s ease-in-out infinite 0.2s; }
-    &.dot-3 { animation: dotPulse 1.2s ease-in-out infinite 0.4s; }
+    .showcase-tv-frame {
+        width: 240px;
+        height: 135px;
+        border: 3.5px solid var(--primary);
+        border-radius: 12px;
+        background: var(--bg-surface);
+        box-shadow: var(--shadow-md);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tv-inner-screen {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    // Stage 1 TV: 3x3 Game Picker Grid
+    .picker-stage-grid {
+        position: absolute;
+        inset: 0;
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-surface-2);
+        animation: pickerStageFade 12s ease-in-out infinite;
+
+        .picker-tile-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            width: 100%;
+            height: 100%;
+
+            .picker-tile-card {
+                background: var(--bg-surface);
+                border: 1.5px solid var(--border-color);
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
+
+                &.is-selected-tile {
+                    border-color: var(--primary);
+                    animation: pickerHighlightPulse 12s ease-in-out infinite;
+                }
+            }
+        }
+
+        // Mini Game Icons inside 3x3 Grid Cards
+        .mini-tile-grid {
+            display: flex;
+            gap: 2px;
+            span {
+                width: 10px;
+                height: 10px;
+                background: var(--primary);
+                border-radius: 2px;
+            }
+        }
+
+        .mini-hex-icon {
+            width: 14px;
+            height: 14px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: var(--accent);
+        }
+
+        .mini-die-icon {
+            width: 13px;
+            height: 13px;
+            background: var(--primary);
+            border-radius: 2.5px;
+        }
+
+        .mini-cards-icon {
+            display: flex;
+            gap: 1.5px;
+            span {
+                width: 7px;
+                height: 11px;
+                border-radius: 1px;
+                background: var(--primary);
+                &.c-2 { background: var(--accent); transform: rotate(10deg); }
+            }
+        }
+
+        .mini-letters-icon {
+            display: flex;
+            gap: 1px;
+            span {
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 900;
+                color: var(--primary);
+                line-height: 1;
+            }
+        }
+
+        .mini-checker-icon {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1px;
+            width: 12px;
+            height: 12px;
+            .sq {
+                width: 5.5px;
+                height: 5.5px;
+                &.sq-1 { background: var(--primary); }
+                &.sq-2 { background: var(--accent); }
+            }
+        }
+
+        .mini-pawn-icon {
+            font-size: 0.85rem;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .mini-domino-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            .d-dot {
+                width: 3px;
+                height: 3px;
+                background: var(--primary);
+                border-radius: 50%;
+            }
+        }
+
+        .mini-wheel-icon {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+
+        .picker-cursor {
+            position: absolute;
+            left: 36px;
+            top: 14px;
+            font-size: 22px;
+            color: var(--primary);
+            z-index: 5;
+            animation: gamePickerCursorClick 12s ease-in-out infinite;
+        }
+    }
+
+    // Stage 2 TV: Room Created Lobby Screen
+    .room-created-screen {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: var(--bg-surface);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        z-index: 4;
+        animation: roomScreenFade 12s ease-in-out infinite;
+
+        .full-tv-header {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            padding: 3px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+
+            .header-code {
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.75rem;
+                font-weight: 900;
+                color: var(--contrast-pink);
+                letter-spacing: 0.1em;
+            }
+        }
+
+        .abstract-lobby-screen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 8px;
+        }
+
+        .lobby-players-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .sidebar-player-row {
+                width: 24px;
+                height: 24px;
+                border-radius: 4px;
+                background: var(--bg-surface-2);
+                border: 1px solid var(--border-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.75rem;
+
+                &.p1-row { color: var(--primary); border-color: var(--primary); animation: player1JoinFade 12s ease-in-out infinite; }
+                &.p2-row { color: var(--accent); border-color: var(--accent); animation: player2JoinFade 12s ease-in-out infinite; }
+            }
+        }
+
+        .lobby-main-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+
+            .main-room-code {
+                font-family: 'Outfit', sans-serif;
+                font-size: 1.15rem;
+                font-weight: 900;
+                color: var(--contrast-pink);
+                letter-spacing: 0.12em;
+            }
+
+            .start-game-btn-wrap {
+                position: relative;
+
+                .tv-start-btn {
+                    background: var(--primary);
+                    color: #fff;
+                    font-size: 0.55rem;
+                    font-weight: 800;
+                    padding: 3px 10px;
+                    border-radius: 4px;
+                    display: inline-flex;
+                    align-items: center;
+                }
+
+                .tv-start-cursor {
+                    position: absolute;
+                    right: -14px;
+                    bottom: -12px;
+                    font-size: 16px;
+                    color: var(--accent);
+                    z-index: 5;
+                    animation: startGameCursorClick 12s ease-in-out infinite;
+                }
+            }
+        }
+    }
+
+    // Stage 3 TV: Live Tile Game Board Screen
+    .live-board-screen {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: var(--bg-surface);
+        display: flex;
+        flex-direction: column;
+        z-index: 5;
+        animation: liveBoardScreenFade 12s ease-in-out infinite;
+
+        .full-tv-header {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            padding: 3px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+
+            .header-code {
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.75rem;
+                font-weight: 900;
+                color: var(--contrast-pink);
+                letter-spacing: 0.1em;
+            }
+        }
+
+        .tile-game-board {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .open-board-slots {
+                display: flex;
+                gap: 4px;
+
+                .board-slot {
+                    width: 28px;
+                    height: 28px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    .placed-tile {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 3px;
+
+                        &.tile-p1 { background: var(--primary); border: 1px solid var(--primary-dark); animation: placedTile1Fade 12s ease-in-out infinite; }
+                        &.tile-p2 { background: var(--accent); border: 1px solid oklch(0.55 0.18 175); animation: placedTile2Fade 12s ease-in-out infinite; }
+                    }
+                }
+            }
+        }
+    }
+
+    .tv-base-stand {
+        width: 55px;
+        height: 5px;
+        background: var(--primary);
+        border-radius: 2px;
+        margin-top: 2px;
+    }
+
+    // Tile Trajectories
+    .sync-beam-connectors {
+        width: 100%;
+        height: 24px;
+        position: relative;
+
+        .sliding-tile-p1 {
+            position: absolute;
+            left: 20px;
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            background: var(--primary);
+            box-shadow: 0 0 6px var(--primary);
+            animation: tile1TranslateUp 12s ease-in-out infinite;
+        }
+
+        .sliding-tile-p2 {
+            position: absolute;
+            right: 20px;
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+            animation: tile2TranslateUp 12s ease-in-out infinite;
+        }
+    }
 }
 
-.connector-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-light);
+// Hero Step Text Cards Grid (01, 02, 03)
+.hero-steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    width: 100%;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+
+    .step-item {
+        background: var(--bg-surface);
+        border: 1.5px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.25rem;
+        transition: transform 0.32s ease, box-shadow 0.32s ease, border-color 0.32s ease;
+        cursor: default;
+
+        &.step-card-1 {
+            animation: step1CardHighlight 12s ease-in-out infinite;
+            &:hover {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 2px oklch(0.94 0.04 var(--brand-hue-primary)), var(--shadow-md);
+                .step-num { color: var(--primary); }
+            }
+            .step-num { animation: step1NumHighlight 12s ease-in-out infinite; }
+        }
+        &.step-card-2 {
+            animation: step2CardHighlight 12s ease-in-out infinite;
+            &:hover {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 2px oklch(0.94 0.04 var(--brand-hue-accent)), var(--shadow-md);
+                .step-num { color: var(--accent); }
+            }
+            .step-num { animation: step2NumHighlight 12s ease-in-out infinite; }
+        }
+        &.step-card-3 {
+            animation: step3CardHighlight 12s ease-in-out infinite;
+            &:hover {
+                border-color: var(--contrast-pink);
+                box-shadow: 0 0 0 2px oklch(0.94 0.04 350), var(--shadow-md);
+                .step-num { color: var(--contrast-pink); }
+            }
+            .step-num { animation: step3NumHighlight 12s ease-in-out infinite; }
+        }
+
+        // Lift and highlight on hover — pause animation so glow doesn't fight hover
+        &:hover {
+            animation-play-state: paused;
+            transform: translateY(-4px);
+
+            .step-desc {
+                max-height: 12rem;
+                -webkit-mask-image: none;
+                mask-image: none;
+            }
+        }
+    }
+
+    .step-num {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+        color: var(--border-color);
+        letter-spacing: -0.03em;
+        margin-block-end: 0.35rem;
+        transition: color 0.28s ease;
+        user-select: none;
+    }
+
+    .step-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-block-end: 0.5rem;
+    }
+
+    .step-desc {
+        font-size: 0.82rem;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        margin: 0;
+        // Collapsed: show ~2 lines, fade out the rest
+        max-height: 2.8em;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), mask-image 0.3s ease, -webkit-mask-image 0.3s ease;
+    }
 }
 
-// ---- HOW IT WORKS SECTION ----------------------------------
-// Full-bleed white section using negative horizontal margins to
-// break out of the main-content padding container.
+
+// ---- UNIFIED 12-SECOND MASTER KEYFRAME TIMELINE ----
+
+// Phase 1 (0% - 20%): Step 01 Host selects Tile Game & creates room
+@keyframes pickerStageFade {
+    0%, 16% { opacity: 1; transform: scale(1); }
+    20%, 96% { opacity: 0; transform: scale(0.95); pointer-events: none; }
+    98%, 100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pickerHighlightPulse {
+    0%, 6% { border-color: var(--border-color); box-shadow: none; }
+    8%, 14% { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); background: oklch(0.94 0.04 var(--brand-hue-primary)); }
+    16%, 100% { border-color: var(--border-color); box-shadow: none; }
+}
+
+@keyframes gamePickerCursorClick {
+    0%, 4% { transform: translate(30px, 30px); opacity: 0; }
+    7%, 10% { transform: translate(0, 0); opacity: 1; }
+    12% { transform: translate(0, 0) scale(0.82); opacity: 1; }
+    15%, 70% { transform: translate(0, 0) scale(1); opacity: 0; }
+    100% { transform: translate(30px, 30px); opacity: 0; }
+}
+
+@keyframes roomScreenFade {
+    0%, 18% { opacity: 0; transform: scale(0.9); pointer-events: none; }
+    20%, 58% { opacity: 1; transform: scale(1); }
+    60%, 100% { opacity: 0; transform: scale(0.9); pointer-events: none; }
+}
+
+// Phase 2 (22% - 60%): Step 02 Dual Phones Join
+@keyframes phoneVisibilityTimeline {
+    0%, 20% { opacity: 0; pointer-events: none; transform: scale(0.88); }
+    22%, 94% { opacity: 1; transform: scale(1); }
+    97%, 100% { opacity: 0; pointer-events: none; transform: scale(0.88); }
+}
+
+// P1 (Navy): Scans QR 22-32%, then lobby 32-60%
+@keyframes p1ScannerFade {
+    0%, 20% { opacity: 0; transform: scale(0.9); pointer-events: none; }
+    22%, 30% { opacity: 1; transform: scale(1); }
+    33%, 100% { opacity: 0; transform: scale(0.9); pointer-events: none; }
+}
+
+@keyframes p1LobbyFade {
+    0%, 31% { opacity: 0; transform: scale(0.85); pointer-events: none; }
+    33%, 60% { opacity: 1; transform: scale(1); }
+    62%, 100% { opacity: 0; transform: scale(0.85); pointer-events: none; }
+}
+
+// P2 (Teal): Types code 22-40% (types 25-38%, btn press 38%), then lobby 40-60%
+@keyframes p2TypistFade {
+    0%, 20% { opacity: 0; transform: scale(0.9); pointer-events: none; }
+    22%, 38% { opacity: 1; transform: scale(1); }
+    41%, 100% { opacity: 0; transform: scale(0.9); pointer-events: none; }
+}
+
+@keyframes p2LobbyFade {
+    0%, 39% { opacity: 0; transform: scale(0.85); pointer-events: none; }
+    41%, 60% { opacity: 1; transform: scale(1); }
+    62%, 100% { opacity: 0; transform: scale(0.85); pointer-events: none; }
+}
+
+// TV lobby player rows: P1 joins at 33%, P2 joins at 41%
+@keyframes player1JoinFade {
+    0%, 31% { opacity: 0; transform: translateX(-6px); }
+    33%, 96% { opacity: 1; transform: translateX(0); }
+    98%, 100% { opacity: 0; transform: translateX(-6px); }
+}
+
+@keyframes player2JoinFade {
+    0%, 39% { opacity: 0; transform: translateX(-6px); }
+    41%, 96% { opacity: 1; transform: translateX(0); }
+    98%, 100% { opacity: 0; transform: translateX(-6px); }
+}
+
+// Phone lobby player rows stay visible once joined
+@keyframes p1RowFade {
+    0%, 31% { opacity: 0; }
+    33%, 100% { opacity: 1; }
+}
+
+@keyframes p2RowFade {
+    0%, 39% { opacity: 0; }
+    41%, 100% { opacity: 1; }
+}
+
+// QR badge hides when host clicks Start (~55-58%), stays hidden through all of Step 3
+@keyframes qrBadgeFade {
+    0%, 52% { opacity: 1; transform: scale(1); }
+    57%, 97% { opacity: 0; transform: scale(0.7); }
+    99%, 100% { opacity: 1; transform: scale(1); }
+}
+
+// P2 types code starting at 25%, finishes at 38%
+@keyframes codeTextTyping {
+    0%, 24% { width: 0; }
+    35%, 38% { width: 44px; }
+    41%, 100% { width: 0; }
+}
+
+// Join button pressed at 38% (just after code fully typed)
+@keyframes phoneBtnPress {
+    0%, 36% { transform: scale(1); }
+    38% { transform: scale(0.85); }
+    40%, 100% { transform: scale(1); }
+}
+
+// Phase 3 (52% - 60%): Host clicks START
+@keyframes startGameCursorClick {
+    0%, 48% { transform: translate(14px, 14px); opacity: 0; }
+    50%, 54% { transform: translate(0, 0); opacity: 1; }
+    55% { transform: translate(0, 0) scale(0.8); opacity: 1; }
+    58%, 100% { opacity: 0; }
+}
+
+// Phase 4 (60% - 95%): Step 03 Live Board & Tile Controllers
+@keyframes liveBoardScreenFade {
+    0%, 58% { opacity: 0; transform: scale(0.9); pointer-events: none; }
+    60%, 94% { opacity: 1; transform: scale(1); }
+    96%, 100% { opacity: 0; transform: scale(0.9); }
+}
+
+@keyframes handCardStageFade {
+    0%, 58% { opacity: 0; transform: scale(0.85); pointer-events: none; }
+    60%, 94% { opacity: 1; transform: scale(1); }
+    96%, 100% { opacity: 0; transform: scale(0.85); }
+}
+
+@keyframes phone1Tap {
+    0%, 63% { transform: scale(1); }
+    65% { transform: scale(0.78); }
+    69%, 100% { transform: scale(1); }
+}
+
+@keyframes tile1TranslateUp {
+    0%, 65% { top: 100%; opacity: 0; transform: scale(0.6); }
+    69% { opacity: 1; }
+    76% { top: -42px; opacity: 1; transform: scale(1); }
+    79%, 100% { top: -42px; opacity: 0; }
+}
+
+@keyframes placedTile1Fade {
+    0%, 75% { opacity: 0; transform: scale(0.6); }
+    78%, 94% { opacity: 1; transform: scale(1); }
+    96%, 100% { opacity: 0; transform: scale(0.6); }
+}
+
+@keyframes phone2Tap {
+    0%, 78% { transform: scale(1); }
+    80% { transform: scale(0.78); }
+    84%, 100% { transform: scale(1); }
+}
+
+@keyframes tile2TranslateUp {
+    0%, 80% { top: 100%; opacity: 0; transform: scale(0.6); }
+    84% { opacity: 1; }
+    90% { top: -42px; opacity: 1; transform: scale(1); }
+    93%, 100% { top: -42px; opacity: 0; }
+}
+
+@keyframes placedTile2Fade {
+    0%, 89% { opacity: 0; transform: scale(0.6); }
+    92%, 94% { opacity: 1; transform: scale(1); }
+    96%, 100% { opacity: 0; transform: scale(0.6); }
+}
+
+// Step Card Highlight Synchronization Keyframes (Navy, Teal, Pink)
+@keyframes step1CardHighlight {
+    0%, 20% {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px oklch(0.94 0.04 var(--brand-hue-primary)), var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    22%, 100% {
+        border-color: var(--border-color);
+        box-shadow: none;
+        transform: translateY(0);
+    }
+}
+
+@keyframes step1NumHighlight {
+    0%, 20% { color: var(--primary); }
+    22%, 100% { color: var(--border-color); }
+}
+
+@keyframes step2CardHighlight {
+    0%, 22% {
+        border-color: var(--border-color);
+        box-shadow: none;
+        transform: translateY(0);
+    }
+    24%, 56% {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px oklch(0.94 0.04 var(--brand-hue-accent)), var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    58%, 100% {
+        border-color: var(--border-color);
+        box-shadow: none;
+        transform: translateY(0);
+    }
+}
+
+@keyframes step2NumHighlight {
+    0%, 22% { color: var(--border-color); }
+    24%, 56% { color: var(--accent); }
+    58%, 100% { color: var(--border-color); }
+}
+
+@keyframes step3CardHighlight {
+    0%, 58% {
+        border-color: var(--border-color);
+        box-shadow: none;
+        transform: translateY(0);
+    }
+    60%, 95% {
+        border-color: var(--contrast-pink);
+        box-shadow: 0 0 0 2px oklch(0.94 0.04 350), var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    97%, 100% {
+        border-color: var(--border-color);
+        box-shadow: none;
+        transform: translateY(0);
+    }
+}
+
+@keyframes step3NumHighlight {
+    0%, 58% { color: var(--border-color); }
+    60%, 95% { color: var(--contrast-pink); }
+    97%, 100% { color: var(--border-color); }
+}
+
+// Accessibility: Prefers Reduced Motion
+@media (prefers-reduced-motion: reduce) {
+    .hero-showcase-container {
+        .unified-showcase-stage,
+        .showcase-phone,
+        .showcase-tv-frame,
+        .tv-inner-screen *,
+        .showcase-phone *,
+        .sync-beam-connectors *,
+        .hero-steps-grid .step-item {
+            animation: none;
+        }
+
+        .showcase-phone {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .picker-stage-grid,
+        .room-created-screen,
+        .qr-viewfinder,
+        .code-type-stage,
+        .sync-beam-connectors {
+            display: none;
+        }
+
+        .live-board-screen,
+        .hand-controller-stage {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .hero-steps-grid .step-desc {
+            max-height: none;
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
+    }
+}
+
+// ---- DETAILED WALKTHROUGH SECTION --------------------------
 
 .hiw-section {
     margin-inline: calc(-1 * var(--space-lg));
@@ -371,91 +1396,15 @@
     text-wrap: pretty;
 }
 
-.steps-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-block-end: 3rem;
-
-    @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-        max-inline-size: 480px;
-        margin-inline: auto;
-    }
-}
-
-.step-card {
-    background: var(--bg-base);
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 2rem 1.5rem 1.75rem;
+.walkthrough-item {
+    border-color: var(--border-color);
     box-shadow: var(--shadow-sm);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 
     &:hover {
-        border-color: var(--accent);
         box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
     }
-}
-
-.step-num {
-    font-family: 'Outfit', sans-serif;
-    font-size: 3.5rem;
-    font-weight: 900;
-    line-height: 1;
-    color: var(--border-color);
-    letter-spacing: -0.04em;
-    margin-block-end: 0.75rem;
-    user-select: none;
-}
-
-.step-icon {
-    inline-size: 56px;
-    block-size: 56px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    margin-block-end: 1.25rem;
-    box-shadow: var(--shadow-sm);
-    border: 2px solid transparent;
-
-    &.step-icon--primary {
-        background: var(--primary);
-        color: var(--text-on-primary);
-        border-color: var(--primary-dark);
-    }
-
-    &.step-icon--accent {
-        background: var(--accent);
-        color: var(--text-on-primary);
-        border-color: var(--accent-dark);
-    }
-
-    &.step-icon--pink {
-        background: var(--contrast-pink);
-        color: var(--text-on-primary);
-        border-color: color-mix(in oklch, var(--contrast-pink) 75%, black);
-    }
-}
-
-.step-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-block-end: 0.6rem;
-    text-wrap: balance;
-}
-
-.step-desc {
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-    line-height: 1.65;
-    margin: 0;
-    text-wrap: pretty;
 }
 
 // ---- GAMES PREVIEW SECTION ---------------------------------
@@ -529,30 +1478,6 @@
     color: var(--text-light);
     font-weight: 500;
     display: block;
-}
-
-.preview-arrow {
-    color: var(--text-light);
-    font-size: 1rem;
-    flex-shrink: 0;
-    transition: transform 0.2s ease;
-}
-
-// ---- KEYFRAME ANIMATIONS -----------------------------------
-
-@keyframes cellPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.45; }
-}
-
-@keyframes codeFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-}
-
-@keyframes dotPulse {
-    0%, 100% { opacity: 0.25; transform: scale(0.75); }
-    50% { opacity: 1; transform: scale(1.25); }
 }
 
 // ---- PREFERS-REDUCED-MOTION --------------------------------

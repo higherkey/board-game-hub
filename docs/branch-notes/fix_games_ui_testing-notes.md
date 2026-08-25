@@ -44,22 +44,12 @@
 ### Rationale
 Deliver a high-contrast, prominent, beautiful mobile and desktop gameplay experience.
 
-## 2) In Progress Work
-- Display Name prominence refactor, contrast audits, and test suites complete.
-
-## 3) Completed Work
-- Refactored "Your Display Name" section in `room-entry.component.html` & `.scss` with 20px primary label, pink person icon, 2px solid navy input border (`oklch 0.28 0.11 250`), 1.2rem font size, and glowing pink focus ring.
-- Refactored Join As buttons to high-contrast `.join-type-card.btn-outline-primary` (solid deep navy background with pure white text when selected).
-- Added global high-contrast rules for `.btn-outline-secondary` in `styles.scss`.
-- Created `DeviceService` (`device.service.ts`) for automatic User-Agent and viewport detection.
-- Fixed Found Words header contrast in `babble.component.scss` (`#ffffff !important` with text shadow).
-- Replaced low-contrast grey role switch button with high-contrast navy pills (`HAND` / `TABLE`).
-- Overrode `.game-sidebar` `max-width: 75vw` on mobile to `width: 100% !important`.
-- Removed `.babble-header` on mobile (`d-none d-md-flex`).
-- Redesigned `<app-mobile-tab-bar>` with 3px pink top border and active pink pills.
-- Verified backend xUnit test suite: 235 / 235 tests passed.
-- Verified frontend Karma unit test suite: 293 / 293 tests passed.
-- Production build (`ng build`) completed in 6.5s.
+### Completed Landing Page Work
+- Synchronized branch with latest `dev` (`fast-forward`).
+- Implemented 12s synchronized Table & Hand timed animation showing all 3 steps left-to-right (Host TV $\rightarrow$ Dual-Phone Join with QR/Code $\rightarrow$ Live Tile Game Board & Hand Controllers) with 01/02/03 step overview cards.
+- Added clean, concise "How Table vs. Hand Works" concept section below the hero.
+- Implemented expandable quick-join code pill with auto-uppercase and validation.
+- Cleaned up prototype routes and verified all 300 frontend Karma tests and 239 backend xUnit tests.
 
 ## 4) Issues and Out of Scope
 ### 4a) Potential Blockers
