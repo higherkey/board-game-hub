@@ -4,7 +4,7 @@ import { SignalRService } from '../../../services/signalr.service';
 import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { GameDataService } from '../../../services/game-data.service';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { LoggerService } from '../../../core/services/logger.service';
 
@@ -75,4 +75,76 @@ describe('PlayComponent', () => {
     it('should refresh games on init', () => {
         expect(mockGameDataService.refreshGames).toHaveBeenCalled();
     });
+
+    describe('joinWithCode', () => {
+        let router: Router;
+
+        beforeEach(() => {
+            router = TestBed.inject(Router);
+            spyOn(router, 'navigate');
+            mockToastService.showError = jasmine.createSpy('showError');
+            mockSignalRService.validateRoomCode = jasmine.createSpy('validateRoomCode').and.returnValue(Promise.resolve(true));
+        });
+
+        it('should set codeError if roomCode length is not 4', async () => {
+            component.roomCode = 'ABC';
+            await component.joinWithCode();
+            expect(component.codeError).toBe('Please enter a valid 4-letter room code.');
+            expect(mockSignalRService.validateRoomCode).not.toHaveBeenCalled();
+        });
+
+        it('should navigate to /game/CODE when room code is valid and exists', async () => {
+            component.roomCode = 'test';
+            mockSignalRService.validateRoomCode.and.returnValue(Promise.resolve(true));
+
+            await component.joinWithCode();
+
+            expect(mockSignalRService.validateRoomCode).toHaveBeenCalledWith('TEST');
+            expect(router.navigate).toHaveBeenCalledWith(['/game', 'TEST']);
+            expect(component.codeError).toBeNull();
+            expect(component.isValidating).toBeFalse();
+        });
+
+        it('should display error and toast if room code is not found', async () => {
+            component.roomCode = 'FAIL';
+            mockSignalRService.validateRoomCode.and.returnValue(Promise.resolve(false));
+
+            await component.joinWithCode();
+
+            expect(mockSignalRService.validateRoomCode).toHaveBeenCalledWith('FAIL');
+            expect(component.codeError).toContain('Room "FAIL" not found');
+            expect(mockToastService.showError).toHaveBeenCalledWith('Room "FAIL" does not exist.');
+            expect(component.isValidating).toBeFalse();
+        });
+
+        it('should handle errors when room code validation throws', async () => {
+            component.roomCode = 'ERRR';
+            mockSignalRService.validateRoomCode.and.returnValue(Promise.reject(new Error('Network error')));
+
+            await component.joinWithCode();
+
+            expect(component.codeError).toBe('Unable to verify room code right now.');
+            expect(mockToastService.showError).toHaveBeenCalledWith('Unable to verify room code.');
+            expect(component.isValidating).toBeFalse();
+        });
+    });
+
+    it('should clear codeError on onCodeInput', () => {
+        component.codeError = 'Invalid code';
+        component.onCodeInput();
+        expect(component.codeError).toBeNull();
+    });
+
+    it('should get host name or Unknown', () => {
+        expect(component.getHostName([{ name: 'Alice', isHost: true }, { name: 'Bob', isHost: false }])).toBe('Alice');
+        expect(component.getHostName([{ name: 'Bob', isHost: false }])).toBe('Unknown');
+    });
+
+    it('should load rooms on loadRooms', async () => {
+        mockSignalRService.getPublicRooms.and.returnValue(Promise.resolve([]));
+        await component.loadRooms();
+        expect(mockSignalRService.getPublicRooms).toHaveBeenCalled();
+        expect(component.loading).toBeFalse();
+    });
 });
+

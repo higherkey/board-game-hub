@@ -146,6 +146,44 @@ describe('SignalRService', () => {
       expect(result).toBeFalse();
       expect(service.currentRoomSubject.value).toBeNull();
     });
+
+    describe('validateRoomCode', () => {
+      it('should return false if room code is empty or not 4 characters', async () => {
+        expect(await service.validateRoomCode('')).toBeFalse();
+        expect(await service.validateRoomCode('ABC')).toBeFalse();
+        expect(await service.validateRoomCode('ABCDE')).toBeFalse();
+        expect(mockHubConnection.invoke).not.toHaveBeenCalledWith('ValidateRooms', jasmine.any(Array));
+      });
+
+      it('should start connection if disconnected and return true when room is valid', async () => {
+        mockHubConnection.state = HubConnectionState.Disconnected;
+        mockHubConnection.invoke.withArgs('ValidateRooms', ['TEST']).and.returnValue(Promise.resolve(['TEST']));
+
+        const isValid = await service.validateRoomCode('test');
+
+        expect(mockHubConnection.start).toHaveBeenCalled();
+        expect(mockHubConnection.invoke).toHaveBeenCalledWith('ValidateRooms', ['TEST']);
+        expect(isValid).toBeTrue();
+      });
+
+      it('should return false when room is not in returned list', async () => {
+        mockHubConnection.state = HubConnectionState.Connected;
+        mockHubConnection.invoke.withArgs('ValidateRooms', ['ABCD']).and.returnValue(Promise.resolve([]));
+
+        const isValid = await service.validateRoomCode('abcd');
+
+        expect(isValid).toBeFalse();
+      });
+
+      it('should catch error and return false when invoke fails', async () => {
+        mockHubConnection.state = HubConnectionState.Connected;
+        mockHubConnection.invoke.withArgs('ValidateRooms', ['FAIL']).and.returnValue(Promise.reject(new Error('SignalR error')));
+
+        const isValid = await service.validateRoomCode('fail');
+
+        expect(isValid).toBeFalse();
+      });
+    });
   });
 
   describe('Lobby Actions', () => {
