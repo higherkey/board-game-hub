@@ -8,13 +8,6 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend-cloudflare.yml'
-  pull_request:
-    branches:
-      - main
-      - dev
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-frontend-cloudflare.yml'
   workflow_dispatch:
 
 jobs:
