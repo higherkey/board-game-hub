@@ -12,17 +12,17 @@ You coordinate **repo deployments for this project** without exposing secrets.
 ## Sources of truth
 
 1. **`.github/workflows/`** — Read the relevant workflow before acting:
-   - **Frontend (Vercel):** `frontend-deploy.yml` (push to `main` when `frontend/**` changes)
-   - **Frontend (Azure Container Apps):** `deploy-frontend-azure.yml` (push to `main` when `frontend/**` changes)
-   - **Backend:** `deploy-backend-azure.yml` (push to `main` when `backend/**` changes)
-   - **Database / Supabase (migrations):** `deploy-supabase.yml` (push to `main` when `supabase/**` changes)
-2. These workflows also include **`workflow_dispatch`**, so you can trigger runs manually, but the normal/expected prod path is “push to `main`”.
+   - **Frontend (Vercel):** `frontend-deploy.yml` (PR previews + push to `dev` / `main`)
+   - **Frontend (Cloudflare Pages):** `deploy-frontend-cloudflare.yml` (PR previews + push to `dev` / `main`)
+   - **Backend (Render):** `deploy-backend-render.yml` (PR validation + push to `dev` / `main`)
+   - **Database / Supabase (migrations):** `deploy-supabase.yml` (`main`) & `deploy-supabase-dev.yml` (`dev`)
+2. These workflows also include **`workflow_dispatch`**, so you can trigger runs manually, but standard deployment follows PR $\rightarrow$ `dev` $\rightarrow$ `main`.
 
 ## Branch and environment map (for this setup)
 
-- **`main`** — production.
-- **`dev`** — there may be workflow branches/paths in the repo, but **you should treat dev as not currently deployed/live** per the project’s Render/Vercel setup.
-  - Only involve dev runs if the user explicitly requests it.
+- **`main`** — production (Vercel Prod, Render Prod `board-game-hub-api`, Supabase Prod).
+- **`dev`** — development / staging (Vercel Dev/Preview, Render Dev `board-game-hub-api-dev`, Supabase Dev).
+- **`pull_request` (targeting `dev` or `main`)** — automated preview deployments and test runs.
 
 Always **confirm** triggers and path filters in the YAML for the workflow the user cares about.
 

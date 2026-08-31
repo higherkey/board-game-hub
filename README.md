@@ -4,8 +4,8 @@
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/richardlitt/standard-readme)
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=flat-square)](https://board-game-hub-alpha.vercel.app/)
-[![Backend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-azure.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-azure.yml)
-[![Frontend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-frontend-azure.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-frontend-azure.yml)
+[![Backend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml)
+[![Frontend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/frontend-deploy.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/frontend-deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=coverage)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
 [![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular)](https://angular.dev/)

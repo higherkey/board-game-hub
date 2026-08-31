@@ -33,7 +33,7 @@ jobs:
 
       - name: Build Application
         run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "main" ]; then
             npm run build -- --configuration=production
           else
             npm run build -- --configuration=development
@@ -46,4 +46,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: 'board-game-hub-frontend'
           directory: 'frontend/dist/frontend/browser'
-          branch: ${{ github.ref_name }}
+          branch: ${{ github.head_ref || github.ref_name }}

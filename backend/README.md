@@ -48,11 +48,11 @@ Migrations are managed **out-of-band** from the API startup process.
 
 ### How CI/CD applies migrations
 
-On every push to `main` or `dev`, the backend deployment workflow (`.github/workflows/deploy-backend-azure.yml`) does the following **before** deploying the new container:
+On every push to `main` or `dev`, the backend deployment workflow (`.github/workflows/deploy-backend-render.yml`) does the following **before** triggering Render deployment:
 
 1. Generates a self-contained **EF Core Migration Bundle** (`efbundle`) from all migrations in source.
 2. Runs the bundle against the target Supabase database using the branch-appropriate connection string.
-3. Only then deploys the new container image.
+3. Only then triggers deployment on Render.
 
 This guarantees the schema is always up-to-date before new code runs. The `efbundle` binary is a transient build artifact — **do not commit it**.
 
