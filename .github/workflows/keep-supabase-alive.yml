@@ -30,12 +30,14 @@ jobs:
             ANON_KEY=$(echo "$KEYS_JSON" | jq -r '.[] | select(.name=="anon") | .api_key')
             
             if [ -n "$ANON_KEY" ] && [ "$ANON_KEY" != "null" ]; then
+              echo "::add-mask::$ANON_KEY"
               echo "Pinging REST API for $PROJ_ID..."
-              curl -s -i -X GET "https://${PROJ_ID}.supabase.co/rest/v1/Games?select=Id&limit=1" \
+              HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "https://${PROJ_ID}.supabase.co/rest/v1/Games?select=Id&limit=1" \
                 -H "apikey: ${ANON_KEY}" \
-                -H "Authorization: Bearer ${ANON_KEY}"
+                -H "Authorization: Bearer ${ANON_KEY}")
+              echo "Ping response for $PROJ_ID: HTTP $HTTP_STATUS"
             else
-              echo "Warning: Could not retrieve anon key for $PROJ_ID"
+              echo "::warning::Could not retrieve anon key for $PROJ_ID"
             fi
           done
 
