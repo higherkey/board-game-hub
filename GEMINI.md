@@ -30,7 +30,9 @@ Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angula
 - **Frontend Tests:** `npm --prefix frontend test` (Karma) and `npm --prefix frontend run test:babble` (Playwright).
 
 ### SonarQube & Code Quality
-- **Scanner vs. API:** Use `sonar-scanner` ONLY for running/uploading analysis.
+- **Architecture**: The project uses a **Unified Monorepo Architecture** for SonarCloud (`.github/workflows/sonar.yml`). It employs the `dotnet-sonarscanner` "sandwich" to natively scan C# backend code while simultaneously ingesting frontend LCOV coverage.
+- **CRITICAL**: SonarCloud "Automatic Analysis" MUST remain OFF in the SonarCloud UI. Enabling it will override the CI pipeline and result in mandatory 0% coverage reports.
+- **Scanner vs. API:** Use `sonar-scanner` ONLY for running/uploading local analysis if needed.
 - **Management:** Use the SonarQube Web API or MCP tools for checking Quality Gates, searching issues, or transitioning issue states.
 - **Hotspots:** Security hotspots must be reviewed via the SonarQube UI or IDE; they cannot be resolved via the scanner.
 

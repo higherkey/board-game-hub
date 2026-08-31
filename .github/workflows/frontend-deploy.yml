@@ -20,6 +20,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'production' || 'development' }}
+      url: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'https://board-game-hub-alpha.vercel.app' || steps.deploy.outputs.preview-url }}
     defaults:
       run:
         working-directory: frontend
@@ -46,6 +49,7 @@ jobs:
           fi
 
       - name: Deploy to Vercel
+        id: deploy
         uses: amondnet/vercel-action@v42
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

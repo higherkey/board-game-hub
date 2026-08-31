@@ -1,4 +1,4 @@
-﻿name: Deploy Backend to Render
+name: Deploy Backend to Render
 
 on:
   push:
@@ -46,6 +46,9 @@ jobs:
     needs: test-and-build
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+      url: ${{ github.ref_name == 'main' && 'https://board-game-hub-api.onrender.com' || 'https://board-game-hub-api-dev.onrender.com' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
