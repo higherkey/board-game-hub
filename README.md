@@ -10,20 +10,23 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=coverage)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
 [![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular)](https://angular.dev/)
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 [![SignalR](https://img.shields.io/badge/SignalR-Active-orange?style=flat-square&logo=signalr)](#)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg?style=flat-square)](LICENSE)
 
 Board Game Hub is a multiplayer board game platform created by [eight1five design](https://eight1fivedesign.com). Designed for "Table" (shared screen) and "Hand" (personal device) gameplay, its mission is to bring people together and make them feel right in the same room — no matter where they are in the world.
 
-### 🌐 Deployments & Environments
+### 🌐 Deployments & Release Pipeline
 
-| Environment | Frontend (Vercel) | Backend API (Render) | Database (Supabase) | Branch Trigger |
-|---|---|---|---|---|
-| **Production** | [board-game-hub-alpha.vercel.app](https://board-game-hub-alpha.vercel.app/) | `https://board-game-hub-api.onrender.com` | Supabase (Prod) | `main` |
-| **Development** | [board-game-hub-dev.vercel.app](https://board-game-hub-dev.vercel.app/) | `https://board-game-hub-api-dev.onrender.com` | Supabase (Dev) | `dev` |
-| **PR Previews** | Dynamic PR preview comments | Dynamic PR previews (Render Blueprint) | Ephemeral / Branch | `pull_request` |
+We follow the **GitFlow Release Train model** with Semantic Versioning (`v0.X.Y`):
+
+| Tier | Branch | Frontend (Vercel) | Backend API (Render) | Database (Supabase) | Version Tagging |
+|---|---|---|---|---|---|
+| **Production** | `main` | [boardgamehub.com](https://board-game-hub-alpha.vercel.app/) | `https://board-game-hub-api.onrender.com` | Supabase (Prod) | Milestone Release (`v0.24.0`) |
+| **Staging / Mirror** | `staging` | Staging Preview | `https://board-game-hub-api-staging.onrender.com` | Supabase (Staging) | Release Candidate (`v0.24.0-rc.1`) |
+| **Development** | `dev` | [board-game-hub-dev.vercel.app](https://board-game-hub-dev.vercel.app/) | `https://board-game-hub-api-dev.onrender.com` | Supabase (Dev) | Dev Pre-Release (`v0.24.0-dev.1`) |
+| **Feature PRs** | `feat/*`, `fix/*` | Dynamic PR Preview | Dynamic PR Preview (Render) | Ephemeral / Dev | Ephemeral |
 
 ## Table of Contents
 
