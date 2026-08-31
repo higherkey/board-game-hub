@@ -1,5 +1,9 @@
 name: SonarQube Analysis
 
+permissions:
+  contents: read
+  pull-requests: read
+
 on:
   push:
     branches:
@@ -45,7 +49,7 @@ jobs:
           npm --prefix frontend test -- --code-coverage --no-watch --no-progress --browsers=ChromeHeadless
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         with:
           args: >
             -Dsonar.projectKey=higherkey_board-game-hub

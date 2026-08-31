@@ -1,0 +1,88 @@
+---
+description: Deployment workflows and environment mapping for Render, Vercel, Supabase, and Cloudflare Pages
+alwaysApply: false
+---
+
+# Deployments & Environments (Render, Vercel, Supabase)
+
+Use this guide when configuring, modifying, or managing deployments across branches and environments.
+
+## 1. Environments & Branch Architecture
+
+| Environment | Branch | Backend (Render) | Frontend (Vercel) | Database (Supabase) |
+|---|---|---|---|---|
+| **Production** | `main` | `board-game-hub-api` (`https://board-game-hub-api.onrender.com`) | `https://board-game-hub.vercel.app` | Supabase Prod |
+| **Development** | `dev` | `board-game-hub-api-dev` (`https://board-game-hub-api-dev.onrender.com`) | `https://board-game-hub-dev.vercel.app` | Supabase Dev |
+| **Preview** | `pull_request` | Render Preview Environments (`render.yaml`) | Vercel PR Previews | Dev DB / Isolated |
+
+---
+
+## 2. Render Blueprint Specification (`render.yaml`)
+
+Both backend services must be defined in `render.yaml` as synchronized twin services:
+
+```yaml
+services:
+  - type: web
+    name: board-game-hub-api
+    branch: main
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    region: oregon 
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Set in Render Dashboard
+      - key: Jwt__Key
+        sync: false
+
+  - type: web
+    name: board-game-hub-api-dev
+    branch: dev
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    region: oregon 
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Development
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Set in Render Dashboard (Supabase Dev)
+      - key: Jwt__Key
+        sync: false
+```
+
+---
+
+## 3. CI/CD Pipeline & Migration Sequence
+
+For any deployment triggering via GitHub Actions (`.github/workflows/deploy-backend-render.yml`):
+
+1. **Test & Build**: Run all .NET backend tests with `--no-build -c Release`.
+2. **EF Migration Bundle**: Automatically generate `efbundle` and apply migrations to the target Supabase environment (`production` on `main`, `development` on `dev`) **prior** to triggering the Render deploy hook.
+3. **Trigger Deploy**: Invoke the respective `RENDER_DEPLOY_HOOK_URL_PROD` or `RENDER_DEPLOY_HOOK_URL_DEV`.
+
+---
+
+## 4. Operational Commands (GitHub CLI)
+
+- **List active deployment workflow runs:**
+  ```powershell
+  gh run list --workflow "Deploy Backend to Render" --branch dev
+  ```
+- **Watch run execution:**
+  ```powershell
+  gh run watch <run_id>
+  ```
+- **Trigger manual deployment:**
+  ```powershell
+  gh workflow run "deploy-backend-render.yml" --ref dev
+  ```

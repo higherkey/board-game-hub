@@ -88,8 +88,8 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
   // Parses the existing Dicebear URL to extract current selections
   parseAvatarUrl(url: string) {
     try {
-      if (!url.includes('api.dicebear.com')) return;
       const urlObj = new URL(url);
+      if (urlObj.hostname !== 'api.dicebear.com') return;
       const top = urlObj.searchParams.get('top');
       if (top && this.topOptions.includes(top)) this.selectedTop = this.topOptions.indexOf(top);
 

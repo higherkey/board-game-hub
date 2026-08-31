@@ -816,6 +816,10 @@ export class SignalRService {
     if (!target || !patch) return;
 
     for (const key of Object.keys(patch)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+
       const patchValue = patch[key];
       const targetValue = target[key];
 

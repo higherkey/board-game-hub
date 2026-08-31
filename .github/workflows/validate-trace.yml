@@ -1,5 +1,9 @@
 name: Validate Feature Trace Document
 
+permissions:
+  contents: read
+  pull-requests: read
+
 on:
   pull_request:
     branches:
