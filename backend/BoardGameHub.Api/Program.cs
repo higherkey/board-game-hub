@@ -136,6 +136,7 @@ builder.Services.AddSingleton<IGameService, FarkleService>();
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();
 builder.Services.AddSingleton<GameStateManager>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<GameStateManager>());
 
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<ISocialService, SocialService>();
@@ -162,10 +163,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
-// Start Game Loop
-var gameStateManager = app.Services.GetRequiredService<GameStateManager>();
-gameStateManager.StartGameLoop();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -1,13 +1,16 @@
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading.Channels;
 using BoardGameHub.Api.Hubs;
 using BoardGameHub.Api.Models;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 
 namespace BoardGameHub.Api.Services;
 
-public class GameStateManager
+public class GameStateManager : IHostedService, IDisposable
 {
     private readonly IHubContext<GameHub> _hubContext;
     private readonly StateDiffService _diffService;
@@ -23,14 +26,47 @@ public class GameStateManager
     // Set of "Dirty" room codes that need a broadcast
     private readonly ConcurrentDictionary<string, bool> _dirtyRooms = new();
 
-    private Timer? _tickTimer;
-    private const int TickRateMs = 50; // 20 ticks/sec
+    // Unbounded channel for high-throughput event-driven room state updates
+    private readonly Channel<string> _channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+    {
+        SingleReader = false,
+        SingleWriter = false
+    });
+
+    private CancellationTokenSource? _cts;
+    private Task? _processingTask;
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(namingPolicy: null) }
     };
+
+    // Compiled O(1) property accessors to eliminate runtime reflection in the hot diff path (resolves #87)
+    private static readonly FrozenDictionary<string, (string CamelKey, Func<Room, object?> Getter)> _propertyAccessors =
+        new Dictionary<string, (string CamelKey, Func<Room, object?> Getter)>(StringComparer.OrdinalIgnoreCase)
+        {
+            [nameof(Room.Code)] = ("code", r => r.Code),
+            [nameof(Room.Players)] = ("players", r => r.Players),
+            [nameof(Room.State)] = ("state", r => r.State),
+            [nameof(Room.Settings)] = ("settings", r => r.Settings),
+            [nameof(Room.GameType)] = ("gameType", r => r.GameType),
+            [nameof(Room.IsPublic)] = ("isPublic", r => r.IsPublic),
+            [nameof(Room.HostScreenId)] = ("hostScreenId", r => r.HostScreenId),
+            [nameof(Room.HostPlayerId)] = ("hostPlayerId", r => r.HostPlayerId),
+            [nameof(Room.CreatorConnectionId)] = ("creatorConnectionId", r => r.CreatorConnectionId),
+            [nameof(Room.IsHostOverride)] = ("isHostOverride", r => r.IsHostOverride),
+            [nameof(Room.GameData)] = ("gameData", r => r.GameData),
+            [nameof(Room.RoundNumber)] = ("roundNumber", r => r.RoundNumber),
+            [nameof(Room.NextGameVotes)] = ("nextGameVotes", r => r.NextGameVotes),
+            [nameof(Room.RoundEndTime)] = ("roundEndTime", r => r.RoundEndTime),
+            [nameof(Room.IsPaused)] = ("isPaused", r => r.IsPaused),
+            [nameof(Room.TimeRemainingWhenPaused)] = ("timeRemainingWhenPaused", r => r.TimeRemainingWhenPaused),
+            [nameof(Room.PlayerAnswers)] = ("playerAnswers", r => r.PlayerAnswers),
+            [nameof(Room.RoundScores)] = ("roundScores", r => r.RoundScores),
+            [nameof(Room.UndoSettings)] = ("undoSettings", r => r.UndoSettings),
+            [nameof(Room.CurrentVote)] = ("currentVote", r => r.CurrentVote)
+        }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     public GameStateManager(
         IHubContext<GameHub> hubContext, 
@@ -42,10 +78,36 @@ public class GameStateManager
         _logger = logger;
     }
 
-    public void StartGameLoop()
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        _tickTimer = new Timer(async _ => await GameTick(), null, TickRateMs, TickRateMs);
-        _logger.LogInformation("GameStateManager Game Loop Started.");
+        _cts = new CancellationTokenSource();
+        _processingTask = Task.Run(() => ProcessChannelAsync(_cts.Token), CancellationToken.None);
+        _logger.LogInformation("GameStateManager Event-Driven Loop Started.");
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        _channel.Writer.TryComplete();
+        if (_cts != null && !_cts.IsCancellationRequested)
+        {
+            try
+            {
+                await _cts.CancelAsync();
+            }
+            catch (ObjectDisposedException) { }
+        }
+
+        if (_processingTask != null)
+        {
+            try
+            {
+                await Task.WhenAny(_processingTask, Task.Delay(Timeout.Infinite, cancellationToken));
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        _logger.LogInformation("GameStateManager Event-Driven Loop Stopped.");
     }
 
     public void TrackRoom(Room room)
@@ -69,16 +131,6 @@ public class GameStateManager
 
     public void MarkDirty(string roomCode, string? member = null)
     {
-        // If we want to track specific members, we need to access the room and add to its set.
-        // But referencing the room here implies a lock? 
-        // Actually, MarkDirty is called FROM RoomService, which usually holds a lock.
-        // However, this method just sets a flag.
-        
-        // Strategy:
-        // 1. If 'member' is null, it means "Something changed, I don't know what" -> Full Diff.
-        // 2. If 'member' is provided, we assume the caller has put it in Room.DirtyMembers?
-        //    OR we do it here. Doing it here requires looking up the room.
-        
         _dirtyRooms.TryAdd(roomCode, true);
         
         if (member != null)
@@ -90,151 +142,185 @@ public class GameStateManager
         }
         else
         {
-             // Null member -> Force full diff
-             if (_activeRooms.TryGetValue(roomCode, out var room))
-             {
-                 room.DirtyMembers.TryAdd("ALL", 0);
-             }
+            // Null member -> Force full diff
+            if (_activeRooms.TryGetValue(roomCode, out var room))
+            {
+                room.DirtyMembers.TryAdd("ALL", 0);
+            }
+        }
+
+        // Non-blocking channel push for event-driven dispatching
+        _channel.Writer.TryWrite(roomCode);
+    }
+
+    private async Task ProcessChannelAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _channel.Reader.WaitToReadAsync(ct))
+            {
+                while (_channel.Reader.TryRead(out var roomCode))
+                {
+                    if (ct.IsCancellationRequested) break;
+                    await ProcessRoomUpdateAsync(roomCode, ct);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Clean shutdown
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error in GameStateManager Channel processing loop");
         }
     }
 
-    private async Task GameTick()
+    internal async Task ProcessRoomUpdateAsync(string roomCode, CancellationToken ct = default)
     {
-        // Snapshot the dirty list keys to avoid contentions
-        var dirtyCodes = _dirtyRooms.Keys.ToList();
-        
-        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 };
-        
-        await Parallel.ForEachAsync(dirtyCodes, parallelOptions, async (roomCode, ct) =>
+        try 
         {
-            try 
+            if (!_activeRooms.TryGetValue(roomCode, out var liveRoom))
             {
-                if (!_activeRooms.TryGetValue(roomCode, out var liveRoom))
-                {
-                    _dirtyRooms.TryRemove(roomCode, out _);
-                    return;
-                }
-
                 _dirtyRooms.TryRemove(roomCode, out _);
+                return;
+            }
 
-                // Check Dirty Members - Extract and clear atomically
-                var dirtyMembers = new HashSet<string>();
-                foreach (var key in liveRoom.DirtyMembers.Keys)
+            _dirtyRooms.TryRemove(roomCode, out _);
+
+            // Check Dirty Members - Extract and clear atomically
+            var dirtyMembers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var key in liveRoom.DirtyMembers.Keys)
+            {
+                if (liveRoom.DirtyMembers.TryRemove(key, out _))
                 {
-                    if (liveRoom.DirtyMembers.TryRemove(key, out _))
-                    {
-                        dirtyMembers.Add(key);
-                    }
+                    dirtyMembers.Add(key);
                 }
+            }
 
-                // If no specific members tracked, OR "ALL" is present, do Full Diff
-                bool fullDiff = dirtyMembers.Count == 0 || dirtyMembers.Contains("ALL");
+            // If no specific members tracked, OR "ALL" is present, do Full Diff
+            bool fullDiff = dirtyMembers.Count == 0 || dirtyMembers.Contains("ALL");
 
-                JsonNode? patch = null;
-                JsonNode? lastJson = null;
-                _lastSnapshots.TryGetValue(roomCode, out lastJson);
+            JsonNode? patch = null;
+            _lastSnapshots.TryGetValue(roomCode, out var lastJson);
 
-                if (fullDiff)
+            if (fullDiff)
+            {
+                // --- FULL SERIALIZATION (Fallback / Baseline) ---
+                JsonNode? currentJson;
+                await liveRoom.StateLock.WaitAsync(ct);
+                try
                 {
-                    // --- FULL SERIALIZATION (Fallback) ---
+                    currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
+                }
+                finally
+                {
+                    liveRoom.StateLock.Release();
+                }
+                
+                if (currentJson == null) return;
+
+                patch = _diffService.GetDiff(lastJson, currentJson);
+                
+                if (patch != null) _lastSnapshots[roomCode] = currentJson;
+            }
+            else
+            {
+                // --- PARTIAL SERIALIZATION (Zero-Reflection Fast Path) ---
+                if (lastJson == null)
+                {
+                    // No baseline snapshot -> fallback to full serialization
                     JsonNode? currentJson;
+                    await liveRoom.StateLock.WaitAsync(ct);
+                    try { currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions); }
+                    finally { liveRoom.StateLock.Release(); }
+                    if (currentJson == null) return;
+                    _lastSnapshots[roomCode] = currentJson;
+                    patch = currentJson;
+                }
+                else
+                {
+                    var patchObj = new JsonObject();
                     await liveRoom.StateLock.WaitAsync(ct);
                     try
                     {
-                        currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
+                        foreach (var member in dirtyMembers)
+                        {
+                            if (_propertyAccessors.TryGetValue(member, out var accessor))
+                            {
+                                var val = accessor.Getter(liveRoom);
+                                var key = accessor.CamelKey;
+                                var valNode = JsonSerializer.SerializeToNode(val, _jsonOptions);
+                                
+                                var oldVal = lastJson[key];
+                                var partialDiff = _diffService.GetDiff(oldVal, valNode);
+                                
+                                if (partialDiff != null)
+                                {
+                                    patchObj[key] = partialDiff;
+                                    if (lastJson is JsonObject oldObj)
+                                    {
+                                        oldObj[key] = valNode; 
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Unknown custom member fallback
+                                var propInfo = typeof(Room).GetProperty(member);
+                                if (propInfo != null)
+                                {
+                                    var val = propInfo.GetValue(liveRoom);
+                                    var key = JsonNamingPolicy.CamelCase.ConvertName(member);
+                                    var valNode = JsonSerializer.SerializeToNode(val, _jsonOptions);
+                                    var oldVal = lastJson[key];
+                                    var partialDiff = _diffService.GetDiff(oldVal, valNode);
+                                    if (partialDiff != null)
+                                    {
+                                        patchObj[key] = partialDiff;
+                                        if (lastJson is JsonObject oldObj)
+                                        {
+                                            oldObj[key] = valNode;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                     finally
                     {
                         liveRoom.StateLock.Release();
                     }
                     
-                    if (currentJson == null) return;
-
-                    patch = _diffService.GetDiff(lastJson, currentJson);
-                    
-                    if (patch != null) _lastSnapshots[roomCode] = currentJson;
-                }
-                else
-                {
-                    // --- PARTIAL SERIALIZATION (Optimization) ---
-                    // We only serialize the properties that changed.
-                    // And we construct the patch manually from those diffs.
-                    // We ALSO need to update _lastSnapshots with the new values.
-                    
-                    // Ensure we have a base snapshot
-                    if (lastJson == null)
-                    {
-                        // No previous snapshot? Must do full diff first to establish baseline.
-                        // Recursively force full diff logic (simplest way is to just fall through, but let's copy-paste for safety or refactor)
-                        // Actually, if lastJson is null, we can't do partial diff.
-                        // Fallback to Full.
-                        JsonNode? currentJson;
-                        await liveRoom.StateLock.WaitAsync(ct);
-                        try { currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions); }
-                        finally { liveRoom.StateLock.Release(); }
-                        if (currentJson == null) return;
-                        _lastSnapshots[roomCode] = currentJson;
-                        patch = currentJson; // First send is full state? Or Diff(null, curr).
-                    }
-                    else
-                    {
-                        var patchObj = new JsonObject();
-                        // We need the lock to read properties safely
-                        await liveRoom.StateLock.WaitAsync(ct);
-                        try
-                        {
-                           foreach(var member in dirtyMembers)
-                           {
-                               // Reflection or known switch? Reflection is slow. 
-                               // Switch is fast but brittle.
-                               // Use JsonSerializer on the property?
-                               // GetProperty via Reflection is fast enough for 5-10 properties compared to full serialize.
-                               // Actually, `liveRoom` is a POCO.
-                               var propInfo = typeof(Room).GetProperty(member);
-                               if (propInfo != null)
-                               {
-                                   var val = propInfo.GetValue(liveRoom);
-                                   var key = JsonNamingPolicy.CamelCase.ConvertName(member); 
-                                   
-                                   var valNode = JsonSerializer.SerializeToNode(val, _jsonOptions);
-                                   
-                                   // Diff against old (Snapshot keys are already camelCased IF we did a full diff, 
-                                   // but partial diffs need to be consistent)
-                                   var oldVal = lastJson[key]; 
-                                   var partialDiff = _diffService.GetDiff(oldVal, valNode);
-                                   
-                                   if (partialDiff != null)
-                                   {
-                                       patchObj[key] = partialDiff;
-                                       // Update Snapshot Cache immediately
-                                       // Note: lastJson is a reference to the Node in the dictionary.
-                                       // Modifying it updates the "Snapshot".
-                                       if (lastJson is JsonObject oldObj)
-                                       {
-                                           oldObj[key] = valNode; 
-                                       }
-                                   }
-                               }
-                           }
-                        }
-                        finally
-                        {
-                            liveRoom.StateLock.Release();
-                        }
-                        
-                        if (patchObj.Count > 0) patch = patchObj;
-                    }
-                }
-
-                if (patch != null)
-                {
-                    await _hubContext.Clients.Group(roomCode.ToUpper()).SendAsync("RoomStatePatch", patch, ct);
+                    if (patchObj.Count > 0) patch = patchObj;
                 }
             }
-            catch (Exception ex)
+
+            if (patch != null)
             {
-                _logger.LogError(ex, "Error processing GameTick for room {RoomCode}", roomCode);
+                await _hubContext.Clients.Group(roomCode.ToUpper()).SendAsync("RoomStatePatch", patch, ct);
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing room update for room {RoomCode}", roomCode);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_cts != null)
+        {
+            try
+            {
+                if (!_cts.IsCancellationRequested)
+                {
+                    _cts.Cancel();
+                }
+                _cts.Dispose();
+            }
+            catch (ObjectDisposedException) { }
+            _cts = null;
+        }
     }
 }
