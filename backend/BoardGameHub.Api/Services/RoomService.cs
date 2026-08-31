@@ -149,7 +149,8 @@ public class RoomService : IRoomService
 
         if (_rooms.TryAdd(code, room))
         {
-            _logger.LogInformation("Room created: {Code} by {Host} (Type: {GameType})", code, hostName, gameType);
+            var sanitizedHostName = System.Text.RegularExpressions.Regex.Replace(hostName ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            _logger.LogInformation("Room created: {Code} by {Host} (Type: {GameType})", code, sanitizedHostName, gameType);
             _connectionRoomMap.TryAdd(hostConnectionId, code);
             
             // Start State Tracking
