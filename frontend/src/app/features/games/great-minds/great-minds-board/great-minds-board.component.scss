@@ -1,3 +1,5 @@
+@use '../animations';
+
     .board-container {
         display: flex;
         flex-direction: column;
@@ -94,19 +96,7 @@
         animation: rippleEffect 0.6s ease-out forwards;
     }
 
-    @keyframes rippleEffect {
-        from {
-            width: 0;
-            height: 0;
-            opacity: 0.5;
-        }
 
-        to {
-            width: 500px;
-            height: 500px;
-            opacity: 0;
-        }
-    }
 
     .card-display.pulse {
         transform: scale(1.05);
@@ -116,20 +106,7 @@
         animation: successPop 0.4s ease;
     }
 
-    @keyframes successPop {
-        0% {
-            transform: scale(1);
-        }
 
-        50% {
-            transform: scale(1.15);
-            filter: brightness(1.5);
-        }
-
-        100% {
-            transform: scale(1);
-        }
-    }
 
     .message-container {
         height: 2rem;
@@ -153,32 +130,10 @@
 
     .glitch-effect {
         animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
-        background: #450a0a !important;
+        background: #450a0a;
     }
 
-    @keyframes shake {
 
-        10%,
-        90% {
-            transform: translate3d(-2px, 0, 0);
-        }
-
-        20%,
-        80% {
-            transform: translate3d(4px, 0, 0);
-        }
-
-        30%,
-        50%,
-        70% {
-            transform: translate3d(-6px, 0, 0);
-        }
-
-        40%,
-        60% {
-            transform: translate3d(6px, 0, 0);
-        }
-    }
 
     .reward-overlay {
         position: absolute;
@@ -207,7 +162,7 @@
     }
 
     .victory-state {
-        background: linear-gradient(to bottom, #1e293b, #0f172a, #312e81) !important;
+        background: linear-gradient(to bottom, #1e293b, #0f172a, #312e81);
     }
 
     .presence-area {

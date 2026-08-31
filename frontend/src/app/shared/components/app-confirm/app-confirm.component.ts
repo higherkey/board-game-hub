@@ -42,7 +42,7 @@ import { ConfirmService, ConfirmOptions } from '../../services/confirm.service';
     .confirm-popover {
       background: white;
       border: none;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 

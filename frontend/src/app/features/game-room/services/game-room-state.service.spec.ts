@@ -144,6 +144,24 @@ describe('GameRoomStateService', () => {
       expect(routerMock.navigate).toHaveBeenCalledWith(['/game', 'NEW1']);
     });
 
+    it('should join room on submitEntry (isCreating=false)', async () => {
+      const entry = { name: 'PlayerName', joinType: 'player' as const, isPublic: false };
+      const success = await service.submitEntry('ABCD', false, entry, 'Scatterbrain');
+
+      expect(success).toBeTrue();
+      expect(signalRMock.joinRoom).toHaveBeenCalledWith('ABCD', 'PlayerName', false);
+    });
+
+    it('should toast and navigate to /play when joinRoom returns false on submitEntry (isCreating=false)', async () => {
+      signalRMock.joinRoom.and.returnValue(Promise.resolve(false));
+      const entry = { name: 'PlayerName', joinType: 'player' as const, isPublic: false };
+      const success = await service.submitEntry('ABCD', false, entry, 'Scatterbrain');
+
+      expect(success).toBeFalse();
+      expect(toastMock.showError).toHaveBeenCalledWith('Room "ABCD" not found or no longer active.');
+      expect(routerMock.navigate).toHaveBeenCalledWith(['/play']);
+    });
+
     it('should handle errors in submitEntry', async () => {
       signalRMock.createRoom.and.returnValue(Promise.reject('error'));
       const entry = { name: 'NewRoom', joinType: 'player' as const, isPublic: true };

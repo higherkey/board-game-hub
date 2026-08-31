@@ -22,15 +22,20 @@
             <div class="card h-100 bg-surface shadow-sm">
                 <div class="card-body p-3 p-md-4 text-center d-flex flex-column justify-content-center">
                     <h2 class="h5 mb-2 mb-md-3">Join with Code</h2>
-                    <p class="text-secondary small mb-3 mb-md-4">Enter a 4-letter room code to join a private game.</p>
+                    <p class="text-secondary small mb-3 mb-md-4">Enter a 4-letter room code to join an active game.</p>
                     <div class="input-group">
-                        <input [(ngModel)]="roomCode" placeholder="ADBC" maxlength="4"
+                        <input [(ngModel)]="roomCode" (ngModelChange)="onCodeInput()" (keyup.enter)="joinWithCode()" placeholder="CODE" maxlength="4"
                             class="form-control form-control-lg text-uppercase text-center fw-bold"
-                            style="letter-spacing: 0.1em;">
-                        <button type="button" class="btn btn-outline-primary px-4 fw-bold"
-                            [routerLink]="['/game', roomCode]" [disabled]="!roomCode || roomCode.length < 4">
-                            JOIN
+                            [class.is-invalid]="!!codeError"
+                            style="letter-spacing: 0.15em;">
+                        <button type="button" class="btn btn-primary px-4 fw-bold"
+                            (click)="joinWithCode()" [disabled]="!roomCode || roomCode.trim().length < 4 || isValidating">
+                            <span *ngIf="!isValidating">JOIN <i class="bi bi-arrow-right ms-1"></i></span>
+                            <span *ngIf="isValidating" class="spinner-border spinner-border-sm"></span>
                         </button>
+                    </div>
+                    <div *ngIf="codeError" class="text-danger small mt-2 fw-bold text-start ps-1">
+                        <i class="bi bi-exclamation-circle me-1"></i> {{ codeError }}
                     </div>
                 </div>
             </div>
@@ -38,11 +43,12 @@
     </div>
 
     <!-- Public Lobbies -->
-    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom border-secondary pb-2"
-        style="border-bottom-style: dashed !important;">
-        <h3 class="h6 text-secondary mb-0">Public Lobbies</h3>
-        <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="loadRooms()">
-            <i class="bi bi-arrow-clockwise"></i> Refresh
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-dashed border-secondary pb-2">
+        <h3 class="h6 text-primary fw-bold mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-globe text-accent"></i> Public Lobbies
+        </h3>
+        <button type="button" class="btn btn-sm btn-outline-primary px-3 shadow-sm fw-bold" (click)="loadRooms()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </button>
     </div>
 

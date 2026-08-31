@@ -203,6 +203,47 @@ export class CloverMindedHandComponent implements OnInit, OnChanges, OnDestroy {
         return s.prepByPlayer?.[this.myConnectionId];
     }
 
+    getPrepCardForSlot(s: CloverMindedState, slotIndex: number): CloverCardModel | null {
+        const prep = this.getMyPrep(s);
+        if (!prep || !prep.cards || !prep.slotPermutation) return null;
+        const cardIdx = prep.slotPermutation[slotIndex];
+        return prep.cards[cardIdx] ?? null;
+    }
+
+    getPrepCardRotation(s: CloverMindedState, slotIndex: number): number {
+        const prep = this.getMyPrep(s);
+        if (!prep || !prep.slotRotations) return 0;
+        return prep.slotRotations[slotIndex] ?? 0;
+    }
+
+    selectPoolCard(cardId: string) {
+        const s = this.state;
+        if (!s || this.isSpectator(s)) return;
+        if (this.isOccupiedByOthers(s, cardId)) return;
+
+        if (this.selectedCardId === cardId) {
+            this.selectedCardId = null;
+        } else {
+            this.selectedCardId = cardId;
+        }
+    }
+
+    onSlotClick(slotIndex: number) {
+        const s = this.state;
+        if (!s || this.isSpectator(s)) return;
+
+        if (this.selectedCardId) {
+            this.signalRService.sendGameAction('CLOVER_SET_SLOT', {
+                slotIndex,
+                cardId: this.selectedCardId,
+                rotation: 0
+            });
+            this.selectedCardId = null;
+        } else if (s.slots?.[slotIndex]?.cardId) {
+            this.rotateSlot(slotIndex);
+        }
+    }
+
     getMyPair(s: CloverMindedState, idx: number): string[] | null {
         const prep = this.getMyPrep(s);
         if (!prep?.pairWords?.[idx]) return null;

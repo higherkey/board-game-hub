@@ -36,7 +36,7 @@ Run commands from repo root unless noted.
   - `backend/migrate-db.ps1`
 - Add a new migration:
   - `dotnet ef migrations add <MigrationName> --project backend/BoardGameHub.Api`
-- **CI/CD**: On every push to `main` or `dev`, `.github/workflows/deploy-backend-azure.yml` automatically builds an EF Core Migration Bundle and runs it against the target database **before** the new container is deployed. Do not commit `efbundle` or `efbundle.exe` — these are build artifacts.
+- **CI/CD**: On every push to `main` or `dev`, `.github/workflows/deploy-backend-render.yml` automatically builds an EF Core Migration Bundle and runs it against the target database **before** triggering Render deployment. Do not commit `efbundle` or `efbundle.exe` — these are build artifacts.
 
 ### Frontend (Angular)
 - Install dependencies:
@@ -96,7 +96,11 @@ Run commands from repo root unless noted.
 ### Persistence boundary
 - Persistent data (users, friendships, chat, game history, game definitions) is in EF Core `AppDbContext` (`backend/BoardGameHub.Api/Data/AppDbContext.cs`).
 - Active room/game runtime state is in-memory (`RoomService`/`GameStateManager`) and not fully persisted between process restarts.
-- **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-azure.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
+- **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-render.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
+
+## Engineering Standards to honor
+- **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
+- **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
 
 ## Existing AI/workflow guidance to honor
 - `.cursor/rules/git-powershell.mdc` + `.agent/workflows/git-commands.md`:

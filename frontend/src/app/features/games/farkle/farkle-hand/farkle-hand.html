@@ -1,0 +1,110 @@
+<div class="farkle-hand-container" *ngIf="state">
+  <!-- Status Bar -->
+  <output class="status-bar" [class.active]="myConnectionId === state.activePlayerId"
+       aria-label="Current turn status">
+    <div class="player-info">
+      <span class="label">Current Player:</span>
+      <span class="value">{{ state.playerStates[state.activePlayerId]?.playerName || 'Unknown' }}</span>
+    </div>
+    <div class="score-info">
+      <span class="label">Turn Score:</span>
+      <span class="value">{{ state.currentTurnScore }}</span>
+    </div>
+    <button class="rules-btn" (click)="toggleScoringAid()" aria-label="View scoring guide">?</button>
+  </output>
+
+  <!-- Scoring Aid Overlay -->
+  <dialog class="scoring-aid-overlay" [open]="showScoringAid" (click)="toggleScoringAid()" (keydown.escape)="toggleScoringAid()"
+       aria-label="Scoring guide">
+    <div class="scoring-aid-content" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+      <h3>Scoring Guide</h3>
+      <div class="rules-scroll-container">
+        <ul>
+          <li><span>Single 1</span> <span>100 pts</span></li>
+          <li><span>Single 5</span> <span>50 pts</span></li>
+          <li><span>Three 1s</span> <span>300 pts</span></li>
+          <li><span>Three of a Kind (2-6)</span> <span>Value &times; 100</span></li>
+          <li><span>Four of any number</span> <span>1000 pts</span></li>
+          <li><span>Five of any number</span> <span>2000 pts</span></li>
+          <li><span>Six of any number</span> <span>3000 pts</span></li>
+          <li><span>Straight (1-6)</span> <span>1500 pts</span></li>
+          <li><span>Three Pairs</span> <span>1500 pts</span></li>
+          <li><span>Four with a Pair</span> <span>1500 pts</span></li>
+          <li><span>Two Triplets</span> <span>2500 pts</span></li>
+        </ul>
+        <p class="small text-muted mt-2 mb-0"><em>Note: First score entered on Score Pad requires 500+ pts.</em></p>
+      </div>
+      <button class="close-btn" (click)="toggleScoringAid()">Got it</button>
+    </div>
+  </dialog>
+
+  <div class="dice-tray-area">
+    <div class="dice-felt">
+      <fieldset class="dice-grid" aria-label="Dice">
+        <button *ngFor="let die of state.dice; let i = index" 
+             class="die-3d-container"
+             [class.held]="die.isHeld"
+             [class.reserved]="die.isReserved"
+             [class.rolling]="state.phase === 'Rolling'"
+             [tabindex]="die.isHeld ? -1 : 0"
+             [attr.aria-pressed]="die.isHeld || die.isReserved"
+             [attr.aria-label]="'Die showing ' + die.value"
+             [disabled]="die.isHeld"
+             (click)="toggleDie(i)">
+          
+          <div class="die-3d" [attr.data-value]="die.value">
+            <!-- Opposite sides add up to 7 -->
+            <div class="face top"><div class="pip" *ngFor="let p of getPips(die.value)"></div></div>
+            <div class="face bottom"><div class="pip" *ngFor="let p of getPips(7 - die.value)"></div></div>
+            <div class="face front"><div class="pip" *ngFor="let p of getPips((die.value % 6) + 1)"></div></div>
+            <div class="face back"><div class="pip" *ngFor="let p of getPips(7 - ((die.value % 6) + 1))"></div></div>
+            <div class="face right"><div class="pip" *ngFor="let p of getPips(((die.value + 1) % 6) + 1)"></div></div>
+            <div class="face left"><div class="pip" *ngFor="let p of getPips(7 - (((die.value + 1) % 6) + 1))"></div></div>
+          </div>
+          
+          <div class="die-shadow"></div>
+          
+          <!-- Absolute positioned labels to prevent layout shift -->
+          <div class="status-indicator banked" *ngIf="die.isHeld">Banked</div>
+          <div class="status-indicator keeping" *ngIf="die.isReserved">Keep</div>
+        </button>
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls" *ngIf="myConnectionId === state.activePlayerId">
+    <!-- aria-live announces phase changes to screen readers -->
+    <div aria-live="assertive" aria-atomic="true" class="sr-only">
+      <ng-container [ngSwitch]="state.phase">
+        <span *ngSwitchCase="'Farkled'">Farkle! Your turn is over.</span>
+        <span *ngSwitchCase="'Rolling'">Dice are rolling.</span>
+        <span *ngSwitchCase="'Banked'">Points banked.</span>
+      </ng-container>
+    </div>
+    <ng-container [ngSwitch]="state.phase">
+      <div *ngSwitchCase="'Picking'" class="button-group">
+        <button class="btn roll" (click)="roll()">
+          {{ getRollCount() > 0 ? 'Roll ' + getRollCount() + ' Dice' : 'Roll Again' }}
+        </button>
+        <button class="btn bank" [disabled]="state.currentTurnScore === 0" (click)="bank()">Stop & Bank</button>
+      </div>
+      
+      <div *ngSwitchCase="'Rolling'" class="phase-msg">
+        <span class="rolling-text">Dice are rolling...</span>
+      </div>
+
+      <div *ngSwitchCase="'Farkled'" class="phase-msg farkle">
+        <span class="farkle-text">FARKLE!</span>
+      </div>
+
+      <div *ngSwitchCase="'Banked'" class="phase-msg banked">
+        <span class="banked-text">Banking points...</span>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="not-my-turn" *ngIf="myConnectionId !== state.activePlayerId">
+    Waiting for {{ state.playerStates[state.activePlayerId]?.playerName }}...
+  </div>
+</div>

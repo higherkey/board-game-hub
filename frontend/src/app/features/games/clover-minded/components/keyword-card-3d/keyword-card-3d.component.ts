@@ -13,7 +13,7 @@ import { CloverCardModel } from '../../clover-minded.types';
             [class.dimmed]="dimmed"
             [class.placed]="placed"
             [style.width.px]="sizePx"
-            [style.height.px]="sizePx * 1.55"
+            [style.height.px]="sizePx"
             (click)="interactive && onCardClick($event)">
 
             <div class="card-face" [style.transform]="'rotate(' + (rotation * 90) + 'deg)'">

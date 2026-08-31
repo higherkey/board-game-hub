@@ -1,1 +1,86 @@
-/* Component styles defined in the parent game-room layout. */
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    width: 100%;
+}
+
+.player-list-card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.score-circle {
+    width: 28px;
+    height: 28px;
+    background-color: #6c757d; // Gray background
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.border-bottom-light {
+    border-bottom: 1px solid var(--bg-surface-2);
+}
+
+.bg-accent {
+    background-color: var(--accent);
+}
+
+.table-card {
+    max-height: 40%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.glow-blue {
+    filter: drop-shadow(0 0 2px rgba(0, 150, 255, 0.5));
+}
+
+.player-card {
+    min-height: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.bg-brand-blue {
+    background-color: var(--brand-blue);
+}
+
+.thick-border-left {
+    border-left-width: 4px;
+}
+
+.avatar-sm {
+    width: 24px;
+    height: 24px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+}
+
+.font-xs {
+    font-size: 0.75rem;
+}
+
+.font-xxs {
+    font-size: 0.6rem;
+}
+
+.font-micro {
+    font-size: 0.5rem;
+}
+
+.font-sm-badge {
+    font-size: 0.7rem;
+}

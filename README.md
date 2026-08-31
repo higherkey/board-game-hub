@@ -1,18 +1,34 @@
 # Board Game Hub
 
-**Bringing people together through shared screens and personal devices.**
+> Connecting people and making them feel as close as possible no matter where they are in the world.
 
-Board Game Hub is a multiplayer board game platform designed for "Table" (shared screen) and "Hand" (personal device) gameplay. It bridges the gap between digital and physical play by allowing players to use their phones as controllers while a central screen (TV or laptop) serves as the game board.
+[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/richardlitt/standard-readme)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=flat-square)](https://board-game-hub-alpha.vercel.app/)
+[![Backend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml)
+[![Frontend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/frontend-deploy.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/frontend-deploy.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=coverage)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
+[![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular)](https://angular.dev/)
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![SignalR](https://img.shields.io/badge/SignalR-Active-orange?style=flat-square&logo=signalr)](#)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg?style=flat-square)](LICENSE)
 
-## 🚀 Tech Stack
+Board Game Hub is a multiplayer board game platform created by [eight1five design](https://eight1fivedesign.com). Designed for "Table" (shared screen) and "Hand" (personal device) gameplay, its mission is to bring people together and make them feel right in the same room — no matter where they are in the world.
 
-- **Frontend**: Angular 18 (Standalone Components, RxJS, SignalR Client)
-- **Backend**: ASP.NET Core 8 Web API
-- **Real-time**: SignalR (WebSockets)
-- **Database**: PostgreSQL (EF Core)
-- **Styling**: Bootstrap 5 + custom SCSS
+## Table of Contents
 
-## 🎮 Platform Concept (Table vs Hand)
+- [Background](#background)
+- [Install](#install)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Background
+
+Board Game Hub was built on the core belief that technology should bring people closer together, not pull them apart. By combining a central shared display with individual mobile controllers, Board Game Hub recreates the warmth, laughter, and intimacy of physical game night across any distance.
+
+### Platform Concept (Table vs Hand)
 
 The platform distinguishes between two roles:
 - **Table**: The shared display (e.g., a TV). Optimized for large text and shared game state. Join with `Player.isScreen === true`.
@@ -20,45 +36,88 @@ The platform distinguishes between two roles:
 
 For more details, see the [Platform Glossary](file:///c:/Programming/board%20game%20hub/docs/platform-glossary.md).
 
-## 🧩 Game Plugin Model
+### Game Plugin Model
 
-Board Game Hub is designed to be extensible. New games can be added by implementing a backend `IGameService` and registering a frontend component.
-Current games include:
+Board Game Hub is designed to be extensible. New games can be added by implementing a backend `IGameService` and registering a frontend component. Current games include:
 - **Scatterbrain**: A fast-paced word game.
 - **Clover-Minded**: A cooperative clue-giving game.
 
-## 🛠️ Project Structure
+### Project Structure
 
 - **[/frontend](file:///c:/Programming/board%20game%20hub/frontend)**: Angular client application.
 - **[/backend](file:///c:/Programming/board%20game%20hub/backend)**: .NET Core API and SignalR hubs.
 - **[/docs](file:///c:/Programming/board%20game%20hub/docs)**: Technical documentation and architecture plans.
 
-## 🚢 Deployment & Database Migrations
+---
 
-Deployments to `dev` and `main` are triggered automatically via GitHub Actions (`.github/workflows/`).
+## Install
 
-**Database schema changes are applied automatically during deployment** using EF Core Migration Bundles — the schema is always updated *before* the new container starts. Developers should **never** apply migrations by re-adding `db.Database.Migrate()` to startup code.
+This project requires [Docker](https://www.docker.com/) for database dependencies, [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0), and [Node.js](https://nodejs.org/) for Angular.
 
-For full details on local and CI/CD migration workflows, see the [Backend README](file:///c:/Programming/board%20game%20hub/backend/README.md#-database-migrations).
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/higherkey/board-game-hub.git
+   cd "board game hub"
+   ```
+2. **Start Docker dependencies:**
+   ```bash
+   docker compose up -d postgres pgadmin
+   ```
+3. **Install frontend dependencies:**
+   ```bash
+   npm --prefix frontend install
+   ```
+4. **Apply local database migrations:**
+   Run the migration script:
+   ```powershell
+   ./backend/migrate-db.ps1
+   ```
 
-## ✅ Testing & Quality
+---
 
-Board Game Hub maintains mission-critical stability through a standardized testing methodology:
-- **Comprehensive Testing**: All features are validated with .NET unit tests (Backend) and Karma/Jasmine specs (Frontend). See our [.agent/workflows/testing-workflow.md](.agent/workflows/testing-workflow.md) for full standards.
-- **SonarCloud Monorepo Analysis**: We utilize a **Unified Monorepo Architecture** via `dotnet-sonarscanner`. This ensures accurate Roslyn-based analysis for C# and single-pane-of-glass coverage reports. *Note: Automatic Analysis in SonarCloud must remain disabled to prevent scanning conflicts.*
-- **Peer Review**: Every significant change undergoes a senior-level code and UX audit.
-- **Future Ready**: We are currently preparing for additional E2E coverage via Playwright.
+## Usage
 
-## 🤝 Contributing
+### Development Startup
 
-We welcome contributions of all kinds! Whether you want to add a new game, improve the platform core, or polish the UX, we'd love to have you.
+To run the full development environment with hot reloading (opens backend and frontend hot reload windows):
+```powershell
+./dev-start-dev.ps1
+```
 
-- **Human-only?** No problem. Please ensure you maintain a manual work trace in `docs/traces/` for your feature branch.
-- **Using AI?** We have established AI workflows in `.agent/workflows` to help you move faster. Mandatory tracking and testing standards apply to all AI-assisted work.
+Or start components individually:
+- **Backend**: `dotnet watch run --project backend/BoardGameHub.Api`
+- **Frontend**: `npm --prefix frontend start`
+
+### Testing
+
+Board Game Hub maintains stability through a standardized testing methodology:
+- **Backend**: Run all backend tests:
+  ```bash
+  dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj
+  ```
+- **Frontend Unit**: Run frontend unit tests (Karma):
+  ```bash
+  npm --prefix frontend test
+  ```
+- **Frontend E2E**: Run Playwright E2E game tests:
+  ```bash
+  npm --prefix frontend run test:babble
+  ```
+
+For full details, see the [.agent/workflows/testing-workflow.md](.agent/workflows/testing-workflow.md).
+
+---
+
+## Contributing
+
+We welcome contributions of all kinds! Whether you want to add a new game, improve the platform core, or polish the UX.
 
 Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for developer workflow standards and legal terms.
 
-## ⚖️ License
+- **Using AI?** We have established AI workflows in `.agent/workflows` to help you move faster. Mandatory tracking and testing standards apply to all AI-assisted work (e.g. maintain a manual work trace in `docs/traces/` for your feature branch).
 
-This project is **Source-Available and Proprietary**. You are free to view and contribute to the source code, but commercial use is restricted. See [CONTRIBUTING.md](file:///c:/Programming/board%20game%20hub/CONTRIBUTING.md) for details.
+---
 
+## License
+
+Proprietary / Source-Available. You are free to view and contribute to the source code, but commercial use is restricted. See [CONTRIBUTING.md](file:///c:/Programming/board%20game%20hub/CONTRIBUTING.md) for details.
