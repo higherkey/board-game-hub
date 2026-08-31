@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build -- --configuration=production
 
 # Stage 2: Build the .NET backend
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
 WORKDIR /app
 COPY backend/BoardGameHub.Api/BoardGameHub.Api.csproj ./BoardGameHub.Api/
 RUN dotnet restore BoardGameHub.Api/BoardGameHub.Api.csproj
@@ -17,7 +17,7 @@ COPY --from=frontend-build /app/frontend/dist/frontend/browser ./BoardGameHub.Ap
 RUN dotnet publish BoardGameHub.Api/BoardGameHub.Api.csproj -c Release -o out
 
 # Stage 3: Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=backend-build /app/out .
 USER app

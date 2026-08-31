@@ -5,7 +5,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 ## Repository overview
 - Monorepo with:
   - `frontend/`: Angular app (standalone components) for gameplay UI, lobby/social/admin pages, and SignalR/WebRTC client flows.
-  - `backend/`: ASP.NET Core 8 API + SignalR hubs + in-memory room/game orchestration + EF Core/Postgres persistence.
+  - `backend/`: ASP.NET Core 10 API + SignalR hubs + in-memory room/game orchestration + EF Core/Postgres persistence.
 - Local database dependencies are defined in `docker-compose.yml` (`postgres`, `pgadmin`).
 
 ## Common development commands
