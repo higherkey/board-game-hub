@@ -36,7 +36,6 @@ export const routes: Routes = [
             { path: 'terms-of-service', loadComponent: () => import('./features/pages/terms-of-service/terms-of-service').then(m => m.TermsOfService), title: 'Terms of Service' },
             { path: 'data-privacy', loadComponent: () => import('./features/pages/data-privacy/data-privacy').then(m => m.DataPrivacy), title: 'Data Privacy' },
             { path: 'game/:code', component: GameRoomComponent, title: 'Game Room' },
-            { path: 'video-popout/:code', loadComponent: () => import('./features/game-room/components/video-chat/video-popout/video-popout.component').then(m => m.VideoPopoutComponent), title: 'Video Chat' },
             { path: 'not-found', component: NotFoundComponent, title: '404 - Page Not Found' }
         ]
     },

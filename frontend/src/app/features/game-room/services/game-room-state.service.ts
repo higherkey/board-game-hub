@@ -174,7 +174,12 @@ export class GameRoomStateService {
         return true;
       } else {
         this.logger.info(`User submitting entry to join room: ${roomCode}`);
-        await this.signalRService.joinRoom(roomCode, entryData.name, isScreen);
+        const success = await this.signalRService.joinRoom(roomCode, entryData.name, isScreen);
+        if (!success) {
+          this.toastService.showError(`Room "${roomCode}" not found or no longer active.`);
+          this.router.navigate(['/play']);
+          return false;
+        }
         return true;
       }
     } catch (err) {

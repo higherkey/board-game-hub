@@ -4,8 +4,17 @@ on:
   push:
     branches:
       - main
+      - dev
     paths:
       - 'frontend/**'
+      - '.github/workflows/frontend-deploy.yml'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:
 
 jobs:
@@ -29,7 +38,12 @@ jobs:
         run: npm ci
 
       - name: Build Application
-        run: npm run build --configuration=production
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ] && [ "${{ github.event_name }}" = "push" ]; then
+            npm run build -- --configuration=production
+          else
+            npm run build -- --configuration=development
+          fi
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v42
@@ -38,4 +52,5 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: frontend
-          vercel-args: '--prod'
+          vercel-args: ${{ github.ref_name == 'main' && github.event_name == 'push' && '--prod' || '' }}
+          github-comment: true

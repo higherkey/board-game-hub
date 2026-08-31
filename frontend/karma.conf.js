@@ -27,10 +27,11 @@ module.exports = function karmaConfig(config) {
             reporters: [
                 { type: 'html' },
                 { type: 'text-summary' },
-                { type: 'lcovonly' }
+                { type: 'lcov', subdir: '.' },
+                { type: 'lcovonly', subdir: '.', file: 'lcov.info' }
             ]
         },
-        reporters: ['progress', 'kjhtml'],
+        reporters: ['progress', 'kjhtml', 'coverage'],
         browsers: ['Chrome', 'ChromeHeadless'],
         restartOnFileChange: true,
         customLaunchers: {
