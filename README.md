@@ -3,7 +3,8 @@
 > Connecting people and making them feel as close as possible no matter where they are in the world.
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/richardlitt/standard-readme)
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=flat-square)](https://board-game-hub-alpha.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo%20(Prod)-brightgreen?style=flat-square)](https://board-game-hub-alpha.vercel.app/)
+[![Dev Preview](https://img.shields.io/badge/Dev%20Preview-blue?style=flat-square)](https://board-game-hub-dev.vercel.app/)
 [![Backend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml)
 [![Frontend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/frontend-deploy.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/frontend-deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
@@ -16,9 +17,18 @@
 
 Board Game Hub is a multiplayer board game platform created by [eight1five design](https://eight1fivedesign.com). Designed for "Table" (shared screen) and "Hand" (personal device) gameplay, its mission is to bring people together and make them feel right in the same room — no matter where they are in the world.
 
+### 🌐 Deployments & Environments
+
+| Environment | Frontend (Vercel) | Backend API (Render) | Database (Supabase) | Branch Trigger |
+|---|---|---|---|---|
+| **Production** | [board-game-hub-alpha.vercel.app](https://board-game-hub-alpha.vercel.app/) | `https://board-game-hub-api.onrender.com` | Supabase (Prod) | `main` |
+| **Development** | [board-game-hub-dev.vercel.app](https://board-game-hub-dev.vercel.app/) | `https://board-game-hub-api-dev.onrender.com` | Supabase (Dev) | `dev` |
+| **PR Previews** | Dynamic PR preview comments | Dynamic PR previews (Render Blueprint) | Ephemeral / Branch | `pull_request` |
+
 ## Table of Contents
 
 - [Background](#background)
+- [Deployments & Environments](#-deployments--environments)
 - [Install](#install)
 - [Usage](#usage)
 - [Contributing](#contributing)
