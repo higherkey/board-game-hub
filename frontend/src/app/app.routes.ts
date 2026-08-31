@@ -35,6 +35,7 @@ export const routes: Routes = [
             { path: 'privacy-policy', loadComponent: () => import('./features/pages/privacy-policy/privacy-policy').then(m => m.PrivacyPolicy), title: 'Privacy Policy' },
             { path: 'terms-of-service', loadComponent: () => import('./features/pages/terms-of-service/terms-of-service').then(m => m.TermsOfService), title: 'Terms of Service' },
             { path: 'data-privacy', loadComponent: () => import('./features/pages/data-privacy/data-privacy').then(m => m.DataPrivacy), title: 'Data Privacy' },
+            { path: 'news', loadComponent: () => import('./features/pages/news-page/news.component').then(m => m.NewsComponent), title: 'What\'s New' },
             { path: 'game/:code', component: GameRoomComponent, title: 'Game Room' },
             { path: 'not-found', component: NotFoundComponent, title: '404 - Page Not Found' }
         ]

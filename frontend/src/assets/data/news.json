@@ -1,0 +1,34 @@
+[
+  {
+    "version": "v0.24.0",
+    "date": "2026-08-31",
+    "title": "Platform Engine Modernization & Performance Boost",
+    "badge": "Performance & Architecture",
+    "highlights": [
+      "Upgraded core backend platform to .NET 10 LTS for blazing-fast response times and minimal server overhead.",
+      "Synchronized frontend Angular framework to v21.2.22 for silky-smooth client rendering.",
+      "Overhauled real-time room synchronization to an event-driven push architecture, delivering instantaneous action broadcasts with zero lag.",
+      "Eliminated reflection bottlenecks in real-time game state delivery for high-concurrency multiplayer sessions."
+    ]
+  },
+  {
+    "version": "v0.23.0",
+    "date": "2026-08-15",
+    "title": "End-to-End Real-Time Multiplayer Test Suite",
+    "badge": "Quality & Stability",
+    "highlights": [
+      "Added multi-client browser testing to guarantee connection reliability across all devices.",
+      "Hardened room lifecycle, lobby joins, and game transitions under concurrent load."
+    ]
+  },
+  {
+    "version": "v0.22.0",
+    "date": "2026-08-01",
+    "title": "Clover-Minded Experience & UI Polish",
+    "badge": "Game Updates",
+    "highlights": [
+      "Enhanced So Clover (Clover-Minded) card rotation and submission mechanics.",
+      "Refined mobile phone touch controls and responsive layouts for party play."
+    ]
+  }
+]
