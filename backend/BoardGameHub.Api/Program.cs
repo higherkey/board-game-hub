@@ -152,7 +152,7 @@ builder.Services.AddCors(options =>
         policy.SetIsOriginAllowed(origin => 
             origin.StartsWith("http://localhost:") || 
             origin.EndsWith(".vercel.app") ||
-            origin.EndsWith(".azurecontainerapps.io") ||
+            origin.EndsWith(".onrender.com") ||
             origin.EndsWith(".pages.dev") ||
             origin.EndsWith(".eight1fivedesign.com")
         )

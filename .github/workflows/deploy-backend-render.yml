@@ -1,0 +1,87 @@
+﻿name: Deploy Backend to Render
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'backend/**'
+      - 'render.yaml'
+      - '.github/workflows/deploy-backend-render.yml'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'backend/**'
+      - 'render.yaml'
+      - '.github/workflows/deploy-backend-render.yml'
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    name: Backend Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore backend/BoardGameHub.sln
+
+      - name: Build Backend
+        run: dotnet build backend/BoardGameHub.sln --no-restore -c Release
+
+      - name: Run Backend Tests
+        run: dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj --no-build -c Release
+
+  deploy:
+    name: Apply Migrations & Deploy
+    needs: test-and-build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Determine Target Environment & DB Connection
+        id: determine_env
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}" >> "$GITHUB_OUTPUT"
+            echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_PROD }}" >> "$GITHUB_OUTPUT"
+            echo "env_name=production" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_name }}" = "dev" ]; then
+            echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}" >> "$GITHUB_OUTPUT"
+            echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_DEV }}" >> "$GITHUB_OUTPUT"
+            echo "env_name=development" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch '${{ github.ref_name }}' is not configured for automatic deployment."
+            exit 1
+          fi
+
+      - name: Apply Database Migrations
+        if: steps.determine_env.outputs.db_connection != ''
+        run: |
+          dotnet ef migrations bundle --project backend/BoardGameHub.Api --force
+          chmod +x ./efbundle
+          ./efbundle --connection "${{ steps.determine_env.outputs.db_connection }}"
+
+      - name: Trigger Render Deploy Hook
+        if: steps.determine_env.outputs.deploy_hook != ''
+        run: |
+          curl -s -X POST "${{ steps.determine_env.outputs.deploy_hook }}"
