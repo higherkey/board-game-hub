@@ -34,11 +34,24 @@ public class GameStateManagerTests
         _manager = new GameStateManager(_mockHubContext.Object, _diffService, _mockLogger.Object);
     }
 
-    private async Task InvokeGameTickAsync()
+    private async Task InvokeGameTickAsync(string roomCode = "")
     {
-        var method = typeof(GameStateManager).GetMethod("GameTick", BindingFlags.NonPublic | BindingFlags.Instance);
-        var task = (Task)method!.Invoke(_manager, null)!;
-        await task;
+        if (!string.IsNullOrEmpty(roomCode))
+        {
+            await _manager.ProcessRoomUpdateAsync(roomCode);
+        }
+        else
+        {
+            // If no room code provided, process any tracked rooms
+            var activeRoomsField = typeof(GameStateManager).GetField("_activeRooms", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (activeRoomsField?.GetValue(_manager) is System.Collections.Concurrent.ConcurrentDictionary<string, Room> activeRooms)
+            {
+                foreach (var code in activeRooms.Keys)
+                {
+                    await _manager.ProcessRoomUpdateAsync(code);
+                }
+            }
+        }
     }
 
     [Fact]
