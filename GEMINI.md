@@ -6,7 +6,7 @@ This file defines the core architectural principles, development workflows, and 
 
 Board Game Hub is a monorepo consisting of an ASP.NET Core backend and an Angular frontend, designed for "Table" (Shared Screen) and "Hand" (Private Device) gameplay.
 
-- **Backend (`/backend`):** ASP.NET Core 8, SignalR for real-time orchestration, EF Core with PostgreSQL.
+- **Backend (`/backend`):** ASP.NET Core 10, SignalR for real-time orchestration, EF Core with PostgreSQL.
 - **Frontend (`/frontend`):** Angular (Standalone Components). Uses a `GameType` registry to route between Table and Hand views.
 - **Real-time Engine:** `RoomService` and `GameStateManager` manage in-memory game state and broadcast partial diffs (`RoomStatePatch`) every 50ms.
 - **Game Plugin Model:** New games must implement `IGameService` (backend) and be registered in `game.registry.ts` (frontend).

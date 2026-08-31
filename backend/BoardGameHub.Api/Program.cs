@@ -141,9 +141,8 @@ builder.Services.AddSingleton<GameStateManager>();
 builder.Services.AddScoped<ISocialService, SocialService>();
 builder.Services.AddScoped<IGameHistoryService, GameHistoryService>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Configure OpenAPI (.NET 10)
+builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
 {
@@ -171,8 +170,7 @@ gameStateManager.StartGameLoop();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 }
 
 // Initialize database: Seed roles and admin user (Migrations are managed out-of-band)

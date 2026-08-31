@@ -12,11 +12,16 @@ public class TestBase : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            // Remove the existing DbContext registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+            // Remove all existing DbContext and EF provider registrations
+            var efDescriptors = services.Where(d => 
+                d.ServiceType == typeof(DbContextOptions<AppDbContext>) ||
+                d.ServiceType == typeof(DbContextOptions) ||
+                d.ServiceType == typeof(AppDbContext) ||
+                d.ServiceType.Namespace?.StartsWith("Microsoft.EntityFrameworkCore") == true ||
+                d.ServiceType.Namespace?.StartsWith("Npgsql") == true
+            ).ToList();
 
-            if (descriptor != null)
+            foreach (var descriptor in efDescriptors)
             {
                 services.Remove(descriptor);
             }
