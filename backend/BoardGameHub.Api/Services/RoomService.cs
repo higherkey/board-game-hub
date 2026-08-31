@@ -171,7 +171,8 @@ public class RoomService : IRoomService
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room))
         {
-            _logger.LogWarning("Player {Player} failed to join room {Code}: Room not found", playerName, code);
+            var sanitizedPlayerName = (playerName ?? string.Empty).Replace("\r", string.Empty).Replace("\n", " ");
+            _logger.LogWarning("Player {Player} failed to join room {Code}: Room not found", sanitizedPlayerName, code);
             return null;
         }
 

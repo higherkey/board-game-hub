@@ -24,24 +24,26 @@ public class ClientLoggingController : ControllerBase
     [HttpPost]
     public IActionResult PostLog([FromBody] LogEntry entry)
     {
-        switch (entry.Level.ToUpper())
+        var sanitizedMessage = (entry.Message ?? string.Empty).Replace("\r", string.Empty).Replace("\n", " ");
+
+        switch (entry.Level?.ToUpperInvariant())
         {
             case "DEBUG":
-                _logger.LogDebug("{ClientMessage} | Data: {@Data}", entry.Message, entry.Data);
+                _logger.LogDebug("{ClientMessage} | Data: {@Data}", sanitizedMessage, entry.Data);
                 break;
             case "INFO":
             case "INFORMATION":
-                _logger.LogInformation("{ClientMessage} | Data: {@Data}", entry.Message, entry.Data);
+                _logger.LogInformation("{ClientMessage} | Data: {@Data}", sanitizedMessage, entry.Data);
                 break;
             case "WARN":
             case "WARNING":
-                _logger.LogWarning("{ClientMessage} | Data: {@Data}", entry.Message, entry.Data);
+                _logger.LogWarning("{ClientMessage} | Data: {@Data}", sanitizedMessage, entry.Data);
                 break;
             case "ERROR":
-                _logger.LogError("{ClientMessage} | Data: {@Data}", entry.Message, entry.Data);
+                _logger.LogError("{ClientMessage} | Data: {@Data}", sanitizedMessage, entry.Data);
                 break;
             default:
-                _logger.LogInformation("{ClientMessage} | Data: {@Data}", entry.Message, entry.Data);
+                _logger.LogInformation("{ClientMessage} | Data: {@Data}", sanitizedMessage, entry.Data);
                 break;
         }
 

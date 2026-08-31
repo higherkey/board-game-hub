@@ -1,5 +1,8 @@
 name: Keep Supabase Alive
 
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: '30 5 * * *' # Run daily at a random-ish time (5:30 AM)

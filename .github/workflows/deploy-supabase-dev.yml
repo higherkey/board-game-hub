@@ -1,5 +1,8 @@
 name: Deploy to Supabase Dev
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:

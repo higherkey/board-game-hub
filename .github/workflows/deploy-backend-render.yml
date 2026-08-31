@@ -1,5 +1,8 @@
 name: Deploy Backend to Render
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
