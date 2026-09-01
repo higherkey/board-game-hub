@@ -1,83 +1,105 @@
-<div class="h-full bg-gray-100 dark:bg-gray-800 p-4 overflow-y-auto">
+<div class="h-100 bg-surface-2 p-3 p-md-4 overflow-y-auto d-flex flex-column">
+    <!-- Host Admin Controls (Visible when Hand player is also Host) -->
+    <div *ngIf="isHost && !isResult" class="card shadow-sm border-0 mb-3 bg-surface-3">
+        <div class="card-body p-2 px-3 d-flex justify-content-between align-items-center">
+            <span class="badge bg-primary text-uppercase small">Host Controls</span>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-warning shadow-sm" *ngIf="!room.isPaused" (click)="pauseGame()" title="Pause Game" aria-label="Pause Game">
+                    <i class="bi bi-pause-fill"></i> Pause
+                </button>
+                <button class="btn btn-sm btn-success shadow-sm" *ngIf="room.isPaused" (click)="resumeGame()" title="Resume Game" aria-label="Resume Game">
+                    <i class="bi bi-play-fill"></i> Resume
+                </button>
+                <button class="btn btn-sm btn-danger shadow-sm" (click)="endRound()" title="End Round" aria-label="End Round">
+                    <i class="bi bi-skip-end-fill"></i> End Round
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Phase: Writing -->
-    <div *ngIf="isWriting" class="flex flex-col gap-6 max-w-md mx-auto">
-        <h2 class="text-2xl font-bold dark:text-white text-center">Your Prompts</h2>
+    <div *ngIf="isWriting" class="d-flex flex-column gap-4 max-w-md mx-auto w-100 flex-grow-1 justify-content-center">
+        <h2 class="h3 fw-bold text-center text-primary mb-2">Your Prompts</h2>
 
         <div *ngFor="let assignment of myAssignments; let i = index"
-            class="bg-white dark:bg-gray-700 p-4 rounded shadow">
-            <p class="font-bold text-lg mb-2 dark:text-gray-200">
+            class="card shadow-sm border-0 bg-surface-3 p-4 rounded-4">
+            <p class="h5 fw-bold mb-3 text-light">
                 {{assignment.text}}
             </p>
             <div *ngIf="!hasAnswered(assignment.promptId); else answeredTemplate">
                 <textarea [(ngModel)]="inputs[assignment.promptId]" rows="3"
-                    class="w-full p-2 border rounded dark:bg-gray-900 dark:text-white dark:border-gray-600 mb-2"
-                    placeholder="Type something funny...">
-            </textarea>
+                    class="form-control form-control-lg bg-surface border-0 text-white mb-3"
+                    placeholder="Type something funny..."
+                    aria-label="Your response to prompt">
+                </textarea>
                 <button (click)="submitAnswer(assignment.promptId)" [disabled]="!inputs[assignment.promptId]"
-                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded">
-                    Submit
+                    class="btn btn-primary btn-lg w-100 fw-bold py-3">
+                    Submit Answer
                 </button>
             </div>
             <ng-template #answeredTemplate>
-                <div class="text-green-600 dark:text-green-400 font-bold flex items-center gap-2">
-                    <span>✓ Submitted</span>
+                <div class="text-success fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Submitted</span>
                 </div>
-                <p class="text-gray-500 italic mt-1">{{inputs[assignment.promptId]}}</p>
+                <p class="text-muted fst-italic mt-2 mb-0">"{{inputs[assignment.promptId]}}"</p>
             </ng-template>
         </div>
 
-        <div *ngIf="myAssignments.length === 0" class="text-center text-gray-500">
-            No prompts assigned (Waiting...)
+        <div *ngIf="myAssignments.length === 0" class="alert alert-info text-center">
+            No prompts assigned (Waiting for other players...)
         </div>
 
-        <div *ngIf="allAnswered" class="text-center text-purple-500 font-bold animate-pulse mt-4">
-            All done! Waiting for others...
+        <div *ngIf="allAnswered" class="alert alert-success text-center fw-bold mt-3">
+            <i class="bi bi-clock-history me-2"></i> All done! Waiting for others to finish...
         </div>
     </div>
 
     <!-- Phase: Battling -->
-    <div *ngIf="isBattling" class="flex flex-col items-center justify-center h-full gap-6">
-        <div *ngIf="!canVote" class="text-center">
-            <h3 class="text-xl dark:text-white mb-2">You are in this battle!</h3>
-            <p class="text-gray-500">Hope people vote for you.</p>
+    <div *ngIf="isBattling" class="d-flex flex-column align-items-center justify-content-center flex-grow-1 gap-4">
+        <div *ngIf="!canVote" class="text-center p-4">
+            <i class="bi bi-fire text-warning fs-1 mb-2 d-block"></i>
+            <h3 class="h4 fw-bold text-light mb-2">You are in this battle!</h3>
+            <p class="text-muted">Cheer on your joke on the main screen.</p>
         </div>
 
-        <div *ngIf="canVote" class="w-full max-w-sm flex flex-col gap-4">
-            <h2 class="text-2xl font-bold dark:text-white text-center mb-4">Vote!</h2>
+        <div *ngIf="canVote" class="w-100 max-w-sm d-flex flex-column gap-3">
+            <h2 class="h3 fw-bold text-primary text-center mb-3">Cast Your Vote!</h2>
 
             <button (click)="vote(0)"
-                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 px-4 rounded-xl text-xl transition-transform active:scale-95 shadow-lg relative overflow-hidden"
-                [disabled]="hasVoted">
-                <span class="relative z-10">Vote Left</span>
+                class="btn btn-primary btn-lg py-4 px-3 rounded-4 fs-4 fw-bold shadow position-relative"
+                [disabled]="hasVoted"
+                aria-label="Vote Left Option">
+                <span>Vote Left</span>
                 <div *ngIf="hasVoted && votedChoice === 0"
-                    class="absolute inset-0 bg-white/20 flex items-center justify-center">
-                    ✓
+                    class="position-absolute top-50 start-50 translate-middle">
+                    <i class="bi bi-check-circle-fill fs-2"></i>
                 </div>
             </button>
 
-            <div class="text-center dark:text-gray-400 font-bold">VS</div>
+            <div class="text-center text-muted fw-bold text-uppercase fs-5 my-1">VS</div>
 
             <button (click)="vote(1)"
-                class="bg-red-600 hover:bg-red-700 text-white font-bold py-6 px-4 rounded-xl text-xl transition-transform active:scale-95 shadow-lg relative overflow-hidden"
-                [disabled]="hasVoted">
-                <span class="relative z-10">Vote Right</span>
+                class="btn btn-danger btn-lg py-4 px-3 rounded-4 fs-4 fw-bold shadow position-relative"
+                [disabled]="hasVoted"
+                aria-label="Vote Right Option">
+                <span>Vote Right</span>
                 <div *ngIf="hasVoted && votedChoice === 1"
-                    class="absolute inset-0 bg-white/20 flex items-center justify-center">
-                    ✓
+                    class="position-absolute top-50 start-50 translate-middle">
+                    <i class="bi bi-check-circle-fill fs-2"></i>
                 </div>
             </button>
 
-            <div *ngIf="hasVoted" class="text-center mt-4 text-green-500 font-bold">
-                Vote Cast!
+            <div *ngIf="hasVoted" class="alert alert-success text-center fw-bold py-2 mt-2">
+                <i class="bi bi-check-circle-fill me-1"></i> Vote Cast!
             </div>
         </div>
     </div>
 
     <!-- Phase: Result -->
-    <div *ngIf="isResult" class="flex flex-col items-center justify-center h-full text-center">
-        <h2 class="text-3xl font-bold dark:text-white">Game Over</h2>
-        <p class="dark:text-gray-300">Check the main screen for results!</p>
+    <div *ngIf="isResult" class="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center p-4">
+        <i class="bi bi-trophy-fill text-warning fs-1 mb-3"></i>
+        <h2 class="h3 fw-bold text-primary mb-2">Round Finished</h2>
+        <p class="text-muted">Check the Table screen for the results!</p>
     </div>
-
 </div>

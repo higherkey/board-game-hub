@@ -1,4 +1,21 @@
-<div class="h-100 d-flex flex-column text-center">
+<div class="h-100 d-flex flex-column text-center p-3">
+    <!-- Host Admin Controls (Visible when Hand player is also Host) -->
+    <div *ngIf="isHost && gameData?.phase !== 2" class="card shadow-sm border-0 mb-3 bg-surface-3">
+        <div class="card-body p-2 d-flex justify-content-between align-items-center">
+            <span class="badge bg-primary text-uppercase small">Host Controls</span>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-warning shadow-sm" *ngIf="!room?.isPaused" (click)="pauseGame()" title="Pause Game">
+                    <i class="bi bi-pause-fill"></i> Pause
+                </button>
+                <button class="btn btn-sm btn-success shadow-sm" *ngIf="room?.isPaused" (click)="resumeGame()" title="Resume Game">
+                    <i class="bi bi-play-fill"></i> Resume
+                </button>
+                <button class="btn btn-sm btn-danger shadow-sm" (click)="endRound()" title="End Round">
+                    <i class="bi bi-skip-end-fill"></i> End Round
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Phase: Faking -->
     <div *ngIf="gameData?.phase === 0" class="flex-grow-1 d-flex flex-column justify-content-center">
@@ -10,9 +27,9 @@
             <div *ngIf="gameData?.dasherId !== myConnectionId; else dasherFaking">
                 <p class="lead mb-3">Write a fake definition that sounds real!</p>
                 <div class="form-group mb-4">
-                    <textarea class="form-control form-control-lg bg-surface border-0 shadow-inner text-white" rows="4"
+                    <textarea class="form-control form-control-lg bg-surface border-0 shadow-inner text-white no-resize" rows="4"
                         [(ngModel)]="definition" placeholder="e.g. A type of small crustacean found in..."
-                        [disabled]="isSubmitting" style="resize: none;">
+                        [disabled]="isSubmitting" aria-label="Fake definition input">
                     </textarea>
                 </div>
 

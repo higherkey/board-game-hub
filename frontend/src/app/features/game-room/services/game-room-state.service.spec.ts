@@ -38,8 +38,8 @@ describe('GameRoomStateService', () => {
     signalRMock = {
       players$: new BehaviorSubject<Player[]>(mockRoom.players),
       connectionStatus$: new BehaviorSubject<string>('Connected'),
-      currentRoomSubject: new BehaviorSubject<Room | null>(mockRoom),
-      currentRoom$: new BehaviorSubject<Room | null>(mockRoom),
+      currentRoomSubject: new BehaviorSubject<Room | null>(null),
+      currentRoom$: new BehaviorSubject<Room | null>(null),
       me$: of(mockRoom.players[0]),
       connectionId$: new BehaviorSubject<string | null>('my-id'),
       isHost$: new BehaviorSubject<boolean>(true),
@@ -198,9 +198,49 @@ describe('GameRoomStateService', () => {
   });
 
   describe('State Syncing', () => {
-    it('should select host component for host view', (done) => {
-      service.isScreen = true;
-      // Skip the initial null emission and capture the first valid component emission
+    it('should select tableComponent when isScreen is true', (done) => {
+      const roomWithHandGame: Room = {
+        ...mockRoom,
+        gameType: 'CloverMinded',
+        players: [{ connectionId: 'my-id', name: 'Tester', isHost: true, isReady: false, isScreen: true, score: 0 }]
+      };
+
+      service.gameComponent$.pipe(
+        filter((c: any) => !!c),
+        take(1)
+      ).subscribe(comp => {
+        expect(comp).toBeTruthy();
+        expect(comp.name).toContain('Table');
+        done();
+      });
+      signalRMock.currentRoom$.next(roomWithHandGame);
+    });
+
+    it('should select handComponent when isScreen is false and handComponent is defined', (done) => {
+      const roomWithHandGame: Room = {
+        ...mockRoom,
+        gameType: 'CloverMinded',
+        players: [{ connectionId: 'my-id', name: 'Tester', isHost: true, isReady: false, isScreen: false, score: 0 }]
+      };
+
+      service.gameComponent$.pipe(
+        filter((c: any) => !!c),
+        take(1)
+      ).subscribe(comp => {
+        expect(comp).toBeTruthy();
+        expect(comp.name).toContain('Hand');
+        done();
+      });
+      signalRMock.currentRoom$.next(roomWithHandGame);
+    });
+
+    it('should fallback to tableComponent when isScreen is false and handComponent is undefined', (done) => {
+      const roomWithSingleComp: Room = {
+        ...mockRoom,
+        gameType: 'Babble',
+        players: [{ connectionId: 'my-id', name: 'Tester', isHost: true, isReady: false, isScreen: false, score: 0 }]
+      };
+
       service.gameComponent$.pipe(
         filter((c: any) => !!c),
         take(1)
@@ -208,7 +248,7 @@ describe('GameRoomStateService', () => {
         expect(comp).toBeTruthy();
         done();
       });
-      signalRMock.currentRoom$.next(mockRoom);
+      signalRMock.currentRoom$.next(roomWithSingleComp);
     });
   });
 });
