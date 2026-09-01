@@ -114,8 +114,9 @@ builder.Services.AddSingleton<IRoomService, RoomService>();
 builder.Services.AddSingleton<IBabbleService, BabbleService>();
 builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
 builder.Services.AddSingleton<IDictionaryService, DictionaryService>();
-builder.Services.AddSingleton<DeepfakeGameService>();
 // Register Game Services
+builder.Services.AddSingleton<IGameService, DeepfakeGameService>();
+builder.Services.AddSingleton<DeepfakeGameService>(sp => (DeepfakeGameService)sp.GetServices<IGameService>().First(s => s is DeepfakeGameService));
 builder.Services.AddSingleton<IGameService, ScatterbrainGameService>();
 builder.Services.AddSingleton<IGameService, BabbleGameService>();
 builder.Services.AddSingleton<IGameService, OneAndOnlyService>();
@@ -137,6 +138,7 @@ builder.Services.AddSingleton<IGameService, FarkleService>();
 builder.Services.AddSingleton<StateDiffService>();
 builder.Services.AddSingleton<GameStateManager>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GameStateManager>());
+builder.Services.AddSingleton<IRoomStateSerializer, RoomStateSerializer>();
 
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<ISocialService, SocialService>();

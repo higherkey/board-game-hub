@@ -28,7 +28,7 @@ public class BabbleResult
     public int Points { get; set; }
 }
 
-public class BabbleGameService : IGameService
+public class BabbleGameService : BaseGameService<BabbleState>
 {
     private readonly IBabbleService _babbleService;
     private readonly IDictionaryService _dictionaryService;
@@ -41,9 +41,9 @@ public class BabbleGameService : IGameService
         _logger = logger;
     }
 
-    public GameType GameType => GameType.Babble;
+    public override GameType GameType => GameType.Babble;
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Babble round in room {Code}", room.Code);
         var state = new BabbleState
@@ -58,7 +58,7 @@ public class BabbleGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null) return Task.CompletedTask;
 
@@ -190,7 +190,7 @@ public class BabbleGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "SUBMIT_ANSWERS" && action.Payload.HasValue)
         {
@@ -250,23 +250,9 @@ public class BabbleGameService : IGameService
         }
         return false;
     }
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
-    }
-
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        try 
-        {
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, IncludeFields = true };
-            return json.Deserialize<BabbleState>(options) ?? new BabbleState();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deserializing BabbleState: {ex.Message}");
-            return new BabbleState();
-        }
     }
 }

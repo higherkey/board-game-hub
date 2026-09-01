@@ -3,17 +3,17 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
-public class UniversalTranslatorService : IGameService
+public class UniversalTranslatorService : BaseGameService<UniversalTranslatorState>
 {
     private readonly ILogger<UniversalTranslatorService> _logger;
-    public GameType GameType => GameType.UniversalTranslator;
+    public override GameType GameType => GameType.UniversalTranslator;
 
     public UniversalTranslatorService(ILogger<UniversalTranslatorService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Universal Translator round in room {Code}", room.Code);
         var state = new UniversalTranslatorState();
@@ -94,7 +94,7 @@ public class UniversalTranslatorService : IGameService
         return Task.FromResult(true);
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         // Scores are binary: Crew Win vs J Win.
         // Usually handled at game end moment. 
@@ -248,7 +248,7 @@ public class UniversalTranslatorService : IGameService
         }
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room == null || action == null) return false;
 
@@ -287,14 +287,9 @@ public class UniversalTranslatorService : IGameService
         return false;
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
-    }
-
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        return json.Deserialize<UniversalTranslatorState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new UniversalTranslatorState();
     }
 }

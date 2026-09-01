@@ -40,10 +40,10 @@ public enum DeepfakePhase
     Results
 }
 
-public class DeepfakeGameService : IGameService
+public class DeepfakeGameService : BaseGameService<DeepfakeState>
 {
     private readonly ILogger<DeepfakeGameService> _logger;
-    public GameType GameType => GameType.Deepfake;
+    public override GameType GameType => GameType.Deepfake;
 
     public DeepfakeGameService(ILogger<DeepfakeGameService> logger)
     {
@@ -84,7 +84,7 @@ public class DeepfakeGameService : IGameService
         ("Fantasy", "Castle")
     };
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Deepfake round in room {Code}", room.Code);
         var state = new DeepfakeState();
@@ -105,7 +105,7 @@ public class DeepfakeGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not DeepfakeState state) return Task.CompletedTask;
 
@@ -267,13 +267,13 @@ public class DeepfakeGameService : IGameService
         return true;
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
 
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "SUBMIT_STROKE" && action.Payload.HasValue)
         {
@@ -301,9 +301,5 @@ public class DeepfakeGameService : IGameService
             }
         }
         return Task.FromResult(false);
-    }
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        return json.Deserialize<DeepfakeState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new DeepfakeState();
     }
 }

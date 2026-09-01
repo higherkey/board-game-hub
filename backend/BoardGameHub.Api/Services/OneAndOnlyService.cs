@@ -4,17 +4,17 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
-public class OneAndOnlyService : IGameService
+public class OneAndOnlyService : BaseGameService<OneAndOnlyState>
 {
     private readonly ILogger<OneAndOnlyService> _logger;
-    public GameType GameType => GameType.OneAndOnly;
+    public override GameType GameType => GameType.OneAndOnly;
 
     public OneAndOnlyService(ILogger<OneAndOnlyService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting One and Only round in room {Code}", room.Code);
         // Initialize OneAndOnly State if needed
@@ -28,7 +28,7 @@ public class OneAndOnlyService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not OneAndOnlyState state) return Task.CompletedTask;
 
@@ -148,7 +148,7 @@ public class OneAndOnlyService : IGameService
         return words[new Random().Next(words.Length)];
     }
 
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room == null || action == null) return Task.FromResult(false);
 
@@ -174,15 +174,10 @@ public class OneAndOnlyService : IGameService
         return Task.FromResult(false);
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
-    }
-
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        return json.Deserialize<OneAndOnlyState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new OneAndOnlyState();
     }
 }
 

@@ -6,21 +6,21 @@ using Microsoft.Extensions.Logging;
 namespace BoardGameHub.Api.Services;
 
 /// <summary>Clover-Minded (inspired by So Clover!) — cooperative word association.</summary>
-public class CloverMindedGameService : IGameService
+public class CloverMindedGameService : BaseGameService<CloverMindedState>
 {
     private readonly ILogger<CloverMindedGameService> _logger;
     private readonly Random _rng = new();
     private readonly ConcurrentDictionary<string, Dictionary<string, string[]>> _privateClues = new();
     private readonly ConcurrentDictionary<string, CloverRoundSolution> _roundSolutions = new();
 
-    public GameType GameType => GameType.CloverMinded;
+    public override GameType GameType => GameType.CloverMinded;
 
     public CloverMindedGameService(ILogger<CloverMindedGameService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         room.Settings.CloverAllowPerPlayerSingleCardRotation = settings.CloverAllowPerPlayerSingleCardRotation;
         if (room.Settings.TimerDurationSeconds < 600)
@@ -113,18 +113,18 @@ public class CloverMindedGameService : IGameService
         return pool;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         return Task.CompletedTask;
     }
 
-    public Task EndRound(Room room)
+    public override Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         return Task.CompletedTask;
     }
 
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room.GameData is not CloverMindedState state) return Task.FromResult(false);
 
@@ -420,12 +420,6 @@ public class CloverMindedGameService : IGameService
 
         state.ResolutionAttempt = 1;
         BeginResolutionForCurrentSpectator(room, state);
-    }
-
-    public object DeserializeState(JsonElement json)
-    {
-        return json.Deserialize<CloverMindedState>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-               ?? new CloverMindedState();
     }
 }
 

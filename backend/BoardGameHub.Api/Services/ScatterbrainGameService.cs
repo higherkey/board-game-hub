@@ -38,17 +38,17 @@ public class ScatterbrainState
     public ChallengeState? ActiveChallenge { get; set; }
 }
 
-public class ScatterbrainGameService : IGameService
+public class ScatterbrainGameService : BaseGameService<ScatterbrainState>
 {
     private readonly ILogger<ScatterbrainGameService> _logger;
-    public GameType GameType => GameType.Scatterbrain;
+    public override GameType GameType => GameType.Scatterbrain;
 
     public ScatterbrainGameService(ILogger<ScatterbrainGameService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Scatterbrain round in room {Code}", room.Code);
         // Pick random letter based on mode
@@ -68,7 +68,7 @@ public class ScatterbrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not ScatterbrainState state) return Task.CompletedTask;
 
@@ -150,7 +150,7 @@ public class ScatterbrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room.GameData is not ScatterbrainState state) return false;
 
@@ -280,14 +280,9 @@ public class ScatterbrainGameService : IGameService
         return false;
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
-    }
-
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        return json.Deserialize<ScatterbrainState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new ScatterbrainState();
     }
 }

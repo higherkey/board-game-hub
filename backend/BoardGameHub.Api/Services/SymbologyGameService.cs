@@ -25,10 +25,10 @@ public class SymbologyMarker
     public string Color { get; set; } = "green"; 
 }
 
-public class SymbologyGameService : IGameService
+public class SymbologyGameService : BaseGameService<SymbologyState>
 {
     private readonly ILogger<SymbologyGameService> _logger;
-    public GameType GameType => GameType.Symbology;
+    public override GameType GameType => GameType.Symbology;
 
     public SymbologyGameService(ILogger<SymbologyGameService> logger)
     {
@@ -47,7 +47,7 @@ public class SymbologyGameService : IGameService
         "New York", "Paris", "Tokyo", "London", "Sydney"
     };
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Symbology round in room {Code}", room.Code);
         // 1. Setup State
@@ -71,7 +71,7 @@ public class SymbologyGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not SymbologyState state) return Task.CompletedTask;
 
@@ -163,13 +163,13 @@ public class SymbologyGameService : IGameService
         state.Scores[playerId] += points;
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room == null || action == null) return false;
 
@@ -201,9 +201,5 @@ public class SymbologyGameService : IGameService
              }
         }
         return false;
-    }
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        return json.Deserialize<SymbologyState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new SymbologyState();
     }
 }

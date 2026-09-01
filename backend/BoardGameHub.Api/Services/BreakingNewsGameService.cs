@@ -27,17 +27,17 @@ public class ScriptSlot
     public string LastEditedBy { get; set; } = string.Empty;
 }
 
-public class BreakingNewsGameService : IGameService
+public class BreakingNewsGameService : BaseGameService<BreakingNewsState>
 {
     private readonly ILogger<BreakingNewsGameService> _logger;
-    public GameType GameType => GameType.BreakingNews;
+    public override GameType GameType => GameType.BreakingNews;
 
     public BreakingNewsGameService(ILogger<BreakingNewsGameService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Breaking News round in room {Code}", room.Code);
         var state = new BreakingNewsState();
@@ -83,7 +83,7 @@ public class BreakingNewsGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not BreakingNewsState state) return Task.CompletedTask;
 
@@ -140,13 +140,13 @@ public class BreakingNewsGameService : IGameService
         );
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room == null || action == null) return false;
 
@@ -159,9 +159,5 @@ public class BreakingNewsGameService : IGameService
              }
         }
         return false;
-    }
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        return json.Deserialize<BreakingNewsState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new BreakingNewsState();
     }
 }

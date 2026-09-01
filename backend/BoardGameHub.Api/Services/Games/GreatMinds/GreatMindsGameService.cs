@@ -8,12 +8,12 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services.Games.GreatMinds
 {
-    public class GreatMindsGameService : IGameService
+    public class GreatMindsGameService : BaseGameService<GreatMindsGameState>
     {
         private readonly IHubContext<GameHub> _hubContext;
         private readonly ILogger<GreatMindsGameService> _logger;
 
-        public GameType GameType => GameType.GreatMinds;
+        public override GameType GameType => GameType.GreatMinds;
 
         public GreatMindsGameService(IHubContext<GameHub> hubContext, ILogger<GreatMindsGameService> logger)
         {
@@ -21,7 +21,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             _logger = logger;
         }
 
-        public Task StartRound(Room room, GameSettings settings)
+        public override Task StartRound(Room room, GameSettings settings)
         {
             _logger.LogInformation("Starting Great Minds round in room {Code}", room.Code);
             // 1. Setup State
@@ -40,9 +40,6 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             }
 
             room.GameData = state;
-
-            // 3. Deal Level 1
-            DealCards(room, state);
 
             // 3. Deal Level 1
             DealCards(room, state);
@@ -76,7 +73,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             }
         }
 
-        public Task CalculateScores(Room room)
+        public override Task CalculateScores(Room room)
         {
             // Cooperative, score = Level reached.
             // No explicit end-of-game scoring except "You won/lost".
@@ -238,7 +235,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             return room.GameData as GreatMindsGameState;
         }
 
-        public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+        public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
         {
             if (action.Type == "PLAY_CARD" && action.Payload.HasValue)
             {
@@ -266,15 +263,10 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
             }
             return false;
         }
-        public async Task EndRound(Room room)
+        public override async Task EndRound(Room room)
         {
             room.State = GameState.Finished;
             await CalculateScores(room);
         }
-
-    public object DeserializeState(System.Text.Json.JsonElement json)
-    {
-        return json.Deserialize<GreatMindsGameState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new GreatMindsGameState();
     }
-}
 }
