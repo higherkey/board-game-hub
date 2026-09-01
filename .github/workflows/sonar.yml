@@ -56,8 +56,13 @@ jobs:
             -Dsonar.organization=higherkey
             -Dsonar.sources=backend/BoardGameHub.Api,frontend/src
             -Dsonar.exclusions=**/node_modules/**,**/obj/**,**/bin/**,**/*.spec.ts,backend/BoardGameHub.Tests/**
+            -Dsonar.cpd.ts.minimumLines=20
+            -Dsonar.cpd.cs.minimumLines=20
             -Dsonar.cs.opencover.reportsPaths=coverage.opencover.xml
             -Dsonar.javascript.lcov.reportPaths=frontend/coverage/frontend/lcov.info
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+
+

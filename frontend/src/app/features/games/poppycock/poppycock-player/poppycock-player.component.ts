@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SignalRService } from '../../../../services/signalr.service';
 
 @Component({
     selector: 'app-poppycock-player',
@@ -12,6 +13,10 @@ import { FormsModule } from '@angular/forms';
 export class PoppycockPlayerComponent implements OnChanges {
     @Input() room: any;
     @Input() myConnectionId: string = '';
+    @Input() isHost: boolean = false;
+    @Input() set playerId(v: string) {
+        if (v) this.myConnectionId = v;
+    }
     @Output() definitionSubmitted = new EventEmitter<string>();
     @Output() voteSubmitted = new EventEmitter<string>();
 
@@ -19,25 +24,12 @@ export class PoppycockPlayerComponent implements OnChanges {
     definition: string = '';
     isSubmitting: boolean = false;
 
-    // Local state to track if we've done the action for this phase
-    // Note: Better to derive from Room state if possible, but for input text preservation:
     hasSubmitted: boolean = false;
     hasVoted: boolean = false;
 
-    // Cache same as board for consistency if we want to show options here
-    // IMPORTANT: The shuffling MUST BE CONSISTENT between Board and Player?
-    // Actually, standard Jackbox style: Players just see buttons A, B, C on device, look at TV for text.
-    // OR, for this mobile-first web app, we show text on phone too.
-    // PROBLEM: If we shuffle randomly on client, Player A sees "A" as one text, Player B sees "A" as another.
-    // CRITICAL FIX: Shuffling must be deterministic (seeded by Round ID or something) OR sent by server.
-    // OR, simply show the full text on buttons, order doesn't matter as much, 
-    // BUT we refer to "A", "B", "C". 
-    // IF we want "Vote for A", the order MUST be same.
-    // Solution: Board shuffles? No, Server sends definitions?
-    // Current Backend sends Dictionary. Order is undefined.
-    // QUICK FIX: Sort by Definition ID (PlayerId/REAL) alphabetically. Then it is consistent everywhere.
-
     shuffledDefinitions: any[] = [];
+
+    constructor(private readonly signalRService: SignalRService) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['room']) {
@@ -69,15 +61,30 @@ export class PoppycockPlayerComponent implements OnChanges {
     }
 
     submitDef() {
+        if (!this.definition || this.isSubmitting) return;
         this.isSubmitting = true;
         this.definitionSubmitted.emit(this.definition);
+        this.signalRService.submitPoppycockDefinition(this.definition);
         this.hasSubmitted = true;
     }
 
     submitVote(targetId: string) {
         if (targetId === this.myConnectionId) return; // Prevent self vote
         this.voteSubmitted.emit(targetId);
+        this.signalRService.submitPoppycockVote(targetId);
         this.hasVoted = true;
+    }
+
+    pauseGame() {
+        this.signalRService.pauseGame();
+    }
+
+    resumeGame() {
+        this.signalRService.resumeGame();
+    }
+
+    endRound() {
+        this.signalRService.endRound();
     }
 
     getLetter(index: number): string {

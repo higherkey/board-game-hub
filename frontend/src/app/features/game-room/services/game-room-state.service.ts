@@ -94,12 +94,9 @@ export class GameRoomStateService {
 
     const gameConfig = this.getGameConfig(room.gameType);
     if (gameConfig) {
-      let component;
-      if (gameConfig.playerComponent) {
-        component = isScreen ? gameConfig.hostComponent : gameConfig.playerComponent;
-      } else {
-        component = gameConfig.hostComponent;
-      }
+      const component = isScreen
+        ? gameConfig.tableComponent
+        : (gameConfig.handComponent ?? gameConfig.tableComponent);
       this._gameComponent.next(component);
     } else {
       this._gameComponent.next(null);
