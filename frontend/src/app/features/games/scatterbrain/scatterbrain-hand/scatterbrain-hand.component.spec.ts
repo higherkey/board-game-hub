@@ -58,6 +58,40 @@ describe('ScatterbrainHandComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should map phase numbers and names correctly', () => {
+    component.room.gameData = { phase: 0 };
+    expect(component.phase).toBe('Writing');
+
+    component.room.gameData = { phase: 1 };
+    expect(component.phase).toBe('Validation');
+
+    component.room.gameData = { phase: 2 };
+    expect(component.phase).toBe('Result');
+  });
+
+  it('should re-initialize answers on round change in ngOnChanges', () => {
+    const prevRoom = { ...mockRoom };
+    const nextRoom: Room = {
+      ...mockRoom,
+      roundNumber: 2,
+      gameData: { phase: 0, currentLetter: 'A', categories: ['Car', 'Color'] },
+      playerAnswers: {}
+    };
+
+    component.room = nextRoom;
+    component.ngOnChanges({
+      room: {
+        currentValue: nextRoom,
+        previousValue: prevRoom,
+        firstChange: false,
+        isFirstChange: () => false
+      }
+    });
+
+    expect(component.answers.length).toBe(2);
+    expect(component.answers[0]).toBe('');
+  });
+
   it('should initialize answers from existing player answers if available', () => {
     expect(component.answers.length).toBe(3);
     expect(component.answers[0]).toBe('Seattle');
@@ -68,7 +102,14 @@ describe('ScatterbrainHandComponent', () => {
     expect(signalRMock.submitAnswers).toHaveBeenCalledWith(['Seattle', 'Soup', 'Snake']);
   });
 
-  it('should dispatch voteChallenge via SignalRService', () => {
+  it('should dispatch voteChallenge via SignalRService and check hasVoted', () => {
+    component.room.gameData = {
+      activeChallenge: {
+        votes: { 'p1': true }
+      }
+    };
+    expect(component.hasVoted()).toBeTrue();
+
     component.voteChallenge(true);
     expect(signalRMock.sendGameAction).toHaveBeenCalledWith('VOTE_WORD', { approve: true });
   });
@@ -77,5 +118,11 @@ describe('ScatterbrainHandComponent', () => {
     component.isHost = true;
     component.pauseGame();
     expect(signalRMock.pauseGame).toHaveBeenCalled();
+
+    component.resumeGame();
+    expect(signalRMock.resumeGame).toHaveBeenCalled();
+
+    component.endRound();
+    expect(signalRMock.endRound).toHaveBeenCalled();
   });
 });

@@ -64,6 +64,25 @@ describe('PictophoneHandComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should map phase labels correctly', () => {
+    expect(component.getPhaseLabel('Prompting')).toBe('Write a Prompt');
+    expect(component.getPhaseLabel('Drawing')).toBe('Draw It!');
+    expect(component.getPhaseLabel('Guessing')).toBe('What is this?');
+    expect(component.getPhaseLabel('Reveal')).toBe('Showcase');
+    expect(component.getPhaseLabel('Lobby')).toBe('Lobby');
+  });
+
+  it('should get previous page from current holder book', () => {
+    const bookWithPages = {
+      bookId: 'b1',
+      currentHolderId: 'p1',
+      pages: [{ type: 'prompt', content: 'A happy cat' }]
+    };
+    const state = { books: [bookWithPages] };
+    const prev = component.getPreviousPage(state);
+    expect(prev).toEqual({ type: 'prompt', content: 'A happy cat' });
+  });
+
   it('should submit page content via SignalR', () => {
     component.onSubmit('Test prompt');
     expect(signalRMock.submitPictophonePage).toHaveBeenCalledWith('Test prompt');
@@ -74,8 +93,22 @@ describe('PictophoneHandComponent', () => {
     expect(signalRMock.submitPictophoneDraft).toHaveBeenCalledWith('Drafting...');
   });
 
-  it('should dispatch star action', () => {
+  it('should dispatch reveal next and star actions', () => {
+    component.onRevealNext();
+    expect(signalRMock.revealPictophoneNext).toHaveBeenCalledWith('PICT');
+
     component.onStarPage({ bookIndex: 0, pageIndex: 1 });
     expect(signalRMock.starPictophonePage).toHaveBeenCalledWith('PICT', 0, 1);
+  });
+
+  it('should execute host administrative controls', () => {
+    component.pauseGame();
+    expect(signalRMock.pauseGame).toHaveBeenCalled();
+
+    component.resumeGame();
+    expect(signalRMock.resumeGame).toHaveBeenCalled();
+
+    component.forceNext();
+    expect(signalRMock.forcePictophoneNext).toHaveBeenCalledWith('PICT');
   });
 });

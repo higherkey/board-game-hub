@@ -41,6 +41,38 @@ describe('PoppycockPlayerComponent', () => {
         expect(component).toBeTruthy();
     });
 
+    it('should reset state on phase change via ngOnChanges', () => {
+        component.gameData = { phase: 0 };
+        component.hasSubmitted = true;
+        component.definition = 'test';
+
+        component.room = {
+            roundNumber: 1,
+            gameData: {
+                phase: 1,
+                currentPrompt: { realDefinition: 'Real' },
+                playerSubmissions: { 'conn2': 'Fake definition' }
+            }
+        };
+        component.ngOnChanges({
+            room: {
+                currentValue: component.room,
+                previousValue: null,
+                firstChange: false,
+                isFirstChange: () => false
+            }
+        });
+
+        expect(component.hasVoted).toBeFalse();
+        expect(component.shuffledDefinitions.length).toBe(2);
+    });
+
+    it('should convert index to uppercase letter', () => {
+        expect(component.getLetter(0)).toBe('A');
+        expect(component.getLetter(1)).toBe('B');
+        expect(component.getLetter(2)).toBe('C');
+    });
+
     it('should submit definition via SignalRService and emit output', () => {
         spyOn(component.definitionSubmitted, 'emit');
         component.definition = 'A type of ox';
@@ -51,6 +83,14 @@ describe('PoppycockPlayerComponent', () => {
         expect(component.hasSubmitted).toBeTrue();
     });
 
+    it('should not submit vote for self', () => {
+        spyOn(component.voteSubmitted, 'emit');
+        component.submitVote('conn1'); // Same as myConnectionId
+
+        expect(component.voteSubmitted.emit).not.toHaveBeenCalled();
+        expect(signalRMock.submitPoppycockVote).not.toHaveBeenCalled();
+    });
+
     it('should submit vote via SignalRService and emit output', () => {
         spyOn(component.voteSubmitted, 'emit');
         component.submitVote('conn2');
@@ -58,5 +98,16 @@ describe('PoppycockPlayerComponent', () => {
         expect(component.voteSubmitted.emit).toHaveBeenCalledWith('conn2');
         expect(signalRMock.submitPoppycockVote).toHaveBeenCalledWith('conn2');
         expect(component.hasVoted).toBeTrue();
+    });
+
+    it('should execute host administrative controls', () => {
+        component.pauseGame();
+        expect(signalRMock.pauseGame).toHaveBeenCalled();
+
+        component.resumeGame();
+        expect(signalRMock.resumeGame).toHaveBeenCalled();
+
+        component.endRound();
+        expect(signalRMock.endRound).toHaveBeenCalled();
     });
 });
