@@ -45,4 +45,14 @@ describe('PlayerSettingsComponent', () => {
         component.room = mockRoom;
         expect(component.settings).toEqual(mockRoom.settings);
     });
+
+    it('should toggle sound via soundService', () => {
+        spyOn(component.soundService, 'toggleMute');
+        spyOn(component.soundService, 'playClick');
+        component.toggleSound();
+        expect(component.soundService.toggleMute).toHaveBeenCalled();
+        expect(component.soundService.playClick).toHaveBeenCalled();
+    });
 });
+
+
