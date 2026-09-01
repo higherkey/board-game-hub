@@ -61,13 +61,13 @@ describe('ScatterbrainHandComponent', () => {
   });
 
   it('should map phase numbers and names correctly', () => {
-    component.room.gameData = { phase: 0 };
+    component.room!.gameData = { phase: 0 };
     expect(component.phase).toBe('Writing');
 
-    component.room.gameData = { phase: 1 };
+    component.room!.gameData = { phase: 1 };
     expect(component.phase).toBe('Validation');
 
-    component.room.gameData = { phase: 2 };
+    component.room!.gameData = { phase: 2 };
     expect(component.phase).toBe('Result');
   });
 
@@ -105,7 +105,7 @@ describe('ScatterbrainHandComponent', () => {
   });
 
   it('should dispatch voteChallenge via SignalRService and check hasVoted', () => {
-    component.room.gameData = {
+    component.room!.gameData = {
       activeChallenge: {
         votes: { 'p1': true }
       }

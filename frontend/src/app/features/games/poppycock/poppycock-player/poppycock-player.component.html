@@ -1,21 +1,19 @@
 <div class="h-100 d-flex flex-column text-center p-3">
-    <!-- Host Admin Controls (Visible when Hand player is also Host) -->
-    <div *ngIf="isHost && gameData?.phase !== 2" class="card shadow-sm border-0 mb-3 bg-surface-3">
-        <div class="card-body p-2 d-flex justify-content-between align-items-center">
-            <span class="badge bg-primary text-uppercase small">Host Controls</span>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-warning shadow-sm" *ngIf="!room?.isPaused" (click)="pauseGame()" title="Pause Game">
-                    <i class="bi bi-pause-fill"></i> Pause
-                </button>
-                <button class="btn btn-sm btn-success shadow-sm" *ngIf="room?.isPaused" (click)="resumeGame()" title="Resume Game">
-                    <i class="bi bi-play-fill"></i> Resume
-                </button>
-                <button class="btn btn-sm btn-danger shadow-sm" (click)="endRound()" title="End Round">
-                    <i class="bi bi-skip-end-fill"></i> End Round
-                </button>
-            </div>
+    <!-- Host Toolbar -->
+    <section *ngIf="isHost && gameData?.phase !== 2" class="p-2 mb-3 bg-surface-2 rounded-3 border d-flex justify-content-between align-items-center" aria-label="Host Tools">
+        <span class="badge bg-secondary">Host Panel</span>
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-warning" *ngIf="!room?.isPaused" (click)="pauseGame()">
+                <i class="bi bi-pause"></i>
+            </button>
+            <button class="btn btn-success" *ngIf="room?.isPaused" (click)="resumeGame()">
+                <i class="bi bi-play"></i>
+            </button>
+            <button class="btn btn-danger" (click)="endRound()">
+                <i class="bi bi-forward"></i> Next
+            </button>
         </div>
-    </div>
+    </section>
 
     <!-- Phase: Faking -->
     <div *ngIf="gameData?.phase === 0" class="flex-grow-1 d-flex flex-column justify-content-center">

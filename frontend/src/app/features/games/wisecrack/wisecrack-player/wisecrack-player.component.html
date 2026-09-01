@@ -4,10 +4,10 @@
         <div class="card-body p-2 px-3 d-flex justify-content-between align-items-center">
             <span class="badge bg-primary text-uppercase small">Host Controls</span>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-warning shadow-sm" *ngIf="!room.isPaused" (click)="pauseGame()" title="Pause Game" aria-label="Pause Game">
+                <button class="btn btn-sm btn-warning shadow-sm" *ngIf="!room?.isPaused" (click)="pauseGame()" title="Pause Game" aria-label="Pause Game">
                     <i class="bi bi-pause-fill"></i> Pause
                 </button>
-                <button class="btn btn-sm btn-success shadow-sm" *ngIf="room.isPaused" (click)="resumeGame()" title="Resume Game" aria-label="Resume Game">
+                <button class="btn btn-sm btn-success shadow-sm" *ngIf="room?.isPaused" (click)="resumeGame()" title="Resume Game" aria-label="Resume Game">
                     <i class="bi bi-play-fill"></i> Resume
                 </button>
                 <button class="btn btn-sm btn-danger shadow-sm" (click)="endRound()" title="End Round" aria-label="End Round">

@@ -54,22 +54,22 @@ describe('WisecrackPlayerComponent', () => {
     });
 
     it('should evaluate phase getters correctly', () => {
-        component.room.gameData = { phase: 'Writing' };
+        component.room!.gameData = { phase: 'Writing' };
         expect(component.isWriting).toBeTrue();
         expect(component.isBattling).toBeFalse();
         expect(component.isResult).toBeFalse();
 
-        component.room.gameData = { phase: 'Battling' };
+        component.room!.gameData = { phase: 'Battling' };
         expect(component.isWriting).toBeFalse();
         expect(component.isBattling).toBeTrue();
 
-        component.room.gameData = { phase: 'Result' };
+        component.room!.gameData = { phase: 'Result' };
         expect(component.isResult).toBeTrue();
     });
 
     it('should filter assignments and check answers', () => {
         component.myConnectionId = 'p1';
-        component.room.gameData = {
+        component.room!.gameData = {
             assignments: [
                 { promptId: 'pr1', text: 'Prompt 1', assignedPlayerIds: ['p1', 'p2'] },
                 { promptId: 'pr2', text: 'Prompt 2', assignedPlayerIds: ['p3', 'p4'] }
@@ -98,7 +98,7 @@ describe('WisecrackPlayerComponent', () => {
 
     it('should calculate voting eligibility and vote state correctly', () => {
         component.myConnectionId = 'voter1';
-        component.room.gameData = {
+        component.room!.gameData = {
             currentBattleIndex: 0,
             battles: [
                 {
@@ -119,11 +119,11 @@ describe('WisecrackPlayerComponent', () => {
 
         // If battle finished, cannot vote
         component.myConnectionId = 'voter1';
-        component.room.gameData.battles[0].isFinished = true;
+        component.room!.gameData.battles[0].isFinished = true;
         expect(component.canVote).toBeFalse();
 
         // If user voted
-        component.room.gameData.battles[0].votes.push({ playerId: 'voter1', choice: 0 });
+        component.room!.gameData.battles[0].votes.push({ playerId: 'voter1', choice: 0 });
         expect(component.hasVoted).toBeTrue();
     });
 

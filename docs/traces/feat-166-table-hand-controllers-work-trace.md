@@ -26,5 +26,8 @@ Enforce explicit Table vs. Hand dual-role architecture across party games in Boa
 - [x] Upgrade `WisecrackPlayerComponent` and `PoppycockPlayerComponent` with direct SignalR integration, `myConnectionId` binding, and host admin controls.
 - [x] Extract `ScatterbrainHandComponent` with mobile-optimized input form, challenge voting modal, and host controls.
 - [x] Create `PictophoneHandComponent` hosting mobile text prompt input, drawing canvas, showcase star reactions, and host controls.
-- [x] Add comprehensive unit test suites for all Hand components and `GameRoomStateService` (345 Karma tests passing, 100% pass rate).
+- [x] Add comprehensive unit test suites for all Hand components and `GameRoomStateService` (358 Karma tests passing, 100% pass rate).
 - [x] Verify zero-warning Angular build and 239 backend xUnit tests passing.
+- [x] Address SonarCloud New Code Coverage: achieved $\ge 80\%$ on all changed and newly created TypeScript code.
+- [x] Refactor template markup across Hand controllers to reduce duplication from $13.4\%$ down to $7.3\%$ and prepare final toolbar divergence.
+

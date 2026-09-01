@@ -11,7 +11,7 @@ import { Room, SignalRService } from '../../../../services/signalr.service';
   styleUrls: ['./wisecrack-player.component.scss']
 })
 export class WisecrackPlayerComponent {
-  @Input() room!: Room;
+  @Input() room?: Room;
   @Input() myConnectionId: string = '';
   @Input() isHost: boolean = false;
   @Input() set playerId(v: string) {
@@ -28,8 +28,9 @@ export class WisecrackPlayerComponent {
   }
 
   get state(): any {
-    return this.room.gameData;
+    return this.room?.gameData;
   }
+
 
   get isWriting(): boolean {
     return this.state?.phase === 'Writing';

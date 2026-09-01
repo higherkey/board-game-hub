@@ -12,7 +12,7 @@ import { Observable, map, timer } from 'rxjs';
     styleUrls: ['./scatterbrain-hand.component.scss']
 })
 export class ScatterbrainHandComponent implements OnInit, OnChanges {
-    @Input() room!: Room;
+    @Input() room?: Room;
     @Input() myConnectionId: string = '';
     @Input() isHost: boolean = false;
     @Input() isHand: boolean = true;
