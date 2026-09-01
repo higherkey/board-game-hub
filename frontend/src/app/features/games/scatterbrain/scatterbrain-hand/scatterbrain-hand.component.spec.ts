@@ -8,28 +8,30 @@ describe('ScatterbrainHandComponent', () => {
   let fixture: ComponentFixture<ScatterbrainHandComponent>;
   let signalRMock: any;
 
-  const mockRoom: Room = {
-    code: 'TEST',
-    players: [{ connectionId: 'p1', name: 'Tester', isHost: true, isReady: true, isScreen: false, score: 0 }],
-    state: 'Lobby',
-    gameType: 'Scatterbrain',
-    settings: { timerDurationSeconds: 60, letterMode: 0, boardSize: 4 },
-    gameState: {},
-    gameData: {
-      phase: 0,
-      currentLetter: 'S',
-      categories: ['City', 'Food', 'Animal']
-    },
-    playerAnswers: {
-      'p1': ['Seattle', 'Soup', 'Snake']
-    },
-    roundNumber: 1,
-    isPaused: false,
-    nextGameVotes: {},
-    roundScores: {},
-    undoSettings: { allowVoting: true, hostOnly: false },
-    currentVote: null
-  };
+  function createMockRoom(): Room {
+    return {
+      code: 'TEST',
+      players: [{ connectionId: 'p1', name: 'Tester', isHost: true, isReady: true, isScreen: false, score: 0 }],
+      state: 'Lobby',
+      gameType: 'Scatterbrain',
+      settings: { timerDurationSeconds: 60, letterMode: 0, boardSize: 4 },
+      gameState: {},
+      gameData: {
+        phase: 0,
+        currentLetter: 'S',
+        categories: ['City', 'Food', 'Animal']
+      },
+      playerAnswers: {
+        'p1': ['Seattle', 'Soup', 'Snake']
+      },
+      roundNumber: 1,
+      isPaused: false,
+      nextGameVotes: {},
+      roundScores: {},
+      undoSettings: { allowVoting: true, hostOnly: false },
+      currentVote: null
+    };
+  }
 
   beforeEach(async () => {
     signalRMock = {
@@ -49,7 +51,7 @@ describe('ScatterbrainHandComponent', () => {
 
     fixture = TestBed.createComponent(ScatterbrainHandComponent);
     component = fixture.componentInstance;
-    component.room = mockRoom;
+    component.room = createMockRoom();
     component.myConnectionId = 'p1';
     fixture.detectChanges();
   });
@@ -70,9 +72,9 @@ describe('ScatterbrainHandComponent', () => {
   });
 
   it('should re-initialize answers on round change in ngOnChanges', () => {
-    const prevRoom = { ...mockRoom };
+    const prevRoom = createMockRoom();
     const nextRoom: Room = {
-      ...mockRoom,
+      ...createMockRoom(),
       roundNumber: 2,
       gameData: { phase: 0, currentLetter: 'A', categories: ['Car', 'Color'] },
       playerAnswers: {}
