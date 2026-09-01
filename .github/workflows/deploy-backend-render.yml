@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - staging
       - dev
     paths:
       - 'backend/**'
@@ -15,6 +16,7 @@ on:
   pull_request:
     branches:
       - main
+      - staging
       - dev
     paths:
       - 'backend/**'
@@ -50,8 +52,8 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
-      url: ${{ github.ref_name == 'main' && 'https://board-game-hub-api.onrender.com' || 'https://board-game-hub-api-dev.onrender.com' }}
+      name: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'staging' && 'staging' || 'development') }}
+      url: ${{ github.ref_name == 'main' && 'https://board-game-hub-api.onrender.com' || (github.ref_name == 'staging' && 'https://board-game-hub-api-staging.onrender.com' || 'https://board-game-hub-api-dev.onrender.com') }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -60,6 +62,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore backend/BoardGameHub.sln
 
       - name: Install EF Core CLI
         run: dotnet tool install --global dotnet-ef --version 10.*
@@ -71,6 +76,15 @@ jobs:
             echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_PROD }}" >> "$GITHUB_OUTPUT"
             echo "env_name=production" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_name }}" = "staging" ]; then
+            # Use dedicated staging connection if configured; otherwise safely fall back to dev connection
+            STAGING_DB="${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}"
+            if [ -z "$STAGING_DB" ]; then
+              STAGING_DB="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
+            fi
+            echo "db_connection=$STAGING_DB" >> "$GITHUB_OUTPUT"
+            echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_STAGING }}" >> "$GITHUB_OUTPUT"
+            echo "env_name=staging" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref_name }}" = "dev" ]; then
             echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_DEV }}" >> "$GITHUB_OUTPUT"
@@ -79,6 +93,7 @@ jobs:
             echo "Branch '${{ github.ref_name }}' is not configured for automatic deployment."
             exit 1
           fi
+
 
       - name: Apply Database Migrations
         if: steps.determine_env.outputs.db_connection != ''
