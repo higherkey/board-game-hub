@@ -32,4 +32,8 @@
     <loc>https://boardgamehub.com/data-privacy</loc>
     <priority>0.5</priority>
   </url>
+  <url>
+    <loc>https://boardgamehub.com/news</loc>
+    <priority>0.6</priority>
+  </url>
 </urlset>

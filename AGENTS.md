@@ -76,8 +76,8 @@ Run commands from repo root unless noted.
   - Manages in-memory rooms and connection→room mapping.
   - Handles room lifecycle/reconnect behavior.
   - Routes actions to the game-specific service selected by `Room.GameType`.
-- `GameStateManager` (`backend/BoardGameHub.Api/Services/GameStateManager.cs`) runs a 50ms tick loop and broadcasts `RoomStatePatch` diffs instead of full state when possible.
-- `StateDiffService` + `Room.DirtyMembers` drive partial state updates; game actions usually mark `GameData`, `RoundScores`, `PlayerAnswers`, and `Players` dirty.
+- `GameStateManager` (`backend/BoardGameHub.Api/Services/GameStateManager.cs`) runs an event-driven `System.Threading.Channels.Channel<string>` consumer (`IHostedService`) and broadcasts `RoomStatePatch` diffs over SignalR with zero reflection ($O(1)$ compiled `FrozenDictionary` property accessors).
+- `StateDiffService` + `Room.DirtyMembers` drive partial state updates; game actions mark properties dirty (`GameData`, `RoundScores`, `PlayerAnswers`, `Players`).
 
 ### Game plugin model
 - `IGameService` (`backend/BoardGameHub.Api/Services/IGameService.cs`) defines the per-game contract (`StartRound`, `HandleAction`, `EndRound`, `DeserializeState`).
@@ -97,6 +97,11 @@ Run commands from repo root unless noted.
 - Persistent data (users, friendships, chat, game history, game definitions) is in EF Core `AppDbContext` (`backend/BoardGameHub.Api/Data/AppDbContext.cs`).
 - Active room/game runtime state is in-memory (`RoomService`/`GameStateManager`) and not fully persisted between process restarts.
 - **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-render.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
+
+## Release & Versioning Standards
+- **Feature Branches $\rightarrow$ `dev`**: Day-to-day PRs merge into `dev` as pre-releases (`v0.X.Y-dev.Z`). Use `chore:`, `refactor:`, or `test:` for internal plumbing to prevent inflating minor versions prematurely.
+- **Milestone Bundles $\rightarrow$ `main`**: Feature slices under an Epic are bundled on `dev` and promoted to `main` as cohesive Milestone Releases (e.g. `v0.24.0`).
+- **Changelog & News**: User-facing notes are automatically synced to the `/news` page via GitHub Actions upon merge to `main`.
 
 ## Engineering Standards to honor
 - **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
