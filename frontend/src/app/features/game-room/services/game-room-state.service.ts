@@ -7,6 +7,7 @@ import { GameDataService } from '../../../services/game-data.service';
 import { GameSettings, Room, SignalRService } from '../../../services/signalr.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { SoundService } from '../../../core/services/sound.service';
 import { GAME_REGISTRY } from '../../games/game.registry';
 
 @Injectable({
@@ -16,11 +17,13 @@ export class GameRoomStateService {
   private readonly authService = inject(AuthService);
   private readonly signalRService = inject(SignalRService);
   private readonly gameDataService = inject(GameDataService);
+  private readonly soundService = inject(SoundService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
   private readonly logger = inject(LoggerService);
   private readonly destroyRef = inject(DestroyRef);
+
 
   // Expose core streams
   public readonly session$ = this.authService.session$;
@@ -63,7 +66,15 @@ export class GameRoomStateService {
       });
   }
 
+  private previousRoomState: string = 'Lobby';
+
   private syncRoomState(room: Room) {
+    // Sound cue on game finished / victory
+    if (room.state === 'Finished' && this.previousRoomState === 'Playing') {
+      this.soundService.playVictory();
+    }
+    this.previousRoomState = room.state;
+
     // Sync local isScreen state with the server-side player state
     const me = room.players.find(p => p.connectionId === this.signalRService.getConnectionId());
     if (me && !this.needsName) {
@@ -79,6 +90,7 @@ export class GameRoomStateService {
 
     this.updateActiveGame(room);
   }
+
 
   private updateActiveGame(room: Room) {
     const isScreen = this.isScreen;

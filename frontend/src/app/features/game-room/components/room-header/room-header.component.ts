@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { UserProfileDropdownComponent } from '../../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { DeviceService } from '../../../../services/device.service';
+import { SoundService } from '../../../../core/services/sound.service';
 
 @Component({
   selector: 'app-room-header',
@@ -13,6 +14,7 @@ import { DeviceService } from '../../../../services/device.service';
 })
 export class RoomHeaderComponent {
   readonly deviceService = inject(DeviceService);
+  readonly soundService = inject(SoundService);
   @Input() isBigScreen = false;
   @Input() roomCode = '';
   @Input() gameDisplayName = 'Lobby';
@@ -34,4 +36,10 @@ export class RoomHeaderComponent {
   toggleNavMenu() {
     this.isNavMenuOpen = !this.isNavMenuOpen;
   }
+
+  toggleSound() {
+    this.soundService.toggleMute();
+    this.soundService.playClick();
+  }
 }
+
