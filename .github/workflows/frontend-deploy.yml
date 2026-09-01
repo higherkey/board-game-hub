@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - staging
       - dev
     paths:
       - 'frontend/**'
@@ -15,6 +16,7 @@ on:
   pull_request:
     branches:
       - main
+      - staging
       - dev
     paths:
       - 'frontend/**'
@@ -25,7 +27,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'production' || 'development' }}
+      name: ${{ github.event_name == 'push' && (github.ref_name == 'main' && 'production' || (github.ref_name == 'staging' && 'staging' || 'development')) || 'development' }}
       url: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'https://board-game-hub-alpha.vercel.app' || steps.deploy.outputs.preview-url }}
     defaults:
       run:
@@ -48,6 +50,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "main" ]; then
             npm run build -- --configuration=production
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "staging" ]; then
+            npm run build -- --configuration=staging
           else
             npm run build -- --configuration=development
           fi
@@ -62,3 +66,4 @@ jobs:
           working-directory: frontend
           vercel-args: ${{ github.event_name == 'push' && github.ref_name == 'main' && '--prod' || '' }}
           github-comment: true
+
