@@ -99,6 +99,7 @@ Run commands from repo root unless noted.
 - **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-render.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
 
 ## Release & Versioning Standards
+- **Automated Conventional Semantic Versioning**: Full specification in [`CONTRIBUTING.md`](file:///c:/Programming/board%20game%20hub/CONTRIBUTING.md#️-developer-workflow--automated-conventional-semantic-versioning).
 - **Feature Branches $\rightarrow$ `dev`**: Day-to-day PRs merge into `dev` as pre-releases (`v0.X.Y-dev.Z`). Use `chore:`, `refactor:`, or `test:` for internal plumbing to prevent inflating minor versions prematurely.
 - **Milestone Bundles $\rightarrow$ `main`**: Feature slices under an Epic are bundled on `dev` and promoted to `main` as cohesive Milestone Releases (e.g. `v0.24.0`).
 - **Changelog & News**: User-facing notes are automatically synced to the `/news` page via GitHub Actions upon merge to `main`.

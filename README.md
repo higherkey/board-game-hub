@@ -19,7 +19,7 @@ Board Game Hub is a multiplayer board game platform created by [eight1five desig
 
 ### 🌐 Deployments & Release Pipeline
 
-We follow the **GitFlow Release Train model** with Semantic Versioning (`v0.X.Y`):
+We follow **[Automated Conventional Semantic Versioning](CONTRIBUTING.md#️-developer-workflow--automated-conventional-semantic-versioning)** (`SemVer 2.0.0` + `Conventional Commits`):
 
 | Tier | Branch | Frontend (Vercel) | Backend API (Render) | Database (Supabase) | Version Tagging |
 |---|---|---|---|---|---|
