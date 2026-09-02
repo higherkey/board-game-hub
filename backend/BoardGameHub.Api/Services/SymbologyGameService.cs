@@ -202,4 +202,16 @@ public class SymbologyGameService : BaseGameService<SymbologyState>
         }
         return false;
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.Scores.RebindKey(oldConnectionId, newConnectionId);
+        if (state.ActivePlayerId == oldConnectionId)
+        {
+            state.ActivePlayerId = newConnectionId;
+        }
+    }
 }

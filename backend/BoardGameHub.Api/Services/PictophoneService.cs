@@ -261,6 +261,32 @@ public class PictophoneService : BaseGameService<PictophoneState>
         };
         return suggestions.OrderBy(x => Guid.NewGuid()).Take(3).ToList();
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.Books != null)
+        {
+            foreach (var book in state.Books)
+            {
+                if (book.OwnerId == oldConnectionId) book.OwnerId = newConnectionId;
+                if (book.CurrentHolderId == oldConnectionId) book.CurrentHolderId = newConnectionId;
+                if (book.Pages != null)
+                {
+                    foreach (var page in book.Pages)
+                    {
+                        if (page.AuthorId == oldConnectionId) page.AuthorId = newConnectionId;
+                        page.Stars.RebindItems(oldConnectionId, newConnectionId);
+                    }
+                }
+            }
+        }
+
+        state.PendingNextPhase.RebindSet(oldConnectionId, newConnectionId);
+        state.Drafts.RebindKey(oldConnectionId, newConnectionId);
+    }
 }
 
 public class PictophoneState

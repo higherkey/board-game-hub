@@ -230,6 +230,18 @@ public class PoppycockGameService : BaseGameService<PoppycockState>
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.Votes.RebindKey(oldConnectionId, newConnectionId);
+        state.Votes.RebindValues(oldConnectionId, newConnectionId);
+        state.PlayerSubmissions.RebindKey(oldConnectionId, newConnectionId);
+        state.CorrectSubmissions.RebindItems(oldConnectionId, newConnectionId);
+        if (state.DasherId == oldConnectionId) state.DasherId = newConnectionId;
+    }
 }
 
 public class PoppycockState

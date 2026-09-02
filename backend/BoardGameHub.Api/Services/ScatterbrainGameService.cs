@@ -285,4 +285,19 @@ public class ScatterbrainGameService : BaseGameService<ScatterbrainState>
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.Vetoes.RebindKey(oldConnectionId, newConnectionId);
+
+        if (state.ActiveChallenge != null)
+        {
+            if (state.ActiveChallenge.ChallengerId == oldConnectionId) state.ActiveChallenge.ChallengerId = newConnectionId;
+            if (state.ActiveChallenge.TargetPlayerId == oldConnectionId) state.ActiveChallenge.TargetPlayerId = newConnectionId;
+            state.ActiveChallenge.Votes.RebindKey(oldConnectionId, newConnectionId);
+        }
+    }
 }

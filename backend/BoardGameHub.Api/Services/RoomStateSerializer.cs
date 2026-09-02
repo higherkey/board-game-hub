@@ -4,38 +4,6 @@ using System.Text.Json.Serialization;
 
 namespace BoardGameHub.Api.Services;
 
-public class RoomStateEnvelope
-{
-    public int SchemaVersion { get; set; } = 1;
-    public string Code { get; set; } = string.Empty;
-    public GameType GameType { get; set; } = GameType.None;
-    public GameState State { get; set; } = GameState.Lobby;
-    public GameSettings Settings { get; set; } = new();
-    public bool IsPublic { get; set; }
-    public string? HostScreenId { get; set; }
-    public string? HostPlayerId { get; set; }
-    public string? CreatorConnectionId { get; set; }
-    public bool IsHostOverride { get; set; }
-    public int RoundNumber { get; set; }
-    public Dictionary<string, GameType> NextGameVotes { get; set; } = new();
-    public DateTime? RoundEndTime { get; set; }
-    public bool IsPaused { get; set; }
-    public TimeSpan? TimeRemainingWhenPaused { get; set; }
-    public Dictionary<string, List<string>> PlayerAnswers { get; set; } = new();
-    public Dictionary<string, int> RoundScores { get; set; } = new();
-    public List<Player> Players { get; set; } = new();
-    public UndoSettings UndoSettings { get; set; } = new();
-    public UndoVote? CurrentVote { get; set; }
-    public JsonElement? RawGameData { get; set; }
-}
-
-public interface IRoomStateSerializer
-{
-    string Serialize(Room room);
-    Room Deserialize(string json);
-    Room Deserialize(string json, IEnumerable<IGameService> gameServices);
-}
-
 public class RoomStateSerializer : IRoomStateSerializer
 {
     private readonly List<IGameService> _gameServices;
@@ -77,6 +45,10 @@ public class RoomStateSerializer : IRoomStateSerializer
         {
             SchemaVersion = 1,
             Code = room.Code,
+            Revision = room.Revision,
+            CreatedAt = room.CreatedAt,
+            UpdatedAt = room.UpdatedAt,
+            ExpiresAt = room.ExpiresAt,
             GameType = room.GameType,
             State = room.State,
             Settings = room.Settings ?? new GameSettings(),
@@ -92,9 +64,10 @@ public class RoomStateSerializer : IRoomStateSerializer
             TimeRemainingWhenPaused = room.TimeRemainingWhenPaused,
             PlayerAnswers = room.PlayerAnswers != null ? new Dictionary<string, List<string>>(room.PlayerAnswers) : new(),
             RoundScores = room.RoundScores != null ? new Dictionary<string, int>(room.RoundScores) : new(),
-            Players = room.Players?.Select(p => new Player
+            Players = room.Players?.Select(p => new PersistedPlayer
             {
                 ConnectionId = p.ConnectionId,
+                SessionId = p.SessionId,
                 Name = p.Name,
                 Score = p.Score,
                 IsHost = p.IsHost,
@@ -135,6 +108,10 @@ public class RoomStateSerializer : IRoomStateSerializer
         var room = new Room
         {
             Code = envelope.Code,
+            Revision = envelope.Revision,
+            CreatedAt = envelope.CreatedAt,
+            UpdatedAt = envelope.UpdatedAt,
+            ExpiresAt = envelope.ExpiresAt,
             GameType = envelope.GameType,
             State = envelope.State,
             Settings = envelope.Settings ?? new GameSettings(),
@@ -150,7 +127,19 @@ public class RoomStateSerializer : IRoomStateSerializer
             TimeRemainingWhenPaused = envelope.TimeRemainingWhenPaused,
             PlayerAnswers = envelope.PlayerAnswers ?? new Dictionary<string, List<string>>(),
             RoundScores = envelope.RoundScores ?? new Dictionary<string, int>(),
-            Players = envelope.Players ?? new List<Player>(),
+            Players = envelope.Players?.Select(p => new Player
+            {
+                ConnectionId = p.ConnectionId,
+                SessionId = p.SessionId,
+                Name = p.Name,
+                Score = p.Score,
+                IsHost = p.IsHost,
+                IsConnected = p.IsConnected,
+                IsReady = p.IsReady,
+                IsScreen = p.IsScreen,
+                UserId = p.UserId,
+                AvatarUrl = p.AvatarUrl
+            }).ToList() ?? new List<Player>(),
             UndoSettings = envelope.UndoSettings ?? new UndoSettings(),
             CurrentVote = envelope.CurrentVote
         };

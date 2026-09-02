@@ -28,7 +28,17 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 // Add services to the container.
 // Database Context
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrEmpty(connectionString) || connectionString.StartsWith("InMemory", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseInMemoryDatabase(string.IsNullOrEmpty(connectionString) ? "BoardGameHubInMemory" : connectionString);
+    }
+    else
+    {
+        options.UseNpgsql(connectionString);
+    }
+});
 
 // Identity
 builder.Services.AddIdentity<User, IdentityRole>(options => {
@@ -136,9 +146,17 @@ builder.Services.AddSingleton<IGameService, FarkleService>();
 
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();
+builder.Services.AddSingleton<IRoomStateSerializer, RoomStateSerializer>();
 builder.Services.AddSingleton<GameStateManager>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GameStateManager>());
-builder.Services.AddSingleton<IRoomStateSerializer, RoomStateSerializer>();
+
+// Room Persistence Engine
+builder.Services.AddSingleton<RoomPersistenceWorker>();
+builder.Services.AddSingleton<IRoomPersistenceService>(sp => sp.GetRequiredService<RoomPersistenceWorker>());
+if (!string.Equals(builder.Configuration["Testing:DisablePersistenceWorker"], "true", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<RoomPersistenceWorker>());
+}
 
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<ISocialService, SocialService>();
@@ -176,6 +194,10 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
+    {
+        db.Database.EnsureCreated();
+    }
     
     // Seed Roles and Admin User
     await DbInitializer.SeedAsync(scope.ServiceProvider);

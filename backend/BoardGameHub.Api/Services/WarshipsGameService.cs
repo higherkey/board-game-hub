@@ -27,6 +27,18 @@ public class WarshipsGameService : BaseGameService<WarshipsState>
         room.State = GameState.Finished;
         return Task.CompletedTask;
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.PlayerBoards.RebindKey(oldConnectionId, newConnectionId);
+        if (state.ActivePlayerId == oldConnectionId)
+        {
+            state.ActivePlayerId = newConnectionId;
+        }
+    }
 }
 
 public class WarshipsState

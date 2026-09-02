@@ -23,6 +23,15 @@ public class FourInARowGameService : BaseGameService<FourInARowState>
         room.State = GameState.Finished;
         return Task.CompletedTask;
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.CurrentPlayerId == oldConnectionId) state.CurrentPlayerId = newConnectionId;
+        if (state.WinnerId == oldConnectionId) state.WinnerId = newConnectionId;
+    }
 }
 
 public class FourInARowState

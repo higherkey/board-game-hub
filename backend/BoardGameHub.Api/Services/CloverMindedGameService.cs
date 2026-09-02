@@ -421,6 +421,36 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
         state.ResolutionAttempt = 1;
         BeginResolutionForCurrentSpectator(room, state);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.ParticipantIds.RebindItems(oldConnectionId, newConnectionId);
+
+        if (state.PrepByPlayer.Remove(oldConnectionId, out var prep))
+        {
+            prep.ConnectionId = newConnectionId;
+            state.PrepByPlayer[newConnectionId] = prep;
+        }
+
+        state.ClueSubmitted.RebindKey(oldConnectionId, newConnectionId);
+        state.RotationCardIdByPlayerThisAttempt.RebindKey(oldConnectionId, newConnectionId);
+
+        if (state.CurrentSpectatorId == oldConnectionId)
+        {
+            state.CurrentSpectatorId = newConnectionId;
+        }
+
+        if (state.CardOccupants != null)
+        {
+            foreach (var cardId in state.CardOccupants.Where(kvp => kvp.Value == oldConnectionId).Select(kvp => kvp.Key).ToList())
+            {
+                state.CardOccupants[cardId] = newConnectionId;
+            }
+        }
+    }
 }
 
 public static class CloverGeometry

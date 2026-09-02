@@ -255,4 +255,18 @@ public class BabbleGameService : BaseGameService<BabbleState>
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.LastRoundResults != null)
+        {
+            foreach (var result in state.LastRoundResults)
+            {
+                result.FoundBy.RebindItems(oldConnectionId, newConnectionId);
+            }
+        }
+    }
 }

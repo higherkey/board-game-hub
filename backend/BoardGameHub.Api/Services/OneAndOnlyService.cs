@@ -179,6 +179,15 @@ public class OneAndOnlyService : BaseGameService<OneAndOnlyState>
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.GuesserId == oldConnectionId) state.GuesserId = newConnectionId;
+        state.Clues.RebindKey(oldConnectionId, newConnectionId);
+    }
 }
 
 public class OneAndOnlyState

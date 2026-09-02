@@ -6,7 +6,8 @@ public interface IRoomService
 {
     // Host & Room Management
     Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null, bool isScreen = false);
-    Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false);
+    Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false, string? sessionId = null);
+    void RebindPlayerConnection(Room room, string oldConnectionId, string newConnectionId);
     Room? ToggleReady(string code, string connectionId, bool? forcedState = null);
     Room? RemovePlayer(string connectionId);
     Room? GetRoom(string code);
@@ -16,6 +17,8 @@ public interface IRoomService
     Room? RenamePlayer(string connectionId, string newName);
     Room? ChangeRole(string connectionId, bool isScreen);
     void TerminateRoom(string code);
+    void RehydrateRoom(Room room);
+    void EvictRoom(string code);
 
     // Game Flow
     Task<Room?> StartGame(string code, GameSettings? settings = null);

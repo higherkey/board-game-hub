@@ -518,4 +518,16 @@ public class SushiTrainGameService : BaseGameService<SushiTrainState>
         }
         return Task.FromResult(false);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.PlayerStates.Remove(oldConnectionId, out var playerState))
+        {
+            playerState.PlayerId = newConnectionId;
+            state.PlayerStates[newConnectionId] = playerState;
+        }
+    }
 }

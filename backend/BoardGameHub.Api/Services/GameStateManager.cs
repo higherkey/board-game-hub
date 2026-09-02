@@ -15,6 +15,8 @@ public class GameStateManager : IHostedService, IDisposable
     private readonly IHubContext<GameHub> _hubContext;
     private readonly StateDiffService _diffService;
     private readonly ILogger<GameStateManager> _logger;
+    private readonly IRoomPersistenceService? _persistenceService;
+    private readonly IRoomStateSerializer? _serializer;
 
     // The "Live" state. Modified by Game Services.
     private readonly ConcurrentDictionary<string, Room> _activeRooms = new();
@@ -72,10 +74,22 @@ public class GameStateManager : IHostedService, IDisposable
         IHubContext<GameHub> hubContext, 
         StateDiffService diffService,
         ILogger<GameStateManager> logger)
+        : this(hubContext, diffService, logger, null, null)
+    {
+    }
+
+    public GameStateManager(
+        IHubContext<GameHub> hubContext, 
+        StateDiffService diffService,
+        ILogger<GameStateManager> logger,
+        IRoomPersistenceService? persistenceService,
+        IRoomStateSerializer? serializer)
     {
         _hubContext = hubContext;
         _diffService = diffService;
         _logger = logger;
+        _persistenceService = persistenceService;
+        _serializer = serializer;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -102,9 +116,13 @@ public class GameStateManager : IHostedService, IDisposable
         {
             try
             {
-                await Task.WhenAny(_processingTask, Task.Delay(Timeout.Infinite, cancellationToken));
+                await _processingTask.WaitAsync(cancellationToken);
             }
             catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Exception while awaiting GameStateManager task during StopAsync.");
+            }
         }
 
         _logger.LogInformation("GameStateManager Event-Driven Loop Stopped.");
@@ -133,18 +151,19 @@ public class GameStateManager : IHostedService, IDisposable
     {
         _dirtyRooms.TryAdd(roomCode, true);
         
-        if (member != null)
+        if (_activeRooms.TryGetValue(roomCode, out var room))
         {
-            if (_activeRooms.TryGetValue(roomCode, out var room))
+            room.Revision++;
+            room.UpdatedAt = DateTime.UtcNow;
+            room.ExpiresAt = DateTime.UtcNow.AddHours(4);
+
+            if (member != null)
             {
                 room.DirtyMembers.TryAdd(member, 0);
             }
-        }
-        else
-        {
-            // Null member -> Force full diff
-            if (_activeRooms.TryGetValue(roomCode, out var room))
+            else
             {
+                // Null member -> Force full diff
                 room.DirtyMembers.TryAdd("ALL", 0);
             }
         }
@@ -202,6 +221,7 @@ public class GameStateManager : IHostedService, IDisposable
             bool fullDiff = dirtyMembers.Count == 0 || dirtyMembers.Contains("ALL");
 
             JsonNode? patch = null;
+            RoomSnapshot? snapshot = null;
             _lastSnapshots.TryGetValue(roomCode, out var lastJson);
 
             if (fullDiff)
@@ -212,6 +232,21 @@ public class GameStateManager : IHostedService, IDisposable
                 try
                 {
                     currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
+                    if (_persistenceService != null && _serializer != null)
+                    {
+                        snapshot = new RoomSnapshot
+                        {
+                            RoomCode = liveRoom.Code,
+                            GameType = liveRoom.GameType.ToString(),
+                            State = liveRoom.State.ToString(),
+                            SchemaVersion = 1,
+                            Revision = liveRoom.Revision,
+                            RoomEnvelopeJson = _serializer.Serialize(liveRoom),
+                            CreatedAt = liveRoom.CreatedAt,
+                            UpdatedAt = liveRoom.UpdatedAt,
+                            ExpiresAt = liveRoom.ExpiresAt
+                        };
+                    }
                 }
                 finally
                 {
@@ -232,7 +267,25 @@ public class GameStateManager : IHostedService, IDisposable
                     // No baseline snapshot -> fallback to full serialization
                     JsonNode? currentJson;
                     await liveRoom.StateLock.WaitAsync(ct);
-                    try { currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions); }
+                    try
+                    {
+                        currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
+                        if (_persistenceService != null && _serializer != null)
+                        {
+                            snapshot = new RoomSnapshot
+                            {
+                                RoomCode = liveRoom.Code,
+                                GameType = liveRoom.GameType.ToString(),
+                                State = liveRoom.State.ToString(),
+                                SchemaVersion = 1,
+                                Revision = liveRoom.Revision,
+                                RoomEnvelopeJson = _serializer.Serialize(liveRoom),
+                                CreatedAt = liveRoom.CreatedAt,
+                                UpdatedAt = liveRoom.UpdatedAt,
+                                ExpiresAt = liveRoom.ExpiresAt
+                            };
+                        }
+                    }
                     finally { liveRoom.StateLock.Release(); }
                     if (currentJson == null) return;
                     _lastSnapshots[roomCode] = currentJson;
@@ -244,6 +297,22 @@ public class GameStateManager : IHostedService, IDisposable
                     await liveRoom.StateLock.WaitAsync(ct);
                     try
                     {
+                        if (_persistenceService != null && _serializer != null)
+                        {
+                            snapshot = new RoomSnapshot
+                            {
+                                RoomCode = liveRoom.Code,
+                                GameType = liveRoom.GameType.ToString(),
+                                State = liveRoom.State.ToString(),
+                                SchemaVersion = 1,
+                                Revision = liveRoom.Revision,
+                                RoomEnvelopeJson = _serializer.Serialize(liveRoom),
+                                CreatedAt = liveRoom.CreatedAt,
+                                UpdatedAt = liveRoom.UpdatedAt,
+                                ExpiresAt = liveRoom.ExpiresAt
+                            };
+                        }
+
                         foreach (var member in dirtyMembers)
                         {
                             if (_propertyAccessors.TryGetValue(member, out var accessor))
@@ -299,6 +368,11 @@ public class GameStateManager : IHostedService, IDisposable
             if (patch != null)
             {
                 await _hubContext.Clients.Group(roomCode.ToUpper()).SendAsync("RoomStatePatch", patch, ct);
+            }
+
+            if (snapshot != null)
+            {
+                _persistenceService?.QueueSave(snapshot);
             }
         }
         catch (Exception ex)

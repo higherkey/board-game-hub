@@ -216,24 +216,7 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
         }
 
 
-        private GreatMindsGameState? GetState(Room room)
-        {
-            if (room.GameData is GreatMindsGameState s) return s;
-            
-            // Handle deserialization if it came from JSON/Undo
-            if (room.GameData is JsonElement element)
-            {
-                var options = new JsonSerializerOptions { IncludeFields = true };
-                try 
-                {
-                    var updated = element.Deserialize<GreatMindsGameState>(options);
-                    room.GameData = updated; // Cache it back
-                    return updated;
-                }
-                catch { return null; }
-            }
-            return room.GameData as GreatMindsGameState;
-        }
+
 
         public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
         {
@@ -256,7 +239,6 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
                     if (state != null)
                     {
                         state.PlayerPresence[connectionId] = presenceProp.GetDouble();
-                        state.PlayerPresence[connectionId] = presenceProp.GetDouble();
                         return true;
                     }
                 }
@@ -267,6 +249,22 @@ namespace BoardGameHub.Api.Services.Games.GreatMinds
         {
             room.State = GameState.Finished;
             await CalculateScores(room);
+        }
+
+        public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+        {
+            var state = GetState(room);
+            if (state != null)
+            {
+                if (state.PlayerHands.Remove(oldConnectionId, out var hand))
+                {
+                    state.PlayerHands[newConnectionId] = hand;
+                }
+                if (state.PlayerPresence.Remove(oldConnectionId, out var pres))
+                {
+                    state.PlayerPresence[newConnectionId] = pres;
+                }
+            }
         }
     }
 }

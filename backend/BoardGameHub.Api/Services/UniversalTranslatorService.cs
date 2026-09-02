@@ -292,4 +292,14 @@ public class UniversalTranslatorService : BaseGameService<UniversalTranslatorSta
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.Roles.RebindKey(oldConnectionId, newConnectionId);
+        state.Votes.RebindKey(oldConnectionId, newConnectionId);
+        state.Votes.RebindValues(oldConnectionId, newConnectionId);
+    }
 }

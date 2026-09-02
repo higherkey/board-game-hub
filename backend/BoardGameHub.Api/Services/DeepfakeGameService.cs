@@ -302,4 +302,19 @@ public class DeepfakeGameService : BaseGameService<DeepfakeState>
         }
         return Task.FromResult(false);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.Votes.RebindKey(oldConnectionId, newConnectionId);
+        state.Votes.RebindValues(oldConnectionId, newConnectionId);
+        state.PlayerOrder.RebindItems(oldConnectionId, newConnectionId);
+        if (state.AiConnectionId == oldConnectionId) state.AiConnectionId = newConnectionId;
+        foreach (var stroke in state.Strokes)
+        {
+            if (stroke.OwnerId == oldConnectionId) stroke.OwnerId = newConnectionId;
+        }
+    }
 }

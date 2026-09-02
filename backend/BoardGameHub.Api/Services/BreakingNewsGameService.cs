@@ -160,4 +160,13 @@ public class BreakingNewsGameService : BaseGameService<BreakingNewsState>
         }
         return false;
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.AnchorConnectionId == oldConnectionId) state.AnchorConnectionId = newConnectionId;
+        state.SlotOwners.RebindValues(oldConnectionId, newConnectionId);
+    }
 }

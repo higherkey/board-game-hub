@@ -350,4 +350,46 @@ public class WisecrackGameService : BaseGameService<WisecrackState>
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.Assignments != null)
+        {
+            foreach (var assignment in state.Assignments)
+            {
+                assignment.AssignedPlayerIds.RebindItems(oldConnectionId, newConnectionId);
+            }
+        }
+
+        if (state.Answers != null)
+        {
+            foreach (var answer in state.Answers)
+            {
+                if (answer.PlayerId == oldConnectionId)
+                {
+                    answer.PlayerId = newConnectionId;
+                }
+            }
+        }
+
+        if (state.Battles != null)
+        {
+            foreach (var battle in state.Battles)
+            {
+                if (battle.AnswerA?.PlayerId == oldConnectionId) battle.AnswerA.PlayerId = newConnectionId;
+                if (battle.AnswerB?.PlayerId == oldConnectionId) battle.AnswerB.PlayerId = newConnectionId;
+                if (battle.WinnerPlayerId == oldConnectionId) battle.WinnerPlayerId = newConnectionId;
+                if (battle.Votes != null)
+                {
+                    foreach (var vote in battle.Votes)
+                    {
+                        if (vote.PlayerId == oldConnectionId) vote.PlayerId = newConnectionId;
+                    }
+                }
+            }
+        }
+    }
 }

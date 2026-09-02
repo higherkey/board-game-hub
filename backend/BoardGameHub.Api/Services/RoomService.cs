@@ -5,11 +5,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BoardGameHub.Api.Services;
 
-public class RoomService : IRoomService
+public class RoomService : IRoomService, IDisposable
 {
     // Concurrent dictionary for thread safety
     private readonly ConcurrentDictionary<string, Room> _rooms = new();
@@ -20,9 +21,13 @@ public class RoomService : IRoomService
     private readonly Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> _gameHubContext;
     private readonly GameStateManager _gameStateManager;
     private readonly ILogger<RoomService> _logger;
+    private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory? _scopeFactory;
+    private readonly IRoomPersistenceService? _persistenceService;
+    private readonly IRoomStateSerializer? _serializer;
 
     private readonly Timer _statsTimer;
-    private bool _statsDirty = false;
+    private int _statsDirty = 0;
+    private int _isBroadcasting = 0;
 
     public RoomService(
         IEnumerable<IGameService> gameServices,
@@ -30,24 +35,74 @@ public class RoomService : IRoomService
         Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> gameHubContext,
         GameStateManager gameStateManager,
         ILogger<RoomService> logger)
+        : this(gameServices, adminHubContext, gameHubContext, gameStateManager, logger, null, null, null)
+    {
+    }
+
+    public RoomService(
+        IEnumerable<IGameService> gameServices,
+        Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub> adminHubContext,
+        Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub> gameHubContext,
+        GameStateManager gameStateManager,
+        ILogger<RoomService> logger,
+        Microsoft.Extensions.DependencyInjection.IServiceScopeFactory? scopeFactory,
+        IRoomPersistenceService? persistenceService,
+        IRoomStateSerializer? serializer)
     {
         _gameServices = gameServices;
         _adminHubContext = adminHubContext;
         _gameHubContext = gameHubContext;
         _gameStateManager = gameStateManager;
         _logger = logger;
+        _scopeFactory = scopeFactory;
+        _persistenceService = persistenceService;
+        _serializer = serializer;
         
         // Broadcast stats at most every 2 seconds
-        _statsTimer = new Timer(async _ => await BroadcastStatsIfNeeded(), null, 2000, 2000);
+        _statsTimer = new Timer(static state =>
+        {
+            if (state is RoomService self)
+            {
+                _ = self.BroadcastStatsIfNeeded();
+            }
+        }, this, 2000, 2000);
     }
 
     private async Task BroadcastStatsIfNeeded()
     {
-        if (_statsDirty)
+        try
         {
-            _statsDirty = false;
-            await _adminHubContext.Clients.All.SendAsync("StatsUpdated", GetServerStats());
+            if (Interlocked.CompareExchange(ref _statsDirty, 0, 1) == 1)
+            {
+                if (Interlocked.CompareExchange(ref _isBroadcasting, 1, 0) != 0)
+                {
+                    Interlocked.Exchange(ref _statsDirty, 1);
+                    return;
+                }
+
+                try
+                {
+                    if (_adminHubContext?.Clients?.All != null)
+                    {
+                        await _adminHubContext.Clients.All.SendAsync("StatsUpdated", GetServerStats());
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _isBroadcasting, 0);
+                }
+            }
         }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to broadcast server stats to AdminHub");
+        }
+    }
+
+    public void Dispose()
+    {
+        _statsTimer?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public T? GetGameService<T>(GameType type) where T : class
@@ -130,6 +185,10 @@ public class RoomService : IRoomService
         {
             Code = code,
             GameType = gameType,
+            Revision = 1,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddHours(4),
             Players = new List<Player>
             {
                 new Player { 
@@ -168,63 +227,79 @@ public class RoomService : IRoomService
             .ToList();
     }
 
-    public Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false)
+    public void RebindPlayerConnection(Room room, string oldConnectionId, string newConnectionId)
+    {
+        if (room == null || string.IsNullOrWhiteSpace(oldConnectionId) || string.IsNullOrWhiteSpace(newConnectionId) || oldConnectionId == newConnectionId)
+            return;
+
+        if (room.HostPlayerId == oldConnectionId) room.HostPlayerId = newConnectionId;
+        if (room.HostScreenId == oldConnectionId) room.HostScreenId = newConnectionId;
+        if (room.CreatorConnectionId == oldConnectionId) room.CreatorConnectionId = newConnectionId;
+
+        room.RoundScores.RebindKey(oldConnectionId, newConnectionId);
+        room.PlayerAnswers.RebindKey(oldConnectionId, newConnectionId);
+        room.NextGameVotes.RebindKey(oldConnectionId, newConnectionId);
+
+        // Rebind game-specific service state
+        var gameService = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
+        gameService?.RebindPlayer(room, oldConnectionId, newConnectionId);
+    }
+
+    public Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false, string? sessionId = null)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room))
         {
-            var sanitizedPlayerName = System.Text.RegularExpressions.Regex.Replace(playerName ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
-            _logger.LogWarning("Player {Player} failed to join room {Code}: Room not found", sanitizedPlayerName, code);
+            room = HydrateRoomFromDatabase(code.ToUpper());
+        }
+
+        if (room == null)
+        {
+            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            _logger.LogWarning("Player attempted to join room {Code}: Room not found", sanitizedCode);
             return null;
         }
 
-        // 1. RECONNECTION LOGIC: Check if player exists by ID (UserId or GuestId)
-        var existingPlayer = room.Players.FirstOrDefault(p => userId != null && p.UserId == userId);
-        if (existingPlayer != null)
-        {
-            room.StateLock.Wait();
-            try
-            {
-                if (existingPlayer.ConnectionId != connectionId)
-                {
-                    // If this player was the host, update the room's host pointers to the new connection ID
-                    if (room.HostPlayerId == existingPlayer.ConnectionId) room.HostPlayerId = connectionId;
-                    if (room.HostScreenId == existingPlayer.ConnectionId) room.HostScreenId = connectionId;
-                    // Ensure creator pointer is updated
-                    if (room.CreatorConnectionId == existingPlayer.ConnectionId) room.CreatorConnectionId = connectionId;
+        var cleanUserId = string.IsNullOrWhiteSpace(userId) ? null : userId.Trim();
+        // Validate sessionId is a well-formed GUID to prevent arbitrary string injection as a bearer token
+        var cleanSessionId = Guid.TryParse(sessionId, out var parsedSessionId) ? parsedSessionId.ToString("N") : null;
 
-                    _connectionRoomMap.TryRemove(existingPlayer.ConnectionId, out _);
+        room.StateLock.Wait();
+        try
+        {
+            // 1. RECONNECTION LOGIC: Check if player exists by ID (UserId or SessionId)
+            var existingPlayer = room.Players.FirstOrDefault(p => 
+                (cleanUserId != null && p.UserId == cleanUserId) || 
+                (cleanSessionId != null && p.SessionId == cleanSessionId));
+
+            if (existingPlayer != null)
+            {
+                var oldConnectionId = existingPlayer.ConnectionId;
+                if (oldConnectionId != connectionId)
+                {
+                    RebindPlayerConnection(room, oldConnectionId, connectionId);
+                    _connectionRoomMap.TryRemove(oldConnectionId, out _);
                 }
                 
                 existingPlayer.ConnectionId = connectionId;
                 existingPlayer.IsConnected = true; // Mark as connected
                 existingPlayer.Name = playerName; // Update name in case it changed
                 
-                if (userId != null) existingPlayer.UserId = userId;
+                if (cleanUserId != null) existingPlayer.UserId = cleanUserId;
                 if (avatarUrl != null) existingPlayer.AvatarUrl = avatarUrl;
                 // existingPlayer.IsScreen = isScreen; // KEEP EXISTING ROLE ON RECONNECT
-            }
-            finally
-            {
-                room.StateLock.Release();
+
+                // Rotate the session token on reconnect to limit exposure window if a prior token was leaked.
+                // GameHub will re-emit the new token via the existing SessionAssigned flow.
+                existingPlayer.SessionId = Guid.NewGuid().ToString("N");
+
+                _connectionRoomMap.TryAdd(connectionId, code);
+                _gameStateManager.MarkDirty(room.Code);
+                NotifyStatsChanged();
+                return room;
             }
 
-            _connectionRoomMap.TryAdd(connectionId, code);
-            _gameStateManager.MarkDirty(room.Code);
-            NotifyStatsChanged();
-            return room;
-        }
-
-        // 2. NEW PLAYER LOGIC
-        // If no Host Player or Screen Player, this player might fill the gap?
-        // Actually, if a room exists, it already had a creator (HostScreen/Player).
-        // But if they disconnected and the room is still alive, maybe we need to reassign?
-        // Let's stick to the core requirement: creator starts as both.
-        bool assignHost = false;
-        
-        room.StateLock.Wait();
-        try
-        {
-            assignHost = !room.Players.Any(p => p.IsHost);
+            // 2. NEW PLAYER LOGIC
+            bool assignHost = !room.Players.Any(p => p.IsHost);
             
             if (assignHost && string.IsNullOrEmpty(room.HostPlayerId))
             {
@@ -237,20 +312,20 @@ public class RoomService : IRoomService
                 Name = playerName,
                 IsHost = assignHost,
                 IsConnected = true,
-                UserId = userId,
+                UserId = cleanUserId,
                 AvatarUrl = avatarUrl,
                 IsScreen = isScreen
             };
 
             room.Players.Add(newPlayer);
+            _connectionRoomMap.TryAdd(connectionId, code);
+            _logger.LogInformation("New player {Player} joined room {Code} (Host: {IsHost})", playerName, code, assignHost);
         }
         finally
         {
             room.StateLock.Release();
         }
-        _connectionRoomMap.TryAdd(connectionId, code);
-        _logger.LogInformation("New player {Player} joined room {Code} (Host: {IsHost})", playerName, code, assignHost);
-        
+
         _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
@@ -285,8 +360,70 @@ public class RoomService : IRoomService
 
     public Room? GetRoom(string code)
     {
-        _rooms.TryGetValue(code.ToUpper(), out var room);
-        return room;
+        if (string.IsNullOrWhiteSpace(code)) return null;
+        var upperCode = code.ToUpperInvariant();
+        if (_rooms.TryGetValue(upperCode, out var room))
+        {
+            return room;
+        }
+
+        return HydrateRoomFromDatabase(upperCode);
+    }
+
+    public void RehydrateRoom(Room room)
+    {
+        if (room == null || string.IsNullOrWhiteSpace(room.Code)) return;
+        _rooms.AddOrUpdate(room.Code.ToUpperInvariant(), room, (_, _) => room);
+        NotifyStatsChanged();
+    }
+
+    public void EvictRoom(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return;
+        var upperCode = code.ToUpperInvariant();
+        _rooms.TryRemove(upperCode, out _);
+        _gameStateManager.UntrackRoom(upperCode);
+        NotifyStatsChanged();
+    }
+
+    private Room? HydrateRoomFromDatabase(string code)
+    {
+        if (_scopeFactory == null) return null;
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<BoardGameHub.Api.Data.AppDbContext>();
+            var now = DateTime.UtcNow;
+            var entity = db.ActiveRooms.AsNoTracking().FirstOrDefault(r => r.RoomCode == code && r.ExpiresAt > now);
+            if (entity == null) return null;
+
+            var serializer = _serializer ?? new RoomStateSerializer(_gameServices);
+            var room = serializer.Deserialize(entity.RoomEnvelopeJson, _gameServices);
+            room.Revision = entity.Revision;
+            room.CreatedAt = entity.CreatedAt;
+            room.UpdatedAt = entity.UpdatedAt;
+            room.ExpiresAt = entity.ExpiresAt;
+
+            foreach (var player in room.Players)
+            {
+                player.IsConnected = false;
+            }
+
+            if (_rooms.TryAdd(room.Code.ToUpperInvariant(), room))
+            {
+                _gameStateManager.TrackRoom(room);
+                NotifyStatsChanged();
+                return room;
+            }
+
+            return _rooms.GetValueOrDefault(room.Code.ToUpperInvariant());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed on-demand rehydration for room {RoomCode} from database.", code);
+            return null;
+        }
     }
 
     public Room? RenamePlayer(string connectionId, string newName)
@@ -322,26 +459,30 @@ public class RoomService : IRoomService
         {
             if (_rooms.TryGetValue(roomCode, out var room))
             {
-                var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
-                if (player != null)
+                room.StateLock.Wait();
+                try
                 {
-                    // SOFT DELETE: Just mark as disconnected
-                    room.StateLock.Wait();
-                    try
+                    var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+                    if (player != null)
                     {
+                        // SOFT DELETE: Just mark as disconnected
                         player.IsConnected = false;
                     }
-                    finally
+                    else
                     {
-                        room.StateLock.Release();
+                        return null;
                     }
-                    
-                    // Trigger cleanup check
-                    CheckRoomLifecycle(room);
-                    _gameStateManager.MarkDirty(room.Code);
-                    NotifyStatsChanged();
-                    return room;
                 }
+                finally
+                {
+                    room.StateLock.Release();
+                }
+                
+                // Trigger cleanup check
+                CheckRoomLifecycle(room);
+                _gameStateManager.MarkDirty(room.Code);
+                NotifyStatsChanged();
+                return room;
             }
         }
         return null;
@@ -398,6 +539,7 @@ public class RoomService : IRoomService
                  await _gameHubContext.Clients.All.SendAsync("RoomDeleted", code);
 
                  _gameStateManager.UntrackRoom(code);
+                 _persistenceService?.QueueDelete(code);
                  NotifyStatsChanged();
             }
         }
@@ -409,6 +551,7 @@ public class RoomService : IRoomService
         _ = _gameHubContext.Clients.Group(code.ToUpper()).SendAsync("RoomTerminated", "Room terminated by administrator");
         _ = _gameHubContext.Clients.All.SendAsync("RoomDeleted", code.ToUpper());
         _gameStateManager.UntrackRoom(code.ToUpper());
+        _persistenceService?.QueueDelete(code.ToUpper());
         NotifyStatsChanged();
     }
 
@@ -763,7 +906,7 @@ public class RoomService : IRoomService
     public void NotifyStatsChanged()
     {
         // Mark dirty, handled by timer
-        _statsDirty = true;
+        Interlocked.Exchange(ref _statsDirty, 1);
     }
 
     private string GenerateRoomCode()
