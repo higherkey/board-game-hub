@@ -421,7 +421,8 @@ public class RoomService : IRoomService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed on-demand rehydration for room {RoomCode} from database.", code);
+            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            _logger.LogError(ex, "Failed on-demand rehydration for room {RoomCode} from database.", sanitizedCode);
             return null;
         }
     }
