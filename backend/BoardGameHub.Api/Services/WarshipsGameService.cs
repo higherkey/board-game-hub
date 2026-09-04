@@ -1,18 +1,16 @@
 using BoardGameHub.Api.Models;
-using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
-public class WarshipsGameService : IGameService
+public class WarshipsGameService : BaseGameService<WarshipsState>
 {
-    public GameType GameType => GameType.Warships;
+    public override GameType GameType => GameType.Warships;
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         var state = new WarshipsState
         {
-            Phase = WarshipsPhase.Placement,
-            // Initialize Grids for Players
+            Phase = WarshipsPhase.Placement
         };
         
         foreach(var p in room.Players)
@@ -24,25 +22,22 @@ public class WarshipsGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
-    {
-        return Task.FromResult(false);
-    }
-
-    public Task EndRound(Room room)
+    public override Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         return Task.CompletedTask;
     }
 
-    public object DeserializeState(JsonElement json)
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
     {
-        return json.Deserialize<WarshipsState>(new JsonSerializerOptions { IncludeFields = true }) ?? new WarshipsState();
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.PlayerBoards.RebindKey(oldConnectionId, newConnectionId);
+        if (state.ActivePlayerId == oldConnectionId)
+        {
+            state.ActivePlayerId = newConnectionId;
+        }
     }
 }
 
@@ -56,15 +51,17 @@ public class WarshipsState
 public class WarshipsBoard
 {
     // Grid 10x10. 0=Empty, 1=Ship, 2=Hit, 3=Miss
-    public int[,] Grid { get; set; } = new int[10, 10]; 
+    public int[][] Grid { get; set; } = Enumerable.Range(0, 10).Select(_ => new int[10]).ToArray(); 
     public List<Warship> Ships { get; set; } = new();
 }
+
+public record WarshipCoordinate(int Row, int Col);
 
 public class Warship
 {
     public string Type { get; set; } = string.Empty;
     public int Size { get; set; }
-    public List<(int Row, int Col)> Coordinates { get; set; } = new();
+    public List<WarshipCoordinate> Coordinates { get; set; } = new();
     public bool IsSunk { get; set; }
 }
 

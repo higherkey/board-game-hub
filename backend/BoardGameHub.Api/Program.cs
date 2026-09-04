@@ -28,7 +28,17 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 // Add services to the container.
 // Database Context
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrEmpty(connectionString) || connectionString.StartsWith("InMemory", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseInMemoryDatabase(string.IsNullOrEmpty(connectionString) ? "BoardGameHubInMemory" : connectionString);
+    }
+    else
+    {
+        options.UseNpgsql(connectionString);
+    }
+});
 
 // Identity
 builder.Services.AddIdentity<User, IdentityRole>(options => {
@@ -114,8 +124,9 @@ builder.Services.AddSingleton<IRoomService, RoomService>();
 builder.Services.AddSingleton<IBabbleService, BabbleService>();
 builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
 builder.Services.AddSingleton<IDictionaryService, DictionaryService>();
-builder.Services.AddSingleton<DeepfakeGameService>();
 // Register Game Services
+builder.Services.AddSingleton<IGameService, DeepfakeGameService>();
+builder.Services.AddSingleton<DeepfakeGameService>(sp => (DeepfakeGameService)sp.GetServices<IGameService>().First(s => s is DeepfakeGameService));
 builder.Services.AddSingleton<IGameService, ScatterbrainGameService>();
 builder.Services.AddSingleton<IGameService, BabbleGameService>();
 builder.Services.AddSingleton<IGameService, OneAndOnlyService>();
@@ -125,7 +136,7 @@ builder.Services.AddSingleton<IGameService, SymbologyGameService>();
 builder.Services.AddSingleton<IGameService, PictophoneService>();
 builder.Services.AddSingleton<IGameService, WisecrackGameService>();
 builder.Services.AddSingleton<IGameService, SushiTrainGameService>();
-builder.Services.AddSingleton<IGameService, BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameService>();
+builder.Services.AddSingleton<IGameService, GreatMindsGameService>();
 builder.Services.AddSingleton<IGameService, PoppycockGameService>();
 builder.Services.AddSingleton<IGameService, NomDeCodeService>();
 builder.Services.AddSingleton<IGameService, WarshipsGameService>();
@@ -135,8 +146,17 @@ builder.Services.AddSingleton<IGameService, FarkleService>();
 
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();
+builder.Services.AddSingleton<IRoomStateSerializer, RoomStateSerializer>();
 builder.Services.AddSingleton<GameStateManager>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GameStateManager>());
+
+// Room Persistence Engine
+builder.Services.AddSingleton<RoomPersistenceWorker>();
+builder.Services.AddSingleton<IRoomPersistenceService>(sp => sp.GetRequiredService<RoomPersistenceWorker>());
+if (!string.Equals(builder.Configuration["Testing:DisablePersistenceWorker"], "true", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<RoomPersistenceWorker>());
+}
 
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<ISocialService, SocialService>();
@@ -174,6 +194,10 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
+    {
+        db.Database.EnsureCreated();
+    }
     
     // Seed Roles and Admin User
     await DbInitializer.SeedAsync(scope.ServiceProvider);

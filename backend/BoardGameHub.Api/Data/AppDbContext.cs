@@ -15,10 +15,44 @@ public class AppDbContext : IdentityDbContext<User>
     public DbSet<GameSession> GameSessions { get; set; }
     public DbSet<GameSessionPlayer> GameSessionPlayers { get; set; }
     public DbSet<GameDefinition> Games { get; set; }
+    public DbSet<ActiveRoom> ActiveRooms { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // Active Room Persistence Configuration
+        var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+            v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+        builder.Entity<ActiveRoom>(entity =>
+        {
+            entity.HasKey(r => r.RoomCode);
+            entity.Property(r => r.RoomCode).HasMaxLength(10);
+            entity.Property(r => r.GameType).HasMaxLength(50).IsRequired();
+            entity.Property(r => r.State).HasMaxLength(30).IsRequired();
+            entity.Property(r => r.SchemaVersion).HasDefaultValue(1);
+            entity.Property(r => r.Revision).IsConcurrencyToken().HasDefaultValue(0L);
+            entity.Property(r => r.RoomEnvelopeJson).HasColumnType("jsonb").IsRequired();
+
+            entity.Property(r => r.CreatedAt)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasConversion(utcConverter);
+
+            entity.Property(r => r.UpdatedAt)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasConversion(utcConverter);
+
+            entity.Property(r => r.ExpiresAt)
+                .HasColumnType("timestamp with time zone")
+                .HasConversion(utcConverter);
+
+            entity.HasIndex(r => new { r.State, r.ExpiresAt, r.UpdatedAt })
+                .HasDatabaseName("idx_active_rooms_lookup");
+        });
 
         // Friendship Configuration
         builder.Entity<Friendship>()
