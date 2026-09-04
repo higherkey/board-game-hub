@@ -6,7 +6,7 @@ using BoardGameHub.Api.Models;
 using Microsoft.AspNetCore.SignalR;
 using System.Text.Json;
 
-namespace BoardGameHub.Api.Services.Games.GreatMinds
+namespace BoardGameHub.Api.Services
 {
     public class GreatMindsGameService : BaseGameService<GreatMindsGameState>
     {

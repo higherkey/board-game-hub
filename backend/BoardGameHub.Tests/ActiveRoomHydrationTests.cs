@@ -6,7 +6,6 @@ using BoardGameHub.Api.Data;
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Services.Games;
-using BoardGameHub.Api.Services.Games.GreatMinds;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;

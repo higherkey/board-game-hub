@@ -7,7 +7,6 @@ using BoardGameHub.Api.Data;
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Services.Games;
-using BoardGameHub.Api.Services.Games.GreatMinds;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -249,5 +248,51 @@ public class RoomPersistenceWorkerTests : IDisposable
 
         _mockRoomService.Verify(r => r.EvictRoom("EXPIRED1"), Times.Once);
         _mockRoomService.Verify(r => r.EvictRoom("VALID1"), Times.Never);
+    }
+
+    [Fact]
+    public async Task StartAsync_And_StopAsync_ShouldExecuteGracefully()
+    {
+        // Arrange
+        var worker = CreateWorker();
+
+        // Act & Assert
+        await worker.StartAsync(CancellationToken.None);
+        await worker.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task RehydrateActiveRoomsAsync_ShouldRehydrateValidRooms()
+    {
+        // Arrange
+        var worker = CreateWorker();
+        var room = new Room
+        {
+            Code = "REHYD1",
+            GameType = GameType.Farkle,
+            State = GameState.Playing,
+            ExpiresAt = DateTime.UtcNow.AddHours(2)
+        };
+        var json = _serializer.Serialize(room);
+
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.ActiveRooms.Add(new ActiveRoom
+            {
+                RoomCode = "REHYD1",
+                GameType = "Farkle",
+                State = "Playing",
+                ExpiresAt = DateTime.UtcNow.AddHours(2),
+                RoomEnvelopeJson = json
+            });
+            await db.SaveChangesAsync();
+        }
+
+        // Act
+        await worker.RehydrateActiveRoomsAsync(CancellationToken.None);
+
+        // Assert
+        _mockRoomService.Verify(r => r.RehydrateRoom(It.Is<Room>(rm => rm.Code == "REHYD1")), Times.Once);
     }
 }

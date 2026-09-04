@@ -136,7 +136,7 @@ builder.Services.AddSingleton<IGameService, SymbologyGameService>();
 builder.Services.AddSingleton<IGameService, PictophoneService>();
 builder.Services.AddSingleton<IGameService, WisecrackGameService>();
 builder.Services.AddSingleton<IGameService, SushiTrainGameService>();
-builder.Services.AddSingleton<IGameService, BoardGameHub.Api.Services.Games.GreatMinds.GreatMindsGameService>();
+builder.Services.AddSingleton<IGameService, GreatMindsGameService>();
 builder.Services.AddSingleton<IGameService, PoppycockGameService>();
 builder.Services.AddSingleton<IGameService, NomDeCodeService>();
 builder.Services.AddSingleton<IGameService, WarshipsGameService>();

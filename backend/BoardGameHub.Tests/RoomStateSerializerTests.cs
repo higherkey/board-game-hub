@@ -2,7 +2,6 @@ using BoardGameHub.Api.Hubs;
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Services.Games;
-using BoardGameHub.Api.Services.Games.GreatMinds;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
