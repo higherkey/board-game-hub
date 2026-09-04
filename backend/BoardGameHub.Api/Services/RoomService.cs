@@ -249,7 +249,8 @@ public class RoomService : IRoomService, IDisposable
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room))
         {
-            room = HydrateRoomFromDatabase(code.ToUpper());
+            HydrateRoomFromDatabase(code.ToUpper());
+            _rooms.TryGetValue(code.ToUpper(), out room);
         }
 
         if (room == null)
