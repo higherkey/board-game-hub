@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -34,6 +34,9 @@ namespace BoardGameHub.Api.Migrations
                 name: "idx_active_rooms_lookup",
                 table: "ActiveRooms",
                 columns: new[] { "State", "ExpiresAt", "UpdatedAt" });
+
+            migrationBuilder.Sql("ALTER TABLE public.\"ActiveRooms\" ENABLE ROW LEVEL SECURITY;");
+            migrationBuilder.Sql("REVOKE ALL ON TABLE public.\"ActiveRooms\" FROM anon, authenticated;");
         }
 
         /// <inheritdoc />
