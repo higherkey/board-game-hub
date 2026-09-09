@@ -295,4 +295,250 @@ public class RoomPersistenceWorkerTests : IDisposable
         // Assert
         _mockRoomService.Verify(r => r.RehydrateRoom(It.Is<Room>(rm => rm.Code == "REHYD1")), Times.Once);
     }
+
+    [Fact]
+    public async Task QueueSave_ShouldUpdateExistingEntity_WhenRevisionIsHigher()
+    {
+        // Arrange
+        var worker = CreateWorker();
+        var snapshotV1 = new RoomSnapshot
+        {
+            RoomCode = "UPDATE1",
+            GameType = "Babble",
+            State = "Lobby",
+            SchemaVersion = 1,
+            Revision = 1,
+            RoomEnvelopeJson = "{\"rev\":1}",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddHours(4)
+        };
+        worker.QueueSave(snapshotV1);
+        await worker.FlushAsync(CancellationToken.None);
+
+        var snapshotV2 = new RoomSnapshot
+        {
+            RoomCode = "UPDATE1",
+            GameType = "Babble",
+            State = "Playing",
+            SchemaVersion = 1,
+            Revision = 2,
+            RoomEnvelopeJson = "{\"rev\":2}",
+            CreatedAt = snapshotV1.CreatedAt,
+            UpdatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddHours(4)
+        };
+
+        // Act
+        worker.QueueSave(snapshotV2);
+        await worker.FlushAsync(CancellationToken.None);
+
+        // Assert
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var updated = await db.ActiveRooms.FindAsync("UPDATE1");
+
+        updated.Should().NotBeNull();
+        updated!.Revision.Should().Be(2);
+        updated.State.Should().Be("Playing");
+        updated.RoomEnvelopeJson.Should().Be("{\"rev\":2}");
+    }
+
+    [Fact]
+    public async Task FallbackPersistIndividuallyAsync_ShouldPersistEntitiesIndividually()
+    {
+        // Arrange
+        var worker = CreateWorker();
+        var upserts = new Dictionary<string, RoomSnapshot>
+        {
+            ["FALLBACK1"] = new RoomSnapshot
+            {
+                RoomCode = "FALLBACK1",
+                GameType = "Farkle",
+                State = "Lobby",
+                SchemaVersion = 1,
+                Revision = 1,
+                RoomEnvelopeJson = "{}",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddHours(2)
+            }
+        };
+
+        // Act - invoke private FallbackPersistIndividuallyAsync via reflection
+        var fallbackMethod = typeof(RoomPersistenceWorker).GetMethod(
+            "FallbackPersistIndividuallyAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        var task = (Task)fallbackMethod.Invoke(worker, new object[] { upserts, CancellationToken.None })!;
+        await task;
+
+        // Assert
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var saved = await db.ActiveRooms.FindAsync("FALLBACK1");
+
+        saved.Should().NotBeNull();
+        saved!.RoomCode.Should().Be("FALLBACK1");
+
+        // Act 2 - Update existing entity via fallback
+        var updatedUpserts = new Dictionary<string, RoomSnapshot>
+        {
+            ["FALLBACK1"] = new RoomSnapshot
+            {
+                RoomCode = "FALLBACK1",
+                GameType = "Farkle",
+                State = "Playing",
+                SchemaVersion = 1,
+                Revision = 2,
+                RoomEnvelopeJson = "{\"rev\":2}",
+                CreatedAt = saved.CreatedAt,
+                UpdatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddHours(2)
+            }
+        };
+
+        var task2 = (Task)fallbackMethod.Invoke(worker, new object[] { updatedUpserts, CancellationToken.None })!;
+        await task2;
+
+        using var scope2 = _scopeFactory.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var reloaded = await db2.ActiveRooms.AsNoTracking().FirstOrDefaultAsync(r => r.RoomCode == "FALLBACK1");
+        reloaded.Should().NotBeNull();
+        reloaded!.Revision.Should().Be(2);
+        reloaded.State.Should().Be("Playing");
+    }
+
+    [Fact]
+    public async Task QueueSave_CoalescesMultipleSnapshotsForSameRoom_WithinBatch()
+    {
+        // Arrange
+        var worker = CreateWorker();
+        var snapshotV1 = new RoomSnapshot
+        {
+            RoomCode = "COALESCE1",
+            GameType = "Babble",
+            State = "Lobby",
+            Revision = 1
+        };
+        var snapshotV2 = new RoomSnapshot
+        {
+            RoomCode = "COALESCE1",
+            GameType = "Babble",
+            State = "Playing",
+            Revision = 2
+        };
+
+        // Queue both before flush
+        worker.QueueSave(snapshotV1);
+        worker.QueueSave(snapshotV2);
+
+        // Act
+        await worker.FlushAsync(CancellationToken.None);
+
+        // Assert
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var record = await db.ActiveRooms.FindAsync("COALESCE1");
+
+        record.Should().NotBeNull();
+        record!.Revision.Should().Be(2);
+        record.State.Should().Be("Playing");
+    }
+
+    [Fact]
+    public void Worker_Dispose_ShouldDisposeGracefully()
+    {
+        var worker = CreateWorker();
+        worker.Dispose();
+    }
+
+    [Fact]
+    public void QueueSave_And_QueueDelete_InvalidInputs_ShouldReturnFalse()
+    {
+        // Arrange
+        var worker = CreateWorker();
+
+        // Act & Assert
+        worker.QueueSave(null!).Should().BeFalse();
+        worker.QueueSave(new RoomSnapshot { RoomCode = "" }).Should().BeFalse();
+        worker.QueueSave(new RoomSnapshot { RoomCode = "   " }).Should().BeFalse();
+
+        worker.QueueDelete(null!).Should().BeFalse();
+        worker.QueueDelete("").Should().BeFalse();
+        worker.QueueDelete("   ").Should().BeFalse();
+    }
+
+    [Fact]
+    public void QueueSave_And_QueueDelete_ShouldLogWarning_WhenChannelCapacityReached()
+    {
+        // Arrange
+        var worker = CreateWorker();
+
+        // Fill channel to max capacity (1000 items)
+        for (int i = 0; i < RoomPersistenceWorker.ChannelCapacity; i++)
+        {
+            worker.QueueSave(new RoomSnapshot { RoomCode = $"CAP{i}", GameType = "Babble" });
+        }
+
+        // Act - 1001st item should be rejected and log warning
+        var saveResult = worker.QueueSave(new RoomSnapshot { RoomCode = "OVERFLOW", GameType = "Babble" });
+        var deleteResult = worker.QueueDelete("OVERFLOW");
+
+        // Assert
+        saveResult.Should().BeFalse();
+        deleteResult.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RehydrateActiveRoomsAsync_ShouldResetPlayerIsConnected_AndHandleDeserError()
+    {
+        // Arrange
+        var worker = CreateWorker();
+        var roomWithConnectedPlayer = new Room
+        {
+            Code = "RESETCONN",
+            GameType = GameType.Babble,
+            State = GameState.Playing,
+            ExpiresAt = DateTime.UtcNow.AddHours(2)
+        };
+        roomWithConnectedPlayer.Players.Add(new Player
+        {
+            ConnectionId = "c1",
+            Name = "Alice",
+            IsConnected = true
+        });
+        var validJson = _serializer.Serialize(roomWithConnectedPlayer);
+
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.ActiveRooms.AddRange(
+                new ActiveRoom
+                {
+                    RoomCode = "RESETCONN",
+                    GameType = "Babble",
+                    State = "Playing",
+                    ExpiresAt = DateTime.UtcNow.AddHours(2),
+                    RoomEnvelopeJson = validJson
+                },
+                new ActiveRoom
+                {
+                    RoomCode = "CORRUPTED",
+                    GameType = "Babble",
+                    State = "Playing",
+                    ExpiresAt = DateTime.UtcNow.AddHours(2),
+                    RoomEnvelopeJson = "INVALID_JSON{{{"
+                }
+            );
+            await db.SaveChangesAsync();
+        }
+
+        // Act
+        await worker.RehydrateActiveRoomsAsync(CancellationToken.None);
+
+        // Assert
+        _mockRoomService.Verify(r => r.RehydrateRoom(It.Is<Room>(rm => 
+            rm.Code == "RESETCONN" && rm.Players.All(p => !p.IsConnected))), Times.Once);
+    }
 }

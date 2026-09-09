@@ -150,10 +150,26 @@ export class SignalRService {
       this.connectionStatus$.next('Reconnecting');
     });
 
-    this.hubConnection.onreconnected((id) => {
+    this.hubConnection.onreconnected(async (id) => {
       this.logger.info('SignalR Reconnected', id);
       this.connectionStatus$.next('Connected');
       this.connectionId$.next(id || null);
+
+      // Re-join active room so SignalR group membership and state diffs are restored
+      const activeRoom = this.currentRoomSubject.value;
+      if (activeRoom && this.lastPlayerName) {
+        try {
+          await this.joinRoom(activeRoom.code, this.lastPlayerName, this.lastIsScreen);
+        } catch (err) {
+          this.logger.error('Failed to auto-rejoin room after reconnect', err);
+        }
+      }
+    });
+
+    this.hubConnection.on('SessionAssigned', (sessionId: string) => {
+      if (sessionId) {
+        localStorage.setItem('bgh_session_id', sessionId);
+      }
     });
 
     this.hubConnection.on('PlayerJoined', (players: Player[]) => {
@@ -575,12 +591,19 @@ export class SignalRService {
     }
   }
 
+  private lastPlayerName: string | null = null;
+  private lastIsScreen = false;
+
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
     if (this.hubConnection.state !== HubConnectionState.Connected) {
       await this.startConnection();
     }
+    this.lastPlayerName = playerName;
+    this.lastIsScreen = isScreen;
+
     const guestId = this.authService.getGuestId();
-    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName, guestId, isScreen);
+    const sessionId = localStorage.getItem('bgh_session_id') || null;
+    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName, guestId, isScreen, sessionId);
     if (room) {
       this.currentRoomSubject.next(room);
       this.players$.next(room.players); // Sync players immediately

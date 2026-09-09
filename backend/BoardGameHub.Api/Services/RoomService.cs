@@ -267,10 +267,11 @@ public class RoomService : IRoomService, IDisposable
         room.StateLock.Wait();
         try
         {
-            // 1. RECONNECTION LOGIC: Check if player exists by ID (UserId or SessionId)
+            // 1. RECONNECTION LOGIC: Check if player exists by ID (UserId or SessionId) AND matching role (Table vs Hand)
             var existingPlayer = room.Players.FirstOrDefault(p => 
-                (cleanUserId != null && p.UserId == cleanUserId) || 
-                (cleanSessionId != null && p.SessionId == cleanSessionId));
+                p.IsScreen == isScreen && (
+                    (cleanUserId != null && p.UserId == cleanUserId) || 
+                    (cleanSessionId != null && p.SessionId == cleanSessionId)));
 
             if (existingPlayer != null)
             {

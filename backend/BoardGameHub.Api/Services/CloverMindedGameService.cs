@@ -124,6 +124,7 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
         return Task.CompletedTask;
     }
 
+
     public override Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room.GameData is not CloverMindedState state) return Task.FromResult(false);
@@ -240,6 +241,7 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
         sol.DecoyCardId = decoy.Id;
         sol.SpectatorId = specId;
         _roundSolutions[room.Code] = sol;
+        state.CurrentRoundSolution = sol;
 
         state.LastResult = null;
     }
@@ -331,9 +333,12 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
 
         var p = room.Players.FirstOrDefault(x => x.ConnectionId == connectionId);
         if (p == null || p.IsScreen) return false;
-        if (connectionId == state.CurrentSpectatorId) return false;
-
-        if (state.Slots == null || !_roundSolutions.TryGetValue(room.Code, out var sol)) return false;
+        var sol = state.CurrentRoundSolution;
+        if (sol == null && _roundSolutions.TryGetValue(room.Code, out var cachedSol))
+        {
+            sol = cachedSol;
+        }
+        if (state.Slots == null || sol == null) return false;
 
         for (var i = 0; i < 4; i++)
         {
@@ -443,6 +448,11 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
             state.CurrentSpectatorId = newConnectionId;
         }
 
+        if (state.CurrentRoundSolution != null && state.CurrentRoundSolution.SpectatorId == oldConnectionId)
+        {
+            state.CurrentRoundSolution.SpectatorId = newConnectionId;
+        }
+
         if (state.CardOccupants != null)
         {
             foreach (var cardId in state.CardOccupants.Where(kvp => kvp.Value == oldConnectionId).Select(kvp => kvp.Key).ToList())
@@ -474,7 +484,7 @@ public static class CloverGeometry
     }
 }
 
-internal sealed class CloverRoundSolution
+public class CloverRoundSolution
 {
     public string[] SlotCardIds { get; set; } = new string[4];
     public int[] SlotRotations { get; set; } = new int[4];
@@ -484,6 +494,7 @@ internal sealed class CloverRoundSolution
 
 public class CloverMindedState
 {
+    public CloverRoundSolution? CurrentRoundSolution { get; set; }
     public string Phase { get; set; } = CloverMindedPhase.ClueWriting.ToString();
     public string? Message { get; set; }
     public List<string> ParticipantIds { get; set; } = new();

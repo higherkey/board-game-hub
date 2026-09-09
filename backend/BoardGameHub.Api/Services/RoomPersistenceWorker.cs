@@ -43,7 +43,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
 
         _channel = Channel.CreateBounded<RoomPersistenceMessage>(new BoundedChannelOptions(ChannelCapacity)
         {
-            FullMode = BoundedChannelFullMode.DropOldest,
+            FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
             SingleWriter = false
         });
@@ -396,11 +396,59 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         }
         catch (DbUpdateConcurrencyException cex)
         {
-            _logger.LogWarning(cex, "Optimistic concurrency conflict while saving active room batch.");
+            _logger.LogWarning(cex, "Optimistic concurrency conflict while saving active room batch. Falling back to individual saves.");
+            await FallbackPersistIndividuallyAsync(upserts, ct);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to persist active room batch to PostgreSQL.");
+        }
+    }
+
+    private async Task FallbackPersistIndividuallyAsync(Dictionary<string, RoomSnapshot> upserts, CancellationToken ct)
+    {
+        foreach (var (code, snapshot) in upserts)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var existing = await db.ActiveRooms.FindAsync(new object?[] { code }, ct);
+                if (existing != null)
+                {
+                    if (snapshot.Revision > existing.Revision)
+                    {
+                        existing.GameType = snapshot.GameType;
+                        existing.State = snapshot.State;
+                        existing.SchemaVersion = snapshot.SchemaVersion;
+                        existing.Revision = snapshot.Revision;
+                        existing.RoomEnvelopeJson = snapshot.RoomEnvelopeJson;
+                        existing.UpdatedAt = snapshot.UpdatedAt;
+                        existing.ExpiresAt = snapshot.ExpiresAt;
+                        await db.SaveChangesAsync(ct);
+                    }
+                }
+                else
+                {
+                    db.ActiveRooms.Add(new ActiveRoom
+                    {
+                        RoomCode = snapshot.RoomCode.ToUpperInvariant(),
+                        GameType = snapshot.GameType,
+                        State = snapshot.State,
+                        SchemaVersion = snapshot.SchemaVersion,
+                        Revision = snapshot.Revision,
+                        RoomEnvelopeJson = snapshot.RoomEnvelopeJson,
+                        CreatedAt = snapshot.CreatedAt,
+                        UpdatedAt = snapshot.UpdatedAt,
+                        ExpiresAt = snapshot.ExpiresAt
+                    });
+                    await db.SaveChangesAsync(ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Individual fallback save failed for room {RoomCode}.", code);
+            }
         }
     }
 

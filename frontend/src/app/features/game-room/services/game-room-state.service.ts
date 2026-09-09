@@ -69,9 +69,12 @@ export class GameRoomStateService {
   private previousRoomState: string = 'Lobby';
 
   private syncRoomState(room: Room) {
-    // Sound cue on game finished / victory
+    // Sound cue on game finished / victory: prioritize Table screen, fallback to Hand if no screen is present
     if (room.state === 'Finished' && this.previousRoomState === 'Playing') {
-      this.soundService.playVictory();
+      const hasScreen = room.players.some(p => p.isScreen);
+      if (this.isScreen || !hasScreen) {
+        this.soundService.playVictory();
+      }
     }
     this.previousRoomState = room.state;
 

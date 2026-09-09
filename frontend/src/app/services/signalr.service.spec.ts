@@ -123,7 +123,7 @@ describe('SignalRService', () => {
     });
 
     it('joinRoom should invoke JoinRoom and update currentRoomSubject on success', async () => {
-      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false).and.returnValue(Promise.resolve({
+      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false, null).and.returnValue(Promise.resolve({
         code: 'ABCD',
         players: [],
         gameType: 'Scatterbrain',
@@ -132,17 +132,17 @@ describe('SignalRService', () => {
 
       const result = await service.joinRoom('ABCD', 'Player');
 
-      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false);
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false, null);
       expect(result).toBeTrue();
       expect(service.currentRoomSubject.value?.code).toBe('ABCD');
     });
 
     it('joinRoom should NOT update currentRoomSubject on failure', async () => {
-      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false).and.returnValue(Promise.resolve(null));
+      mockHubConnection.invoke.withArgs('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false, null).and.returnValue(Promise.resolve(null));
 
       const result = await service.joinRoom('ABCD', 'Player');
 
-      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false);
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false, null);
       expect(result).toBeFalse();
       expect(service.currentRoomSubject.value).toBeNull();
     });

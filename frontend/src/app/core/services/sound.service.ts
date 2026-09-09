@@ -149,6 +149,11 @@ export class SoundService {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+
     osc.start(now);
     osc.stop(now + 0.04);
   }
@@ -167,6 +172,11 @@ export class SoundService {
 
     osc.connect(gain);
     gain.connect(ctx.destination);
+
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
 
     osc.start(now);
     osc.stop(now + duration);
@@ -188,6 +198,11 @@ export class SoundService {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+
     osc.start(now);
     osc.stop(now + 0.25);
   }
@@ -207,6 +222,11 @@ export class SoundService {
 
     osc.connect(gain);
     gain.connect(ctx.destination);
+
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
 
     osc.start(now);
     osc.stop(now + 0.06);
@@ -233,6 +253,11 @@ export class SoundService {
 
       osc.connect(gain);
       gain.connect(ctx.destination);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
 
       osc.start(now);
       osc.stop(now + duration);

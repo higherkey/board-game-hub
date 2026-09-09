@@ -361,4 +361,45 @@ public class PlayerSessionRebindTests
         Assert.Equal("conn-p1-new", fourState.CurrentPlayerId);
         Assert.Equal("conn-p1-new", fourState.WinnerId);
     }
+
+    [Fact]
+    public void RebindPlayerConnection_MigratesCloverMinded()
+    {
+        // Arrange
+        var cloverRoom = _roomService.CreateRoom("conn-clover-old", "CloverPlayer", false, GameType.CloverMinded);
+        var cloverState = new CloverMindedState
+        {
+            CurrentSpectatorId = "conn-clover-old",
+            CurrentRoundSolution = new CloverRoundSolution
+            {
+                SpectatorId = "conn-clover-old"
+            },
+            CardOccupants = new System.Collections.Concurrent.ConcurrentDictionary<string, string?>
+            {
+                ["c1"] = "conn-clover-old"
+            },
+            ParticipantIds = new List<string> { "conn-clover-old" },
+            PrepByPlayer = new Dictionary<string, CloverPlayerPrep>
+            {
+                ["conn-clover-old"] = new()
+            },
+            ClueSubmitted = new Dictionary<string, bool>
+            {
+                ["conn-clover-old"] = true
+            }
+        };
+        cloverRoom.GameData = cloverState;
+
+        // Act
+        _roomService.RebindPlayerConnection(cloverRoom, "conn-clover-old", "conn-clover-new");
+
+        // Assert
+        Assert.Equal("conn-clover-new", cloverState.CurrentSpectatorId);
+        Assert.Equal("conn-clover-new", cloverState.CurrentRoundSolution.SpectatorId);
+        Assert.Equal("conn-clover-new", cloverState.CardOccupants["c1"]);
+        Assert.Contains("conn-clover-new", cloverState.ParticipantIds);
+        Assert.DoesNotContain("conn-clover-old", cloverState.ParticipantIds);
+        Assert.True(cloverState.PrepByPlayer.ContainsKey("conn-clover-new"));
+        Assert.True(cloverState.ClueSubmitted.ContainsKey("conn-clover-new"));
+    }
 }

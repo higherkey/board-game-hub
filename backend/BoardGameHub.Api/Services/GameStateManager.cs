@@ -128,13 +128,13 @@ public class GameStateManager : IHostedService, IDisposable
         _logger.LogInformation("GameStateManager Event-Driven Loop Stopped.");
     }
 
-    public void TrackRoom(Room room)
+    public virtual void TrackRoom(Room room)
     {
         _activeRooms.AddOrUpdate(room.Code, room, (key, oldValue) => room);
         MarkDirty(room.Code);
     }
 
-    public void UntrackRoom(string roomCode)
+    public virtual void UntrackRoom(string roomCode)
     {
         _activeRooms.TryRemove(roomCode, out _);
         _lastSnapshots.TryRemove(roomCode, out _);
