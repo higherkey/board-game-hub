@@ -58,6 +58,7 @@ jobs:
             -Dsonar.organization=higherkey
             -Dsonar.sources=backend/BoardGameHub.Api,frontend/src
             -Dsonar.exclusions=**/node_modules/**,**/obj/**,**/bin/**,**/*.spec.ts,backend/BoardGameHub.Tests/**
+            -Dsonar.coverage.exclusions=**/Migrations/**,backend/BoardGameHub.Api/Program.cs,**/node_modules/**,**/*.spec.ts
             -Dsonar.cpd.ts.minimumLines=20
             -Dsonar.cpd.cs.minimumLines=20
             -Dsonar.cs.opencover.reportsPaths=coverage.opencover.xml

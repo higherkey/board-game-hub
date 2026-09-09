@@ -81,15 +81,18 @@ public class StateDiffService
                 }
             }
 
-            // Check for removed properties (optional, depending on if we support deletions)
-            // For this implementation, we might send explicit nulls for removed keys if supported,
-            // or we might assume state is additive/defined by the server. 
-            // Let's strictly handle changes. If a key is missing in newObj, we ignore it? 
-            // Or do we need to send a "delete" op?
-            // "Colyseus-lite": usually sends the new value. 
-            // If we strictly follow "Sync State", a missing key in NewState implies it is gone.
-            // But usually we just sync fields that are PRESENT.
-            // Let's stick to: If it's in NewState and different -> send it.
+            // Check for removed properties (emit explicit null so clients delete/clear them)
+            if (oldNode is JsonObject oldObject)
+            {
+                foreach (var oldProp in oldObject)
+                {
+                    if (!newObj.ContainsKey(oldProp.Key))
+                    {
+                        patch[oldProp.Key] = null;
+                        hasChanges = true;
+                    }
+                }
+            }
             
             return hasChanges ? patch : null;
         }

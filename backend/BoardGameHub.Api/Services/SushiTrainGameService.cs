@@ -4,17 +4,17 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
-public class SushiTrainGameService : IGameService
+public class SushiTrainGameService : BaseGameService<SushiTrainState>
 {
     private readonly ILogger<SushiTrainGameService> _logger;
-    public GameType GameType => GameType.SushiTrain;
+    public override GameType GameType => GameType.SushiTrain;
 
     public SushiTrainGameService(ILogger<SushiTrainGameService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Sushi Train round in room {Code}", room.Code);
         var state = new SushiTrainState();
@@ -39,7 +39,7 @@ public class SushiTrainGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not SushiTrainState state) return Task.CompletedTask;
 
@@ -497,13 +497,13 @@ public class SushiTrainGameService : IGameService
         }
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
 
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "SUBMIT_SELECTION" && action.Payload.HasValue)
         {
@@ -518,8 +518,16 @@ public class SushiTrainGameService : IGameService
         }
         return Task.FromResult(false);
     }
-    public object DeserializeState(System.Text.Json.JsonElement json)
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
     {
-        return json.Deserialize<SushiTrainState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new SushiTrainState();
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.PlayerStates.Remove(oldConnectionId, out var playerState))
+        {
+            playerState.PlayerId = newConnectionId;
+            state.PlayerStates[newConnectionId] = playerState;
+        }
     }
 }

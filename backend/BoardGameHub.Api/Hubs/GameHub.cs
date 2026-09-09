@@ -73,6 +73,13 @@ public class GameHub : Hub
 
         // Broadcast to the creator (and anyone else in the group, though it's just them)
         await Clients.Group(room.Code.ToUpper()).SendAsync("PlayerJoined", room.Players);
+
+        // Private Session Token for Reconnection
+        var callerPlayer = room.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+        if (callerPlayer != null)
+        {
+            await Clients.Caller.SendAsync("SessionAssigned", callerPlayer.SessionId);
+        }
         
         // Public Lobby Update
         if (room.IsPublic)
@@ -82,11 +89,6 @@ public class GameHub : Hub
 
         return room;
     }
-
-    // ... (StartGame, PauseGame etc skipped for brevity in replacement if not touched, but here I need to be careful with range)
-    // Actually I should target specific blocks. But SetGameType is further down.
-
-    // Let's do a multi-replace or carefully targeted replacement.
 
     public async Task StartGame(string roomCode, GameSettings settings)
     {
@@ -267,18 +269,25 @@ public class GameHub : Hub
         return await Task.FromResult(_roomService.GetPublicRooms());
     }
 
-    public async Task<Room?> JoinRoom(string roomCode, string playerName, string? guestId = null, bool isScreen = false)
+    public async Task<Room?> JoinRoom(string roomCode, string playerName, string? guestId = null, bool isScreen = false, string? sessionId = null)
     {
         var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
-        var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, playerName, userId, avatarUrl, isScreen);
+        var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, playerName, userId, avatarUrl, isScreen, sessionId);
         if (room == null) return null;
 
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
         
         // Send TURN credentials to the joining player
         await SendTurnCredentialsToClient();
+
+        // Private Session Token for Reconnection
+        var callerPlayer = room.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+        if (callerPlayer != null)
+        {
+            await Clients.Caller.SendAsync("SessionAssigned", callerPlayer.SessionId);
+        }
         
         // Notify others in group
         await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);

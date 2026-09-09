@@ -5,12 +5,12 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services.Games;
 
-public class FarkleService : IGameService
+public class FarkleService : BaseGameService<FarkleState>
 {
     private readonly ILogger<FarkleService> _logger;
     private readonly IServiceProvider _serviceProvider;
 
-    public GameType GameType => GameType.Farkle;
+    public override GameType GameType => GameType.Farkle;
 
     public FarkleService(ILogger<FarkleService> logger, IServiceProvider serviceProvider)
     {
@@ -18,7 +18,7 @@ public class FarkleService : IGameService
         _serviceProvider = serviceProvider;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Farkle in room {Code}", room.Code);
         var state = new FarkleState { RoomCode = room.Code };
@@ -43,7 +43,7 @@ public class FarkleService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room.GameData is not FarkleState state) return Task.CompletedTask;
 
@@ -59,13 +59,13 @@ public class FarkleService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task EndRound(Room room)
+    public override Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         return CalculateScores(room);
     }
 
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room.GameData is not FarkleState state) return Task.FromResult(false);
         if (state.ActivePlayerId != connectionId) return Task.FromResult(false);
@@ -81,11 +81,6 @@ public class FarkleService : IGameService
             default:
                 return Task.FromResult(false);
         }
-    }
-
-    public object DeserializeState(JsonElement json)
-    {
-        return json.Deserialize<FarkleState>(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? new FarkleState();
     }
 
     private bool HandleRoll(FarkleState state)
@@ -357,5 +352,21 @@ public class FarkleService : IGameService
         }
 
         return new ScoringResult(score, usedDice);
+    }
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
+    {
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.PlayerStates.Remove(oldConnectionId, out var playerState))
+        {
+            playerState.PlayerId = newConnectionId;
+            state.PlayerStates[newConnectionId] = playerState;
+        }
+        if (state.ActivePlayerId == oldConnectionId)
+        {
+            state.ActivePlayerId = newConnectionId;
+        }
     }
 }

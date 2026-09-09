@@ -6,6 +6,8 @@ using System.Collections.Concurrent;
 public class Player
 {
     public string ConnectionId { get; set; } = string.Empty;
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string SessionId { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = string.Empty;
     public int Score { get; set; }
     public bool IsHost { get; set; }
@@ -30,6 +32,12 @@ public class Room
 
     public GameType GameType { get; set; } = GameType.None; 
     public bool IsPublic { get; set; } = false;
+
+    // Persistence & Concurrency
+    public long Revision { get; set; } = 0;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddHours(4);
 
     public string? HostScreenId { get; set; }
     public string? HostPlayerId { get; set; }

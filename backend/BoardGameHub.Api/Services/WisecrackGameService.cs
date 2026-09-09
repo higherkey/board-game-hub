@@ -4,10 +4,10 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
-public class WisecrackGameService : IGameService
+public class WisecrackGameService : BaseGameService<WisecrackState>
 {
     private readonly ILogger<WisecrackGameService> _logger;
-    public GameType GameType => GameType.Wisecrack;
+    public override GameType GameType => GameType.Wisecrack;
 
     public WisecrackGameService(ILogger<WisecrackGameService> logger)
     {
@@ -38,7 +38,7 @@ public class WisecrackGameService : IGameService
         "A terrible name for a rock band"
     };
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Wisecrack round in room {Code}", room.Code);
         // 1. Determine Phase based on Round Number
@@ -67,7 +67,7 @@ public class WisecrackGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
 
@@ -161,10 +161,10 @@ public class WisecrackGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task NextBattle(Room room)
+    public async Task NextBattle(Room room)
     {
-        if (room == null || room.GameData is not WisecrackState state) return Task.CompletedTask;
-        if (state.Phase != WisecrackPhase.Battling) return Task.CompletedTask;
+        if (room == null || room.GameData is not WisecrackState state) return;
+        if (state.Phase != WisecrackPhase.Battling) return;
 
         state.CurrentBattleIndex++;
         if (state.CurrentBattleIndex >= state.Battles.Count)
@@ -172,9 +172,8 @@ public class WisecrackGameService : IGameService
             // End of Battles
             state.Phase = WisecrackPhase.Result;
             state.CurrentBattleIndex = -1;
-             _ = CalculateScores(room);
+            await CalculateScores(room);
         }
-        return Task.CompletedTask;
     }
 
     private void FinishBattle(Room room, WisecrackBattle battle)
@@ -318,7 +317,7 @@ public class WisecrackGameService : IGameService
         }
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "SUBMIT_ANSWER" && action.Payload.HasValue)
         {
@@ -346,14 +345,51 @@ public class WisecrackGameService : IGameService
         return false;
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
 
-    public object DeserializeState(System.Text.Json.JsonElement json)
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
     {
-        return json.Deserialize<WisecrackState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new WisecrackState();
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.Assignments != null)
+        {
+            foreach (var assignment in state.Assignments)
+            {
+                assignment.AssignedPlayerIds.RebindItems(oldConnectionId, newConnectionId);
+            }
+        }
+
+        if (state.Answers != null)
+        {
+            foreach (var answer in state.Answers)
+            {
+                if (answer.PlayerId == oldConnectionId)
+                {
+                    answer.PlayerId = newConnectionId;
+                }
+            }
+        }
+
+        if (state.Battles != null)
+        {
+            foreach (var battle in state.Battles)
+            {
+                if (battle.AnswerA?.PlayerId == oldConnectionId) battle.AnswerA.PlayerId = newConnectionId;
+                if (battle.AnswerB?.PlayerId == oldConnectionId) battle.AnswerB.PlayerId = newConnectionId;
+                if (battle.WinnerPlayerId == oldConnectionId) battle.WinnerPlayerId = newConnectionId;
+                if (battle.Votes != null)
+                {
+                    foreach (var vote in battle.Votes)
+                    {
+                        if (vote.PlayerId == oldConnectionId) vote.PlayerId = newConnectionId;
+                    }
+                }
+            }
+        }
     }
 }

@@ -3,11 +3,11 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
-public class NomDeCodeService : IGameService
+public class NomDeCodeService : BaseGameService<NomDeCodeState>
 {
-    public GameType GameType => GameType.NomDeCode;
+    public override GameType GameType => GameType.NomDeCode;
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         // Stub: Initialize Basic State
         var state = new NomDeCodeState
@@ -32,25 +32,10 @@ public class NomDeCodeService : IGameService
         return grid;
     }
 
-    public Task CalculateScores(Room room)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
-    {
-        return Task.FromResult(false);
-    }
-
-    public Task EndRound(Room room)
+    public override Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         return Task.CompletedTask;
-    }
-
-    public object DeserializeState(JsonElement json)
-    {
-        return json.Deserialize<NomDeCodeState>(new JsonSerializerOptions { IncludeFields = true }) ?? new NomDeCodeState();
     }
 }
 
