@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "board-game-hub-frontend",
+  "compatibility_date": "2026-09-11",
+  "assets": {
+    "directory": "./dist/frontend/browser",
+    "not_found_handling": "single-page-application"
+  },
+  "pages_build_output_dir": "./dist/frontend/browser",
+  "workers_dev": true
+}
