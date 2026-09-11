@@ -46,3 +46,4 @@ Thumbs.db
 /test-results
 /playwright/.cache
 .vercel
+.wrangler
