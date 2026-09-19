@@ -100,10 +100,12 @@ jobs:
         env:
           Jwt__Key: "TemporaryCiBuildTimeDesignKeyForEfCoreMigrations1234567890!"
           DOTNET_ENVIRONMENT: "Production"
+          ConnectionStrings__DefaultConnection: "${{ steps.determine_env.outputs.db_connection }}"
         run: |
           dotnet ef migrations bundle --project backend/BoardGameHub.Api --force
           chmod +x ./efbundle
           ./efbundle --connection "${{ steps.determine_env.outputs.db_connection }}"
+
 
       - name: Trigger Render Deploy Hook
         if: steps.determine_env.outputs.deploy_hook != ''
