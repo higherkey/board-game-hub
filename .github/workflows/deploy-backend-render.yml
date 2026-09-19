@@ -73,20 +73,33 @@ jobs:
         id: determine_env
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}" >> "$GITHUB_OUTPUT"
+            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_PROD }}"
+            if [ -z "$DB_CONN" ]; then
+              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}"
+            fi
+            echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_PROD }}" >> "$GITHUB_OUTPUT"
             echo "env_name=production" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref_name }}" = "staging" ]; then
-            # Use dedicated staging connection if configured; otherwise safely fall back to dev connection
-            STAGING_DB="${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}"
-            if [ -z "$STAGING_DB" ]; then
-              STAGING_DB="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
+            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_STAGING }}"
+            if [ -z "$DB_CONN" ]; then
+              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}"
             fi
-            echo "db_connection=$STAGING_DB" >> "$GITHUB_OUTPUT"
+            if [ -z "$DB_CONN" ]; then
+              DB_CONN="${{ secrets.NEON_CONNECTION_STRING_DEV }}"
+            fi
+            if [ -z "$DB_CONN" ]; then
+              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
+            fi
+            echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_STAGING }}" >> "$GITHUB_OUTPUT"
             echo "env_name=staging" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref_name }}" = "dev" ]; then
-            echo "db_connection=${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}" >> "$GITHUB_OUTPUT"
+            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_DEV }}"
+            if [ -z "$DB_CONN" ]; then
+              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
+            fi
+            echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_DEV }}" >> "$GITHUB_OUTPUT"
             echo "env_name=development" >> "$GITHUB_OUTPUT"
           else
@@ -94,17 +107,26 @@ jobs:
             exit 1
           fi
 
+      - name: Normalize DB Connection String
+        if: steps.determine_env.outputs.db_connection != ''
+        id: normalize_conn
+        env:
+          RAW_CONNECTION_STRING: ${{ steps.determine_env.outputs.db_connection }}
+        run: |
+          NORMALIZED=$(node scripts/normalize-connection-string.js)
+          echo "::add-mask::$NORMALIZED"
+          echo "normalized_connection=$NORMALIZED" >> "$GITHUB_OUTPUT"
 
       - name: Apply Database Migrations
-        if: steps.determine_env.outputs.db_connection != ''
+        if: steps.normalize_conn.outputs.normalized_connection != ''
         env:
           Jwt__Key: "TemporaryCiBuildTimeDesignKeyForEfCoreMigrations1234567890!"
           DOTNET_ENVIRONMENT: "Production"
-          ConnectionStrings__DefaultConnection: "${{ steps.determine_env.outputs.db_connection }}"
+          ConnectionStrings__DefaultConnection: "${{ steps.normalize_conn.outputs.normalized_connection }}"
         run: |
           dotnet ef migrations bundle --project backend/BoardGameHub.Api --force
           chmod +x ./efbundle
-          ./efbundle --connection "${{ steps.determine_env.outputs.db_connection }}"
+          ./efbundle --connection "${{ steps.normalize_conn.outputs.normalized_connection }}"
 
 
       - name: Trigger Render Deploy Hook

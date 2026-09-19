@@ -29,7 +29,7 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 // Database Context
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    var connectionString = ConnectionStringHelper.Normalize(builder.Configuration.GetConnectionString("DefaultConnection"));
     if (string.IsNullOrEmpty(connectionString) || connectionString.StartsWith("InMemory", StringComparison.OrdinalIgnoreCase))
     {
         options.UseInMemoryDatabase(string.IsNullOrEmpty(connectionString) ? "BoardGameHubInMemory" : connectionString);
