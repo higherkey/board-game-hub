@@ -50,4 +50,10 @@ describe('LayoutComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should render the dynamic environment version in the footer chip', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const betaChip = compiled.querySelector('.footer-beta-chip');
+    expect(betaChip?.textContent).toContain(component.version);
+  });
 });
