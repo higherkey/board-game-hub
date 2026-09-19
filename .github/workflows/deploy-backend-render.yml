@@ -129,7 +129,22 @@ jobs:
           ./efbundle --connection "${{ steps.normalize_conn.outputs.normalized_connection }}"
 
 
-      - name: Trigger Render Deploy Hook
-        if: steps.determine_env.outputs.deploy_hook != ''
+      - name: Trigger Render Deploy
         run: |
-          curl -s -X POST "${{ steps.determine_env.outputs.deploy_hook }}"
+          if [ -n "${{ steps.determine_env.outputs.deploy_hook }}" ]; then
+            echo "Triggering deployment via Deploy Hook..."
+            curl -s -X POST "${{ steps.determine_env.outputs.deploy_hook }}"
+          elif [ -n "${{ secrets.RENDER_API_KEY }}" ]; then
+            echo "Triggering deployment via Render REST API..."
+            SERVICE_NAME="${{ github.ref_name == 'main' && 'board-game-hub-api' || (github.ref_name == 'staging' && 'board-game-hub-api-staging' || 'board-game-hub-api-dev') }}"
+            SERVICES=$(curl -s -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" "https://api.render.com/v1/services?limit=20")
+            SERVICE_ID=$(echo "$SERVICES" | node scripts/find-render-service.js "$SERVICE_NAME")
+            if [ -n "$SERVICE_ID" ]; then
+              echo "Found Render service ID: $SERVICE_ID for $SERVICE_NAME. Triggering deploy..."
+              curl -s -X POST -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" -H "Content-Type: application/json" -d "{}" "https://api.render.com/v1/services/$SERVICE_ID/deploys"
+            else
+              echo "Service $SERVICE_NAME not found on Render."
+            fi
+          else
+            echo "Neither deploy hook nor Render API key configured."
+          fi
