@@ -16,7 +16,9 @@ describe('WisecrackBoardComponent', () => {
             submitWisecrackAnswer: jasmine.createSpy('submitWisecrackAnswer'),
             submitWisecrackVote: jasmine.createSpy('submitWisecrackVote'),
             nextWisecrackBattle: jasmine.createSpy('nextWisecrackBattle'),
-            nextRound: jasmine.createSpy('nextRound')
+            nextRound: jasmine.createSpy('nextRound'),
+            pauseGame: jasmine.createSpy('pauseGame'),
+            resumeGame: jasmine.createSpy('resumeGame')
         };
 
         await TestBed.configureTestingModule({

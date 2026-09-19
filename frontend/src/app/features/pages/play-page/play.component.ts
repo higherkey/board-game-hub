@@ -22,6 +22,38 @@ export class PlayComponent implements OnInit, OnDestroy {
     playerName = '';
     roomCode = '';
     games: GameDefinition[] = [];
+    isValidating = false;
+    codeError: string | null = null;
+
+    async joinWithCode() {
+        const cleanCode = this.roomCode ? this.roomCode.trim().toUpperCase() : '';
+        if (!cleanCode || cleanCode.length !== 4) {
+            this.codeError = 'Please enter a valid 4-letter room code.';
+            return;
+        }
+
+        this.isValidating = true;
+        this.codeError = null;
+
+        try {
+            const isValid = await this.signalRService.validateRoomCode(cleanCode);
+            if (isValid) {
+                this.router.navigate(['/game', cleanCode]);
+            } else {
+                this.codeError = `Room "${cleanCode}" not found. Check your code and try again.`;
+                this.toastService.showError(`Room "${cleanCode}" does not exist.`);
+            }
+        } catch (err) {
+            this.codeError = 'Unable to verify room code right now.';
+            this.toastService.showError('Unable to verify room code.');
+        } finally {
+            this.isValidating = false;
+        }
+    }
+
+    onCodeInput() {
+        this.codeError = null;
+    }
 
     constructor(
         private readonly signalRService: SignalRService,

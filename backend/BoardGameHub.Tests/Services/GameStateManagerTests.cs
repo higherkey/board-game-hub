@@ -34,11 +34,24 @@ public class GameStateManagerTests
         _manager = new GameStateManager(_mockHubContext.Object, _diffService, _mockLogger.Object);
     }
 
-    private async Task InvokeGameTickAsync()
+    private async Task InvokeGameTickAsync(string roomCode = "")
     {
-        var method = typeof(GameStateManager).GetMethod("GameTick", BindingFlags.NonPublic | BindingFlags.Instance);
-        var task = (Task)method!.Invoke(_manager, null)!;
-        await task;
+        if (!string.IsNullOrEmpty(roomCode))
+        {
+            await _manager.ProcessRoomUpdateAsync(roomCode);
+        }
+        else
+        {
+            // If no room code provided, process any tracked rooms
+            var activeRoomsField = typeof(GameStateManager).GetField("_activeRooms", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (activeRoomsField?.GetValue(_manager) is System.Collections.Concurrent.ConcurrentDictionary<string, Room> activeRooms)
+            {
+                foreach (var code in activeRooms.Keys)
+                {
+                    await _manager.ProcessRoomUpdateAsync(code);
+                }
+            }
+        }
     }
 
     [Fact]
@@ -211,5 +224,103 @@ public class GameStateManagerTests
         _mockClientProxy.Verify(
             c => c.SendCoreAsync("RoomStatePatch", It.IsAny<object[]>(), It.IsAny<CancellationToken>()),
             Times.AtLeastOnce());
+    }
+
+    [Fact]
+    public async Task ProcessRoomUpdateAsync_ShouldQueuePersistenceSave_OnFullDiff_WhenPersistenceConfigured()
+    {
+        // Arrange
+        var mockPersistence = new Mock<IRoomPersistenceService>();
+        var mockSerializer = new Mock<IRoomStateSerializer>();
+        mockSerializer.Setup(s => s.Serialize(It.IsAny<Room>())).Returns("{\"code\":\"PERSIST1\"}");
+
+        var manager = new GameStateManager(
+            _mockHubContext.Object,
+            _diffService,
+            _mockLogger.Object,
+            mockPersistence.Object,
+            mockSerializer.Object);
+
+        var room = new Room { Code = "PERSIST1", GameType = GameType.Babble, State = GameState.Playing };
+        manager.TrackRoom(room);
+
+        // Act - Invoke tick (which triggers full diff on newly tracked room)
+        await manager.ProcessRoomUpdateAsync("PERSIST1");
+
+        // Assert
+        mockPersistence.Verify(p => p.QueueSave(It.Is<RoomSnapshot>(s => s.RoomCode == "PERSIST1" && s.GameType == "Babble")), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessRoomUpdateAsync_ShouldQueuePersistenceSave_OnPartialDiff_WhenPersistenceConfigured()
+    {
+        // Arrange
+        var mockPersistence = new Mock<IRoomPersistenceService>();
+        var mockSerializer = new Mock<IRoomStateSerializer>();
+        mockSerializer.Setup(s => s.Serialize(It.IsAny<Room>())).Returns("{\"code\":\"PERSIST2\"}");
+
+        var manager = new GameStateManager(
+            _mockHubContext.Object,
+            _diffService,
+            _mockLogger.Object,
+            mockPersistence.Object,
+            mockSerializer.Object);
+
+        var room = new Room { Code = "PERSIST2", GameType = GameType.None };
+        manager.TrackRoom(room);
+
+        // First tick sets baseline snapshot
+        await manager.ProcessRoomUpdateAsync("PERSIST2");
+        mockPersistence.Invocations.Clear();
+
+        // Mutate and mark specific property dirty
+        await room.StateLock.WaitAsync();
+        try
+        {
+            room.GameType = GameType.Babble;
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+
+        manager.MarkDirty("PERSIST2", nameof(Room.GameType));
+
+        // Act - Second tick triggers partial diff
+        await manager.ProcessRoomUpdateAsync("PERSIST2");
+
+        // Assert
+        mockPersistence.Verify(p => p.QueueSave(It.Is<RoomSnapshot>(s => s.RoomCode == "PERSIST2" && s.GameType == "Babble")), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessRoomUpdateAsync_ShouldQueuePersistenceSave_WhenNoBaselineSnapshot_OnPartialDiff()
+    {
+        // Arrange
+        var mockPersistence = new Mock<IRoomPersistenceService>();
+        var mockSerializer = new Mock<IRoomStateSerializer>();
+        mockSerializer.Setup(s => s.Serialize(It.IsAny<Room>())).Returns("{\"code\":\"PERSIST3\"}");
+
+        var manager = new GameStateManager(
+            _mockHubContext.Object,
+            _diffService,
+            _mockLogger.Object,
+            mockPersistence.Object,
+            mockSerializer.Object);
+
+        var room = new Room { Code = "PERSIST3", GameType = GameType.Scatterbrain };
+        // Directly add to active rooms without TrackRoom so _lastSnapshots has no entry
+        var activeRoomsField = typeof(GameStateManager).GetField("_activeRooms", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var activeRooms = (System.Collections.Concurrent.ConcurrentDictionary<string, Room>)activeRoomsField.GetValue(manager)!;
+        activeRooms.TryAdd("PERSIST3", room);
+
+        // Mark only a single member dirty (not fullDiff)
+        room.DirtyMembers.TryAdd(nameof(Room.GameType), 0);
+
+        // Act
+        await manager.ProcessRoomUpdateAsync("PERSIST3");
+
+        // Assert
+        mockPersistence.Verify(p => p.QueueSave(It.Is<RoomSnapshot>(s => s.RoomCode == "PERSIST3" && s.GameType == "Scatterbrain")), Times.Once);
     }
 }

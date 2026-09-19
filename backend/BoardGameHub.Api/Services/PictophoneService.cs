@@ -5,17 +5,17 @@ using System.Text.Json.Serialization;
 
 namespace BoardGameHub.Api.Services;
 
-public class PictophoneService : IGameService
+public class PictophoneService : BaseGameService<PictophoneState>
 {
     private readonly ILogger<PictophoneService> _logger;
-    public GameType GameType => GameType.Pictophone;
+    public override GameType GameType => GameType.Pictophone;
 
     public PictophoneService(ILogger<PictophoneService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Pictophone round in room {Code}", room.Code);
         // Initialize State
@@ -42,7 +42,7 @@ public class PictophoneService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not PictophoneState state) return Task.CompletedTask;
 
@@ -151,13 +151,13 @@ public class PictophoneService : IGameService
         }
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
 
-    public async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (room == null || room.GameData is not PictophoneState state) return false;
 
@@ -261,9 +261,31 @@ public class PictophoneService : IGameService
         };
         return suggestions.OrderBy(x => Guid.NewGuid()).Take(3).ToList();
     }
-    public object DeserializeState(System.Text.Json.JsonElement json)
+
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
     {
-        return json.Deserialize<PictophoneState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new PictophoneState();
+        var state = GetState(room);
+        if (state == null) return;
+
+        if (state.Books != null)
+        {
+            foreach (var book in state.Books)
+            {
+                if (book.OwnerId == oldConnectionId) book.OwnerId = newConnectionId;
+                if (book.CurrentHolderId == oldConnectionId) book.CurrentHolderId = newConnectionId;
+                if (book.Pages != null)
+                {
+                    foreach (var page in book.Pages)
+                    {
+                        if (page.AuthorId == oldConnectionId) page.AuthorId = newConnectionId;
+                        page.Stars.RebindItems(oldConnectionId, newConnectionId);
+                    }
+                }
+            }
+        }
+
+        state.PendingNextPhase.RebindSet(oldConnectionId, newConnectionId);
+        state.Drafts.RebindKey(oldConnectionId, newConnectionId);
     }
 }
 

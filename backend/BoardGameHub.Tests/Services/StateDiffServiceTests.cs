@@ -93,4 +93,18 @@ public class StateDiffServiceTests
         Assert.NotNull(diff);
         Assert.Equal("Added", diff["newProp"]?.GetValue<string>());
     }
+
+    [Fact]
+    public void GetDiff_RemovedProperty_ReturnsNullPatch()
+    {
+        var original = new Dictionary<string, int> { ["playerA"] = 10, ["playerB"] = 20 };
+        var modified = new Dictionary<string, int> { ["playerA"] = 10 };
+
+        var diff = _service.GetDiff(original, modified);
+
+        Assert.NotNull(diff);
+        Assert.True(diff.AsObject().ContainsKey("playerB"));
+        Assert.Null(diff["playerB"]);
+        Assert.False(diff.AsObject().ContainsKey("playerA"));
+    }
 }

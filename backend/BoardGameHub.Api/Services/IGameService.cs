@@ -10,4 +10,5 @@ public interface IGameService
     Task EndRound(Room room);
     Task<bool> HandleAction(Room room, GameAction action, string connectionId);
     object DeserializeState(System.Text.Json.JsonElement json);
+    void RebindPlayer(Room room, string oldConnectionId, string newConnectionId);
 }

@@ -1,5 +1,12 @@
 import { Browser, BrowserContext, Page } from '@playwright/test';
 
+export interface PlayerSession {
+    page: Page;
+    context: BrowserContext;
+    roomCode?: string;
+    playerName: string;
+}
+
 export class MultiplayerTestHelper {
     readonly browser: Browser;
 
@@ -7,53 +14,59 @@ export class MultiplayerTestHelper {
         this.browser = browser;
     }
 
-    async createHost(name: string = 'HostPlayer'): Promise<{ page: Page; context: BrowserContext; roomCode: string }> {
-        const context = await this.browser.newContext();
+    async createHost(name: string = 'HostPlayer', options?: { isTable?: boolean }): Promise<PlayerSession & { roomCode: string }> {
+        const context = await this.browser.newContext({
+            viewport: options?.isTable ? { width: 1920, height: 1080 } : { width: 1280, height: 720 }
+        });
         const page = await context.newPage();
 
-        // Go to home
-        await page.goto('/');
+        // Navigate directly to create room page
+        await page.goto('/game/create');
 
-        // Click Play Now
-        await page.click('text=Play Now');
+        // Enter display name
+        const nameInput = page.locator('#playerNameInput');
+        await nameInput.waitFor({ state: 'visible' });
+        await nameInput.fill(name);
 
-        // Create Room
-        await page.click('text=CREATE NEW ROOM');
+        if (options?.isTable) {
+            await page.click('label[for="joinTable"]');
+        }
 
-        // Enter Name in the "needsName" overlay
-        await page.fill('input[placeholder*="Captain Awesome"]', name);
+        // Submit create room form
         await page.click('button:has-text("CREATE ROOM")');
 
-        // Wait for room to load and grab code from URL or display
+        // Wait for room URL navigation (/game/ABCD)
         await page.waitForURL(/\/game\/[A-Z0-9]{4}/);
-
         const url = page.url();
-        const roomCode = url.split('/').pop() || '';
+        const roomCode = url.split('/').pop()?.split('?')[0] || '';
 
-        return { page, context, roomCode };
+        return { page, context, roomCode, playerName: name };
     }
 
-    async createGuest(roomCode: string, name: string = 'GuestPlayer'): Promise<{ page: Page; context: BrowserContext }> {
-        const context = await this.browser.newContext();
+    async createGuest(roomCode: string, name: string = 'GuestPlayer', options?: { isTable?: boolean; isMobile?: boolean }): Promise<PlayerSession> {
+        const context = await this.browser.newContext({
+            viewport: options?.isMobile ? { width: 390, height: 844 } : { width: 1280, height: 720 }
+        });
         const page = await context.newPage();
 
-        // Go to home
-        await page.goto('/');
+        // Navigate directly to room join URL
+        await page.goto(`/game/${roomCode}`);
 
-        // Click Play Now
-        await page.click('text=Play Now');
+        // Enter display name in entry screen
+        const nameInput = page.locator('#playerNameInput');
+        await nameInput.waitFor({ state: 'visible' });
+        await nameInput.fill(name);
 
-        // Join Room
-        await page.fill('input[placeholder="ADBC"]', roomCode);
-        await page.click('button:has-text("JOIN")');
+        if (options?.isTable) {
+            await page.click('label[for="joinTable"]');
+        }
 
-        // Enter Name in the "needsName" overlay
-        await page.fill('input[placeholder*="Captain Awesome"]', name);
+        // Submit enter room
         await page.click('button:has-text("ENTER ROOM")');
 
-        // Wait for lobby
-        await page.waitForURL(/\/game\/[A-Z0-9]{4}/);
+        // Wait for lobby to initialize
+        await page.waitForURL(new RegExp(`/game/${roomCode}`));
 
-        return { page, context };
+        return { page, context, roomCode, playerName: name };
     }
 }

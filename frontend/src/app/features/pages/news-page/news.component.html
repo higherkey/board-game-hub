@@ -1,0 +1,49 @@
+<div class="news-container">
+  <header class="news-header">
+    <div class="header-badge">
+      <i class="bi bi-megaphone-fill"></i>
+      <span>What's New</span>
+    </div>
+    <h1 class="news-title">Updates & Releases</h1>
+    <p class="news-subtitle">
+      Discover the latest features, enhancements, and improvements brought to Board Game Hub.
+    </p>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading updates...</span>
+      </div>
+    </div>
+  } @else {
+    <div class="timeline">
+      @for (item of newsList(); track item.version) {
+        <article class="timeline-item">
+          <div class="timeline-marker">
+            <span class="version-tag">{{ item.version }}</span>
+            <time class="release-date">{{ item.date | date:'longDate' }}</time>
+          </div>
+          
+          <div class="timeline-card">
+            <div class="card-top">
+              <h2 class="card-title">{{ item.title }}</h2>
+              @if (item.badge) {
+                <span class="category-badge">{{ item.badge }}</span>
+              }
+            </div>
+            
+            <ul class="highlights-list">
+              @for (highlight of item.highlights; track highlight) {
+                <li>
+                  <i class="bi bi-check-circle-fill check-icon"></i>
+                  <span>{{ highlight }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>

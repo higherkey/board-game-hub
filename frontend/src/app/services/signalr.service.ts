@@ -150,10 +150,26 @@ export class SignalRService {
       this.connectionStatus$.next('Reconnecting');
     });
 
-    this.hubConnection.onreconnected((id) => {
+    this.hubConnection.onreconnected(async (id) => {
       this.logger.info('SignalR Reconnected', id);
       this.connectionStatus$.next('Connected');
       this.connectionId$.next(id || null);
+
+      // Re-join active room so SignalR group membership and state diffs are restored
+      const activeRoom = this.currentRoomSubject.value;
+      if (activeRoom && this.lastPlayerName) {
+        try {
+          await this.joinRoom(activeRoom.code, this.lastPlayerName, this.lastIsScreen);
+        } catch (err) {
+          this.logger.error('Failed to auto-rejoin room after reconnect', err);
+        }
+      }
+    });
+
+    this.hubConnection.on('SessionAssigned', (sessionId: string) => {
+      if (sessionId) {
+        localStorage.setItem('bgh_session_id', sessionId);
+      }
     });
 
     this.hubConnection.on('PlayerJoined', (players: Player[]) => {
@@ -561,12 +577,33 @@ export class SignalRService {
     }
   }
 
+  public async validateRoomCode(code: string): Promise<boolean> {
+    if (!code || code.trim().length !== 4) return false;
+    if (this.hubConnection.state !== HubConnectionState.Connected) {
+      await this.startConnection();
+    }
+    try {
+      const validCodes: string[] = await this.hubConnection.invoke('ValidateRooms', [code.trim().toUpperCase()]);
+      return !!(validCodes && validCodes.length > 0 && validCodes.includes(code.trim().toUpperCase()));
+    } catch (err) {
+      console.error('Failed to validate room code', err);
+      return false;
+    }
+  }
+
+  private lastPlayerName: string | null = null;
+  private lastIsScreen = false;
+
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
     if (this.hubConnection.state !== HubConnectionState.Connected) {
       await this.startConnection();
     }
+    this.lastPlayerName = playerName;
+    this.lastIsScreen = isScreen;
+
     const guestId = this.authService.getGuestId();
-    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName, guestId, isScreen);
+    const sessionId = localStorage.getItem('bgh_session_id') || null;
+    const room = await this.hubConnection.invoke('JoinRoom', roomCode, playerName, guestId, isScreen, sessionId);
     if (room) {
       this.currentRoomSubject.next(room);
       this.players$.next(room.players); // Sync players immediately
@@ -802,6 +839,10 @@ export class SignalRService {
     if (!target || !patch) return;
 
     for (const key of Object.keys(patch)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+
       const patchValue = patch[key];
       const targetValue = target[key];
 

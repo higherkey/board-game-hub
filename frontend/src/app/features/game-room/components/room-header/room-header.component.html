@@ -20,6 +20,13 @@
             <span>{{ isBigScreen ? 'QUIT ROOM' : 'QUIT' }}</span>
         </button>
         
+        <!-- Sound Mute Toggle (Desktop) -->
+        <button class="btn btn-outline-light btn-sm" (click)="toggleSound()"
+            [title]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'"
+            [attr.aria-label]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'">
+            <i class="bi" [class.bi-volume-mute-fill]="soundService.isMuted$ | async" [class.bi-volume-up-fill]="!(soundService.isMuted$ | async)"></i>
+        </button>
+
         <!-- Video Chat Toggle (Desktop) -->
         <button class="btn btn-outline-light btn-sm" (click)="startVideoChat.emit()"
             *ngIf="videoChatReady && !isVideoActive" title="Start Video" aria-label="Start Video">
@@ -50,6 +57,13 @@
 
     <!-- Right: Mobile Video & Desktop Profile -->
     <div class="header-section-right gap-2 gap-md-3">
+        <!-- Sound Mute Toggle (Mobile) -->
+        <button class="btn btn-outline-light btn-sm d-md-none" (click)="toggleSound()"
+            [title]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'"
+            [attr.aria-label]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'">
+            <i class="bi" [class.bi-volume-mute-fill]="soundService.isMuted$ | async" [class.bi-volume-up-fill]="!(soundService.isMuted$ | async)"></i>
+        </button>
+
         <!-- Video Chat Toggle (Mobile) -->
         <button class="btn btn-outline-light btn-sm d-md-none" (click)="startVideoChat.emit()"
             *ngIf="videoChatReady && !isVideoActive" title="Start Video" aria-label="Start Video">
@@ -79,10 +93,16 @@
             </div>
 
             <div class="menu-actions d-flex flex-column gap-3">
+                <button class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleSound()">
+                    <i class="bi fs-4" [class.bi-volume-mute-fill]="soundService.isMuted$ | async" [class.bi-volume-up-fill]="!(soundService.isMuted$ | async)"></i>
+                    <span class="fw-bold">{{ (soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound' }}</span>
+                </button>
+
                 <a routerLink="/" class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleNavMenu()">
                     <i class="bi bi-house-door-fill fs-4"></i>
                     <span class="fw-bold">Go Home</span>
                 </a>
+
 
                 <button class="btn btn-lg btn-pink w-100 d-flex align-items-center gap-3 py-3" (click)="leaveRoom.emit()">
                     <i class="bi bi-box-arrow-left fs-4"></i>

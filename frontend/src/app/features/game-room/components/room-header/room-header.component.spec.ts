@@ -82,4 +82,14 @@ describe('RoomHeaderComponent', () => {
     const roomCodeDisplay = fixture.nativeElement.querySelector('.room-code-display');
     expect(roomCodeDisplay.textContent.trim()).toBe('ABCDEF');
   });
+
+  it('should toggle sound via soundService', () => {
+    spyOn(component.soundService, 'toggleMute');
+    spyOn(component.soundService, 'playClick');
+    component.toggleSound();
+    expect(component.soundService.toggleMute).toHaveBeenCalled();
+    expect(component.soundService.playClick).toHaveBeenCalled();
+  });
 });
+
+

@@ -1,8 +1,11 @@
 using BoardGameHub.Api.Models;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Hubs;
+using BoardGameHub.Api.Data;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -433,5 +436,74 @@ public class RoomServiceTests
         // Assert
         room.StateHistory.Count.Should().Be(0); // Successfully reverted
         room.CurrentVote.Should().BeNull(); // Closed
+    }
+
+    [Fact]
+    public void RehydrateRoom_ShouldStoreRoom_AndBeRetrievable()
+    {
+        var room = new Room { Code = "REHYD", GameType = GameType.Babble };
+        _sut.RehydrateRoom(room);
+
+        var retrieved = _sut.GetRoom("REHYD");
+        retrieved.Should().NotBeNull();
+        retrieved!.Code.Should().Be("REHYD");
+    }
+
+    [Fact]
+    public void EvictRoom_ShouldRemoveRoomFromMemory_AndUntrack()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", false);
+        _sut.GetRoom(room.Code).Should().NotBeNull();
+
+        _sut.EvictRoom(room.Code);
+
+        _sut.GetRoom(room.Code).Should().BeNull();
+        _mockGameStateManager.Verify(g => g.UntrackRoom(room.Code), Times.Once);
+    }
+
+    [Fact]
+    public void GetRoom_ShouldHydrateFromDatabase_WhenScopeFactoryProvided()
+    {
+        var dbName = "RoomService_Hydration_" + Guid.NewGuid().ToString("N");
+        var services = new ServiceCollection();
+        services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase(dbName));
+        using var sp = services.BuildServiceProvider();
+        var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+
+        using (var scope = scopeFactory.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.ActiveRooms.Add(new ActiveRoom
+            {
+                RoomCode = "DBHYD",
+                GameType = "Babble",
+                State = "Playing",
+                ExpiresAt = DateTime.UtcNow.AddHours(2),
+                RoomEnvelopeJson = "{\"code\":\"DBHYD\",\"gameType\":\"Babble\",\"players\":[{\"connectionId\":\"c1\",\"name\":\"Alice\",\"isConnected\":true}]}"
+            });
+            db.SaveChanges();
+        }
+
+        var serializer = new RoomStateSerializer(_gameServices);
+        var sutWithDb = new RoomService(
+            _gameServices,
+            _mockAdminHub.Object,
+            _mockGameHub.Object,
+            _mockGameStateManager.Object,
+            new Mock<ILogger<RoomService>>().Object,
+            scopeFactory,
+            null,
+            serializer);
+
+        var room = sutWithDb.GetRoom("DBHYD");
+        room.Should().NotBeNull();
+        room!.Code.Should().Be("DBHYD");
+        room.Players.First().IsConnected.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Dispose_ShouldDisposeGracefully()
+    {
+        _sut.Dispose();
     }
 }

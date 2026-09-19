@@ -3,11 +3,11 @@ using System.Text.Json;
 
 namespace BoardGameHub.Api.Services;
 
-public class PoppycockGameService : IGameService
+public class PoppycockGameService : BaseGameService<PoppycockState>
 {
-    public GameType GameType => GameType.Poppycock;
+    public override GameType GameType => GameType.Poppycock;
 
-    public Task StartRound(Room room, GameSettings settings)
+    public override Task StartRound(Room room, GameSettings settings)
     {
         // 1. Determine Dasher (rotate based on round number)
         var dasher = room.Players[room.RoundNumber % room.Players.Count];
@@ -30,7 +30,7 @@ public class PoppycockGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task CalculateScores(Room room)
+    public override Task CalculateScores(Room room)
     {
         if (room == null || room.GameData is not PoppycockState state) return Task.CompletedTask;
 
@@ -133,18 +133,18 @@ public class PoppycockGameService : IGameService
         return Task.CompletedTask;
     }
 
-    public Task SubmitVote(Room room, string playerId, string votedDefinitionId)
+    public async Task SubmitVote(Room room, string playerId, string votedDefinitionId)
     {
-        if (room == null || room.GameData is not PoppycockState state) return Task.CompletedTask;
-        if (state.Phase != PoppycockPhase.Voting) return Task.CompletedTask;
+        if (room == null || room.GameData is not PoppycockState state) return;
+        if (state.Phase != PoppycockPhase.Voting) return;
         
-        if (playerId == state.DasherId) return Task.CompletedTask;
+        if (playerId == state.DasherId) return;
 
         // Prevent voting for self
-        if (votedDefinitionId == playerId) return Task.CompletedTask; 
+        if (votedDefinitionId == playerId) return; 
 
         // Prevent those who got it right from voting
-        if (state.CorrectSubmissions.Contains(playerId)) return Task.CompletedTask;
+        if (state.CorrectSubmissions.Contains(playerId)) return;
 
         state.Votes[playerId] = votedDefinitionId;
 
@@ -153,22 +153,8 @@ public class PoppycockGameService : IGameService
         
         if (state.Votes.Count >= expectedVoters)
         {
-            _ = CalculateScores(room); // Fire and forget or await? Pattern says Task.
+            await CalculateScores(room);
             state.Phase = PoppycockPhase.Result;
-        }
-        return Task.CompletedTask;
-    }
-
-    private void AddScore(Room room, string playerId, int points)
-    {
-        var player = room.Players.FirstOrDefault(p => p.ConnectionId == playerId);
-        if (player != null)
-        {
-            player.Score += points;
-            
-            if (room.RoundScores == null) room.RoundScores = new Dictionary<string, int>();
-            if (!room.RoundScores.ContainsKey(playerId)) room.RoundScores[playerId] = 0;
-            room.RoundScores[playerId] += points;
         }
     }
 
@@ -218,36 +204,43 @@ public class PoppycockGameService : IGameService
         return prompts[new Random().Next(prompts.Length)];
     }
 
-    public Task<bool> HandleAction(Room room, GameAction action, string connectionId)
+    public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)
     {
         if (action.Type == "SUBMIT_DEFINITION" && action.Payload.HasValue)
         {
              if (action.Payload.Value.TryGetProperty("definition", out var defProp))
              {
-                 SubmitDefinition(room, connectionId, defProp.GetString() ?? "");
-                 return Task.FromResult(true);
+                 await SubmitDefinition(room, connectionId, defProp.GetString() ?? "");
+                 return true;
              }
         }
         else if (action.Type == "SUBMIT_VOTE" && action.Payload.HasValue)
         {
              if (action.Payload.Value.TryGetProperty("votedId", out var voteProp))
              {
-                 SubmitVote(room, connectionId, voteProp.GetString() ?? "");
-                 return Task.FromResult(true);
+                 await SubmitVote(room, connectionId, voteProp.GetString() ?? "");
+                 return true;
              }
         }
-        return Task.FromResult(false);
+        return false;
     }
 
-    public async Task EndRound(Room room)
+    public override async Task EndRound(Room room)
     {
         room.State = GameState.Finished;
         await CalculateScores(room);
     }
 
-    public object DeserializeState(System.Text.Json.JsonElement json)
+    public override void RebindPlayer(Room room, string oldConnectionId, string newConnectionId)
     {
-        return json.Deserialize<PoppycockState>(new System.Text.Json.JsonSerializerOptions { IncludeFields = true }) ?? new PoppycockState();
+        var state = GetState(room);
+        if (state == null) return;
+
+        state.Votes.RebindKey(oldConnectionId, newConnectionId);
+        state.Votes.RebindValues(oldConnectionId, newConnectionId);
+        state.PlayerSubmissions.RebindKey(oldConnectionId, newConnectionId);
+        state.CorrectSubmissions.RebindItems(oldConnectionId, newConnectionId);
+        if (state.DasherId == oldConnectionId) state.DasherId = newConnectionId;
     }
 }
 

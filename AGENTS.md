@@ -5,7 +5,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 ## Repository overview
 - Monorepo with:
   - `frontend/`: Angular app (standalone components) for gameplay UI, lobby/social/admin pages, and SignalR/WebRTC client flows.
-  - `backend/`: ASP.NET Core 8 API + SignalR hubs + in-memory room/game orchestration + EF Core/Postgres persistence.
+  - `backend/`: ASP.NET Core 10 API + SignalR hubs + in-memory room/game orchestration + EF Core/Postgres persistence.
 - Local database dependencies are defined in `docker-compose.yml` (`postgres`, `pgadmin`).
 
 ## Common development commands
@@ -36,7 +36,7 @@ Run commands from repo root unless noted.
   - `backend/migrate-db.ps1`
 - Add a new migration:
   - `dotnet ef migrations add <MigrationName> --project backend/BoardGameHub.Api`
-- **CI/CD**: On every push to `main` or `dev`, `.github/workflows/deploy-backend-azure.yml` automatically builds an EF Core Migration Bundle and runs it against the target database **before** the new container is deployed. Do not commit `efbundle` or `efbundle.exe` — these are build artifacts.
+- **CI/CD**: On every push to `main` or `dev`, `.github/workflows/deploy-backend-render.yml` automatically builds an EF Core Migration Bundle and runs it against the target database **before** triggering Render deployment. Do not commit `efbundle` or `efbundle.exe` — these are build artifacts.
 
 ### Frontend (Angular)
 - Install dependencies:
@@ -76,8 +76,8 @@ Run commands from repo root unless noted.
   - Manages in-memory rooms and connection→room mapping.
   - Handles room lifecycle/reconnect behavior.
   - Routes actions to the game-specific service selected by `Room.GameType`.
-- `GameStateManager` (`backend/BoardGameHub.Api/Services/GameStateManager.cs`) runs a 50ms tick loop and broadcasts `RoomStatePatch` diffs instead of full state when possible.
-- `StateDiffService` + `Room.DirtyMembers` drive partial state updates; game actions usually mark `GameData`, `RoundScores`, `PlayerAnswers`, and `Players` dirty.
+- `GameStateManager` (`backend/BoardGameHub.Api/Services/GameStateManager.cs`) runs an event-driven `System.Threading.Channels.Channel<string>` consumer (`IHostedService`) and broadcasts `RoomStatePatch` diffs over SignalR with zero reflection ($O(1)$ compiled `FrozenDictionary` property accessors).
+- `StateDiffService` + `Room.DirtyMembers` drive partial state updates; game actions mark properties dirty (`GameData`, `RoundScores`, `PlayerAnswers`, `Players`).
 
 ### Game plugin model
 - `IGameService` (`backend/BoardGameHub.Api/Services/IGameService.cs`) defines the per-game contract (`StartRound`, `HandleAction`, `EndRound`, `DeserializeState`).
@@ -96,7 +96,13 @@ Run commands from repo root unless noted.
 ### Persistence boundary
 - Persistent data (users, friendships, chat, game history, game definitions) is in EF Core `AppDbContext` (`backend/BoardGameHub.Api/Data/AppDbContext.cs`).
 - Active room/game runtime state is in-memory (`RoomService`/`GameStateManager`) and not fully persisted between process restarts.
-- **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-azure.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
+- **Database migrations are NOT applied at startup.** They are applied out-of-band via `backend/migrate-db.ps1` (locally) or via an EF Core Migration Bundle in CI/CD (see `deploy-backend-render.yml`). Never re-add `db.Database.Migrate()` to `Program.cs`.
+
+## Release & Versioning Standards
+- **Automated Conventional Semantic Versioning**: Full specification in [`CONTRIBUTING.md`](file:///c:/Programming/board%20game%20hub/CONTRIBUTING.md#️-developer-workflow--automated-conventional-semantic-versioning).
+- **Feature Branches $\rightarrow$ `dev`**: Day-to-day PRs merge into `dev` as pre-releases (`v0.X.Y-dev.Z`). Use `chore:`, `refactor:`, or `test:` for internal plumbing to prevent inflating minor versions prematurely.
+- **Milestone Bundles $\rightarrow$ `main`**: Feature slices under an Epic are bundled on `dev` and promoted to `main` as cohesive Milestone Releases (e.g. `v0.24.0`).
+- **Changelog & News**: User-facing notes are automatically synced to the `/news` page via GitHub Actions upon merge to `main`.
 
 ## Engineering Standards to honor
 - **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
@@ -110,7 +116,8 @@ Run commands from repo root unless noted.
   - **Issue Reference**: Link GitHub Issues with `#123` or `fixes #123` where applicable.
   - **GitHub Enforcement**: PR titles are strictly linted via `.github/workflows/lint-pr.yml`.
 - `.cursor/rules/sonarqube-workflow.mdc` + `.agent/workflows/sonarqube-review.md`:
-  - Use `sonar-scanner` only to run/upload analysis.
+  - Enforces the **Unified Monorepo Architecture**: Use `dotnet-sonarscanner` within `.github/workflows/sonar.yml` to sequence backend/frontend analysis.
+  - **CRITICAL**: SonarCloud "Automatic Analysis" must remain OFF to prevent pipeline overriding and 0% coverage bugs.
   - Use Sonar Web API/MCP/UI for gates/issues/hotspots/transitions.
   - Use `gh` for GitHub/CI context, not as a Sonar client.
 - `.cursor/agents/deploy.md`:

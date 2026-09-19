@@ -35,20 +35,11 @@ export class ScatterbrainComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        this.initAnswers();
+        // Table display setup
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes['room']) {
-            const prev = changes['room'].previousValue;
-            const curr = changes['room'].currentValue;
-
-            // Check if round changed or categories changed
-            if (curr?.roundNumber !== prev?.roundNumber ||
-                curr?.gameData?.categories?.length !== prev?.gameData?.categories?.length) {
-                this.initAnswers();
-            }
-        }
+        // Table display reacting to room state diffs
     }
 
     get phase(): 'Writing' | 'Validation' | 'Result' {
@@ -57,33 +48,6 @@ export class ScatterbrainComponent implements OnInit, OnChanges {
         if (val === 1 || val === 'Validation') return 'Validation';
         if (val === 2 || val === 'Result') return 'Result';
         return 'Writing';
-    }
-
-    private initAnswers() {
-        if (this.room?.gameData?.categories) {
-            const count = this.room.gameData.categories.length;
-            if (this.answers.length !== count) {
-                this.answers = new Array(count).fill('');
-            }
-        }
-    }
-
-    autoSave() {
-        // Optional logic
-    }
-
-    submitAnswers() {
-        if (this.phase !== 'Writing') return;
-
-        this.isSubmitting = true;
-        try {
-            const cleanAnswers = this.answers.map(a => a ? a.trim() : '');
-            this.signalRService.submitAnswers(cleanAnswers);
-        } catch (err) {
-            console.error('Error submitting answers', err);
-        } finally {
-            this.isSubmitting = false;
-        }
     }
 
     toggleVeto(targetPlayerId: string, categoryIndex: number) {

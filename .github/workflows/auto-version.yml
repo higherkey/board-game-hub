@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - staging
       - dev
   workflow_dispatch:
 
@@ -18,10 +19,21 @@ jobs:
         with:
           fetch-depth: 0 # Required to fetch git history for tags
           
+      - name: Determine Pre-release Suffix
+        id: prerelease_suffix
+        run: |
+          if [ "${{ github.ref_name }}" = "staging" ]; then
+            echo "tag_suffix=rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag_suffix=dev" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Bump Version and Push Tag
         uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
           release_branches: main
-          pre_release_branches: dev
+          pre_release_branches: dev,staging
+          append_to_pre_release_tag: ${{ steps.prerelease_suffix.outputs.tag_suffix }}
+

@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { SignalRService } from '../../services/signalr.service';
 import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { LogoComponent } from '../../shared/logo/logo.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
    selector: 'app-layout',
@@ -20,6 +21,7 @@ export class LayoutComponent {
    private readonly signalRService = inject(SignalRService);
    private readonly router = inject(Router);
 
+   readonly version = environment.version;
    session$ = this.authService.session$;
    activeGamesCount$ = this.signalRService.activeRooms$.pipe(
       map(rooms => rooms.length)

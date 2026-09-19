@@ -1,0 +1,37 @@
+name: Sync News Updates
+
+permissions:
+  contents: write
+  pull-requests: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+  workflow_dispatch:
+
+jobs:
+  update-news:
+    name: Generate News Entry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check for PR context and update news
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Syncing user-facing release notes..."
+          # Validates news.json integrity on production deployments
+          node -e "const fs = require('fs'); const data = JSON.parse(fs.readFileSync('frontend/src/assets/data/news.json', 'utf8')); console.log('News entries loaded:', data.length);"

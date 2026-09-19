@@ -22,7 +22,7 @@ public class FourInARowGameServiceTests
         await _sut.StartRound(room, new GameSettings());
         var state = room.GameData as FourInARowState;
         state.Should().NotBeNull();
-        state!.Grid[0, 0].Should().Be(0);
+        state!.Grid[0][0].Should().Be(0);
     }
 
     [Fact]

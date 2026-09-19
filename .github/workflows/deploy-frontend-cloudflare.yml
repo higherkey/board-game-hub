@@ -1,9 +1,13 @@
 name: Deploy Frontend to Cloudflare Pages
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
       - main
+      - staging
       - dev
     paths:
       - 'frontend/**'
@@ -13,6 +17,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'staging' && 'staging' || 'development') }}
+      url: ${{ github.ref_name == 'main' && 'https://boardgamehub.eight1fivedesign.com' || (github.ref_name == 'staging' && 'https://staging.board-game-hub-frontend.pages.dev' || 'https://dev.board-game-hub-frontend.pages.dev') }}
     defaults:
       run:
         working-directory: frontend
@@ -33,8 +40,10 @@ jobs:
 
       - name: Build Application
         run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "main" ]; then
             npm run build -- --configuration=production
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "staging" ]; then
+            npm run build -- --configuration=staging
           else
             npm run build -- --configuration=development
           fi
@@ -46,4 +55,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: 'board-game-hub-frontend'
           directory: 'frontend/dist/frontend/browser'
-          branch: ${{ github.ref_name }}
+          branch: ${{ github.head_ref || github.ref_name }}

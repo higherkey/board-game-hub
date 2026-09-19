@@ -43,12 +43,12 @@
     <div class="resize-handle d-none d-md-block" (mousedown)="startResizing($event)"></div>
 
     <div class="game-sidebar" [style.width.px]="sidebarWidth">
-        <!-- Player View -->
-        <div *ngIf="!isHost && isPlaying" class="controls-section">
+        <!-- Player Input View (Any Hand controller or non-screen player) -->
+        <div *ngIf="!isScreen && isPlaying" class="controls-section">
             <div class="word-input-wrapper mb-4">
                 <input id="babbleWord" [(ngModel)]="currentWord" (keyup.enter)="submitWord()" placeholder="Type word..."
-                    [disabled]="!isPlaying || isPaused" />
-                <button class="btn-submit" (click)="submitWord()" [disabled]="!isPlaying || isPaused">
+                    [disabled]="!isPlaying || isPaused" aria-label="Enter word" />
+                <button class="btn-submit" (click)="submitWord()" [disabled]="!isPlaying || isPaused" aria-label="Submit word">
                     <i class="bi bi-plus-lg"></i>
                 </button>
             </div>
@@ -61,13 +61,11 @@
             </div>
         </div>
 
-        <!-- Host Playing View (for found words) -->
-        <div *ngIf="isHost && isPlaying" class="controls-section">
+        <!-- Table Screen View (Passive display only) -->
+        <div *ngIf="isScreen && isPlaying" class="controls-section">
             <div class="found-words-area">
-                <h5 class="mb-3">Host's Words ({{ foundWords.length }})</h5>
-                <div class="word-chips">
-                    <span class="word-chip" *ngFor="let word of foundWords">{{ word }}</span>
-                </div>
+                <h5 class="mb-3">Playing Words</h5>
+                <p class="text-muted small">Players submit words on their hand controllers.</p>
             </div>
         </div>
 
@@ -125,23 +123,23 @@
                                 <div *ngIf="isHost && res.showMenu" class="host-validation-inline">
                                     <button type="button" class="btn-validate text-success" 
                                         (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, true)"
-                                        title="Accept">
+                                        title="Accept" aria-label="Accept word">
                                         <i class="bi bi-check-circle-fill"></i>
                                     </button>
                                     <button type="button" class="btn-validate text-danger" 
                                         (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, false)"
-                                        title="Reject">
+                                        title="Reject" aria-label="Reject word">
                                         <i class="bi bi-x-circle-fill"></i>
                                     </button>
                                     <button type="button" class="btn-validate text-muted ms-1" 
                                         (click)="$event.stopPropagation(); res.showMenu = false"
-                                        title="Cancel">
+                                        title="Cancel" aria-label="Cancel word validation">
                                         <i class="bi bi-chevron-right"></i>
                                     </button>
                                 </div>
 
                                 <button *ngIf="isHost && !res.showMenu" type="button" class="btn-icon-sm"
-                                    (click)="$event.stopPropagation(); res.showMenu = true">
+                                    (click)="$event.stopPropagation(); res.showMenu = true" aria-label="Word options">
                                     <i class="bi bi-three-dots-vertical"></i>
                                 </button>
 
@@ -181,10 +179,10 @@
         <ng-container *ngIf="isPlaying">
             <app-end-round-button (endRound)="handleEndRound()" [disabled]="isEnding" size="sm"></app-end-round-button>
 
-            <button *ngIf="!isPaused" class="btn btn-sm btn-outline-warning" (click)="handlePause()" title="Pause">
+            <button *ngIf="!isPaused" class="btn btn-sm btn-outline-warning" (click)="handlePause()" title="Pause" aria-label="Pause round">
                 <i class="bi bi-pause-fill"></i>
             </button>
-            <button *ngIf="isPaused" class="btn btn-sm btn-warning" (click)="handleResume()" title="Resume">
+            <button *ngIf="isPaused" class="btn btn-sm btn-warning" (click)="handleResume()" title="Resume" aria-label="Resume round">
                 <i class="bi bi-play-fill"></i>
             </button>
 
