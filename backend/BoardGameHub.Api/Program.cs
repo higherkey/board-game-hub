@@ -14,15 +14,25 @@ using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://+:{port}");
+}
+
+var logDir = Path.Combine(AppContext.BaseDirectory, "logs");
+try { Directory.CreateDirectory(logDir); } catch { logDir = Path.GetTempPath(); }
+
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.File("../logs/backend.log", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(Path.Combine(logDir, "backend.log"), rollingInterval: RollingInterval.Day)
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(evt => evt.Properties.ContainsKey("SourceContext") && evt.Properties["SourceContext"].ToString().Contains("ClientLogging"))
-        .WriteTo.File("../logs/frontend.log", rollingInterval: RollingInterval.Day))
+        .WriteTo.File(Path.Combine(logDir, "frontend.log"), rollingInterval: RollingInterval.Day))
 );
 
 // Add services to the container.
@@ -191,21 +201,30 @@ if (app.Environment.IsDevelopment())
 }
 
 // Initialize database: Seed roles and admin user (Migrations are managed out-of-band)
-using (var scope = app.Services.CreateScope())
+try
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
+    using (var scope = app.Services.CreateScope())
     {
-        db.Database.EnsureCreated();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
+        {
+            db.Database.EnsureCreated();
+        }
+        
+        // Seed Roles and Admin User
+        await DbInitializer.SeedAsync(scope.ServiceProvider);
     }
-    
-    // Seed Roles and Admin User
-    await DbInitializer.SeedAsync(scope.ServiceProvider);
 }
-
+catch (Exception ex)
+{
+    Log.Error(ex, "An error occurred during database seeding on startup.");
+}
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// Health check endpoint for Render / uptime monitoring
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 // Redirect root to admin dashboard
 app.MapGet("/", () => Results.Redirect("/admin"));

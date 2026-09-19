@@ -4,6 +4,7 @@
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/richardlitt/standard-readme)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo%20(Prod)-brightgreen?style=flat-square)](https://boardgamehub.eight1fivedesign.com)
+[![Staging Preview](https://img.shields.io/badge/Staging%20Preview-purple?style=flat-square)](https://staging.board-game-hub-frontend.pages.dev)
 [![Dev Preview](https://img.shields.io/badge/Dev%20Preview-blue?style=flat-square)](https://dev.board-game-hub-frontend.pages.dev)
 [![Backend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-backend-render.yml)
 [![Frontend Deploy](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-frontend-cloudflare.yml/badge.svg)](https://github.com/higherkey/board-game-hub/actions/workflows/deploy-frontend-cloudflare.yml)
@@ -11,7 +12,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=coverage)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
 [![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular)](https://angular.dev/)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![Neon Postgres](https://img.shields.io/badge/PostgreSQL-Neon%20Serverless-00E599?style=flat-square&logo=postgresql)](https://neon.tech/)
 [![SignalR](https://img.shields.io/badge/SignalR-Active-orange?style=flat-square&logo=signalr)](#)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg?style=flat-square)](LICENSE)
 
