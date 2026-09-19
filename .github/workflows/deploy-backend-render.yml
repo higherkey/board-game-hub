@@ -97,6 +97,9 @@ jobs:
 
       - name: Apply Database Migrations
         if: steps.determine_env.outputs.db_connection != ''
+        env:
+          Jwt__Key: "TemporaryCiBuildTimeDesignKeyForEfCoreMigrations1234567890!"
+          DOTNET_ENVIRONMENT: "Production"
         run: |
           dotnet ef migrations bundle --project backend/BoardGameHub.Api --force
           chmod +x ./efbundle
