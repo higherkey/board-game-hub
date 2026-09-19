@@ -1,10 +1,10 @@
 # Board Game Hub - Backend
 
-This directory contains the ASP.NET Core 8 Web API that serves as the orchestration layer for the Board Game Hub platform.
+This directory contains the ASP.NET Core 10 Web API that serves as the orchestration layer for the Board Game Hub platform.
 
 ## 🏛️ Architecture
 
-The backend is built with **ASP.NET Core 8** and uses **SignalR** for real-time bi-directional communication.
+The backend is built with **ASP.NET Core 10** and uses **SignalR** for real-time bi-directional communication.
 
 ### Core Components
 - **`RoomService`**: The central orchestrator for in-memory game rooms. It manages the lifecycle of rooms and player connections.
@@ -17,7 +17,7 @@ The backend is built with **ASP.NET Core 8** and uses **SignalR** for real-time 
 ## 🛠️ Local Development
 
 ### Prerequisites
-- .NET 8 SDK
+- .NET 10 SDK
 - Docker (for PostgreSQL)
 
 ### Setup
@@ -48,10 +48,10 @@ Migrations are managed **out-of-band** from the API startup process.
 
 ### How CI/CD applies migrations
 
-On every push to `main` or `dev`, the backend deployment workflow (`.github/workflows/deploy-backend-render.yml`) does the following **before** triggering Render deployment:
+On every push to `main`, `staging`, or `dev`, the backend deployment workflow (`.github/workflows/deploy-backend-render.yml`) does the following **before** triggering Render deployment:
 
 1. Generates a self-contained **EF Core Migration Bundle** (`efbundle`) from all migrations in source.
-2. Runs the bundle against the target Supabase database using the branch-appropriate connection string.
+2. Runs the bundle against the target Neon PostgreSQL database using the branch-appropriate connection string.
 3. Only then triggers deployment on Render.
 
 This guarantees the schema is always up-to-date before new code runs. The `efbundle` binary is a transient build artifact — **do not commit it**.
