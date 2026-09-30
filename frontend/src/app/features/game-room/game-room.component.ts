@@ -18,7 +18,6 @@ import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.com
 import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 import { GameRoomStateService } from './services/game-room-state.service';
 import { DeviceService } from '../../services/device.service';
-import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-game-room',

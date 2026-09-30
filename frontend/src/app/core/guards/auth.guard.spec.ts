@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CanActivateFn, Router, RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/router';
+import { CanActivateFn, Router, RouterStateSnapshot, ActivatedRouteSnapshot, UrlTree } from '@angular/router';
 import { authGuard } from './auth.guard';
 import { AuthService } from '../../services/auth.service';
 
@@ -9,13 +9,15 @@ describe('authGuard', () => {
 
     let mockAuthService: any;
     let mockRouter: any;
+    let mockUrlTree: UrlTree;
 
     beforeEach(() => {
+        mockUrlTree = {} as UrlTree;
         mockAuthService = {
             isAuthenticated: jasmine.createSpy('isAuthenticated').and.returnValue(false)
         };
         mockRouter = {
-            parseUrl: jasmine.createSpy('parseUrl').and.returnValue('login-url')
+            parseUrl: jasmine.createSpy('parseUrl').and.returnValue(mockUrlTree)
         };
 
         TestBed.configureTestingModule({
@@ -44,6 +46,6 @@ describe('authGuard', () => {
 
         const result = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
         expect(mockRouter.parseUrl).toHaveBeenCalledWith('/login');
-        expect(result).toBe('login-url');
+        expect(result).toBe(mockUrlTree);
     });
 });
