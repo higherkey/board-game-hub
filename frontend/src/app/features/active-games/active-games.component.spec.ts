@@ -88,4 +88,20 @@ describe('ActiveGamesComponent', () => {
 
         expect(mockSignalRService.removeActiveRoom).toHaveBeenCalledWith('ABCD');
     });
+
+    it('should close on Escape keydown', () => {
+        component.isOpen = true;
+        component.onEscape();
+        expect(component.isOpen).toBeFalse();
+    });
+
+    it('should close when clicked outside', () => {
+        component.isOpen = true;
+        const outsideElement = document.createElement('div');
+        const event = new MouseEvent('click');
+        Object.defineProperty(event, 'target', { value: outsideElement });
+
+        component.onClickOutside(event);
+        expect(component.isOpen).toBeFalse();
+    });
 });

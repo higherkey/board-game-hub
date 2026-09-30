@@ -390,5 +390,44 @@ describe('SignalRService', () => {
       expect(updated?.players.length).toBe(2);
       expect(updated?.code).toBe('PATCH'); // Should verify original props remain
     });
+
+    it('should catch error and not throw in validateActiveRooms when connection fails', async () => {
+      spyOn(service, 'getActiveRooms').and.returnValue([{ code: 'ROOM1', gameType: 'Babble', lastPlayed: new Date().toISOString() }]);
+      mockHubConnection.state = HubConnectionState.Disconnected;
+      mockHubConnection.start.and.returnValue(Promise.reject(new Error('Connection error')));
+
+      await expectAsync(service.validateActiveRooms()).toBeResolved();
+    });
+
+    it('should invoke CloverDragMove via cloverDragMove when in room', async () => {
+      service.currentRoomSubject.next({ code: 'CLOV1' } as any);
+      await service.cloverDragMove('card-1', 100, 200);
+
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('CloverDragMove', 'CLOV1', 'card-1', 100, 200);
+    });
+
+    it('should invoke joinLobby and getPublicRooms in joinLobby', async () => {
+      spyOn(service, 'getPublicRooms').and.returnValue(Promise.resolve([]));
+      mockHubConnection.state = HubConnectionState.Connected;
+
+      await service.joinLobby();
+
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinLobby');
+      expect(service.getPublicRooms).toHaveBeenCalled();
+    });
+
+    it('should invoke SetHostPlayer and RemoveHostPlayer', async () => {
+      await service.setHostPlayer('ROOM1', 'target-user');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('SetHostPlayer', 'ROOM1', 'target-user');
+
+      await service.removeHostPlayer('ROOM1', 'target-user');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('RemoveHostPlayer', 'ROOM1', 'target-user');
+    });
+
+    it('should invoke RenamePlayer', async () => {
+      mockHubConnection.state = HubConnectionState.Connected;
+      await service.renamePlayer('NewPlayerName');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('RenamePlayer', 'NewPlayerName');
+    });
   });
 });

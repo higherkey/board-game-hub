@@ -1,5 +1,6 @@
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, HostListener, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { take } from 'rxjs';
@@ -17,7 +18,6 @@ import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.com
 import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 import { GameRoomStateService } from './services/game-room-state.service';
 import { DeviceService } from '../../services/device.service';
-import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-game-room',
@@ -158,15 +158,17 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   setGameType(gameType: string) {
-    this.stateService.setGameType(this.roomCode, gameType);
+    void this.stateService.setGameType(this.roomCode, gameType);
   }
 
-  goToLogin() {
-    this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+  async goToLogin() {
+    await this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
   }
+
+  private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       this.roomCode = (params.get('code') || '').toUpperCase();
       this.isCreating = this.roomCode === 'CREATE';
 
@@ -177,7 +179,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
         this.logger.info(`User navigated to room: ${this.roomCode}`);
       }
       
-      this.stateService.initializeRoom(this.roomCode, this.isCreating);
+      void this.stateService.initializeRoom(this.roomCode, this.isCreating);
     });
 
     // Check query params for pre-selected game or name
@@ -191,7 +193,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     });
 
     // Load available games for creation
-    this.gameDataService.games$.subscribe(games => {
+    this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
       if (games) {
         this.availableGames = games.filter(g => g.status !== 'Backlog');
 
@@ -227,11 +229,11 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   onGameSelected(gameType: string) {
-    this.stateService.setGameType(this.roomCode, gameType);
+    void this.stateService.setGameType(this.roomCode, gameType);
   }
 
   startGame(settings: GameSettings) {
-    this.stateService.startGame(settings);
+    void this.stateService.startGame(settings);
   }
 
   async onNextRound(settings: GameSettings) {
@@ -292,10 +294,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
 
   onSetHostPlayer(targetId: string) {
-    this.stateService.setHostPlayer(this.roomCode, targetId);
+    void this.stateService.setHostPlayer(this.roomCode, targetId);
   }
 
   onRemoveHostPlayer(targetId: string) {
-    this.stateService.removeHostPlayer(this.roomCode, targetId);
+    void this.stateService.removeHostPlayer(this.roomCode, targetId);
   }
 }

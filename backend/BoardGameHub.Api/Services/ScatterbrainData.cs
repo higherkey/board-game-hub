@@ -15,12 +15,11 @@ public static class ScatterbrainData
 
     public static char GetLetter(LetterMode mode)
     {
-        var rng = new Random();
         return mode switch
         {
-            LetterMode.Normal => NormalLetters[rng.Next(NormalLetters.Length)],
-            LetterMode.Hard => HardLetters[rng.Next(HardLetters.Length)],
-            _ => AllLetters[rng.Next(AllLetters.Length)]
+            LetterMode.Normal => NormalLetters[Random.Shared.Next(NormalLetters.Length)],
+            LetterMode.Hard => HardLetters[Random.Shared.Next(HardLetters.Length)],
+            _ => AllLetters[Random.Shared.Next(AllLetters.Length)]
         };
     }
 
@@ -53,9 +52,8 @@ public static class ScatterbrainData
 
     public static List<string> GetRandomList()
     {
-        var rng = new Random();
         var keys = GlobalLists.Keys.ToList();
-        var randomKey = keys[rng.Next(keys.Count)];
+        var randomKey = keys[Random.Shared.Next(keys.Count)];
         return GlobalLists[randomKey];
     }
 
@@ -63,7 +61,6 @@ public static class ScatterbrainData
     {
         // For now, this is a mock "AI" generator. 
         // It picks categories that might feel related to the seed keyword.
-        var rng = new Random();
         var allCats = GlobalLists.Values.SelectMany(x => x).Distinct().ToList();
         
         // Very simple "keyword" mock:
@@ -84,11 +81,11 @@ public static class ScatterbrainData
 
         if (selectedPool != null && selectedPool.Count >= 12)
         {
-            return selectedPool.OrderBy(x => rng.Next()).Take(12).ToList();
+            return selectedPool.OrderBy(x => Random.Shared.Next()).Take(12).ToList();
         }
 
         // Fallback: Mix of random categories
-        return allCats.OrderBy(x => rng.Next()).Take(15).ToList();
+        return allCats.OrderBy(x => Random.Shared.Next()).Take(15).ToList();
     }
 
     public static readonly Dictionary<int, List<string>> GlobalLists = new()

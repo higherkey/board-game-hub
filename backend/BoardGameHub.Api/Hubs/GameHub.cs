@@ -92,6 +92,10 @@ public class GameHub : Hub
 
     public async Task StartGame(string roomCode, GameSettings settings)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         var room = await _roomService.StartGame(roomCode, settings);
         if (room != null)
         {
@@ -113,18 +117,30 @@ public class GameHub : Hub
 
     public Task PauseGame(string roomCode)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return Task.CompletedTask;
+        EnsureHost(existingRoom);
+
         _roomService.PauseGame(roomCode);
         return Task.CompletedTask;
     }
 
     public Task ResumeGame(string roomCode)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return Task.CompletedTask;
+        EnsureHost(existingRoom);
+
         _roomService.ResumeGame(roomCode);
         return Task.CompletedTask;
     }
 
     public Task EndGame(string roomCode)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return Task.CompletedTask;
+        EnsureHost(existingRoom);
+
         var room = _roomService.EndGame(roomCode);
         if (room != null && room.IsPublic && room.State == GameState.Finished)
         {
@@ -141,6 +157,14 @@ public class GameHub : Hub
         _logger.LogInformation("[GameHub] SetGameType Request: Room={Room}, Type={GameType}", roomCode, gameType);
         if (Enum.TryParse<GameType>(gameType, true, out var type))
         {
+            var existingRoom = _roomService.GetRoom(roomCode);
+            if (existingRoom == null)
+            {
+                _logger.LogWarning("[GameHub] SetGameType Failed: Room {Room} not found in RoomService.", roomCode);
+                return;
+            }
+            EnsureHost(existingRoom);
+
             var room = _roomService.SetGameType(roomCode, type);
             if (room != null)
             {
@@ -173,6 +197,10 @@ public class GameHub : Hub
 
     public async Task SetHostPlayer(string roomCode, string targetConnectionId)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         var room = _roomService.SetHostPlayer(roomCode, targetConnectionId);
         if (room != null && room.IsPublic && room.State == GameState.Lobby)
         {
@@ -200,6 +228,10 @@ public class GameHub : Hub
     
     public async Task UpdateSettings(string roomCode, GameSettings settings)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         var room = _roomService.UpdateSettings(roomCode, settings);
         if (room != null)
         {
@@ -216,6 +248,10 @@ public class GameHub : Hub
 
     public Task UpdateUndoSettings(string roomCode, UndoSettings settings)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return Task.CompletedTask;
+        EnsureHost(existingRoom);
+
         _roomService.UpdateUndoSettings(roomCode, settings);
         return Task.CompletedTask;
     }
@@ -446,6 +482,10 @@ public class GameHub : Hub
 
     public async Task NextWisecrackBattle(string roomCode)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "NEXT_BATTLE", null);
     }
 
@@ -468,6 +508,10 @@ public class GameHub : Hub
         {
             if (string.IsNullOrEmpty(roomCode)) return;
 
+            var existingRoom = _roomService.GetRoom(roomCode);
+            if (existingRoom == null) return;
+            EnsureHost(existingRoom);
+
             var room = await _roomService.CalculateRoundScores(roomCode.Trim().ToUpperInvariant());
 
             if (room != null)
@@ -482,21 +526,31 @@ public class GameHub : Hub
                 }
                 catch (Exception hex)
                 {
-                    Console.WriteLine($"Error recording game history for room {roomCode}: {hex.Message}");
+                    _logger.LogError(hex, "Error recording game history for room {RoomCode}", roomCode);
                 }
 
                 await Clients.Group(roomCode.ToUpper()).SendAsync("RoundEnded", room);
             }
         }
+        catch (HubException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in EndRound for room {roomCode}: {ex.Message}");
+            _logger.LogError(ex, "Error in EndRound for room {RoomCode}", roomCode);
             throw new HubException("An unexpected error occurred during score calculation.");
         }
     }
 
     public async Task NextRound(string roomCode)
     {
+        if (string.IsNullOrEmpty(roomCode)) return;
+
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         // Start next round with same settings, but new letter/list
         var room = await _roomService.StartGame(roomCode, null); 
         if (room != null)
@@ -577,6 +631,10 @@ public class GameHub : Hub
     
     public async Task UniversalTranslatorForcePhase(string roomCode, string phaseName)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         var payload = JsonSerializer.SerializeToElement(new { phase = phaseName });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_PHASE", payload);
     }
@@ -646,6 +704,15 @@ public class GameHub : Hub
         if (turnConfig != null && !string.IsNullOrEmpty(turnConfig.Url))
         {
             await Clients.Caller.SendAsync("ReceiveTurnCredentials", turnConfig);
+        }
+    }
+
+    private void EnsureHost(Room room)
+    {
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!_roomService.IsAuthorizedHost(room, Context.ConnectionId, userId))
+        {
+            throw new HubException("Unauthorized: Only an authorized host can perform this action.");
         }
     }
 }

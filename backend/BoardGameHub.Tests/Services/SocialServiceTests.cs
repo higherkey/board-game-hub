@@ -179,4 +179,44 @@ public class SocialServiceTests : IDisposable
         requests.Should().HaveCount(1);
         requests[0].RequesterId.Should().Be("B");
     }
+
+    [Fact]
+    public async Task RemoveFriend_ShouldRemoveAcceptedFriendship()
+    {
+        var userA = new User { Id = "A", UserName = "UserA" };
+        var userB = new User { Id = "B", UserName = "UserB" };
+        _context.Users.AddRange(userA, userB);
+        _context.Friendships.Add(new Friendship
+        {
+            RequesterId = "A",
+            AddresseeId = "B",
+            Status = FriendshipStatus.Accepted
+        });
+        await _context.SaveChangesAsync();
+
+        await _service.RemoveFriend("A", "B");
+
+        var friendship = await _context.Friendships.FirstOrDefaultAsync();
+        friendship.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RemoveFriend_ShouldRemoveAcceptedFriendship_WhenInvokedByAddressee()
+    {
+        var userA = new User { Id = "A", UserName = "UserA" };
+        var userB = new User { Id = "B", UserName = "UserB" };
+        _context.Users.AddRange(userA, userB);
+        _context.Friendships.Add(new Friendship
+        {
+            RequesterId = "A",
+            AddresseeId = "B",
+            Status = FriendshipStatus.Accepted
+        });
+        await _context.SaveChangesAsync();
+
+        await _service.RemoveFriend("B", "A");
+
+        var friendship = await _context.Friendships.FirstOrDefaultAsync();
+        friendship.Should().BeNull();
+    }
 }

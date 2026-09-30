@@ -1,4 +1,4 @@
-<div class="babble-view" [class.showing-results]="isFinished" [class.is-host]="isHost" [class.resizing]="isResizing">
+<div class="babble-view" [class.showing-results]="isFinished" [class.is-host]="isHost" [class.resizing]="isResizing" [style.--sidebar-width.px]="sidebarWidth">
     <div class="game-main">
         <div class="babble-header d-none d-md-flex">
             <h2>Babble</h2>
@@ -16,21 +16,34 @@
             </div>
         </div>
 
+        <!-- Mobile Header (Visible on small screens) -->
+        <div class="babble-mobile-header d-flex d-md-none justify-content-between align-items-center mb-2">
+            <h3 class="m-0 fs-4 fw-bold text-white">Babble</h3>
+            <div class="d-flex align-items-center gap-2">
+                <div class="timer-card py-1 px-2" *ngIf="isPlaying" [class.urgent]="isUrgent">
+                    <i class="bi bi-stopwatch-fill fs-6"></i>
+                    <span class="fs-6">{{ timerText }}</span>
+                </div>
+                <div *ngIf="isHost && isPlaying" class="host-controls-panel d-flex align-items-center gap-1">
+                    <ng-container *ngTemplateOutlet="hostControlsTemplate"></ng-container>
+                </div>
+            </div>
+        </div>
+
         <!-- Grid Display -->
         <div class="grid-stage position-relative">
             <div class="babble-grid" [class]="'size-' + boardSize" [class.blurred-board]="isBlurred">
                 <div class="letter-tile animate-pop" *ngFor="let char of gridChars; let i = index"
-                    [style.animation-delay]="(i * 0.05) + 's'" [attr.data-letter]="char === 'Q' ? 'Qu' : char">
+                    [style.--tile-index]="i" [attr.data-letter]="char === 'Q' ? 'Qu' : char">
                     {{ char === 'Q' ? 'Qu' : char }}
                 </div>
             </div>
 
             <!-- Countdown Overlay -->
             <div *ngIf="isPlaying && isBlurred && countdownSeconds > 0"
-                class="position-absolute top-50 start-50 translate-middle text-center" style="z-index: 100;">
+                class="position-absolute top-50 start-50 translate-middle text-center countdown-overlay">
                 <div class="display-1 fw-bold text-white countdown-text">{{ countdownSeconds }}</div>
-                <div class="h4 text-white text-uppercase ls-widest mt-2 fw-bold"
-                    style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Get Ready!</div>
+                <div class="h4 text-white text-uppercase ls-widest mt-2 fw-bold countdown-subtext">Get Ready!</div>
             </div>
         </div>
 
@@ -39,10 +52,9 @@
         </p>
     </div>
 
-    <!-- Resize Handle (Desktop Only) -->
     <div class="resize-handle d-none d-md-block" (mousedown)="startResizing($event)"></div>
 
-    <div class="game-sidebar" [style.width.px]="sidebarWidth">
+    <div class="game-sidebar">
         <!-- Player Input View (Any Hand controller or non-screen player) -->
         <div *ngIf="!isScreen && isPlaying" class="controls-section">
             <div class="word-input-wrapper mb-4">

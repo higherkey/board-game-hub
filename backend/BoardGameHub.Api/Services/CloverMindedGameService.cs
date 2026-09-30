@@ -9,7 +9,6 @@ namespace BoardGameHub.Api.Services;
 public class CloverMindedGameService : BaseGameService<CloverMindedState>
 {
     private readonly ILogger<CloverMindedGameService> _logger;
-    private readonly Random _rng = new();
     private readonly ConcurrentDictionary<string, Dictionary<string, string[]>> _privateClues = new();
     private readonly ConcurrentDictionary<string, CloverRoundSolution> _roundSolutions = new();
 
@@ -76,8 +75,8 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
             });
         }
 
-        var perm = Enumerable.Range(0, 4).OrderBy(_ => _rng.Next()).ToArray();
-        var rot = Enumerable.Range(0, 4).Select(_ => _rng.Next(4)).ToArray();
+        var perm = Enumerable.Range(0, 4).OrderBy(_ => Random.Shared.Next()).ToArray();
+        var rot = Enumerable.Range(0, 4).Select(_ => Random.Shared.Next(4)).ToArray();
 
         var pairWords = new string[4][];
         for (var i = 0; i < 4; i++)
@@ -104,11 +103,11 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
 
     private List<string> PickWords(int count)
     {
-        var pool = WordBank.Words.OrderBy(_ => _rng.Next()).Take(count).ToList();
+        var pool = WordBank.Words.OrderBy(_ => Random.Shared.Next()).Take(count).ToList();
         if (pool.Count < count)
         {
             while (pool.Count < count)
-                pool.Add(WordBank.Words[_rng.Next(WordBank.Words.Length)]);
+                pool.Add(WordBank.Words[Random.Shared.Next(WordBank.Words.Length)]);
         }
         return pool;
     }
@@ -226,7 +225,7 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
             Words = decoyWords.ToArray()
         };
 
-        var pool = prep.Cards.Concat(new[] { decoy }).OrderBy(_ => _rng.Next()).ToList();
+        var pool = prep.Cards.Concat(new[] { decoy }).OrderBy(_ => Random.Shared.Next()).ToList();
         state.Pool = pool;
 
         state.Slots = Enumerable.Range(0, 4).Select(_ => new CloverSlotState()).ToArray();

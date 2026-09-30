@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +14,7 @@ import { SignalRService } from '../../../services/signalr.service';
   styleUrl: './home-page.component.scss'
 })
 export class LandingPageComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   featuredGames: GameDefinition[] = [];
   roomCode: string = '';
   isCodeInputFocused: boolean = false;
@@ -45,7 +47,7 @@ export class LandingPageComponent implements OnInit {
     const cleanCode = this.roomCode ? this.roomCode.trim().toUpperCase() : '';
     // If no 4-letter code is entered, navigate directly to /play (Public Lobbies / Room Finder)
     if (!cleanCode || cleanCode.length < 4) {
-      this.router.navigate(['/play']);
+      await this.router.navigate(['/play']);
       return;
     }
 
@@ -56,7 +58,7 @@ export class LandingPageComponent implements OnInit {
     try {
       const isValid = await this.signalRService.validateRoomCode(cleanCode);
       if (isValid) {
-        this.router.navigate(['/game', cleanCode]);
+        await this.router.navigate(['/game', cleanCode]);
       } else {
         this.codeError = `Room "${cleanCode}" not found. Check code or click Join to browse rooms.`;
       }
@@ -87,7 +89,7 @@ export class LandingPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.gameDataService.games$.subscribe(games => {
+    this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
       if (games) {
         const visibleStatuses = new Set(['Deployed', 'Testing']);
         this.featuredGames = games

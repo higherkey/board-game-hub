@@ -97,7 +97,7 @@ public class BreakingNewsGameService : BaseGameService<BreakingNewsState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in BreakingNews CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in BreakingNews CalculateScores");
         }
         return Task.CompletedTask;
     }

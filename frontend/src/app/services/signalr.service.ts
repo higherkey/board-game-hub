@@ -315,7 +315,7 @@ export class SignalRService {
     this.hubConnection.onreconnected(connectionId => {
       console.info('SignalR Reconnected', connectionId);
       this.connectionId$.next(connectionId || this.hubConnection.connectionId);
-      this.validateActiveRooms();
+      void this.validateActiveRooms();
     });
 
     // Public Lobby Events
@@ -445,7 +445,7 @@ export class SignalRService {
         console.info('SignalR Connection started', connectionId);
 
         // Proactively validate active rooms on startup to catch any that closed while offline
-        this.validateActiveRooms();
+        void this.validateActiveRooms();
       } catch (err) {
         console.error('Error while starting connection: ' + err);
         this.connectionStatus$.next('Error');
@@ -498,11 +498,11 @@ export class SignalRService {
     const currentRooms = this.getActiveRooms();
     if (currentRooms.length === 0) return;
 
-    if (this.hubConnection.state !== HubConnectionState.Connected) {
-      await this.startConnection();
-    }
-
     try {
+      if (this.hubConnection.state !== HubConnectionState.Connected) {
+        await this.startConnection();
+      }
+
       const codes = currentRooms.map(r => r.code);
       const validCodes: string[] = await this.hubConnection.invoke('ValidateRooms', codes);
 
@@ -568,7 +568,7 @@ export class SignalRService {
     }
     await this.hubConnection.invoke('JoinLobby');
     // Initial fetch to populate list
-    this.getPublicRooms();
+    await this.getPublicRooms();
   }
 
   public async leaveLobby(): Promise<void> {
@@ -651,8 +651,11 @@ export class SignalRService {
   public async cloverDragMove(cardId: string, x: number, y: number): Promise<void> {
     const roomCode = this.currentRoomSubject.value?.code;
     if (roomCode) {
-      this.hubConnection.invoke('CloverDragMove', roomCode, cardId, x, y)
-        .catch(err => console.error(err));
+      try {
+        await this.hubConnection.invoke('CloverDragMove', roomCode, cardId, x, y);
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
   // ... rest of file

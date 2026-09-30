@@ -193,5 +193,32 @@ describe('BabbleComponent', () => {
                 isValid: true
             });
         });
+
+        it('should toggle definition display', () => {
+            const res = { word: 'TEST' };
+            component.showDefinition(res);
+            expect(component.selectedWord).toBe(res);
+            component.showDefinition(res);
+            expect(component.selectedWord).toBeNull();
+        });
+
+        it('should handle startResizing and update sidebarWidth', () => {
+            const event = new MouseEvent('mousedown');
+            spyOn(event, 'preventDefault');
+            component.startResizing(event);
+
+            expect(component.isResizing).toBeTrue();
+            expect(event.preventDefault).toHaveBeenCalled();
+
+            // Simulate mouse move
+            const moveEvent = new MouseEvent('mousemove', { clientX: 200 });
+            (component as any).onMouseMove(moveEvent);
+
+            expect(component.sidebarWidth).toBeGreaterThanOrEqual(300);
+
+            // Simulate mouse up
+            (component as any).onMouseUp();
+            expect(component.isResizing).toBeFalse();
+        });
     });
 });

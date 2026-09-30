@@ -2,8 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using BoardGameHub.Api.Services;
 using BoardGameHub.Api.Models;
-
-using System.Security.Claims;
+using BoardGameHub.Api.Models.Dtos;
 
 namespace BoardGameHub.Api.Hubs;
 
@@ -53,22 +52,31 @@ public class SocialHub : Hub
         await Clients.User(requesterId).SendAsync("FriendRequestAccepted", currentUserId);
     }
 
-    public async Task<List<ChatMessage>> GetGlobalChatHistory()
+    public async Task RemoveFriend(string friendId)
+    {
+        var currentUserId = Context.UserIdentifier;
+        if (string.IsNullOrEmpty(currentUserId)) return;
+
+        await _socialService.RemoveFriend(currentUserId, friendId);
+        await Clients.User(friendId).SendAsync("FriendRemoved", currentUserId);
+    }
+
+    public async Task<List<ChatMessageDto>> GetGlobalChatHistory()
     {
         return await _socialService.GetGlobalChatHistory(50);
     }
 
-    public async Task<List<Models.User>> GetFriends()
+    public async Task<List<UserDto>> GetFriends()
     {
         var userId = Context.UserIdentifier;
-        if (string.IsNullOrEmpty(userId)) return new List<Models.User>();
+        if (string.IsNullOrEmpty(userId)) return new List<UserDto>();
         return await _socialService.GetFriends(userId);
     }
     
-    public async Task<List<Friendship>> GetFriendRequests()
+    public async Task<List<FriendRequestDto>> GetFriendRequests()
     {
         var userId = Context.UserIdentifier;
-        if (string.IsNullOrEmpty(userId)) return new List<Friendship>();
+        if (string.IsNullOrEmpty(userId)) return new List<FriendRequestDto>();
         return await _socialService.GetFriendRequests(userId);
     }
 }

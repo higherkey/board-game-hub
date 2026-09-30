@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { UserProfileDropdownComponent } from '../../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
@@ -15,6 +15,9 @@ import { SoundService } from '../../../../core/services/sound.service';
 export class RoomHeaderComponent {
   readonly deviceService = inject(DeviceService);
   readonly soundService = inject(SoundService);
+  @ViewChild('navMenuDialog') navMenuDialog?: ElementRef<HTMLDialogElement>;
+  @ViewChild('menuTrigger') menuTrigger?: ElementRef<HTMLButtonElement>;
+
   @Input() isBigScreen = false;
   @Input() roomCode = '';
   @Input() gameDisplayName = 'Lobby';
@@ -35,6 +38,35 @@ export class RoomHeaderComponent {
 
   toggleNavMenu() {
     this.isNavMenuOpen = !this.isNavMenuOpen;
+    const dialog = this.navMenuDialog?.nativeElement;
+    if (dialog) {
+      if (this.isNavMenuOpen && !dialog.open) {
+        dialog.showModal();
+      } else if (!this.isNavMenuOpen && dialog.open) {
+        dialog.close();
+      }
+    }
+  }
+
+  onDialogClose() {
+    this.isNavMenuOpen = false;
+    this.menuTrigger?.nativeElement?.focus();
+  }
+
+  onDialogKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && this.isNavMenuOpen) {
+      event.preventDefault();
+      this.toggleNavMenu();
+    }
+  }
+
+  onContentKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.toggleNavMenu();
+    } else {
+      event.stopPropagation();
+    }
   }
 
   toggleSound() {

@@ -42,7 +42,7 @@ public class OneAndOnlyService : BaseGameService<OneAndOnlyState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in OneAndOnly CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in OneAndOnly CalculateScores");
         }
         return Task.CompletedTask;
     }
@@ -145,7 +145,7 @@ public class OneAndOnlyService : BaseGameService<OneAndOnlyState>
     private string GetRandomWord()
     {
         var words = new[] { "Apple", "Beach", "Computer", "Doctor", "Elephant", "Football", "Guitar", "House", "Igloo", "Jungle" };
-        return words[new Random().Next(words.Length)];
+        return words[Random.Shared.Next(words.Length)];
     }
 
     public override Task<bool> HandleAction(Room room, GameAction action, string connectionId)
