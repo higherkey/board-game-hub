@@ -415,5 +415,19 @@ describe('SignalRService', () => {
       expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinLobby');
       expect(service.getPublicRooms).toHaveBeenCalled();
     });
+
+    it('should invoke SetHostPlayer and RemoveHostPlayer', async () => {
+      await service.setHostPlayer('ROOM1', 'target-user');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('SetHostPlayer', 'ROOM1', 'target-user');
+
+      await service.removeHostPlayer('ROOM1', 'target-user');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('RemoveHostPlayer', 'ROOM1', 'target-user');
+    });
+
+    it('should invoke RenamePlayer', async () => {
+      mockHubConnection.state = HubConnectionState.Connected;
+      await service.renamePlayer('NewPlayerName');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('RenamePlayer', 'NewPlayerName');
+    });
   });
 });
