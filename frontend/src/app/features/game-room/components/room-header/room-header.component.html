@@ -87,7 +87,7 @@
         [class.open]="isNavMenuOpen" (close)="onDialogClose()" (click)="toggleNavMenu()"
         (keydown)="onDialogKeyDown($event)">
         <div class="nav-menu-content p-3 d-flex flex-column gap-3"
-            (click)="$event.stopPropagation()">
+            (click)="$event.stopPropagation()" (keydown)="onContentKeyDown($event)">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h4 class="mb-0 text-white fw-bold">Room Menu</h4>
                 <button type="button" class="btn-close btn-close-white" (click)="toggleNavMenu()" aria-label="Close Room Menu"></button>

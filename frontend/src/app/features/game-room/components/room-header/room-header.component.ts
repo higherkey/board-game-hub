@@ -60,6 +60,15 @@ export class RoomHeaderComponent {
     }
   }
 
+  onContentKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.toggleNavMenu();
+    } else {
+      event.stopPropagation();
+    }
+  }
+
   toggleSound() {
     this.soundService.toggleMute();
     this.soundService.playClick();
