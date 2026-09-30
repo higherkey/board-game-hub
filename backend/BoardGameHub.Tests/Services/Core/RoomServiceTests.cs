@@ -502,6 +502,22 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public void IsAuthorizedHost_ShouldIdentifyHostCorrectly()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain, userId: "user1");
+        
+        // Host connection
+        _sut.IsAuthorizedHost(room, "conn1").Should().BeTrue();
+        
+        // User ID match
+        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeTrue();
+
+        // Non-host connection
+        _sut.IsAuthorizedHost(room, "conn2", "user2").Should().BeFalse();
+        _sut.IsAuthorizedHost(room, "conn2").Should().BeFalse();
+    }
+
+    [Fact]
     public void Dispose_ShouldDisposeGracefully()
     {
         _sut.Dispose();

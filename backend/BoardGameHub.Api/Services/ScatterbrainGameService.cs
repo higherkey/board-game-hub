@@ -144,7 +144,7 @@ public class ScatterbrainGameService : BaseGameService<ScatterbrainState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Scatterbrain CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Scatterbrain CalculateScores");
             throw;
         }
         return Task.CompletedTask;

@@ -16,6 +16,20 @@
             </div>
         </div>
 
+        <!-- Mobile Header (Visible on small screens) -->
+        <div class="babble-mobile-header d-flex d-md-none justify-content-between align-items-center mb-2">
+            <h3 class="m-0 fs-4 fw-bold text-white">Babble</h3>
+            <div class="d-flex align-items-center gap-2">
+                <div class="timer-card py-1 px-2" *ngIf="isPlaying" [class.urgent]="isUrgent">
+                    <i class="bi bi-stopwatch-fill fs-6"></i>
+                    <span class="fs-6">{{ timerText }}</span>
+                </div>
+                <div *ngIf="isHost && isPlaying" class="host-controls-panel d-flex align-items-center gap-1">
+                    <ng-container *ngTemplateOutlet="hostControlsTemplate"></ng-container>
+                </div>
+            </div>
+        </div>
+
         <!-- Grid Display -->
         <div class="grid-stage position-relative">
             <div class="babble-grid" [class]="'size-' + boardSize" [class.blurred-board]="isBlurred">

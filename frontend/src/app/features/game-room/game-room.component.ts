@@ -1,5 +1,6 @@
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, HostListener, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { take } from 'rxjs';
@@ -165,8 +166,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
   }
 
+  private readonly destroyRef = inject(DestroyRef);
+
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       this.roomCode = (params.get('code') || '').toUpperCase();
       this.isCreating = this.roomCode === 'CREATE';
 
@@ -191,7 +194,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     });
 
     // Load available games for creation
-    this.gameDataService.games$.subscribe(games => {
+    this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
       if (games) {
         this.availableGames = games.filter(g => g.status !== 'Backlog');
 

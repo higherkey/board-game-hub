@@ -5,16 +5,6 @@ import { AuthService } from '../../services/auth.service';
 export const authGuard: CanActivateFn = (route, state) => {
     const authService = inject(AuthService);
     const router = inject(Router);
-    // Ideally use DOCUMENT, but for valid ES modules we just use globalThis if we don't inject.
-    // To allow testing, we should probably check a helper or move logic to service.
-    // Simpler: Just rely on AuthService to handle "IsDev" check?
-    // Or just accept the test limitation for now and focus on AuthInterceptor?
-
-    // Let's stick to the current logic but make it testable by checking if we CAN mock it.
-    // If we're not on port 4200 (local dev), we'll skip auth for now in this app
-    if (globalThis.location.port !== '4200') {
-        return true;
-    }
 
     if (authService.isAuthenticated()) {
         return true;
