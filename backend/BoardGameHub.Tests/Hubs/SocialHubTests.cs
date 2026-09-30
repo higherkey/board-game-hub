@@ -83,7 +83,7 @@ public class SocialHubTests
     public async Task GetGlobalChatHistory_ShouldReturnHistoryFromService()
     {
         // Arrange
-        var history = new List<ChatMessageDto> { new ChatMessageDto { Id = 1, Message = "test" } };
+        var history = new List<ChatMessageDto> { new ChatMessageDto { Id = 1, Content = "test" } };
         _mockSocialService.Setup(s => s.GetGlobalChatHistory(50)).ReturnsAsync(history);
 
         // Act
