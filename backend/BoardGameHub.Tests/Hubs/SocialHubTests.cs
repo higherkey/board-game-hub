@@ -120,4 +120,15 @@ public class SocialHubTests
         // Assert
         result.Should().BeEquivalentTo(requests);
     }
+
+    [Fact]
+    public async Task RemoveFriend_ShouldCallServiceAndBroadcastToFriend()
+    {
+        // Act
+        await _sut.RemoveFriend("friend456");
+
+        // Assert
+        _mockSocialService.Verify(s => s.RemoveFriend("user123", "friend456"), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("FriendRemoved", new object[] { "user123" }, default), Times.Once);
+    }
 }

@@ -383,5 +383,31 @@ public class GameHubTests
         // Act & Assert - NextRound
         await _sut.NextRound("TEST");
         _mockRoomService.Verify(r => r.StartGame("TEST", null), Times.Once);
+
+        // Act & Assert - SetGameType
+        _mockRoomService.Setup(r => r.SetGameType("TEST", GameType.Scatterbrain)).Returns(room);
+        await _sut.SetGameType("TEST", "Scatterbrain");
+        _mockRoomService.Verify(r => r.SetGameType("TEST", GameType.Scatterbrain), Times.Once);
+
+        // Act & Assert - SetHostPlayer
+        _mockRoomService.Setup(r => r.SetHostPlayer("TEST", "conn2")).Returns(room);
+        await _sut.SetHostPlayer("TEST", "conn2");
+        _mockRoomService.Verify(r => r.SetHostPlayer("TEST", "conn2"), Times.Once);
+
+        // Act & Assert - UpdateSettings
+        var settings = new GameSettings { TimerDurationSeconds = 120 };
+        _mockRoomService.Setup(r => r.UpdateSettings("TEST", settings)).Returns(room);
+        await _sut.UpdateSettings("TEST", settings);
+        _mockRoomService.Verify(r => r.UpdateSettings("TEST", settings), Times.Once);
+
+        // Act & Assert - PauseGame & ResumeGame
+        await _sut.PauseGame("TEST");
+        _mockRoomService.Verify(r => r.PauseGame("TEST"), Times.Once);
+        await _sut.ResumeGame("TEST");
+        _mockRoomService.Verify(r => r.ResumeGame("TEST"), Times.Once);
+
+        // Act & Assert - EndGame
+        await _sut.EndGame("TEST");
+        _mockRoomService.Verify(r => r.EndGame("TEST"), Times.Once);
     }
 }
