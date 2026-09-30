@@ -86,6 +86,30 @@ public class CloverMindedGameServiceTests
     }
 
     [Fact]
+    public async Task HandleAction_GrabAndReleaseCard_WorksInResolution()
+    {
+        var room = CreateTestRoom();
+        await _service.StartRound(room, new GameSettings());
+        var state = (CloverMindedState)room.GameData!;
+
+        var payload1 = JsonDocument.Parse("{\"clues\":[\"Fruit\",\"Vehicle\",\"Pet\",\"Weather\"]}").RootElement;
+        await _service.HandleAction(room, new GameAction("CLOVER_SUBMIT_CLUES", payload1), "p2");
+        var payload2 = JsonDocument.Parse("{\"clues\":[\"Music\",\"Color\",\"Sport\",\"Tool\"]}").RootElement;
+        await _service.HandleAction(room, new GameAction("CLOVER_SUBMIT_CLUES", payload2), "p3");
+
+        var card = state.Pool.First();
+        var grabPayload = JsonDocument.Parse($"{{\"cardId\":\"{card.Id}\"}}").RootElement;
+
+        var grabbed = await _service.HandleAction(room, new GameAction("CLOVER_GRAB_CARD", grabPayload), "p3");
+        Assert.True(grabbed);
+        Assert.Equal("p3", state.CardOccupants?[card.Id]);
+
+        var released = await _service.HandleAction(room, new GameAction("CLOVER_RELEASE_CARD", grabPayload), "p3");
+        Assert.True(released);
+        Assert.False(state.CardOccupants?.ContainsKey(card.Id) ?? false);
+    }
+
+    [Fact]
     public async Task Geometry_MapsOuterEdgesCorrectly()
     {
         for (var i = 0; i < 4; i++)
