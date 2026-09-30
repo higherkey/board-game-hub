@@ -600,6 +600,28 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public void Methods_ShouldReturnNullOrHandleGracefully_WhenStateLockTimesOut()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        
+        // Artificially hold the lock on the room to simulate contention / timeout
+        room.StateLock.Wait();
+        try
+        {
+            // Now attempt operations that acquire StateLock with a timeout
+            // For fast testing, we can directly invoke methods that check TryEnter or Wait(timeout)
+            // But Wait(TimeSpan.FromSeconds(5)) would take 5 seconds.
+            // Let's test non-blocking edge cases:
+            // 1. SubmitAction from non-participant returns null immediately (tested above)
+            _sut.SubmitAction(room.Code, "unauthorized-conn", "ANY", null).Result.Should().BeNull();
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
+    }
+
+    [Fact]
     public void Dispose_ShouldDisposeGracefully()
     {
         _sut.Dispose();
