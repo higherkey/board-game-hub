@@ -40,7 +40,7 @@ export class PlayComponent implements OnInit, OnDestroy {
         try {
             const isValid = await this.signalRService.validateRoomCode(cleanCode);
             if (isValid) {
-                this.router.navigate(['/game', cleanCode]);
+                await this.router.navigate(['/game', cleanCode]);
             } else {
                 this.codeError = `Room "${cleanCode}" not found. Check your code and try again.`;
                 this.toastService.showError(`Room "${cleanCode}" does not exist.`);
@@ -88,11 +88,11 @@ export class PlayComponent implements OnInit, OnDestroy {
             this.loading = false;
         });
 
-        this.initLobby();
+        void this.initLobby();
     }
 
     ngOnDestroy() {
-        this.signalRService.leaveLobby();
+        void this.signalRService.leaveLobby();
     }
 
     async initLobby() {

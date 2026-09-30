@@ -158,11 +158,11 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   setGameType(gameType: string) {
-    this.stateService.setGameType(this.roomCode, gameType);
+    void this.stateService.setGameType(this.roomCode, gameType);
   }
 
-  goToLogin() {
-    this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+  async goToLogin() {
+    await this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
   }
 
   private readonly destroyRef = inject(DestroyRef);
@@ -179,7 +179,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
         this.logger.info(`User navigated to room: ${this.roomCode}`);
       }
       
-      this.stateService.initializeRoom(this.roomCode, this.isCreating);
+      void this.stateService.initializeRoom(this.roomCode, this.isCreating);
     });
 
     // Check query params for pre-selected game or name
@@ -229,11 +229,11 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   onGameSelected(gameType: string) {
-    this.stateService.setGameType(this.roomCode, gameType);
+    void this.stateService.setGameType(this.roomCode, gameType);
   }
 
   startGame(settings: GameSettings) {
-    this.stateService.startGame(settings);
+    void this.stateService.startGame(settings);
   }
 
   async onNextRound(settings: GameSettings) {
@@ -294,10 +294,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
 
   onSetHostPlayer(targetId: string) {
-    this.stateService.setHostPlayer(this.roomCode, targetId);
+    void this.stateService.setHostPlayer(this.roomCode, targetId);
   }
 
   onRemoveHostPlayer(targetId: string) {
-    this.stateService.removeHostPlayer(this.roomCode, targetId);
+    void this.stateService.removeHostPlayer(this.roomCode, targetId);
   }
 }

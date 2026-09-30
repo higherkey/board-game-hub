@@ -26,23 +26,26 @@ jobs:
 
           # Check if the branch has a conventional prefix
           if echo "$BRANCH" | grep -qE '^(feat|fix|chore|refactor|docs|test|perf|build|ci|style)/'; then
-            # Normalize branch name: replace / and _ with -
-            TRACE_NAME=$(echo "$BRANCH" | sed 's/[/_ ]/-/g')
-            TRACE_PATH="docs/traces/${TRACE_NAME}-work-trace.md"
-            echo "Expected trace document: $TRACE_PATH"
+            # Normalize branch name: replace / and _ with - and lowercase
+            NORMALIZED_NAME=$(echo "$BRANCH" | sed 's/[/_ ]/-/g' | tr '[:upper:]' '[:lower:]')
+            NOTES_PATH="docs/branch-notes/${NORMALIZED_NAME}-notes.md"
+            LEGACY_TRACE_PATH="docs/traces/${NORMALIZED_NAME}-work-trace.md"
+            echo "Expected branch notes: $NOTES_PATH (or legacy trace: $LEGACY_TRACE_PATH)"
 
-            if [ ! -f "$TRACE_PATH" ]; then
-              echo ""
-              echo "❌ MISSING TRACE DOCUMENT"
-              echo "Branch '$BRANCH' is a prefixed branch but no work trace was found."
-              echo "Expected: $TRACE_PATH"
-              echo ""
-              echo "Create the trace document before opening this PR."
-              echo "See .agent/workflows/feature-tracking.md for instructions."
-              exit 1
+            if [ -f "$NOTES_PATH" ]; then
+              echo "✅ Branch notes document found: $NOTES_PATH"
+            elif [ -f "$LEGACY_TRACE_PATH" ]; then
+              echo "✅ Legacy trace document found: $LEGACY_TRACE_PATH"
             else
-              echo "✅ Trace document found: $TRACE_PATH"
+              echo ""
+              echo "❌ MISSING BRANCH NOTES DOCUMENT"
+              echo "Branch '$BRANCH' is a prefixed branch but no branch notes document was found."
+              echo "Expected: $NOTES_PATH"
+              echo ""
+              echo "Create the branch notes document before opening this PR."
+              echo "See skills/feature-tracking/SKILL.md for instructions."
+              exit 1
             fi
           else
-            echo "ℹ️ Branch '$BRANCH' has no conventional prefix. Trace document not required."
+            echo "ℹ️ Branch '$BRANCH' has no conventional prefix. Branch notes not required."
           fi

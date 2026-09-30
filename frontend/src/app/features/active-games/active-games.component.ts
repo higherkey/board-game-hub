@@ -32,12 +32,12 @@ export class ActiveGamesComponent implements OnInit {
             filter(event => event instanceof NavigationEnd),
             takeUntilDestroyed(this.destroyRef)
         ).subscribe(() => {
-            this.signalRService.validateActiveRooms();
+            void this.signalRService.validateActiveRooms();
         });
     }
 
     ngOnInit() {
-        this.signalRService.validateActiveRooms();
+        void this.signalRService.validateActiveRooms();
     }
 
     @HostListener('document:click', ['$event'])
@@ -47,16 +47,23 @@ export class ActiveGamesComponent implements OnInit {
         }
     }
 
+    @HostListener('document:keydown.escape')
+    onEscape() {
+        if (this.isOpen) {
+            this.isOpen = false;
+        }
+    }
+
     toggle(event: Event) {
         event.stopPropagation();
         this.isOpen = !this.isOpen;
         if (this.isOpen) {
-            this.signalRService.validateActiveRooms();
+            void this.signalRService.validateActiveRooms();
         }
     }
 
     joinRoom(code: string) {
-        this.router.navigate(['/game', code]);
+        void this.router.navigate(['/game', code]);
         this.isOpen = false;
     }
 

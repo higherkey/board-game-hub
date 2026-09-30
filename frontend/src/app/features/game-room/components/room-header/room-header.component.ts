@@ -16,6 +16,7 @@ export class RoomHeaderComponent {
   readonly deviceService = inject(DeviceService);
   readonly soundService = inject(SoundService);
   @ViewChild('navMenuDialog') navMenuDialog?: ElementRef<HTMLDialogElement>;
+  @ViewChild('menuTrigger') menuTrigger?: ElementRef<HTMLButtonElement>;
 
   @Input() isBigScreen = false;
   @Input() roomCode = '';
@@ -49,6 +50,14 @@ export class RoomHeaderComponent {
 
   onDialogClose() {
     this.isNavMenuOpen = false;
+    this.menuTrigger?.nativeElement?.focus();
+  }
+
+  onDialogKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && this.isNavMenuOpen) {
+      event.preventDefault();
+      this.toggleNavMenu();
+    }
   }
 
   toggleSound() {

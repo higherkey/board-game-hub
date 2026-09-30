@@ -128,4 +128,4 @@ Run commands from repo root unless noted.
 - `.agent/workflows/testing-workflow.md`:
   - Dictates the monorepo approach to unit testing, execution verification, and coverage requirements.
 - `.agent/workflows/feature-tracking.md`:
-  - **MANDATORY**: Running trace document (`/docs/traces/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`).
+  - **MANDATORY**: Running branch notes document (`/docs/branch-notes/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`). Track Discoveries, 4a Blockers, 4b Quick Wins, and 4c Deferred Items with Pre-Commit Gate verification.

@@ -498,11 +498,11 @@ export class SignalRService {
     const currentRooms = this.getActiveRooms();
     if (currentRooms.length === 0) return;
 
-    if (this.hubConnection.state !== HubConnectionState.Connected) {
-      await this.startConnection();
-    }
-
     try {
+      if (this.hubConnection.state !== HubConnectionState.Connected) {
+        await this.startConnection();
+      }
+
       const codes = currentRooms.map(r => r.code);
       const validCodes: string[] = await this.hubConnection.invoke('ValidateRooms', codes);
 

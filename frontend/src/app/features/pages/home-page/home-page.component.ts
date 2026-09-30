@@ -47,7 +47,7 @@ export class LandingPageComponent implements OnInit {
     const cleanCode = this.roomCode ? this.roomCode.trim().toUpperCase() : '';
     // If no 4-letter code is entered, navigate directly to /play (Public Lobbies / Room Finder)
     if (!cleanCode || cleanCode.length < 4) {
-      this.router.navigate(['/play']);
+      await this.router.navigate(['/play']);
       return;
     }
 
@@ -58,7 +58,7 @@ export class LandingPageComponent implements OnInit {
     try {
       const isValid = await this.signalRService.validateRoomCode(cleanCode);
       if (isValid) {
-        this.router.navigate(['/game', cleanCode]);
+        await this.router.navigate(['/game', cleanCode]);
       } else {
         this.codeError = `Room "${cleanCode}" not found. Check code or click Join to browse rooms.`;
       }

@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+      - dev
+
+concurrency:
+  group: cleanup-traces-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -14,22 +19,29 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Remove trace files
+      - name: Remove trace and branch notes files
         run: |
-          # Find all files in docs/traces/ except .gitkeep and remove them
-          find docs/traces/ -type f ! -name '.gitkeep' -delete
+          # Find all files in docs/traces/ and docs/branch-notes/ except .gitkeep and remove them
+          if [ -d "docs/traces" ]; then
+            find docs/traces/ -type f ! -name '.gitkeep' -delete
+          fi
+          if [ -d "docs/branch-notes" ]; then
+            find docs/branch-notes/ -type f ! -name '.gitkeep' -delete
+          fi
           
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          if [[ -n $(git status --porcelain docs/traces/) ]]; then
-            git add docs/traces/
-            git commit -m "chore: Cleanup feature trace documents from main"
-            git pull --rebase origin main
-            git push
+          if [[ -n $(git status --porcelain docs/traces/ docs/branch-notes/) ]]; then
+            git add docs/traces/ docs/branch-notes/
+            git commit -m "chore: Cleanup branch notes and trace documents"
+            git pull --rebase origin ${{ github.ref_name }}
+            git push origin ${{ github.ref_name }}
           else
-            echo "No trace files to clean up."
+            echo "No trace or branch notes files to clean up."
           fi
