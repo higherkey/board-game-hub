@@ -112,6 +112,8 @@ public class GameHubTests
         // Arrange
         var room = new Room { Code = "TEST", IsPublic = true };
         var settings = new GameSettings();
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
         _mockRoomService.Setup(r => r.StartGame("TEST", settings)).ReturnsAsync(room);
 
         // Act
@@ -217,6 +219,8 @@ public class GameHubTests
     {
         // Arrange
         var room = new Room { Code = "TEST", Players = new List<Player> { new Player { Name = "P1" } } };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
         _mockRoomService.Setup(r => r.CalculateRoundScores("TEST")).ReturnsAsync(room);
 
         // Act
