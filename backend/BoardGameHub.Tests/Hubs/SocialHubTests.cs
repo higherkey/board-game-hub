@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Moq;
 using Xunit;
 using BoardGameHub.Api.Models;
+using BoardGameHub.Api.Models.Dtos;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -82,7 +83,7 @@ public class SocialHubTests
     public async Task GetGlobalChatHistory_ShouldReturnHistoryFromService()
     {
         // Arrange
-        var history = new List<ChatMessage> { new ChatMessage() };
+        var history = new List<ChatMessageDto> { new ChatMessageDto { Id = 1, Message = "test" } };
         _mockSocialService.Setup(s => s.GetGlobalChatHistory(50)).ReturnsAsync(history);
 
         // Act
@@ -96,7 +97,7 @@ public class SocialHubTests
     public async Task GetFriends_ShouldReturnFriendsFromService()
     {
         // Arrange
-        var friends = new List<BoardGameHub.Api.Models.User> { new BoardGameHub.Api.Models.User() };
+        var friends = new List<UserDto> { new UserDto { Id = "u1", UserName = "User1" } };
         _mockSocialService.Setup(s => s.GetFriends("user123")).ReturnsAsync(friends);
 
         // Act
@@ -110,7 +111,7 @@ public class SocialHubTests
     public async Task GetFriendRequests_ShouldReturnRequestsFromService()
     {
         // Arrange
-        var requests = new List<Friendship> { new Friendship() };
+        var requests = new List<FriendRequestDto> { new FriendRequestDto { Id = 1, RequesterId = "r1" } };
         _mockSocialService.Setup(s => s.GetFriendRequests("user123")).ReturnsAsync(requests);
 
         // Act

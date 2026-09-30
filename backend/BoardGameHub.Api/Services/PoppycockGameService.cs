@@ -9,9 +9,9 @@ public class PoppycockGameService : BaseGameService<PoppycockState>
     private readonly ILogger<PoppycockGameService> _logger;
     public override GameType GameType => GameType.Poppycock;
 
-    public PoppycockGameService(ILogger<PoppycockGameService> logger)
+    public PoppycockGameService(ILogger<PoppycockGameService>? logger = null)
     {
-        _logger = logger;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<PoppycockGameService>.Instance;
     }
 
     public override Task StartRound(Room room, GameSettings settings)
