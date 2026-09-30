@@ -225,7 +225,7 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
             Words = decoyWords.ToArray()
         };
 
-        var pool = prep.Cards.Concat(new[] { decoy }).OrderBy(_ => _rng.Next()).ToList();
+        var pool = prep.Cards.Concat(new[] { decoy }).OrderBy(_ => Random.Shared.Next()).ToList();
         state.Pool = pool;
 
         state.Slots = Enumerable.Range(0, 4).Select(_ => new CloverSlotState()).ToArray();
