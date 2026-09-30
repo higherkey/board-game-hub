@@ -290,5 +290,30 @@ describe('GameRoomComponent', () => {
     const entryStage = fixture.nativeElement.querySelector('app-room-entry');
     expect(entryStage).toBeTruthy();
   });
+
+  it('setGameType and onGameSelected should call stateService.setGameType', () => {
+    component.roomCode = 'TEST';
+    component.setGameType('babble');
+    expect(mockStateService.setGameType).toHaveBeenCalledWith('TEST', 'babble');
+
+    component.onGameSelected('cloverminded');
+    expect(mockStateService.setGameType).toHaveBeenCalledWith('TEST', 'cloverminded');
+  });
+
+  it('onSetHostPlayer and onRemoveHostPlayer should call stateService methods', () => {
+    component.roomCode = 'TEST';
+    component.onSetHostPlayer('user-123');
+    expect(mockStateService.setHostPlayer).toHaveBeenCalledWith('TEST', 'user-123');
+
+    component.onRemoveHostPlayer('user-123');
+    expect(mockStateService.removeHostPlayer).toHaveBeenCalledWith('TEST', 'user-123');
+  });
+
+  it('goToLogin should navigate to /login with returnUrl query param', async () => {
+    const router = TestBed.inject(ActivatedRoute);
+    const navSpy = spyOn((component as any).router, 'navigate').and.returnValue(Promise.resolve(true));
+    await component.goToLogin();
+    expect(navSpy).toHaveBeenCalled();
+  });
 });
 

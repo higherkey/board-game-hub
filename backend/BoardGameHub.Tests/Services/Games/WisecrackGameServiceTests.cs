@@ -181,4 +181,44 @@ public class WisecrackGameServiceTests
 
         result.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task StartRound_Round3_AssignsFinalCrack_AndGeneratesBattlesWithMultiplier()
+    {
+        var p1 = new Player { ConnectionId = "p1", Name = "P1" };
+        var p2 = new Player { ConnectionId = "p2", Name = "P2" };
+        var p3 = new Player { ConnectionId = "p3", Name = "P3" };
+        var room = new Room
+        {
+            Players = new List<Player> { p1, p2, p3 },
+            RoundNumber = 3
+        };
+
+        await _sut.StartRound(room, new GameSettings());
+        var state = (WisecrackState)room.GameData!;
+
+        state.Assignments.Should().HaveCount(1);
+        state.Assignments[0].Text.Should().StartWith("THE FINAL CRACK:");
+        state.Assignments[0].AssignedPlayerIds.Should().Contain(new[] { "p1", "p2", "p3" });
+
+        var promptId = state.Assignments[0].PromptId;
+        await _sut.SubmitAnswer(room, "p1", promptId, "Ans1");
+        await _sut.SubmitAnswer(room, "p2", promptId, "Ans2");
+        await _sut.SubmitAnswer(room, "p3", promptId, "Ans3");
+
+        state.Phase.Should().Be(WisecrackPhase.Battling);
+        state.Battles.Should().NotBeEmpty();
+
+        // Submit vote on current battle
+        var currentBattle = state.CurrentBattle!;
+        await _sut.SubmitVote(room, "voter-audience", 0);
+
+        // Advance battles until results phase
+        while (state.Phase == WisecrackPhase.Battling)
+        {
+            await _sut.NextBattle(room);
+        }
+
+        state.Phase.Should().Be(WisecrackPhase.Result);
+    }
 }
