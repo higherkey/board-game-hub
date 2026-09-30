@@ -518,6 +518,51 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public void PauseGame_And_ResumeGame_ShouldManagePauseStateCorrectly()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", false, GameType.Scatterbrain);
+        room.RoundEndTime = DateTime.UtcNow.AddMinutes(5);
+
+        var paused = _sut.PauseGame(room.Code);
+        paused.Should().NotBeNull();
+        paused!.IsPaused.Should().BeTrue();
+        paused.TimeRemainingWhenPaused.Should().NotBeNull();
+
+        var resumed = _sut.ResumeGame(room.Code);
+        resumed.Should().NotBeNull();
+        resumed!.IsPaused.Should().BeFalse();
+        resumed.TimeRemainingWhenPaused.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateSettings_And_UpdateUndoSettings_ShouldApplySettings()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", false, GameType.Scatterbrain);
+        var settings = new GameSettings { TimerDurationSeconds = 45 };
+        var updated = _sut.UpdateSettings(room.Code, settings);
+        updated.Should().NotBeNull();
+        updated!.Settings.TimerDurationSeconds.Should().Be(45);
+
+        var undo = new UndoSettings { AllowVoting = true, HostOnly = false };
+        var undoUpdated = _sut.UpdateUndoSettings(room.Code, undo);
+        undoUpdated.Should().NotBeNull();
+        undoUpdated!.UndoSettings.AllowVoting.Should().BeTrue();
+    }
+
+    [Fact]
+    public void VoteNextGame_And_GetPublicRooms_ShouldWork()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        var voted = _sut.VoteNextGame(room.Code, "conn1", GameType.Babble);
+        voted.Should().NotBeNull();
+        voted!.NextGameVotes["conn1"].Should().Be(GameType.Babble);
+
+        var publicRooms = _sut.GetPublicRooms();
+        publicRooms.Should().NotBeNull();
+        publicRooms.Should().Contain(r => r.Code == room.Code);
+    }
+
+    [Fact]
     public void Dispose_ShouldDisposeGracefully()
     {
         _sut.Dispose();

@@ -11,7 +11,7 @@ Parent PR: #180 (Targets `dev`)
 
 ## 2. Blockers & Risks (4a)
 - *None*: .NET 10 SDK and Node.js frontend dependencies installed and verified locally. Full test suites pass cleanly:
-  - Backend: 340 tests passed (0 failed).
+  - Backend: 343 tests passed (0 failed).
   - Frontend: 382 tests passed (0 failed).
 
 ## 3. Quick Wins (4b)

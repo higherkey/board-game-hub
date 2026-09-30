@@ -409,5 +409,29 @@ public class GameHubTests
         // Act & Assert - EndGame
         await _sut.EndGame("TEST");
         _mockRoomService.Verify(r => r.EndGame("TEST"), Times.Once);
+
+        // Act & Assert - RemoveHostPlayer
+        _mockRoomService.Setup(r => r.RemoveHostPlayer("TEST", "conn1", "conn2")).Returns(room);
+        await _sut.RemoveHostPlayer("TEST", "conn2");
+        _mockRoomService.Verify(r => r.RemoveHostPlayer("TEST", "conn1", "conn2"), Times.Once);
+
+        // Act & Assert - VoteNextGame
+        await _sut.VoteNextGame("TEST", "Babble");
+        _mockRoomService.Verify(r => r.VoteNextGame("TEST", "conn1", GameType.Babble), Times.Once);
+
+        // Act & Assert - UpdateUndoSettings
+        var undoSettings = new UndoSettings { AllowVoting = true, HostOnly = false };
+        await _sut.UpdateUndoSettings("TEST", undoSettings);
+        _mockRoomService.Verify(r => r.UpdateUndoSettings("TEST", undoSettings), Times.Once);
+
+        // Act & Assert - RequestUndo
+        _mockRoomService.Setup(r => r.RequestUndo("TEST", "conn1")).ReturnsAsync(new Room { Code = "TEST", CurrentVote = new UndoVote { InitiatorId = "conn1" } });
+        await _sut.RequestUndo("TEST");
+        _mockRoomService.Verify(r => r.RequestUndo("TEST", "conn1"), Times.Once);
+
+        // Act & Assert - SubmitUndoVote
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(new Room { Code = "TEST", CurrentVote = null });
+        await _sut.SubmitUndoVote("TEST", true);
+        _mockRoomService.Verify(r => r.SubmitUndoVote("TEST", "conn1", true), Times.Once);
     }
 }
