@@ -563,6 +563,43 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public void SetHostPlayer_And_RemoveHostPlayer_ShouldManageCoHostsCorrectly()
+    {
+        var room = _sut.CreateRoom("creatorConn", "Creator", false, GameType.Scatterbrain);
+        room.CreatorConnectionId = "creatorConn";
+        _sut.JoinRoom(room.Code, "player2", "Alice");
+
+        // Promote Alice to co-host
+        var setHostResult = _sut.SetHostPlayer(room.Code, "player2");
+        setHostResult.Should().NotBeNull();
+        setHostResult!.Players.First(p => p.ConnectionId == "player2").IsHost.Should().BeTrue();
+        setHostResult.HostPlayerId.Should().Be("player2");
+
+        // Demote Alice by Creator
+        var removeHostResult = _sut.RemoveHostPlayer(room.Code, "creatorConn", "player2");
+        removeHostResult.Should().NotBeNull();
+        removeHostResult!.Players.First(p => p.ConnectionId == "player2").IsHost.Should().BeFalse();
+
+        // Non-creator cannot demote
+        var unauthorizedResult = _sut.RemoveHostPlayer(room.Code, "otherUser", "player2");
+        unauthorizedResult.Should().BeNull();
+    }
+
+    [Fact]
+    public void ChangeRole_And_RenamePlayer_ShouldUpdatePlayerProperties()
+    {
+        var room = _sut.CreateRoom("conn1", "OriginalName", false, GameType.Scatterbrain);
+
+        var renamed = _sut.RenamePlayer("conn1", "NewName");
+        renamed.Should().NotBeNull();
+        renamed!.Players.First(p => p.ConnectionId == "conn1").Name.Should().Be("NewName");
+
+        var roleChanged = _sut.ChangeRole("conn1", true);
+        roleChanged.Should().NotBeNull();
+        roleChanged!.Players.First(p => p.ConnectionId == "conn1").IsScreen.Should().BeTrue();
+    }
+
+    [Fact]
     public void Dispose_ShouldDisposeGracefully()
     {
         _sut.Dispose();
