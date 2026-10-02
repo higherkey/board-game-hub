@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +15,7 @@ import { LoggerService } from '../../../core/services/logger.service';
     standalone: true,
     imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent],
     templateUrl: './play.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./play.component.scss']
 })
 export class PlayComponent implements OnInit, OnDestroy {

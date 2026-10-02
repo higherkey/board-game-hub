@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import { PoppycockBoardComponent } from '../poppycock-board/poppycock-board.component';
@@ -10,6 +10,7 @@ import { PoppycockRulesComponent } from '../poppycock-rules/poppycock-rules.comp
     standalone: true,
     imports: [CommonModule, PoppycockBoardComponent, PoppycockPlayerComponent, PoppycockRulesComponent],
     templateUrl: './poppycock-game.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./poppycock-game.component.scss']
 })
 export class PoppycockGameComponent implements OnInit {

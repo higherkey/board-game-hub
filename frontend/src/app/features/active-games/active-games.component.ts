@@ -1,4 +1,4 @@
-import { Component, HostListener, ElementRef, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, HostListener, ElementRef, OnInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../services/signalr.service';
@@ -11,6 +11,7 @@ import { filter, map } from 'rxjs/operators';
     standalone: true,
     imports: [CommonModule],
     templateUrl: './active-games.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./active-games.component.scss']
 })
 export class ActiveGamesComponent implements OnInit {

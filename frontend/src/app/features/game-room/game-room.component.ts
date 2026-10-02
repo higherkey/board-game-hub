@@ -1,5 +1,5 @@
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef } from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -37,6 +37,7 @@ import { DeviceService } from '../../services/device.service';
     RoomEntryComponent
   ],
   templateUrl: './game-room.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./game-room.component.scss']
 })
 export class GameRoomComponent implements OnInit, AfterViewInit {

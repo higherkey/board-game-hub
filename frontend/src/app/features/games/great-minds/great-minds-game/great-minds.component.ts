@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../../../services/signalr.service';
 import { GreatMindsBoardComponent } from '../great-minds-board/great-minds-board.component';
@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs';
   standalone: true,
   imports: [CommonModule, GreatMindsBoardComponent, GreatMindsPlayerComponent, GreatMindsRulesComponent],
   templateUrl: './great-minds.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./great-minds.component.scss']
 })
 export class GreatMindsGameComponent implements OnInit, OnDestroy {

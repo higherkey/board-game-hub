@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -11,6 +11,7 @@ import { DeviceService } from '../../../../services/device.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './room-entry.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./room-entry.component.scss']
 })
 export class RoomEntryComponent implements OnInit {

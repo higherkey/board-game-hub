@@ -1,5 +1,5 @@
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
@@ -46,6 +46,7 @@ import { GameDataService, GameDefinition } from '../../../services/game-data.ser
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .bg-gradient-brand {
       background: linear-gradient(135deg, var(--primary-dark, #0a58ca) 0%, var(--accent-dark, #4b0bb8) 100%);

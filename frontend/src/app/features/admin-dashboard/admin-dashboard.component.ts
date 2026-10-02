@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, RoomStats, RoomSummary } from '../../services/admin.service';
@@ -12,6 +12,7 @@ import { GameSettings } from '../../services/signalr.service';
     standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './admin-dashboard.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./admin-dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {

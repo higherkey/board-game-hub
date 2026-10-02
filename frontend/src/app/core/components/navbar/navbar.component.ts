@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService, Session } from '../../../services/auth.service';
@@ -10,6 +10,7 @@ import { ActiveGamesComponent } from '../../../features/active-games/active-game
   standalone: true,
   imports: [CommonModule, RouterModule, ActiveGamesComponent],
   templateUrl: './navbar.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./navbar.component.scss']
 })
 export class NavbarComponent {

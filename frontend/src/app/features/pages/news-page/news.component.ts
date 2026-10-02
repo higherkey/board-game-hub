@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
@@ -15,6 +15,7 @@ export interface NewsItem {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './news.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./news.component.scss']
 })
 export class NewsComponent implements OnInit {

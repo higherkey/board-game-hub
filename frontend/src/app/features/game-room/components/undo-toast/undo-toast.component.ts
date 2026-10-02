@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../../../services/signalr.service';
 
@@ -7,6 +7,7 @@ import { SignalRService } from '../../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './undo-toast.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./undo-toast.component.scss']
 })
 export class UndoToastComponent {

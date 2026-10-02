@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RoomHeaderComponent } from './room-header.component';
 import { UserProfileDropdownComponent } from '../../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 
-@Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true })
+@Component({ selector: 'app-user-profile-dropdown', template: '', changeDetection: ChangeDetectionStrategy.Eager,
+ standalone: true })
 class UserProfileDropdownStub {
   @Input() session: any;
   @Input() compactMode: any;

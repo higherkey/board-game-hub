@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, inject } from '@angular/core';
+import { Component, HostListener, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map, startWith } from 'rxjs/operators';
 import { ActiveGamesComponent } from '../../features/active-games/active-games.component';
@@ -14,6 +14,7 @@ import { environment } from '../../../environments/environment';
    standalone: true,
    imports: [CommonModule, RouterModule, LogoComponent, ActiveGamesComponent, UserProfileDropdownComponent],
    templateUrl: './layout.component.html',
+   changeDetection: ChangeDetectionStrategy.Eager,
    styleUrls: ['./layout.component.scss']
 })
 export class LayoutComponent {

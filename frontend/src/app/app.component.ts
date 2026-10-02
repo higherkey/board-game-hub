@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, ActivatedRoute } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -9,6 +9,7 @@ import { SignalRService } from './services/signalr.service';
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, ToastComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../services/signalr.service';
 import { RouterModule } from '@angular/router';
@@ -8,6 +8,7 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './game-history.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./game-history.component.scss']
 })
 export class GameHistoryComponent implements OnInit {

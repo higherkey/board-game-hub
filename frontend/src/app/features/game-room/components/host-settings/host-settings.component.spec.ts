@@ -4,7 +4,7 @@ import { SignalRService } from '../../../../services/signalr.service';
 import { GameDataService } from '../../../../services/game-data.service';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { of } from 'rxjs';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HostSettingsComponent', () => {
@@ -34,7 +34,7 @@ describe('HostSettingsComponent', () => {
                 { provide: SignalRService, useValue: mockSignalRService },
                 { provide: GameDataService, useValue: mockGameDataService },
                 { provide: ConfirmService, useValue: mockConfirmService },
-                provideHttpClient(),
+                provideHttpClient(withXhr()),
                 provideHttpClientTesting()
             ]
         }).compileComponents();

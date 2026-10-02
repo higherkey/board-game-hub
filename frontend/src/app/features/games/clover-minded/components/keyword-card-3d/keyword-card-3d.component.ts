@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { CloverCardModel } from '../../clover-minded.types';
 
 @Component({
@@ -25,6 +25,7 @@ import { CloverCardModel } from '../../clover-minded.types';
             <ng-content></ng-content>
         </div>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./keyword-card-3d.component.scss']
 })
 export class KeywordCard3dComponent {

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService, Room } from '../../../../services/signalr.service';
 import { Observable, timer } from 'rxjs';
@@ -13,6 +13,7 @@ import { PictophoneResultsComponent } from '../pictophone-results/pictophone-res
     standalone: true,
     imports: [CommonModule, PictophoneInputComponent, PictophoneDrawingComponent, PictophoneResultsComponent],
     templateUrl: './pictophone-game.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./pictophone-game.component.scss']
 })
 export class PictophoneGameComponent {

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
@@ -12,41 +12,48 @@ import { ConfirmService } from '../../shared/services/confirm.service';
 
 // Stub Components
 
-@Component({ selector: 'app-host-settings', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-host-settings', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class HostSettingsStubComponent {
   @Input() roomCode: any;
   @Input() currentGameType: any;
   @Output() gameStart = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-video-chat', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-video-chat', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class VideoChatStubComponent {
   isVideoActive = false;
   joinVideo() { /* stub for testing */ }
 }
 
-@Component({ selector: 'app-word-hunt', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-word-hunt', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class BabbleStubComponent {
   @Input() grid: any;
   @Input() isPlaying: any;
   @Output() wordsUpdated = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-game-review', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-game-review', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class GameReviewStubComponent {
   @Input() room: any;
   @Input() isHost: any;
 }
 
-@Component({ selector: 'app-social-panel', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-social-panel', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class SocialPanelStubComponent { }
 
-@Component({ selector: 'app-one-and-only-board', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-one-and-only-board', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class OneAndOnlyBoardStubComponent {
   @Input() room: any;
 }
 
-@Component({ selector: 'app-one-and-only-player', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-one-and-only-player', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class OneAndOnlyPlayerStubComponent {
   @Input() room: any;
   @Input() myConnectionId: any;
@@ -54,13 +61,15 @@ class OneAndOnlyPlayerStubComponent {
   @Output() guessSubmitted = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class UserProfileDropdownStubComponent {
   @Input() session: any;
   @Input() compactMode: boolean = false;
 }
 
-@Component({ selector: 'app-room-header', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-room-header', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class RoomHeaderStubComponent {
   @Input() isBigScreen: any;
   @Input() roomCode: any;
@@ -78,7 +87,8 @@ class RoomHeaderStubComponent {
   @Output() requestUndo = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-room-sidebar', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-room-sidebar', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class RoomSidebarStubComponent {
   @Input() currentRoom: any;
   @Input() players: any;
@@ -90,7 +100,8 @@ class RoomSidebarStubComponent {
   @Output() removeHostPlayer = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-room-entry', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-room-entry', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class RoomEntryStubComponent {
   @Input() isCreating: any;
   @Input() isGuest: any;
@@ -115,7 +126,8 @@ import { RoomHeaderComponent } from './components/room-header/room-header.compon
 import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.component';
 import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 
-@Component({ selector: 'app-lobby', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-lobby', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class LobbyStubComponent {
   @Input() room: any;
   @Input() players: any;

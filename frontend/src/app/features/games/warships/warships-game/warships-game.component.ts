@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WarshipsBoardComponent } from '../warships-board/warships-board.component';
 import { WarshipsPlayerComponent } from '../warships-player/warships-player.component';
@@ -9,6 +9,7 @@ import { WarshipsRulesComponent } from '../warships-rules/warships-rules.compone
   standalone: true,
   imports: [CommonModule, WarshipsBoardComponent, WarshipsPlayerComponent, WarshipsRulesComponent],
   templateUrl: './warships-game.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./warships-game.component.scss']
 })
 export class WarshipsGameComponent {

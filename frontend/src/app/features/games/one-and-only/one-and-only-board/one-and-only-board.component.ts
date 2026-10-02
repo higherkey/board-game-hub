@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
     standalone: true,
     imports: [CommonModule],
     templateUrl: './one-and-only-board.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./one-and-only-board.component.scss']
 })
 export class OneAndOnlyBoardComponent implements OnChanges {

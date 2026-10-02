@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { CommonModule } from '@angular/common';
@@ -12,6 +12,7 @@ import { GameComboboxComponent } from '../game-combobox/game-combobox.component'
   standalone: true,
   imports: [CommonModule, FormsModule, GameComboboxComponent],
   templateUrl: './host-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './host-settings.component.scss'
 })
 export class HostSettingsComponent implements OnChanges, OnInit {

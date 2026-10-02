@@ -18,11 +18,11 @@
 
                     <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-3">
                         <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-lg"
-                            [routerLink]="['/game/create']" [queryParams]="{gameType: game?.id}">
+                            [routerLink]="['/game/create']" [queryParams]="{gameType: $safeNavigationMigration(game?.id)}">
                             <i class="bi bi-play-fill me-2"></i> PLAY NOW
                         </button>
                         <a class="btn btn-outline-light btn-lg rounded-pill px-4 fw-bold"
-                            [routerLink]="['/social', game?.id]">
+                            [routerLink]="['/social', $safeNavigationMigration(game?.id)]">
                             <i class="bi bi-people-fill me-2"></i> COMMUNITY HUB
                         </a>
                     </div>
@@ -137,7 +137,7 @@
                             <div *ngIf="!isLoadingHistory && gameHistory.length === 0" class="text-center py-4">
                                 <p class="text-secondary mb-4">You haven't played {{ game?.name }} yet.</p>
                                 <button class="btn btn-primary rounded-pill px-4" [routerLink]="['/game/create']"
-                                    [queryParams]="{gameType: game?.id}">
+                                    [queryParams]="{gameType: $safeNavigationMigration(game?.id)}">
                                     PLAY YOUR FIRST GAME
                                 </button>
                             </div>
