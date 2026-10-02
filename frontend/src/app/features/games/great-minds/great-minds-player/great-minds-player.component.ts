@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../../../services/signalr.service';
 
@@ -7,6 +7,7 @@ import { SignalRService } from '../../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './great-minds-player.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./great-minds-player.component.scss']
 })
 export class GreatMindsPlayerComponent implements OnChanges {

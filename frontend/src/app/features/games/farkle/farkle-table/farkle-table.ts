@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room } from '../../../../services/signalr.service';
 
@@ -7,6 +7,7 @@ import { Room } from '../../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './farkle-table.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './farkle-table.scss'
 })
 export class FarkleTableComponent {

@@ -5,12 +5,13 @@ import { Title } from '@angular/platform-browser';
 import { SignalRService } from './services/signalr.service';
 import { AuthService } from './services/auth.service';
 import { BehaviorSubject } from 'rxjs';
-import { CUSTOM_ELEMENTS_SCHEMA, Component } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, ChangeDetectionStrategy } from '@angular/core';
 import { NavbarComponent } from './core/components/navbar/navbar.component';
 
 @Component({
   selector: 'app-navbar',
   template: '',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true
 })
 class NavbarStubComponent { }

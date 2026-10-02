@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SocialService, ChatMessage, FriendRequest } from '../../../services/social.service';
@@ -10,6 +10,7 @@ import { Subject, takeUntil } from 'rxjs';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './social-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './social-panel.component.scss'
 })
 export class SocialPanelComponent implements OnInit, OnDestroy {

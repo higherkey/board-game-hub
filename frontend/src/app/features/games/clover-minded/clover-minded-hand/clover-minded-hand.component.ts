@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { KeywordCard3dComponent } from '../components/keyword-card-3d/keyword-card-3d.component';
 import { SignalRService, Room } from '../../../../services/signalr.service';
@@ -17,6 +17,7 @@ import { throttleTime, Subject } from 'rxjs';
     standalone: true,
     imports: [CommonModule, FormsModule, KeywordCard3dComponent],
     templateUrl: './clover-minded-hand.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./clover-minded-hand.component.scss']
 })
 export class CloverMindedHandComponent implements OnInit, OnChanges, OnDestroy {

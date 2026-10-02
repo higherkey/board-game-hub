@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SYMBOLOGY_ICONS } from '../symbology-icons';
 
@@ -7,6 +7,7 @@ import { SYMBOLOGY_ICONS } from '../symbology-icons';
     standalone: true,
     imports: [CommonModule],
     templateUrl: './icon-board.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./icon-board.component.scss']
 })
 export class IconBoardComponent {

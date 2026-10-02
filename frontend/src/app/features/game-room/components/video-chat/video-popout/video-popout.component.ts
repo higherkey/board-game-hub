@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { VideoChatComponent } from '../video-chat.component';
@@ -8,6 +8,7 @@ import { VideoChatComponent } from '../video-chat.component';
   standalone: true,
   imports: [CommonModule, VideoChatComponent],
   templateUrl: './video-popout.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./video-popout.component.scss']
 })
 export class VideoPopoutComponent {

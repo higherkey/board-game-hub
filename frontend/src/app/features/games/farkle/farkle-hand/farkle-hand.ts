@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService, Room } from '../../../../services/signalr.service';
 
@@ -39,6 +39,7 @@ interface FarkleState {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './farkle-hand.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './farkle-hand.scss'
 })
 export class FarkleHandComponent {

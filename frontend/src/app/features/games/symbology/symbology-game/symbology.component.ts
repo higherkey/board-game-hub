@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Room, SignalRService } from '../../../../services/signalr.service';
@@ -10,6 +10,7 @@ import { IconBoardComponent } from '../icon-board/icon-board.component';
     standalone: true,
     imports: [CommonModule, FormsModule, IconBoardComponent],
     templateUrl: './symbology.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./symbology.component.scss']
 })
 export class SymbologyComponent {

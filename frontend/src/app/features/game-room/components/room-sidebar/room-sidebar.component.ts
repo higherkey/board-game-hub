@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Player, Room } from '../../../../services/signalr.service';
 
@@ -7,6 +7,7 @@ import { Player, Room } from '../../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './room-sidebar.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./room-sidebar.component.scss']
 })
 export class RoomSidebarComponent {

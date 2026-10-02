@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, forwardRef, ElementRef, ViewChild, OnInit, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, ElementRef, ViewChild, OnInit, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { GameDefinition } from '../../../../services/game-data.service';
@@ -9,6 +9,7 @@ import { GameDefinition } from '../../../../services/game-data.service';
     imports: [CommonModule, FormsModule],
     templateUrl: './game-combobox.component.html',
     styleUrl: './game-combobox.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,

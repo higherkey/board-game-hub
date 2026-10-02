@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CanvasDrawComponent } from '../../../../shared/components/canvas-draw/canvas-draw.component';
 
@@ -7,6 +7,7 @@ import { CanvasDrawComponent } from '../../../../shared/components/canvas-draw/c
     standalone: true,
     imports: [CommonModule, CanvasDrawComponent],
     templateUrl: './pictophone-drawing.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./pictophone-drawing.component.scss']
 })
 export class PictophoneDrawingComponent implements OnChanges {

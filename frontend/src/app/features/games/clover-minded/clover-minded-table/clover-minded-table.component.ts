@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import {
     CloverMindedPhase,
@@ -16,6 +16,7 @@ import { Subscription } from 'rxjs';
     standalone: true,
     imports: [CommonModule, KeywordCard3dComponent],
     templateUrl: './clover-minded-table.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./clover-minded-table.component.scss']
 })
 export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy {

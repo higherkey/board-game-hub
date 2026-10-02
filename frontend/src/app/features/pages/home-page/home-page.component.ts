@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -11,6 +11,7 @@ import { SignalRService } from '../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './home-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './home-page.component.scss'
 })
 export class LandingPageComponent implements OnInit {

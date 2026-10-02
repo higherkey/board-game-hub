@@ -4,27 +4,30 @@ import { SignalRService } from '../../../../services/signalr.service';
 import { createMockRoom } from '../../../../shared/testing/test-helpers';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { WisecrackBoardComponent } from '../wisecrack-board/wisecrack-board.component';
 import { WisecrackPlayerComponent } from '../wisecrack-player/wisecrack-player.component';
 import { WisecrackRulesComponent } from '../wisecrack-rules/wisecrack-rules.component';
 
 // Stub child components
-@Component({ selector: 'app-wisecrack-board', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-wisecrack-board', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class WisecrackBoardStubComponent {
     @Input() room: any;
     @Input() myConnectionId: any;
     @Input() isHost: any;
 }
 
-@Component({ selector: 'app-wisecrack-player', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-wisecrack-player', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class WisecrackPlayerStubComponent {
     @Input() room: any;
     @Input() myConnectionId: any;
     @Input() playerId: any;
 }
 
-@Component({ selector: 'app-wisecrack-rules', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-wisecrack-rules', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class WisecrackRulesStubComponent { }
 
 describe('WisecrackGameComponent', () => {

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FourInARowBoardComponent } from '../four-in-a-row-board/four-in-a-row-board.component';
 import { FourInARowPlayerComponent } from '../four-in-a-row-player/four-in-a-row-player.component';
@@ -9,6 +9,7 @@ import { FourInARowRulesComponent } from '../four-in-a-row-rules/four-in-a-row-r
   standalone: true,
   imports: [CommonModule, FourInARowBoardComponent, FourInARowPlayerComponent, FourInARowRulesComponent],
   templateUrl: './four-in-a-row-game.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./four-in-a-row-game.component.scss']
 })
 export class FourInARowGameComponent {

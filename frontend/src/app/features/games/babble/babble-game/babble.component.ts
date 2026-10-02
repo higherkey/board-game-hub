@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnDestroy, ViewChild, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Room, SignalRService } from '../../../../services/signalr.service';
@@ -9,6 +9,7 @@ import { EndRoundButtonComponent } from '../../shared/components/end-round-butto
   standalone: true,
   imports: [CommonModule, FormsModule, EndRoundButtonComponent],
   templateUrl: './babble.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './babble.component.scss'
 })
 export class BabbleComponent implements OnChanges, OnDestroy {

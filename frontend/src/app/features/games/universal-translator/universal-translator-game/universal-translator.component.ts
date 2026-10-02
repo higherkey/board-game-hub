@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import { UniversalTranslatorRulesComponent } from '../universal-translator-rules/universal-translator-rules.component';
@@ -8,6 +8,7 @@ import { UniversalTranslatorRulesComponent } from '../universal-translator-rules
     standalone: true,
     imports: [CommonModule, UniversalTranslatorRulesComponent],
     templateUrl: './universal-translator.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./universal-translator.component.scss']
 })
 export class UniversalTranslatorComponent implements OnChanges {
