@@ -10,6 +10,7 @@
   - Safe navigation template syntax handling.
   - Added `istanbul-lib-instrument` for Karma coverage instrumentation.
   - Extended diagnostic settings in `tsconfig.app.json` and `tsconfig.spec.json`.
+- Angular v22 CLI requires Node.js >= 22.22.3; updated `sonar.yml` to use `node-version: '22'` matching `deploy-frontend-cloudflare.yml`.
 - Full build (`npm run build`) succeeded in 21s with zero errors or warnings.
 - Frontend test suite (`npm test -- --watch=false --browsers=ChromeHeadless`) passed 384/384 tests.
 - Backend test suite (`dotnet test backend/BoardGameHub.sln`) passed 352/352 tests.
