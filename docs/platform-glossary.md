@@ -29,3 +29,5 @@ Board Game Hub exists to **connect people and make them feel as close as possibl
 
 - TypeScript: `frontend/src/app/core/platform/table-hand.types.ts`
 - Room / player model: `backend/BoardGameHub.Api/Models/Room.cs`, `Player.cs`
+- Spatial hierarchy & game archetypes: `docs/game-archetypes-and-spatial-hierarchy.md`
+- Tabletop spatial ergonomics theory: `docs/zones-of-play-design-system.md`
