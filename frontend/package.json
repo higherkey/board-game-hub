@@ -22,7 +22,7 @@
     "@angular/forms": "^21.2.22",
     "@angular/platform-browser": "^21.2.22",
     "@angular/platform-browser-dynamic": "^21.2.22",
-    "@angular/router": "^21.2.22",
+    "@angular/router": "^21.2.24",
     "@microsoft/signalr": "^10.0.0",
     "@vercel/analytics": "^2.0.1",
     "bootstrap": "^5.3.8",
@@ -33,8 +33,8 @@
     "zone.js": "~0.16.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^21.2.22",
-    "@angular/cli": "^21.2.22",
+    "@angular-devkit/build-angular": "^22.2.3",
+    "@angular/cli": "^21.2.27",
     "@angular/compiler-cli": "^21.2.22",
     "@playwright/test": "^1.57.0",
     "@types/jasmine": "~5.1.0",
