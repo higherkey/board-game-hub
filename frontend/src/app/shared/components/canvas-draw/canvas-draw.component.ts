@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, Output, ViewChild, AfterViewInit, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild, AfterViewInit, OnChanges, OnDestroy, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./canvas-draw.component.scss']
 })
-export class CanvasDrawComponent implements AfterViewInit, OnChanges {
+export class CanvasDrawComponent implements AfterViewInit, OnChanges, OnDestroy {
     @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
     @Input() height = 400;
     @Input() color = '#000000';
@@ -20,6 +20,7 @@ export class CanvasDrawComponent implements AfterViewInit, OnChanges {
     private isDrawing = false;
     private lastX = 0;
     private lastY = 0;
+    private eventCleanups: Array<() => void> = [];
 
     undoStack: string[] = [];
 
@@ -51,25 +52,52 @@ export class CanvasDrawComponent implements AfterViewInit, OnChanges {
         this.saveToUndoStack();
 
         // Mouse Events
-        canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
-        canvas.addEventListener('mousemove', (e) => this.draw(e));
-        canvas.addEventListener('mouseup', () => this.stopDrawing());
-        canvas.addEventListener('mouseout', () => this.stopDrawing());
+        const onMouseDown = (e: MouseEvent) => this.startDrawing(e);
+        const onMouseMove = (e: MouseEvent) => this.draw(e);
+        const onMouseUp = () => this.stopDrawing();
+        const onMouseOut = () => this.stopDrawing();
+
+        canvas.addEventListener('mousedown', onMouseDown);
+        canvas.addEventListener('mousemove', onMouseMove);
+        canvas.addEventListener('mouseup', onMouseUp);
+        canvas.addEventListener('mouseout', onMouseOut);
+
+        this.eventCleanups.push(
+            () => canvas.removeEventListener('mousedown', onMouseDown),
+            () => canvas.removeEventListener('mousemove', onMouseMove),
+            () => canvas.removeEventListener('mouseup', onMouseUp),
+            () => canvas.removeEventListener('mouseout', onMouseOut)
+        );
 
         // Touch Events
-        canvas.addEventListener('touchstart', (e) => {
+        const onTouchStart = (e: TouchEvent) => {
             e.preventDefault();
             const touch = e.touches[0];
             this.startDrawing(this.createMouseEvent('mousedown', touch));
-        });
+        };
 
-        canvas.addEventListener('touchmove', (e) => {
+        const onTouchMove = (e: TouchEvent) => {
             e.preventDefault();
             const touch = e.touches[0];
             this.draw(this.createMouseEvent('mousemove', touch));
-        });
+        };
 
-        canvas.addEventListener('touchend', () => this.stopDrawing());
+        const onTouchEnd = () => this.stopDrawing();
+
+        canvas.addEventListener('touchstart', onTouchStart);
+        canvas.addEventListener('touchmove', onTouchMove);
+        canvas.addEventListener('touchend', onTouchEnd);
+
+        this.eventCleanups.push(
+            () => canvas.removeEventListener('touchstart', onTouchStart),
+            () => canvas.removeEventListener('touchmove', onTouchMove),
+            () => canvas.removeEventListener('touchend', onTouchEnd)
+        );
+    }
+
+    ngOnDestroy() {
+        this.eventCleanups.forEach(cleanup => cleanup());
+        this.eventCleanups = [];
     }
 
     private createMouseEvent(type: string, touch: Touch): MouseEvent {

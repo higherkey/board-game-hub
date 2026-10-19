@@ -69,6 +69,8 @@ export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy 
         gsap.killTweensOf('.deck-stack');
         gsap.killTweensOf('.leaf-card app-keyword-card-3d');
         gsap.killTweensOf('.ghost-card');
+        gsap.killTweensOf('.fly-card');
+        document.querySelectorAll('.fly-card').forEach(el => el.remove());
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -161,7 +163,13 @@ export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy 
             for (let j = 0; j < 4; j++) {
                 const flyCard = document.createElement('div');
                 flyCard.className = 'fly-card';
-                flyCard.innerHTML = `<div style="width:40px;height:55px;background:white;border-radius:4px;box-shadow:0 4px 8px rgba(0,0,0,0.3)"></div>`;
+                const inner = document.createElement('div');
+                inner.style.width = '40px';
+                inner.style.height = '55px';
+                inner.style.background = 'white';
+                inner.style.borderRadius = '4px';
+                inner.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                flyCard.appendChild(inner);
                 flyCard.style.position = 'absolute';
                 flyCard.style.zIndex = '1000';
                 document.body.appendChild(flyCard);

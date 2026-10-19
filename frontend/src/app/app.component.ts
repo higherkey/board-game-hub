@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, ActivatedRoute } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -13,6 +14,8 @@ import { SignalRService } from './services/signalr.service';
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private readonly router: Router,
     private readonly titleService: Title,
@@ -21,15 +24,10 @@ export class AppComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    // 0. Check for Backend Port (Admin Dashboard Deployment) logic removed.
-    if (globalThis.location.port !== '4200') {
-      this.isBackendPort = true;
-    }
-
     // 2. Handle Game Room Titles (Dynamic)
     // This listener handles game-specific titles like "BGHub | Scatterbrain"
     // which change while staying on the same route (/game/:code).
-    this.signalRService.currentRoom$.subscribe(room => {
+    this.signalRService.currentRoom$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(room => {
       if (room) {
         const gameName = room.gameType || 'Game Room';
         this.titleService.setTitle(`BGHub | ${this.formatGameName(gameName)}`);
@@ -38,8 +36,6 @@ export class AppComponent implements OnInit {
       // when the user navigates away from the Game Room.
     });
   }
-
-  isBackendPort = false;
 
   private formatGameName(name: string): string {
     // Add spaces to PascalCase if needed, or just use as is. 

@@ -29,7 +29,7 @@
                 <!-- Unified Session View -->
                 <ng-container *ngIf="session$ | async as session; else loginTemplate">
                     <!-- Active Tables (Only visible with session and active games) -->
-                    <div class="active-games-wrapper" *ngIf="!isBackendPort && (activeGamesCount$ | async) as count">
+                    <div class="active-games-wrapper" *ngIf="(activeGamesCount$ | async) as count">
                         <app-active-games *ngIf="count > 0"></app-active-games>
                     </div>
 
@@ -85,14 +85,14 @@
             
             <div class="footer-col col-studio">
                 <h4 class="col-title">Studio</h4>
-                <p class="mb-2">A product of <a href="https://eight1fivedesign.com" target="_blank" rel="noopener" class="studio-link">eight1five design</a></p>
+                <p class="mb-2">A product of <a href="https://eight1fivedesign.com" target="_blank" rel="noopener noreferrer" class="studio-link">eight1five design</a></p>
                 <div class="mb-3">
                     <a routerLink="/news" class="footer-beta-chip text-decoration-none" title="View latest release notes and updates">
                         <i class="bi bi-stars text-pink" aria-hidden="true"></i>
                         {{ version }} &bull; Public Beta
                     </a>
                 </div>
-                <p class="mb-0"><a href="https://github.com/boardgamehub" target="_blank" rel="noopener" class="github-link"><i class="bi bi-github"></i> GitHub</a></p>
+                <p class="mb-0"><a href="https://github.com/boardgamehub" target="_blank" rel="noopener noreferrer" class="github-link"><i class="bi bi-github"></i> GitHub</a></p>
             </div>
         </div>
         <div class="footer-bottom">

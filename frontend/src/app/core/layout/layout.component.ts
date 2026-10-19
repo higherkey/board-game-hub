@@ -36,7 +36,6 @@ export class LayoutComponent {
 
    mobileMenuOpen = false;
    isScrolled = false;
-   isBackendPort = globalThis.location.port !== '4200';
 
    @HostListener('window:scroll', [])
    onWindowScroll() {

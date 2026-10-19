@@ -48,5 +48,8 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~6.0.3",
     "wrangler": "^4.131.1"
+  },
+  "optionalDependencies": {
+    "@oxc-parser/binding-win32-x64-msvc": "^0.154.0"
   }
 }

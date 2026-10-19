@@ -101,6 +101,15 @@ Under `/frontend-ui-engineering-slim`, media and canvas elements must reserve la
 | Sushi Train Avatar | [`sushi-train-board.component.html#L59`](file:///z:/Programming/board-game-hub/frontend/src/app/features/games/sushi-train/sushi-train-board/sushi-train-board.component.html#L59) | Player avatar missing bounds | Declare `width="40" height="40"`. |
 | Dropdown Header Avatar | [`user-profile-dropdown.component.html#L7`](file:///z:/Programming/board-game-hub/frontend/src/app/shared/components/user-profile-dropdown/user-profile-dropdown.component.html#L7) | Avatar image lacks dimensions | Declare `width="32" height="32"`. |
 
+### 5.1 Test Asset Serving (`angular.json`)
+During testing, Karma reported 404 warnings for `/assets/fonts/outfit-600.woff2` and `/assets/logo.png`. In `angular.json`, the `build` target includes `src/assets`, but the `test` target only declared `public`. To eliminate 404 warnings during test runs, align `test.options.assets` with `build.options.assets`:
+```json
+"assets": [
+  { "glob": "**/*", "input": "public" },
+  { "glob": "**/*", "input": "src/assets", "output": "assets" }
+]
+```
+
 ---
 
 ## 6. Accessibility & Visual Feedback: Focus Indicators (13 Files)
@@ -143,3 +152,83 @@ Under `/accessibility-and-a11y-slim` and `/frontend-ui-engineering-slim`:
    - [`frontend/src/app/features/games/clover-minded/clover-minded-hand/clover-minded-hand.component.ts#L93`](file:///z:/Programming/board-game-hub/frontend/src/app/features/games/clover-minded/clover-minded-hand/clover-minded-hand.component.ts#L93): GSAP `from` animation creates bounce effects on `.clue-zone`.
 3. **Toast Slide Transitions:**
    - [`frontend/src/app/shared/components/toast/toast.component.ts#L12-L22`](file:///z:/Programming/board-game-hub/frontend/src/app/shared/components/toast/toast.component.ts#L12-L22): Ensure toast notifications respect reduced motion by substituting instant opacity transitions.
+
+---
+
+## 8. Wave 2 & Wave 3 Game Spatial Hierarchy & Migration Strategy
+
+Per [`docs/game-archetypes-and-spatial-hierarchy.md`](file:///z:/Programming/board-game-hub/docs/game-archetypes-and-spatial-hierarchy.md) and [`docs/zones-of-play-design-system.md`](file:///z:/Programming/board-game-hub/docs/zones-of-play-design-system.md), all remaining games transition from monolithic desktop views to the **Four-Tier Compositional Hierarchy** (Zone 0 Stage through Zone 6 Dialogs).
+
+### 8.1 Wave 2: Turn-Based Boards, Grids & Hidden Information (5 Games)
+Targeted for immediate adoption of `<app-game-board>`, `<app-player-tableau>`, and `<app-secret-staging>`.
+
+| Game | Primary Archetype | Table View (`isScreen = true`) | Hand View (`isScreen = false`) | Migration Requirements & Shared Primitives |
+| :--- | :--- | :--- | :--- | :--- |
+| **Nom de Code** | `DeductionScreen` + `SpatialGridArena` | Communal $5\times 5$ word card grid with public guess tokens | Spymaster asymmetric role overlay (red/blue key grid) with privacy shield | Integrate `<app-game-board>` (Zone 4) and `<app-secret-staging>` (Zone 2). Implement backend client filtering for strict Spymaster clue security. |
+| **Warships** | `SpatialGridArena` + `PlayerTableauBay` | Dual radar grid showing public hit/miss markers | Personal ocean grid with draggable ship placement & firing console | Dual grid split via `<app-game-board>`. Touch target $\ge 44\text{px}$ on mobile radar coordinate buttons. |
+| **Four in a Row** | `SpatialGridArena` | $7\times 6$ vertical drop matrix with column drop animations | Column selector dock with high-contrast disc indicator | Use `<app-action-dock>` (Zone 1) for mobile drop triggers; CSS Grid container query for board scaling. |
+| **Great Minds** | `SocialPromptVote` + `PlayerTableauBay` | Question spotlight card + real-time player answer reveal podium | Text submission field + category prompt card | Adopt `<app-turn-header>` (Zone 5) and `<app-action-dock>` (Zone 1). |
+| **One and Only** | `SocialPromptVote` + `DeductionScreen` | Public prompt board + eliminated duplicate card animation | Secret word submission input + lock button | Implement privacy toggle for hidden answer staging prior to reveal phase. |
+
+### 8.2 Wave 3: Party, Simultaneous Action & Creative Canvas (8 Games)
+Adopts `<app-player-hand>`, `<app-action-dock>`, `<app-pass-handoff>`, and drawing synchronization.
+
+| Game | Primary Archetype | Table View (`isScreen = true`) | Hand View (`isScreen = false`) | Migration Requirements & Shared Primitives |
+| :--- | :--- | :--- | :--- | :--- |
+| **Pictophone** | `CreativeCanvas` | Communal gallery chain displaying progressive drawing/guess pairs | Full-screen responsive drawing canvas + palette dock | Extract drawing canvas to `<app-game-stage>` (Zone 0) with touch-optimized color palette ($\ge 44\text{px}$). |
+| **Poppycock** | `DeductionScreen` + `SocialPromptVote` | Shared card table with public true/false statement board | Private role card (Honest vs Bluff) + lie submission field | Implement `<app-secret-staging>` (Zone 2) with tap-to-reveal shield. |
+| **Scatterbrain** | `SocialPromptVote` + `PassingRelay` | Communal category list + round countdown panic ring | 12-item list input form with auto-advance and submission lock | Adopt `<app-turn-header>` (Zone 5) timer and `<app-action-dock>` (Zone 1). |
+| **Wisecrack** | `SocialPromptVote` | Punchline tournament brackets + voting podium | Private punchline submission input + voting card grid | Standardize on `<app-player-hand>` (Zone 1) for vote card selection. |
+| **Universal Translator** | `SocialPromptVote` | Translated phrase displays with progressive clue hints | Guess input and translation submission dock | Responsive text input container with high-contrast readable typography. |
+| **Yacht** | `PlayerTableauBay` | Shared multiplayer score sheet with animated score tallying | 5-dice shaker tray + category score picker | Adopt `<app-player-tableau>` (Zone 3) with tap-to-hold dice locking mechanics. |
+| **Sushi Train** | `SpatialGridArena` + `PlayerTableauBay` | Conveyor belt animation with moving plate conveyor | Plate grabber dock with Chopsticks/Wasabi action triggers | Implement SVG/CSS conveyor belt responsive to container width queries. |
+| **Symbology** | `SocialPromptVote` + `SpatialGridArena` | Central symbol decoding arena with shared puzzle tiles | Asymmetric deciphering hand with tile selector tray | Split view into Table spectator board vs Hand private tile rack (`<app-player-hand>`). |
+
+---
+
+## 9. Tracking & Related Work Items
+
+The following architectural and follow-up initiatives connect to this handover:
+
+### 9.1 Authentication Bridge for GitHub CLI (`gh`) via Git Credential Manager (GCM)
+GitHub CLI failed initially because the Windows Keyring credential for `gh` was stale, but Git itself was authenticated via Git Credential Manager (GCM) OAuth token (`gho_...`).
+
+We bridged GCM directly to `gh` via PowerShell profile (`$PROFILE.CurrentUserAllHosts`):
+```powershell
+if (-not $env:GH_TOKEN) {
+    try {
+        $gcm = "protocol=https`nhost=github.com`n`n" | git credential fill 2>$null | Select-String "password="
+        if ($gcm) {
+            $env:GH_TOKEN = $gcm.ToString().Replace("password=", "").Trim()
+        }
+    } catch {}
+}
+```
+With this bridge in place, `gh` uses the active Git OAuth token seamlessly (`gh issue list`, `gh issue create`, `gh pr create`) without requiring interactive login or personal access tokens.
+
+### 9.2 Backlog Candidates & Ready-to-File Issues
+
+#### Issue 1: Game Spatial Hierarchy & Zones of Play Migration (Wave 2 & 3)
+```powershell
+gh issue create `
+  --title "[Frontend] Migrate Wave 2 & 3 games to Zones of Play spatial hierarchy" `
+  --body "### Summary`nMigrate remaining board game views (Wave 2: Nom de Code, Warships, Four in a Row, Great Minds, One and Only; Wave 3: Pictophone, Poppycock, Scatterbrain, Wisecrack, Universal Translator, Yacht, Sushi Train, Symbology) from monolithic desktop layouts to the Four-Tier Compositional Hierarchy (Table vs Hand).`n`n### Reference Spec`nSee section 8 of docs/frontend-design-overhaul-handover.md and docs/game-archetypes-and-spatial-hierarchy.md." `
+  --label "enhancement,frontend"
+```
+
+#### Issue 2: Reusable Spatial Zone Primitives Implementation
+```powershell
+gh issue create `
+  --title "[Frontend Architecture] Implement shared Spatial Zone UI primitives" `
+  --body "### Summary`nImplement shared UI zone components in frontend/src/app/features/games/shared/components/:`n- <app-game-stage> (Zone 0)`n- <app-player-hand> (Zone 1)`n- <app-action-dock> (Zone 1)`n- <app-secret-staging> (Zone 2)`n- <app-player-tableau> / <app-tableau-ring> (Zone 3)`n- <app-game-board> (Zone 4)`n- <app-turn-header> (Zone 5)`n- <app-pass-handoff> (Zone 6)`n`n### Reference`nSee docs/game-archetypes-and-spatial-hierarchy.md Section 4." `
+  --label "architecture,frontend"
+```
+
+#### Issue 3: Backend Strict Hidden Information State Filtering
+```powershell
+gh issue create `
+  --title "[Security/Backend] Implement per-connection SignalR RoomStatePatch filtering for hidden information games" `
+  --body "### Summary`nFor games with asymmetric hidden information (Nom de Code Spymaster grid, Poppycock roles/lies, Clover-Minded keyword prep), implement per-connection SignalR StateDiffService filtering so opponent secrets are never serialized into client memory or inspectable via browser devtools.`n`n### Reference`nSee docs/frontend-design-overhaul-handover.md Section 9 and docs/platform-table-hand-plan.md." `
+  --label "security,backend"
+```
+
