@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { SignalRService } from './services/signalr.service';
 import { AuthService } from './services/auth.service';
+import { GameDataService } from './services/game-data.service';
 import { BehaviorSubject } from 'rxjs';
 import { CUSTOM_ELEMENTS_SCHEMA, Component, ChangeDetectionStrategy } from '@angular/core';
 import { NavbarComponent } from './core/components/navbar/navbar.component';
@@ -52,7 +53,8 @@ describe('AppComponent', () => {
         { provide: SignalRService, useValue: mockSignalRService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: Title, useValue: mockTitleService },
-        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        { provide: GameDataService, useValue: { warmup: jasmine.createSpy('warmup') } }
       ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA]
     })

@@ -49,6 +49,24 @@ describe('GameDataService', () => {
         expect(emittedGames![0].parsedMetadata![0].key).toBe('value');
     });
 
+    it('should initialize with cached games from localStorage if available', () => {
+        localStorage.setItem('bgh_games_cache', JSON.stringify(mockGames));
+        const customService = new GameDataService(TestBed.inject(HttpClientTestingModule as any));
+        expect(customService).toBeTruthy();
+        localStorage.removeItem('bgh_games_cache');
+    });
+
+    it('should trigger health ping and refresh on warmup', () => {
+        service.warmup();
+        const healthReq = httpMock.expectOne(`${environment.apiUrl.replace(/\/api\/?$/, '')}/health`);
+        expect(healthReq.request.method).toBe('GET');
+        healthReq.flush({ status: 'healthy' });
+
+        const gamesReq = httpMock.expectOne(`${environment.apiUrl}/games`);
+        expect(gamesReq.request.method).toBe('GET');
+        gamesReq.flush(mockGames);
+    });
+
     it('should return correct status labels', () => {
         expect(service.getStatusLabel(0)).toBe('Deployed');
         expect(service.getStatusLabel(1)).toBe('Testing');
