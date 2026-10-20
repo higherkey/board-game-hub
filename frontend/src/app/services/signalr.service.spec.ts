@@ -135,6 +135,22 @@ describe('SignalRService', () => {
       expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false, null);
       expect(result).toBeTrue();
       expect(service.currentRoomSubject.value?.code).toBe('ABCD');
+      expect(service.isScreenMode).toBeFalse();
+    });
+
+    it('joinRoom should record isScreen and expose it via isScreenMode getter', async () => {
+      mockHubConnection.invoke.withArgs('JoinRoom', 'SCREEN_ROOM', 'ScreenHost', 'guest-uuid', true, null).and.returnValue(Promise.resolve({
+        code: 'SCREEN_ROOM',
+        players: [],
+        gameType: 'CloverMinded',
+        settings: {}
+      }));
+
+      const result = await service.joinRoom('SCREEN_ROOM', 'ScreenHost', true);
+
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'SCREEN_ROOM', 'ScreenHost', 'guest-uuid', true, null);
+      expect(result).toBeTrue();
+      expect(service.isScreenMode).toBeTrue();
     });
 
     it('joinRoom should NOT update currentRoomSubject on failure', async () => {

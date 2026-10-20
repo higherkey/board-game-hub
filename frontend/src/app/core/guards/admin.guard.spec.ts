@@ -12,7 +12,7 @@ describe('adminGuard', () => {
 
     beforeEach(() => {
         mockAuthService = {
-            isAuthenticated: jasmine.createSpy('isAuthenticated').and.returnValue(false),
+            isLoggedIn: jasmine.createSpy('isLoggedIn').and.returnValue(false),
             isAdmin: jasmine.createSpy('isAdmin').and.returnValue(false)
         };
         mockRouter = {
@@ -28,16 +28,16 @@ describe('adminGuard', () => {
     });
 
     it('should redirect to /login if not authenticated', () => {
-        mockAuthService.isAuthenticated.and.returnValue(false);
+        mockAuthService.isLoggedIn.and.returnValue(false);
         
         const result = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
         
         expect(result as any).toBe('/login');
-        expect(mockAuthService.isAuthenticated).toHaveBeenCalled();
+        expect(mockAuthService.isLoggedIn).toHaveBeenCalled();
     });
 
     it('should redirect to / if authenticated but not an admin', () => {
-        mockAuthService.isAuthenticated.and.returnValue(true);
+        mockAuthService.isLoggedIn.and.returnValue(true);
         mockAuthService.isAdmin.and.returnValue(false);
         
         const result = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
@@ -47,13 +47,13 @@ describe('adminGuard', () => {
     });
 
     it('should return true if authenticated and an admin', () => {
-        mockAuthService.isAuthenticated.and.returnValue(true);
+        mockAuthService.isLoggedIn.and.returnValue(true);
         mockAuthService.isAdmin.and.returnValue(true);
         
         const result = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
         
         expect(result).toBeTrue();
-        expect(mockAuthService.isAuthenticated).toHaveBeenCalled();
+        expect(mockAuthService.isLoggedIn).toHaveBeenCalled();
         expect(mockAuthService.isAdmin).toHaveBeenCalled();
     });
 });

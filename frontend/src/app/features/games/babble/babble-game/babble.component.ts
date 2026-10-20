@@ -138,6 +138,8 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
   ngOnDestroy() {
     this.stopTimer();
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.onMouseUp);
   }
 
   private startTimer() {

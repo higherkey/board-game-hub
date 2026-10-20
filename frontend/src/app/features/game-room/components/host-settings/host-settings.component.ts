@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { CommonModule } from '@angular/common';
@@ -16,6 +17,7 @@ import { GameComboboxComponent } from '../game-combobox/game-combobox.component'
   styleUrl: './host-settings.component.scss'
 })
 export class HostSettingsComponent implements OnChanges, OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   @Input() roomCode!: string;
   @Input() currentGameType: string | undefined = 'None';
   @Input() compactMode = false;
@@ -60,7 +62,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   ) { }
 
   ngOnInit() {
-    this.gameDataService.games$.subscribe(games => {
+    this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
       if (games) {
         // Allow Deployed, Testing, AND InDevelopment (to match Games Library)
         this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing' || g.status === 'InDevelopment');

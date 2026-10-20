@@ -1,5 +1,5 @@
-<button type="button" class="rules-overlay" (click)="rulesClose.emit()" tabindex="0" aria-label="Close rules"
-    (keydown.enter)="rulesClose.emit()" (keydown.space)="rulesClose.emit()">
+<div class="rules-overlay" role="dialog" aria-modal="true" aria-label="Deepfake Rules" tabindex="0"
+    (click)="rulesClose.emit()" (keydown.enter)="rulesClose.emit()" (keydown.space)="rulesClose.emit()">
     <div class="rules-card glassmorphism animate-in" (click)="$event.stopPropagation()"
         (keydown)="$event.stopPropagation()">
         <header class="rules-header">
@@ -52,4 +52,4 @@
             <button class="primary-btn" (click)="rulesClose.emit()">Got it!</button>
         </footer>
     </div>
-</button>
+</div>

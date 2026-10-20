@@ -113,7 +113,7 @@ export class SignalRService {
   ) {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(environment.hubUrl, {
-        accessTokenFactory: () => localStorage.getItem('auth_token') || ''
+        accessTokenFactory: () => this.authService.getToken() || ''
       })
       .withAutomaticReconnect()
       .build();
@@ -593,6 +593,10 @@ export class SignalRService {
 
   private lastPlayerName: string | null = null;
   private lastIsScreen = false;
+
+  public get isScreenMode(): boolean {
+    return this.lastIsScreen;
+  }
 
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
     if (this.hubConnection.state !== HubConnectionState.Connected) {

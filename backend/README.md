@@ -6,13 +6,15 @@ This directory contains the ASP.NET Core 10 Web API that serves as the orchestra
 
 The backend is built with **ASP.NET Core 10** and uses **SignalR** for real-time bi-directional communication.
 
-### Core Components
-- **`RoomService`**: The central orchestrator for in-memory game rooms. It manages the lifecycle of rooms and player connections.
-- **`GameStateManager`**: Runs a high-frequency (50ms) tick loop to broadcast partial state patches (`RoomStatePatch`) to clients, ensuring low-latency updates.
-- **`IGameService`**: A plugin interface that allows new games to be integrated into the platform with minimal friction.
+### Core Components (Basics)
+- **`RoomService`**: Central orchestrator for in-memory game rooms, player connection lifecycles, and game state routing.
+- **`GameStateManager`**: Event-driven `Channel<string>` consumer (`IHostedService`) broadcasting partial state patches (`RoomStatePatch`) over SignalR with zero reflection ($O(1)$ compiled `FrozenDictionary` property accessors).
+- **`Player.IsScreen` (Table vs. Hand)**: Wire model distinguishing shared display screens (`IsScreen = true`) from private mobile controllers (`IsScreen = false`). The hub method `ChangeRole(isScreen)` enables live role switching without rejoining. For details, see [Platform Glossary](../docs/platform-glossary.md).
+- **`IGameService`**: Extensible plugin interface for individual games (`StartRound`, `HandleAction`, `EndRound`). Games compose frontend spatial archetypes defined in [Game Archetypes & Spatial Hierarchy](../docs/game-archetypes-and-spatial-hierarchy.md).
 - **SignalR Hubs**:
-  - `/gamehub`: Handles gameplay logic and room events.
-  - `/socialhub`: Manages chat, friend presence, and notifications.
+  - `/gamehub`: Gameplay actions, room lifecycle, and live state patches.
+  - `/socialhub`: Direct messaging, friend presence, and room invites.
+  - `/adminhub`: Metrics, room inspection, and broadcast commands.
 
 ## 🛠️ Local Development
 

@@ -14,7 +14,7 @@ describe('authGuard', () => {
     beforeEach(() => {
         mockUrlTree = {} as UrlTree;
         mockAuthService = {
-            isAuthenticated: jasmine.createSpy('isAuthenticated').and.returnValue(false)
+            isLoggedIn: jasmine.createSpy('isLoggedIn').and.returnValue(false)
         };
         mockRouter = {
             parseUrl: jasmine.createSpy('parseUrl').and.returnValue(mockUrlTree)
@@ -28,21 +28,15 @@ describe('authGuard', () => {
         });
     });
 
-    afterEach(() => {
-        // Reset global port check if possible, but globalThis is hard to mock safely in JSDOM/Karma without side effects.
-        // The guard uses globalThis.location.port. We should try to mock it if we want to test that branch.
-        // However, location is often read-only.
-    });
-
-    it('should return true when user is authenticated', () => {
-        mockAuthService.isAuthenticated.and.returnValue(true);
+    it('should return true when user is logged in', () => {
+        mockAuthService.isLoggedIn.and.returnValue(true);
 
         const result = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
         expect(result).toBeTrue();
     });
 
-    it('should redirect to login when user is not authenticated', () => {
-        mockAuthService.isAuthenticated.and.returnValue(false);
+    it('should redirect to login when user is not logged in', () => {
+        mockAuthService.isLoggedIn.and.returnValue(false);
 
         const result = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
         expect(mockRouter.parseUrl).toHaveBeenCalledWith('/login');

@@ -43,25 +43,33 @@ We follow **[Automated Conventional Semantic Versioning](CONTRIBUTING.md#️-dev
 
 Board Game Hub was built on the core belief that technology should bring people closer together, not pull them apart. By combining a central shared display with individual mobile controllers, Board Game Hub recreates the warmth, laughter, and intimacy of physical game night across any distance.
 
-### Platform Concept (Table vs Hand)
+### Platform Concept (Table vs Hand & Zones of Play)
 
 The platform distinguishes between two roles:
-- **Table**: The shared display (e.g., a TV). Optimized for large text and shared game state. Join with `Player.isScreen === true`.
-- **Hand**: The personal controller (e.g., a phone). Used for private input and individual actions. Join with `Player.isScreen === false`.
+- **Table**: The shared display (e.g., a TV or projector). Optimized for large text, high readability from across the room, and shared game state. Join with `Player.isScreen === true`.
+- **Hand**: The personal controller (e.g., a mobile phone or tablet). Used for private input, individual actions, and secret clues. Join with `Player.isScreen === false`.
 
-For more details, see the [Platform Glossary](file:///c:/Programming/board%20game%20hub/docs/platform-glossary.md).
+This dual-role architecture is grounded in Scott Rogers & Gil Hova's tabletop ergonomics theory (**The Six Zones of Play**):
+- **Hand Devices** govern **Zones 1–3**: Active touch input ($\ge 44\text{px}$ targets), hidden/reserve staging, and personal player tableaus.
+- **Table Devices** govern **Zones 4–6**: Shared communal boards, peripheral sideboards (scores, round tracks), and ambient rules.
 
-### Game Plugin Model
+For architectural specifications and theoretical foundations, see:
+- 📖 [Platform Glossary](docs/platform-glossary.md) — Core terms and wire models.
+- 📐 [Game Archetypes & Spatial Hierarchy](docs/game-archetypes-and-spatial-hierarchy.md) — Four-tier compositional hierarchy and macro-archetypes.
+- 🔬 [Tabletop Spatial Ergonomics (The Six Zones of Play)](docs/zones-of-play-design-system.md) — Pure theoretical reference on table ergonomics.
 
-Board Game Hub is designed to be extensible. New games can be added by implementing a backend `IGameService` and registering a frontend component. Current games include:
-- **Scatterbrain**: A fast-paced word game.
-- **Clover-Minded**: A cooperative clue-giving game.
+### Game Plugin Model & Spatial Archetypes
+
+Board Game Hub is designed to be extensible. Rather than building ad-hoc, brittle layouts, new games compose standardized spatial layout archetypes (`SpatialGridArena`, `HandDeckTray`, `PlayerTableauBay`, `PassingRelay`, `DeductionScreen`, `CreativeCanvas`, `SocialPromptVote`) paired with backend `IGameService` implementations. Current flagship games include:
+- **Babble**: High-intensity word puzzle combining passing relay timer mechanics with a communal grid.
+- **Clover-Minded**: Cooperative spatial deduction featuring asymmetric keyword staging and clover placement.
+- **Farkle**: Push-your-luck dice game pairing personal player tableaus with a communal scoreboard ring.
 
 ### Project Structure
 
-- **[/frontend](file:///c:/Programming/board%20game%20hub/frontend)**: Angular client application.
-- **[/backend](file:///c:/Programming/board%20game%20hub/backend)**: .NET Core API and SignalR hubs.
-- **[/docs](file:///c:/Programming/board%20game%20hub/docs)**: Technical documentation and architecture plans.
+- **[/frontend](frontend)**: Angular 21 client application (standalone components, Neobrutalist design system, SignalR transport).
+- **[/backend](backend)**: .NET 10 Web API and SignalR hubs with event-driven state diff broadcasting.
+- **[/docs](docs)**: Technical documentation, spatial hierarchy guides, zones of play theory, and release notes.
 
 ---
 

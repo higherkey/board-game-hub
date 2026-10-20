@@ -152,7 +152,7 @@ export class GameRoomStateService {
   private autoJoin(roomCode: string, name: string) {
     const currentRoom = this.signalRService.currentRoomSubject.value;
     if (currentRoom?.code !== roomCode) {
-      this.signalRService.joinRoom(roomCode, name, false)
+      this.signalRService.joinRoom(roomCode, name, this.signalRService.isScreenMode)
         .then(success => {
           if (!success) {
             this.toastService.showError(`Room ${roomCode} not found or no longer active.`);

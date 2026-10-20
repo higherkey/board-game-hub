@@ -47,6 +47,7 @@ describe('AuthService', () => {
                 expect(localStorage.getItem('auth_token')).toBe('fake-jwt-token');
                 expect(service.getToken()).toBe('fake-jwt-token');
                 expect(service.isAuthenticated()).toBeTrue();
+                expect(service.isLoggedIn()).toBeTrue();
             });
 
             const req = httpMock.expectOne('/api/auth/login');

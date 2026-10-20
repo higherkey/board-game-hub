@@ -1,5 +1,6 @@
 
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
@@ -62,6 +63,8 @@ export class GameSocialComponent implements OnInit {
   gameId: string | null = null;
   game: GameDefinition | undefined;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly gameDataService: GameDataService,
@@ -71,7 +74,7 @@ export class GameSocialComponent implements OnInit {
   ngOnInit() {
     this.gameId = this.route.snapshot.paramMap.get('gameId');
     if (this.gameId) {
-      this.gameDataService.games$.subscribe(games => {
+      this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
         if (games) {
           this.game = games.find(g => g.id === this.gameId);
         }
