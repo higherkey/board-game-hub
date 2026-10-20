@@ -53,7 +53,35 @@ describe('GameDataService', () => {
         localStorage.setItem('bgh_games_cache', JSON.stringify(mockGames));
         const customService = new GameDataService(TestBed.inject(HttpClientTestingModule as any));
         expect(customService).toBeTruthy();
+        let emitted: GameDefinition[] | null = null;
+        customService.games$.subscribe(g => emitted = g);
+        expect(emitted as any).toEqual(mockGames);
         localStorage.removeItem('bgh_games_cache');
+    });
+
+    it('should handle corrupt localStorage JSON gracefully during cache hydration', () => {
+        localStorage.setItem('bgh_games_cache', 'invalid-json{');
+        const customService = new GameDataService(TestBed.inject(HttpClientTestingModule as any));
+        expect(customService).toBeTruthy();
+        let emitted: GameDefinition[] | null = null;
+        customService.games$.subscribe(g => emitted = g);
+        expect(emitted).toBeNull();
+        localStorage.removeItem('bgh_games_cache');
+    });
+
+    it('should handle localStorage write failures gracefully', () => {
+        const setItemSpy = spyOn(localStorage, 'setItem').and.throwError(new Error('QuotaExceeded'));
+        (service as any).persistGames(mockGames);
+        expect(setItemSpy).toHaveBeenCalled();
+    });
+
+    it('should handle API errors gracefully during refreshGames and warmup', () => {
+        service.warmup();
+        const healthReq = httpMock.expectOne(`${environment.apiUrl.replace(/\/api\/?$/, '')}/health`);
+        healthReq.error(new ProgressEvent('Network error'));
+
+        const gamesReq = httpMock.expectOne(`${environment.apiUrl}/games`);
+        gamesReq.error(new ProgressEvent('Network error'));
     });
 
     it('should trigger health ping and refresh on warmup', () => {

@@ -65,9 +65,18 @@ describe('AppComponent', () => {
       .compileComponents();
   });
 
-  it('should create the app', () => {
+  it('should create the app and trigger warmup and title strategies', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
+    fixture.detectChanges();
     expect(app).toBeTruthy();
+    const gameData = TestBed.inject(GameDataService);
+    expect(gameData.warmup).toHaveBeenCalled();
+
+    mockSignalRService.currentRoom$.next({ gameType: 'SushiTrain' });
+    expect(mockTitleService.setTitle).toHaveBeenCalledWith('BGHub | Sushi Train');
+
+    mockSignalRService.currentRoom$.next({ gameType: null });
+    expect(mockTitleService.setTitle).toHaveBeenCalledWith('BGHub | Game  Room');
   });
 });
