@@ -57,4 +57,12 @@ describe('LayoutComponent', () => {
     const betaChip = compiled.querySelector('.footer-beta-chip');
     expect(betaChip?.textContent).toContain(component.version);
   });
+  it('should link to the repository on GitHub in the footer', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const githubLink = compiled.querySelector<HTMLAnchorElement>('a.github-link');
+    expect(githubLink?.href).toBe('https://github.com/higherkey/board-game-hub');
+    expect(githubLink?.target).toBe('_blank');
+    expect(githubLink?.rel).toContain('noopener');
+    expect(githubLink?.rel).toContain('noreferrer');
+  });
 });
