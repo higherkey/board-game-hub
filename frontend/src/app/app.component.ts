@@ -5,6 +5,7 @@ import { RouterOutlet, Router, ActivatedRoute } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { SignalRService } from './services/signalr.service';
+import { GameDataService } from './services/game-data.service';
 
 @Component({
   selector: 'app-root',
@@ -20,10 +21,14 @@ export class AppComponent implements OnInit {
     private readonly router: Router,
     private readonly titleService: Title,
     private readonly activatedRoute: ActivatedRoute,
-    private readonly signalRService: SignalRService
+    private readonly signalRService: SignalRService,
+    private readonly gameDataService: GameDataService
   ) { }
 
   ngOnInit() {
+    // 0. Pre-warm backend and games cache to eliminate cold-start latency
+    this.gameDataService.warmup();
+
     // 2. Handle Game Room Titles (Dynamic)
     // This listener handles game-specific titles like "BGHub | Scatterbrain"
     // which change while staying on the same route (/game/:code).
