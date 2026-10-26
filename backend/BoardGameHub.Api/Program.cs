@@ -15,7 +15,15 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+var portStr = Environment.GetEnvironmentVariable("PORT") 
+    ?? Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS") 
+    ?? "10000";
+var port = int.TryParse(portStr, out var parsedPort) ? parsedPort : 10000;
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(port);
+});
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var logDir = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -254,7 +262,8 @@ app.MapHub<AdminHub>("/adminhub")
 
 app.MapFallbackToFile("index.html");
 
-app.Run();
+Log.Information("BoardGameHub API listening on http://0.0.0.0:{Port}", port);
+app.Run($"http://0.0.0.0:{port}");
 
 public partial class Program { }
 
