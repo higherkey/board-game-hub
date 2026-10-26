@@ -12,9 +12,11 @@ services:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: PORT
-        value: 10000
+        value: 8080
       - key: ASPNETCORE_HTTP_PORTS
-        value: 10000
+        value: 8080
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Neon Prod)
       - key: Jwt__Key
@@ -39,9 +41,11 @@ services:
       - key: ASPNETCORE_ENVIRONMENT
         value: Development
       - key: PORT
-        value: 10000
+        value: 8080
       - key: ASPNETCORE_HTTP_PORTS
-        value: 10000
+        value: 8080
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Neon Dev)
       - key: Jwt__Key
@@ -66,9 +70,11 @@ services:
       - key: ASPNETCORE_ENVIRONMENT
         value: Staging
       - key: PORT
-        value: 10000
+        value: 8080
       - key: ASPNETCORE_HTTP_PORTS
-        value: 10000
+        value: 8080
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Neon Staging / Dev fallback)
       - key: Jwt__Key
