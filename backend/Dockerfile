@@ -21,5 +21,5 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=backend-build /app/out .
 USER app
-EXPOSE 8080 10000
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "BoardGameHub.Api.dll"]
