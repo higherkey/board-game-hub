@@ -183,6 +183,13 @@ if (!string.Equals(builder.Configuration["Testing:DisablePersistenceWorker"], "t
     builder.Services.AddHostedService(sp => sp.GetRequiredService<RoomPersistenceWorker>());
 }
 
+// Start and stop hosted services concurrently to ensure Kestrel web server binds ports immediately
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ServicesStartConcurrently = true;
+    options.ServicesStopConcurrently = true;
+});
+
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<ISocialService, SocialService>();
 builder.Services.AddScoped<IGameHistoryService, GameHistoryService>();
