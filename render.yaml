@@ -7,11 +7,10 @@ services:
     dockerContext: .
     region: oregon 
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
-      - key: ASPNETCORE_URLS
-        value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Neon Prod)
       - key: Jwt__Key
@@ -31,11 +30,10 @@ services:
     dockerContext: .
     region: oregon 
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Development
-      - key: ASPNETCORE_URLS
-        value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Neon Dev)
       - key: Jwt__Key
@@ -55,11 +53,10 @@ services:
     dockerContext: .
     region: oregon 
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Staging
-      - key: ASPNETCORE_URLS
-        value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Neon Staging / Dev fallback)
       - key: Jwt__Key
