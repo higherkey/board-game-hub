@@ -258,6 +258,15 @@ app.MapHub<AdminHub>("/adminhub")
 
 app.MapFallbackToFile("index.html");
 
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
+    var addresses = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses;
+    Log.Information(">>> APPLICATION STARTED. Kestrel is actively listening on: {Addresses} <<<", string.Join(", ", addresses ?? Array.Empty<string>()));
+});
+app.Lifetime.ApplicationStopping.Register(() => Log.Information(">>> APPLICATION STOPPING <<<"));
+app.Lifetime.ApplicationStopped.Register(() => Log.Information(">>> APPLICATION STOPPED <<<"));
+
 Log.Information("BoardGameHub API starting up...");
 app.Run();
 
