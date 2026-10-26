@@ -105,6 +105,7 @@ Run commands from repo root unless noted.
 - **Changelog & News**: User-facing notes are automatically synced to the `/news` page via GitHub Actions upon merge to `main`.
 
 ## Engineering Standards to honor
+- **Zero-Token Background Polling:** Never poll external status (such as CI/CD jobs, build statuses, or cloud deployment logs) using rapid conversational tool calls or short sleeps across turns. Instead, execute a single self-terminating background wait loop in a CLI process (e.g., PowerShell loop with internal Start-Sleep or native --watch / --tail flags) that completes when a terminal state is reached. Rely on the reactive task wakeup system to resume execution without burning context tokens or conversational turns.
 - **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
 - **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
 
