@@ -15,8 +15,6 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var logDir = Path.Combine(AppContext.BaseDirectory, "logs");
 try { Directory.CreateDirectory(logDir); } catch { logDir = Path.GetTempPath(); }
@@ -265,25 +263,7 @@ app.Lifetime.ApplicationStopping.Register(() => Log.Information(">>> APPLICATION
 app.Lifetime.ApplicationStopped.Register(() => Log.Information(">>> APPLICATION STOPPED <<<"));
 
 Log.Information("BoardGameHub API starting up...");
-try
-{
-    var hsList = app.Services.GetServices<IHostedService>().ToList();
-    Log.Information(">>> Resolved {Count} HostedServices from DI <<<", hsList.Count);
-    foreach (var hs in hsList)
-    {
-        Log.Information(">>> HostedService registered: {TypeName} <<<", hs.GetType().FullName);
-    }
-
-    Log.Information(">>> Calling app.StartAsync()... <<<");
-    await app.StartAsync();
-    Log.Information(">>> app.StartAsync() completed successfully! <<<");
-    await app.WaitForShutdownAsync();
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, ">>> FATAL EXCEPTION DURING APP STARTUP <<<");
-    throw;
-}
+app.Run();
 
 public partial class Program { }
 
