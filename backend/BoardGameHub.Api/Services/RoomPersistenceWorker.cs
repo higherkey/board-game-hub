@@ -62,25 +62,28 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         _gameStateManager = gameStateManager;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("RoomPersistenceWorker is starting.");
 
-        // 1. Cold Boot Hydration
-        try
-        {
-            await RehydrateActiveRoomsAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed during cold boot active room rehydration.");
-        }
-
-        // 2. Start Background Consumer Loop
         _cts = new CancellationTokenSource();
-        _processingTask = Task.Run(() => ProcessChannelLoopAsync(_cts.Token), CancellationToken.None);
 
-        // 3. Start Periodic Cleanup Timer
+        // 1. Offload Cold Boot Hydration and Background Loop so host startup and Kestrel socket binding are not blocked
+        _processingTask = Task.Run(async () =>
+        {
+            try
+            {
+                await RehydrateActiveRoomsAsync(_cts.Token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed during cold boot active room rehydration.");
+            }
+
+            await ProcessChannelLoopAsync(_cts.Token);
+        }, CancellationToken.None);
+
+        // 2. Start Periodic Cleanup Timer
         _cleanupTimer = new Timer(static state =>
         {
             if (state is RoomPersistenceWorker self)
@@ -90,6 +93,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         }, this, TimeSpan.FromSeconds(CleanupIntervalSeconds), TimeSpan.FromSeconds(CleanupIntervalSeconds));
 
         _logger.LogInformation("RoomPersistenceWorker started successfully.");
+        return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
