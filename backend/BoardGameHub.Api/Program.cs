@@ -228,7 +228,21 @@ app.MapHub<AdminHub>("/adminhub")
 
 app.MapFallbackToFile("index.html");
 
-app.Run();
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStarted.Register(() => Log.Information("=== [HostLifetime] Kestrel successfully started and listening! ==="));
+lifetime.ApplicationStopping.Register(() => Log.Warning("=== [HostLifetime] ApplicationStopping triggered! Stack trace: {StackTrace} ===", Environment.StackTrace));
+lifetime.ApplicationStopped.Register(() => Log.Warning("=== [HostLifetime] ApplicationStopped completed. ==="));
+
+try
+{
+    Log.Information("=== [HostLifetime] Calling app.Run()... ===");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "=== [HostLifetime] Unhandled exception terminated app.Run() ===");
+    throw;
+}
 
 public partial class Program { }
 
