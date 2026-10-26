@@ -265,7 +265,25 @@ app.Lifetime.ApplicationStopping.Register(() => Log.Information(">>> APPLICATION
 app.Lifetime.ApplicationStopped.Register(() => Log.Information(">>> APPLICATION STOPPED <<<"));
 
 Log.Information("BoardGameHub API starting up...");
-app.Run();
+try
+{
+    var hsList = app.Services.GetServices<IHostedService>().ToList();
+    Log.Information(">>> Resolved {Count} HostedServices from DI <<<", hsList.Count);
+    foreach (var hs in hsList)
+    {
+        Log.Information(">>> HostedService registered: {TypeName} <<<", hs.GetType().FullName);
+    }
+
+    Log.Information(">>> Calling app.StartAsync()... <<<");
+    await app.StartAsync();
+    Log.Information(">>> app.StartAsync() completed successfully! <<<");
+    await app.WaitForShutdownAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, ">>> FATAL EXCEPTION DURING APP STARTUP <<<");
+    throw;
+}
 
 public partial class Program { }
 
