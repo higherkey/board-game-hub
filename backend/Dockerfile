@@ -1,5 +1,5 @@
 # Stage 1: Build the Angular frontend
-FROM node:24-alpine AS frontend-build
+FROM node:20 AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
@@ -21,6 +21,5 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=backend-build /app/out .
 USER app
-ENV PORT=10000
-EXPOSE 10000
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "BoardGameHub.Api.dll"]
