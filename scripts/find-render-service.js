@@ -10,8 +10,6 @@
  *   curl ... | node scripts/find-render-service.js <service_name>
  */
 
-const fs = require('fs');
-
 const targetName = process.argv[2] || process.env.TARGET_NAME;
 
 if (!targetName) {
