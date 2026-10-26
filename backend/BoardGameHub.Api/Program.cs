@@ -14,20 +14,15 @@ using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
-var logDir = Path.Combine(AppContext.BaseDirectory, "logs");
-try { Directory.CreateDirectory(logDir); } catch { logDir = Path.GetTempPath(); }
-
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.File(Path.Combine(logDir, "backend.log"), rollingInterval: RollingInterval.Day)
+    .WriteTo.File("../logs/backend.log", rollingInterval: RollingInterval.Day)
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(evt => evt.Properties.ContainsKey("SourceContext") && evt.Properties["SourceContext"].ToString().Contains("ClientLogging"))
-        .WriteTo.File(Path.Combine(logDir, "frontend.log"), rollingInterval: RollingInterval.Day))
+        .WriteTo.File("../logs/frontend.log", rollingInterval: RollingInterval.Day))
 );
 
 // Add services to the container.
@@ -123,16 +118,6 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 20;
     });
-
-    options.AddPolicy("ClientLoggingLimiter", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 10,
-                Window = TimeSpan.FromSeconds(10),
-                QueueLimit = 0
-            }));
 });
 
 builder.Services.AddSingleton<IRoomService, RoomService>();
@@ -173,7 +158,6 @@ if (!string.Equals(builder.Configuration["Testing:DisablePersistenceWorker"], "t
     builder.Services.AddHostedService(sp => sp.GetRequiredService<RoomPersistenceWorker>());
 }
 
-
 // Persistence Services (Scoped because they use DbContext)
 builder.Services.AddScoped<ISocialService, SocialService>();
 builder.Services.AddScoped<IGameHistoryService, GameHistoryService>();
@@ -207,30 +191,21 @@ if (app.Environment.IsDevelopment())
 }
 
 // Initialize database: Seed roles and admin user (Migrations are managed out-of-band)
-try
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
     {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
-        {
-            db.Database.EnsureCreated();
-        }
-        
-        // Seed Roles and Admin User
-        await DbInitializer.SeedAsync(scope.ServiceProvider);
+        db.Database.EnsureCreated();
     }
+    
+    // Seed Roles and Admin User
+    await DbInitializer.SeedAsync(scope.ServiceProvider);
 }
-catch (Exception ex)
-{
-    Log.Error(ex, "An error occurred during database seeding on startup.");
-}
+
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
-
-// Health check endpoint for Render / uptime monitoring
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 // Redirect root to admin dashboard
 app.MapGet("/", () => Results.Redirect("/admin"));
@@ -253,16 +228,6 @@ app.MapHub<AdminHub>("/adminhub")
 
 app.MapFallbackToFile("index.html");
 
-app.Lifetime.ApplicationStarted.Register(() =>
-{
-    var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
-    var addresses = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses;
-    Log.Information(">>> APPLICATION STARTED. Kestrel is actively listening on: {Addresses} <<<", string.Join(", ", addresses ?? Array.Empty<string>()));
-});
-app.Lifetime.ApplicationStopping.Register(() => Log.Information(">>> APPLICATION STOPPING <<<"));
-app.Lifetime.ApplicationStopped.Register(() => Log.Information(">>> APPLICATION STOPPED <<<"));
-
-Log.Information("BoardGameHub API starting up...");
 app.Run();
 
 public partial class Program { }
