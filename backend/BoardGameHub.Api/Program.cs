@@ -263,9 +263,7 @@ app.Lifetime.ApplicationStopping.Register(() => Log.Information(">>> APPLICATION
 app.Lifetime.ApplicationStopped.Register(() => Log.Information(">>> APPLICATION STOPPED <<<"));
 
 Log.Information("BoardGameHub API starting up...");
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-Log.Information(">>> BINDING TO PORT {Port} <<<", port);
-app.Run($"http://0.0.0.0:{port}");
+app.Run();
 
 public partial class Program { }
 
