@@ -90,10 +90,12 @@ public class GameStateManager : IHostedService, IDisposable
         _logger = logger;
         _persistenceService = persistenceService;
         _serializer = serializer;
+        Serilog.Log.Information(">>> GameStateManager constructor completed <<<");
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        Serilog.Log.Information(">>> GameStateManager.StartAsync ENTERED <<<");
         _cts = new CancellationTokenSource();
         _processingTask = Task.Run(() => ProcessChannelAsync(_cts.Token), CancellationToken.None);
         _logger.LogInformation("GameStateManager Event-Driven Loop Started.");

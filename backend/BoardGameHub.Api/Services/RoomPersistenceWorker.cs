@@ -64,7 +64,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("RoomPersistenceWorker is starting.");
+        Serilog.Log.Information(">>> RoomPersistenceWorker.StartAsync ENTERED <<<");
 
         _cts = new CancellationTokenSource();
 
