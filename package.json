@@ -1,7 +1,6 @@
 {
   "name": "board-game-hub",
   "private": true,
-  "type": "module",
   "scripts": {
     "sync-ai": "ai-standards-sync",
     "postinstall": "ai-standards-sync"
