@@ -131,7 +131,13 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-builder.Services.AddSingleton<IRoomService, RoomService>();
+builder.Services.AddSingleton<IRoomService>(sp => new RoomService(
+    sp.GetServices<IGameService>(),
+    sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub>>(),
+    sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub>>(),
+    sp.GetRequiredService<GameStateManager>(),
+    sp.GetRequiredService<ILogger<RoomService>>()
+));
 builder.Services.AddSingleton<IBabbleService, BabbleService>();
 builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
 builder.Services.AddSingleton<IDictionaryService, DictionaryService>();
