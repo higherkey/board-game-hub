@@ -158,7 +158,11 @@ builder.Services.AddSingleton<IGameService, FarkleService>();
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();
 builder.Services.AddSingleton<IRoomStateSerializer, RoomStateSerializer>();
-builder.Services.AddSingleton<GameStateManager>();
+builder.Services.AddSingleton<GameStateManager>(sp => new GameStateManager(
+    sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub>>(),
+    sp.GetRequiredService<StateDiffService>(),
+    sp.GetRequiredService<ILogger<GameStateManager>>()
+));
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GameStateManager>());
 
 // Room Persistence Engine
