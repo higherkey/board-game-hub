@@ -251,13 +251,16 @@ lifetime.ApplicationStopped.Register(() => Log.Warning("=== [HostLifetime] Appli
 
 try
 {
-    Log.Information("=== [HostLifetime] Inspecting registered IHostedServices... ===");
-    var hostedServices = app.Services.GetServices<IHostedService>().ToList();
-    Log.Information("=== [HostLifetime] Found {Count} hosted services ===", hostedServices.Count);
-    foreach (var hs in hostedServices)
-    {
-        Log.Information("=== [HostLifetime] Registered hosted service: {ServiceType} ===", hs.GetType().FullName);
-    }
+    Log.Information("=== [HostLifetime] Inspecting registered IHostedServices individually... ===");
+    Log.Information("=== [HostLifetime] Resolving GameStateManager... ===");
+    var gsm = app.Services.GetRequiredService<GameStateManager>();
+    Log.Information("=== [HostLifetime] GameStateManager resolved successfully ===");
+    Log.Information("=== [HostLifetime] Resolving IRoomService... ===");
+    var rs = app.Services.GetRequiredService<IRoomService>();
+    Log.Information("=== [HostLifetime] IRoomService resolved successfully ===");
+    Log.Information("=== [HostLifetime] Resolving RoomPersistenceWorker... ===");
+    var rpw = app.Services.GetRequiredService<RoomPersistenceWorker>();
+    Log.Information("=== [HostLifetime] RoomPersistenceWorker resolved successfully ===");
     Log.Information("=== [HostLifetime] Calling app.StartAsync()... ===");
     await app.StartAsync();
     Log.Information("=== [HostLifetime] app.StartAsync() completed! Now awaiting shutdown... ===");
