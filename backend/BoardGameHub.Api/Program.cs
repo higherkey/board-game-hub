@@ -14,6 +14,17 @@ using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Bind explicitly to Render dynamic PORT or fallback to 8080
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
+// Ensure hosted services run concurrently and do not block Kestrel socket binding
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ServicesStartConcurrently = true;
+    options.ServicesStopConcurrently = true;
+});
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
