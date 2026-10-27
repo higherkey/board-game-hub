@@ -240,18 +240,32 @@ app.MapHub<AdminHub>("/adminhub")
 app.MapFallbackToFile("index.html");
 
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-lifetime.ApplicationStarted.Register(() => Log.Information("=== [HostLifetime] Kestrel successfully started and listening! ==="));
+lifetime.ApplicationStarted.Register(() =>
+{
+    var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
+    var addresses = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses;
+    Log.Information("=== [HostLifetime] Kestrel successfully started! Bound addresses: {Addresses} ===", string.Join(", ", addresses ?? Array.Empty<string>()));
+});
 lifetime.ApplicationStopping.Register(() => Log.Warning("=== [HostLifetime] ApplicationStopping triggered! Stack trace: {StackTrace} ===", Environment.StackTrace));
 lifetime.ApplicationStopped.Register(() => Log.Warning("=== [HostLifetime] ApplicationStopped completed. ==="));
 
 try
 {
-    Log.Information("=== [HostLifetime] Calling app.Run()... ===");
-    app.Run();
+    Log.Information("=== [HostLifetime] Inspecting registered IHostedServices... ===");
+    var hostedServices = app.Services.GetServices<IHostedService>().ToList();
+    Log.Information("=== [HostLifetime] Found {Count} hosted services ===", hostedServices.Count);
+    foreach (var hs in hostedServices)
+    {
+        Log.Information("=== [HostLifetime] Registered hosted service: {ServiceType} ===", hs.GetType().FullName);
+    }
+    Log.Information("=== [HostLifetime] Calling app.StartAsync()... ===");
+    await app.StartAsync();
+    Log.Information("=== [HostLifetime] app.StartAsync() completed! Now awaiting shutdown... ===");
+    await app.WaitForShutdownAsync();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "=== [HostLifetime] Unhandled exception terminated app.Run() ===");
+    Log.Fatal(ex, "=== [HostLifetime] Unhandled exception terminated server startup ===");
     throw;
 }
 
