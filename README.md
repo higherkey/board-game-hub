@@ -137,7 +137,7 @@ We welcome contributions of all kinds! Whether you want to add a new game, impro
 
 Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for developer workflow standards and legal terms.
 
-- **Using AI?** We have established AI workflows in `.agent/workflows` to help you move faster. Mandatory tracking and testing standards apply to all AI-assisted work (e.g. maintain a manual work trace in `docs/traces/` for your feature branch).
+- **Using AI?** We have established AI workflows in `.agent/workflows` to help you move faster. Mandatory tracking and testing standards apply to all AI-assisted work.
 
 ---
 
