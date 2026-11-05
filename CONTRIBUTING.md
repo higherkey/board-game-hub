@@ -55,9 +55,6 @@ All commit messages and PR titles must follow **Conventional Commits** using **I
 | `chore:`, `refactor:`, `test:`, `build:`, `ci:`, `docs:`, `style:` | Inherits base version (increments pre-release counter) | Internal plumbing, tests, tooling, or formatting |
 | `BREAKING CHANGE:` | **MAJOR** | Placed in commit body to trigger major bump |
 
-### 6. Mandatory Work Traces
-All prefixed branches **must** include a running work trace document in `docs/traces/` (e.g., `docs/traces/feat-my-feature-work-trace.md`).
-
 ## ⚖️ License and CLA
 
 Please note that this project is **Source-Available and Proprietary**. By submitting a Pull Request, you agree to grant the project owner a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute your contributions.
