@@ -244,8 +244,8 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   async onEndGame(event?: MouseEvent) {
     const confirmed = await this.confirmService.confirm({
       title: 'Finish Game?',
-      message: 'Are you sure you want to finish the game and see results?',
-      confirmLabel: 'SEE RESULTS',
+      message: 'Final results are in. Finish the game and return everyone to game selection?',
+      confirmLabel: 'FINISH GAME',
       cancelLabel: 'KEEP PLAYING'
     }, event);
 

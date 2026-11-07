@@ -12,7 +12,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=higherkey_board-game-hub&metric=coverage)](https://sonarcloud.io/summary/new_code?id=higherkey_board-game-hub)
 [![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular)](https://angular.dev/)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
-[![Neon Postgres](https://img.shields.io/badge/PostgreSQL-Neon%20Serverless-00E599?style=flat-square&logo=postgresql)](https://neon.tech/)
+[![Supabase Postgres](https://img.shields.io/badge/PostgreSQL-Supabase%20(prod)-3FCF8E?style=flat-square&logo=supabase)](https://supabase.com/) [![Neon Postgres](https://img.shields.io/badge/PostgreSQL-Neon%20(dev)-00E599?style=flat-square&logo=postgresql)](https://neon.tech/)
 [![SignalR](https://img.shields.io/badge/SignalR-Active-orange?style=flat-square&logo=signalr)](#)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg?style=flat-square)](LICENSE)
 
@@ -24,9 +24,9 @@ We follow **[Automated Conventional Semantic Versioning](CONTRIBUTING.md#️-dev
 
 | Tier | Branch | Frontend (Cloudflare Pages) | Backend API (Render) | Database (Postgres) | Version Tagging |
 |---|---|---|---|---|---|
-| **prod** | `main` | [boardgamehub.eight1fivedesign.com](https://boardgamehub.eight1fivedesign.com) | `https://board-game-hub-api.onrender.com` | Neon Prod DB | Milestone Release (`v0.25.0`) |
-| **staging** | `staging` | `https://staging.board-game-hub-frontend.pages.dev` | `https://board-game-hub-api-staging.onrender.com` | Neon Staging DB | Release Candidate (`v0.25.0-rc.1`) |
-| **dev** | `dev` | [dev.board-game-hub-frontend.pages.dev](https://dev.board-game-hub-frontend.pages.dev) | `https://board-game-hub-api-dev.onrender.com` | Neon Dev DB | Dev Pre-Release (`v0.25.0-dev.1`) |
+| **prod** | `main` | [boardgamehub.eight1fivedesign.com](https://boardgamehub.eight1fivedesign.com) | `https://board-game-hub-api.onrender.com` | Supabase Prod | Milestone Release (`v0.25.0`) |
+| **staging** | `staging` | `https://staging.board-game-hub-frontend.pages.dev` | `https://board-game-hub-api-staging.onrender.com` | Supabase Staging (dev fallback) | Release Candidate (`v0.25.0-rc.1`) |
+| **dev** | `dev` | [dev.board-game-hub-frontend.pages.dev](https://dev.board-game-hub-frontend.pages.dev) | `https://board-game-hub-api-dev.onrender.com` | Neon Dev | Dev Pre-Release (`v0.25.0-dev.1`) |
 | **feature PRs** | `feat/*`, `fix/*` | Cloudflare Branch Preview | PR Build / Unit Tests | Local / Test InMemory | Ephemeral |
 
 

@@ -44,6 +44,16 @@ public class Room
     public string? CreatorConnectionId { get; set; } // The original creator
     public bool IsHostOverride { get; set; } = false; // Host forced room readiness
 
+    /// <summary>
+    /// A new game may start only when every non-screen player is ready, or the host forced room readiness (#66).
+    /// </summary>
+    public bool CanStartNewGame()
+    {
+        if (IsHostOverride) return true;
+        var players = Players.Where(p => !p.IsScreen).ToList();
+        return players.Count > 0 && players.All(p => p.IsReady);
+    }
+
     // Generic Game State
     public object? GameData { get; set; }
     public int RoundNumber { get; set; } = 0;

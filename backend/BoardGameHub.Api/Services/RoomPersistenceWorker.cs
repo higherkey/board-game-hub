@@ -22,6 +22,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
     private Task? _processingTask;
     private Timer? _cleanupTimer;
     private int _isCleaningUp = 0;
+    private int _missingTableWarned = 0;
 
     public const int ChannelCapacity = 10_000;
     public const int BatchSize = 100;
@@ -246,10 +247,30 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
 
             _logger.LogInformation("Pruned {Count} expired active rooms from PostgreSQL and memory.", expiredRooms.Count);
         }
+        catch (Exception ex) when (IsMissingActiveRoomsTable(ex))
+        {
+            // Schema not migrated on this database yet (#215). Warn once instead of erroring every cycle.
+            if (Interlocked.Exchange(ref _missingTableWarned, 1) == 0)
+            {
+                _logger.LogWarning("ActiveRooms table does not exist on the configured database; room persistence is inactive until migrations are applied.");
+            }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while cleaning up expired active rooms.");
         }
+    }
+
+    internal static bool IsMissingActiveRoomsTable(Exception? ex)
+    {
+        for (var current = ex; current != null; current = current.InnerException)
+        {
+            if (current is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.UndefinedTable })
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public async Task FlushAsync(CancellationToken cancellationToken = default)

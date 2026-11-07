@@ -75,7 +75,7 @@ public class FarkleService : BaseGameService<FarkleState>
             case "ROLL":
                 return Task.FromResult(HandleRoll(state));
             case "BANK":
-                return Task.FromResult(HandleBank(state));
+                return Task.FromResult(HandleBank(room, state));
             case "TOGGLE_DIE":
                 return Task.FromResult(HandleToggleDie(state, action.Payload));
             default:
@@ -114,7 +114,7 @@ public class FarkleService : BaseGameService<FarkleState>
         return true;
     }
 
-    private bool HandleBank(FarkleState state)
+    private bool HandleBank(Room room, FarkleState state)
     {
         if (state.Phase != FarklePhase.Picking) return false;
 
@@ -147,7 +147,7 @@ public class FarkleService : BaseGameService<FarkleState>
             }
         }
 
-        AdvanceTurn(state);
+        AdvanceTurn(room, state);
         return true;
     }
 
@@ -213,7 +213,7 @@ public class FarkleService : BaseGameService<FarkleState>
             // Re-verify phase under lock
             if (state.Phase == FarklePhase.Farkled)
             {
-                AdvanceTurn(state);
+                AdvanceTurn(room, state);
                 gameStateManager.MarkDirty(room.Code);
             }
         }
@@ -223,7 +223,7 @@ public class FarkleService : BaseGameService<FarkleState>
         }
     }
 
-    private void AdvanceTurn(FarkleState state)
+    private void AdvanceTurn(Room room, FarkleState state)
     {
         var playerIds = state.PlayerStates.Keys.ToList();
         int currentIndex = playerIds.IndexOf(state.ActivePlayerId);
@@ -236,6 +236,8 @@ public class FarkleService : BaseGameService<FarkleState>
         {
             state.Phase = FarklePhase.GameOver;
             state.WinningPlayerId = state.PlayerStates.Values.OrderByDescending(p => p.TotalScore).First().PlayerId;
+            room.State = GameState.Finished;
+            _ = CalculateScores(room);
         }
         else
         {

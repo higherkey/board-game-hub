@@ -541,4 +541,15 @@ public class RoomPersistenceWorkerTests : IDisposable
         _mockRoomService.Verify(r => r.RehydrateRoom(It.Is<Room>(rm => 
             rm.Code == "RESETCONN" && rm.Players.All(p => !p.IsConnected))), Times.Once);
     }
+
+    [Fact]
+    public void IsMissingActiveRoomsTable_DetectsUndefinedTable_IncludingWrapped()
+    {
+        var pg = new Npgsql.PostgresException("relation \"ActiveRooms\" does not exist", "ERROR", "ERROR", Npgsql.PostgresErrorCodes.UndefinedTable);
+
+        Assert.True(RoomPersistenceWorker.IsMissingActiveRoomsTable(pg));
+        Assert.True(RoomPersistenceWorker.IsMissingActiveRoomsTable(new InvalidOperationException("wrapped", pg)));
+        Assert.False(RoomPersistenceWorker.IsMissingActiveRoomsTable(new InvalidOperationException("other")));
+        Assert.False(RoomPersistenceWorker.IsMissingActiveRoomsTable(null));
+    }
 }

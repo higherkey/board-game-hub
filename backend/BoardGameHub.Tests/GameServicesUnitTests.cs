@@ -178,6 +178,23 @@ public class GameServicesUnitTests
     }
 
     [Fact]
+    public async Task BabbleGameService_EndRound_SetsRoomStateFinished()
+    {
+        var babbleMock = new Mock<IBabbleService>();
+        var dictMock = new Mock<IDictionaryService>();
+        var logger = new Mock<ILogger<BabbleGameService>>();
+        babbleMock.Setup(b => b.GenerateGrid(It.IsAny<int>())).Returns(new List<char> { 'C', 'A', 'T', 'S' });
+        var service = new BabbleGameService(babbleMock.Object, dictMock.Object, logger.Object);
+        var room = CreateTestRoom(GameType.Babble, 2);
+        room.State = GameState.Playing;
+        await service.StartRound(room, new GameSettings { BoardSize = 4, TimerDurationSeconds = 60 });
+
+        await service.EndRound(room);
+
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
     public async Task WisecrackGameService_StartRound_HandleAction_Scoring_Flow()
     {
         var logger = new Mock<ILogger<WisecrackGameService>>();

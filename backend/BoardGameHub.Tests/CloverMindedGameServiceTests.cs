@@ -209,6 +209,48 @@ public class CloverMindedGameServiceTests
         Assert.NotNull(state.Slots[0].CardId); // Correct slot remains
     }
 
+    [Fact]
+    public async Task FullGame_PerfectGuesses_ReachesGameOverAndFinishedState()
+    {
+        var room = CreateTestRoom();
+        room.State = GameState.Playing;
+        await _service.StartRound(room, new GameSettings());
+        var state = (CloverMindedState)room.GameData!;
+
+        var clues1 = JsonDocument.Parse("{\"clues\":[\"Fruit\",\"Vehicle\",\"Pet\",\"Weather\"]}").RootElement;
+        var clues2 = JsonDocument.Parse("{\"clues\":[\"Music\",\"Color\",\"Sport\",\"Tool\"]}").RootElement;
+        await _service.HandleAction(room, new GameAction("CLOVER_SUBMIT_CLUES", clues1), "p2");
+        await _service.HandleAction(room, new GameAction("CLOVER_SUBMIT_CLUES", clues2), "p3");
+
+        for (var turn = 0; turn < 2; turn++)
+        {
+            Assert.Equal(GameState.Playing, room.State);
+            var guesser = state.CurrentSpectatorId == "p2" ? "p3" : "p2";
+            var solution = state.CurrentRoundSolution!;
+            for (var i = 0; i < 4; i++)
+            {
+                var p = JsonDocument.Parse($"{{\"slotIndex\":{i},\"cardId\":\"{solution.SlotCardIds[i]}\",\"rotation\":{solution.SlotRotations[i]}}}").RootElement;
+                await _service.HandleAction(room, new GameAction("CLOVER_SET_SLOT", p), guesser);
+            }
+            Assert.True(await _service.HandleAction(room, new GameAction("CLOVER_SUBMIT_GUESS", JsonDocument.Parse("{}").RootElement), guesser));
+        }
+
+        Assert.Equal(CloverMindedPhase.GameOver.ToString(), state.Phase);
+        Assert.Equal(GameState.Finished, room.State);
+    }
+
+    [Fact]
+    public async Task EndRound_SetsRoomStateFinished()
+    {
+        var room = CreateTestRoom();
+        room.State = GameState.Playing;
+        await _service.StartRound(room, new GameSettings());
+
+        await _service.EndRound(room);
+
+        Assert.Equal(GameState.Finished, room.State);
+    }
+
     private static Room CreateTestRoom()
     {
         return new Room

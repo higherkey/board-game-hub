@@ -11,13 +11,13 @@ test.describe('Table vs. Hand Routing and Role UI', () => {
         // 2. Guest joins as PLAYER (Private mobile Hand controller)
         const guestHand = await helper.createGuest(hostTable.roomCode, 'PhonePlayer', { isMobile: true });
 
-        // 3. Verify Table view shows large lobby screen / header / QR area
-        await expect(hostTable.page.locator(`text=${guestHand.playerName}`).first()).toBeVisible({ timeout: 10000 });
-        await expect(guestHand.page.locator(`text=${hostTable.playerName}`).first()).toBeVisible({ timeout: 10000 });
+        // 3. Table (desktop) shows the Hand player in its sidebar
+        await expect(hostTable.page.locator('app-room-sidebar').getByText(guestHand.playerName)).toBeVisible({ timeout: 10000 });
 
-        // 4. Verify presence in table vs player sections in sidebar
-        await expect(hostTable.page.locator('app-room-sidebar')).toBeVisible();
-        await expect(guestHand.page.locator('app-room-sidebar')).toBeVisible();
+        // 4. Hand (mobile) hides the sidebar behind the bottom PLAYERS tab
+        await expect(guestHand.page.locator('app-room-sidebar')).toBeHidden();
+        await guestHand.page.getByText('PLAYERS', { exact: true }).click();
+        await expect(guestHand.page.locator('app-room-sidebar').getByText(hostTable.playerName)).toBeVisible({ timeout: 10000 });
 
         await hostTable.context.close();
         await guestHand.context.close();

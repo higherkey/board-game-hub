@@ -1,4 +1,4 @@
-import { Browser, BrowserContext, Page } from '@playwright/test';
+import { Browser, BrowserContext, Page, expect } from '@playwright/test';
 
 export interface PlayerSession {
     page: Page;
@@ -28,9 +28,7 @@ export class MultiplayerTestHelper {
         await nameInput.waitFor({ state: 'visible' });
         await nameInput.fill(name);
 
-        if (options?.isTable) {
-            await page.click('label[for="joinTable"]');
-        }
+        await page.click(options?.isTable ? 'label[for="joinTable"]' : 'label[for="joinPlayer"]');
 
         // Submit create room form
         await page.click('button:has-text("CREATE ROOM")');
@@ -57,9 +55,7 @@ export class MultiplayerTestHelper {
         await nameInput.waitFor({ state: 'visible' });
         await nameInput.fill(name);
 
-        if (options?.isTable) {
-            await page.click('label[for="joinTable"]');
-        }
+        await page.click(options?.isTable ? 'label[for="joinTable"]' : 'label[for="joinPlayer"]');
 
         // Submit enter room
         await page.click('button:has-text("ENTER ROOM")');
@@ -69,4 +65,26 @@ export class MultiplayerTestHelper {
 
         return { page, context, roomCode, playerName: name };
     }
+}
+
+/** Marks a Hand player ready (or the Table as "FORCE ROOM READY"), so the host can start a new game. */
+export async function setReady(page: Page): Promise<void> {
+    const readyBtn = page.locator('button.ready-button:visible').first();
+    await readyBtn.waitFor({ state: 'visible', timeout: 10000 });
+    // Already toggled on (btn-success): clicking again would undo it.
+    const isOn = await readyBtn.evaluate(el => el.classList.contains('btn-success'));
+    if (!isOn) {
+        await readyBtn.click();
+        await expect(page.locator('button.ready-button.btn-success:visible').first()).toBeVisible({ timeout: 10000 });
+    }
+}
+
+/** Picks a game in the lobby's searchable game combobox (host only). */
+export async function selectGame(page: Page, gameName: string): Promise<void> {
+    const input = page.locator('#full-game-input');
+    await input.waitFor({ state: 'visible', timeout: 10000 });
+    await input.click();
+    await input.fill(gameName);
+    await page.locator('#full-game-listbox [role="option"]', { hasText: gameName }).first().click();
+    await expect(input).toHaveValue(gameName, { timeout: 10000 });
 }

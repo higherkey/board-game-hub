@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HostSettingsComponent } from './host-settings.component';
 import { SignalRService } from '../../../../services/signalr.service';
 import { GameDataService } from '../../../../services/game-data.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { of } from 'rxjs';
 import { provideHttpClient, withXhr } from '@angular/common/http';
@@ -61,14 +62,43 @@ describe('HostSettingsComponent', () => {
         expect(globalThis.alert).toHaveBeenCalledWith('Cannot start the game! No players in the room.');
     });
 
-    it('should prompt confirm if startGame is called and not all players are ready', async () => {
-        const confirmService = TestBed.inject(ConfirmService);
+    it('should block startGame and warn when not all players are ready and no override (#66)', () => {
+        const toast = TestBed.inject(ToastService);
+        spyOn(toast, 'showWarning');
+        spyOn(component.gameStart, 'emit');
+        component.isIntermission = false;
+        component.isHostOverride = false;
         component.players = [
             { name: 'P1', isReady: true, isScreen: false },
             { name: 'P2', isReady: false, isScreen: false }
         ] as any;
-        await component.startGame();
-        expect(confirmService.confirm).toHaveBeenCalled();
+        component.startGame();
+        expect(toast.showWarning).toHaveBeenCalled();
+        expect(component.gameStart.emit).not.toHaveBeenCalled();
+    });
+
+    it('should start when host override is active even if players are not ready (#66)', () => {
+        spyOn(component.gameStart, 'emit');
+        component.isIntermission = false;
+        component.isHostOverride = true;
+        component.players = [
+            { name: 'P1', isReady: false, isScreen: false }
+        ] as any;
+        component.startGame();
+        expect(component.gameStart.emit).toHaveBeenCalled();
+    });
+
+    it('should not gate next round on readiness during intermission', () => {
+        spyOn(component.nextRound, 'emit');
+        component.isIntermission = true;
+        component.isHostOverride = false;
+        component.currentRound = 1;
+        component.settings = { ...component.settings, totalRounds: 5 };
+        component.players = [
+            { name: 'P1', isReady: false, isScreen: false }
+        ] as any;
+        component.startGame();
+        expect(component.nextRound.emit).toHaveBeenCalled();
     });
 
     it('should emit gameStart if all players are ready', () => {

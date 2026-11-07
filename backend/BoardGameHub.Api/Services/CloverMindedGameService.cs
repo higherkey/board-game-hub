@@ -199,6 +199,7 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
         if (state.SpectatorIndex >= state.ParticipantIds.Count)
         {
             state.Phase = CloverMindedPhase.GameOver.ToString();
+            room.State = GameState.Finished;
             return;
         }
 
@@ -419,6 +420,7 @@ public class CloverMindedGameService : BaseGameService<CloverMindedState>
         {
             state.Phase = CloverMindedPhase.GameOver.ToString();
             state.Message = $"Game over. Total score: {state.TotalScore}.";
+            room.State = GameState.Finished;
             return;
         }
 
