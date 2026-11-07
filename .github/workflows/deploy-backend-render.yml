@@ -72,7 +72,8 @@ jobs:
       - name: Determine Target Environment & DB Connection
         id: determine_env
         run: |
-          # Supabase is the database of record for every tier (#215).
+          # Database per tier (#215): dev runs on Neon Dev; staging and prod run on Supabase.
+          # No cross-provider fallback: migrations must target the same database the Render service uses.
           if [ "${{ github.ref_name }}" = "main" ]; then
             DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}"
             echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
@@ -87,7 +88,7 @@ jobs:
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_STAGING }}" >> "$GITHUB_OUTPUT"
             echo "env_name=staging" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref_name }}" = "dev" ]; then
-            DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
+            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_DEV }}"
             echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_DEV }}" >> "$GITHUB_OUTPUT"
             echo "env_name=development" >> "$GITHUB_OUTPUT"
@@ -96,7 +97,7 @@ jobs:
             exit 1
           fi
           if [ -z "$DB_CONN" ]; then
-            echo "::warning::No Supabase connection string secret is set for '${{ github.ref_name }}'; database migrations will be skipped."
+            echo "::warning::No database connection string secret is set for '${{ github.ref_name }}'; database migrations will be skipped."
           fi
 
       - name: Normalize DB Connection String
