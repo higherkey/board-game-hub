@@ -72,22 +72,14 @@ jobs:
       - name: Determine Target Environment & DB Connection
         id: determine_env
         run: |
+          # Supabase is the database of record for every tier (#215).
           if [ "${{ github.ref_name }}" = "main" ]; then
-            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_PROD }}"
-            if [ -z "$DB_CONN" ]; then
-              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}"
-            fi
+            DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}"
             echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_PROD }}" >> "$GITHUB_OUTPUT"
             echo "env_name=production" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref_name }}" = "staging" ]; then
-            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_STAGING }}"
-            if [ -z "$DB_CONN" ]; then
-              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}"
-            fi
-            if [ -z "$DB_CONN" ]; then
-              DB_CONN="${{ secrets.NEON_CONNECTION_STRING_DEV }}"
-            fi
+            DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}"
             if [ -z "$DB_CONN" ]; then
               DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
             fi
@@ -95,16 +87,16 @@ jobs:
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_STAGING }}" >> "$GITHUB_OUTPUT"
             echo "env_name=staging" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref_name }}" = "dev" ]; then
-            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_DEV }}"
-            if [ -z "$DB_CONN" ]; then
-              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
-            fi
+            DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
             echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
             echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_DEV }}" >> "$GITHUB_OUTPUT"
             echo "env_name=development" >> "$GITHUB_OUTPUT"
           else
             echo "Branch '${{ github.ref_name }}' is not configured for automatic deployment."
             exit 1
+          fi
+          if [ -z "$DB_CONN" ]; then
+            echo "::warning::No Supabase connection string secret is set for '${{ github.ref_name }}'; database migrations will be skipped."
           fi
 
       - name: Normalize DB Connection String

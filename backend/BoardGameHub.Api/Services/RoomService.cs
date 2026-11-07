@@ -663,6 +663,13 @@ public class RoomService : IRoomService, IDisposable
         await room.StateLock.WaitAsync();
         try
         {
+            // A brand-new game from the lobby requires readiness or the host override (#66).
+            if (settings != null && room.State == GameState.Lobby && !room.CanStartNewGame())
+            {
+                _logger.LogInformation("StartGame rejected for room {Code}: players not ready and no host override.", room.Code);
+                return null;
+            }
+
             // Apply settings if provided (Start of Game)
             if (settings != null)
             {
@@ -700,10 +707,10 @@ public class RoomService : IRoomService, IDisposable
         return room;
     }
 
-    public Room? PauseGame(string code)
+    public async Task<Room?> PauseGame(string code)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
+        if (!await room.StateLock.WaitAsync(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in PauseGame for room {Code}", code);
             return null;
@@ -729,10 +736,10 @@ public class RoomService : IRoomService, IDisposable
         return room;
     }
 
-    public Room? ResumeGame(string code)
+    public async Task<Room?> ResumeGame(string code)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
+        if (!await room.StateLock.WaitAsync(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in ResumeGame for room {Code}", code);
             return null;
@@ -759,32 +766,70 @@ public class RoomService : IRoomService, IDisposable
         return room;
     }
 
-    public Room? EndGame(string code)
+    /// <summary>
+    /// Ends the current game. From Playing, the room moves to Finished (results/intermission).
+    /// From Finished, the session ends and the room returns to the game-selection lobby (#79).
+    /// </summary>
+    public async Task<Room?> EndGame(string code)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        
-        // Already finished?
-        if (room.State == GameState.Finished) return room;
 
-        if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
+        if (!await room.StateLock.WaitAsync(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in EndGame for room {Code}", code);
             return null;
         }
         try
         {
-            room.State = GameState.Finished;
-            room.IsPaused = false;
-            room.RoundEndTime = null; // Clear timer
+            // Guard is evaluated under the lock to avoid a check-then-act race (#112).
+            switch (room.State)
+            {
+                case GameState.Playing:
+                    room.State = GameState.Finished;
+                    room.IsPaused = false;
+                    room.TimeRemainingWhenPaused = null;
+                    room.RoundEndTime = null; // Clear timer
+                    break;
+                case GameState.Finished:
+                    room.GameType = GameType.None;
+                    ResetToLobby(room);
+                    break;
+                default:
+                    return room; // Already in the lobby: nothing to end.
+            }
         }
         finally
         {
             room.StateLock.Release();
         }
-        
+
         _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
+    }
+
+    /// <summary>
+    /// Clears all per-game runtime state so the next game starts clean. Caller must hold StateLock.
+    /// Readiness and the host override are reset because they applied to the game that just ended (#66, #79).
+    /// </summary>
+    private static void ResetToLobby(Room room)
+    {
+        room.State = GameState.Lobby;
+        room.GameData = null;
+        room.RoundNumber = 0;
+        room.RoundEndTime = null;
+        room.IsPaused = false;
+        room.TimeRemainingWhenPaused = null;
+        room.PlayerAnswers.Clear();
+        room.RoundScores.Clear();
+        room.StateHistory.Clear();
+        room.CurrentVote = null;
+        room.NextGameVotes.Clear();
+        room.IsHostOverride = false;
+        foreach (var player in room.Players)
+        {
+            player.IsReady = false;
+        }
     }
 
     public async Task<Room?> SubmitAction(string code, string connectionId, string actionType, System.Text.Json.JsonElement? payload)
@@ -870,9 +915,16 @@ public class RoomService : IRoomService, IDisposable
         try
         {
             room.GameType = gameType;
-            room.State = GameState.Lobby; // Reset to Lobby so clients switch view
-            // Clear votes if game type is manually force set? 
-            room.NextGameVotes.Clear();
+            if (room.State == GameState.Lobby)
+            {
+                // Choosing a game in the lobby keeps readiness intact.
+                room.NextGameVotes.Clear();
+            }
+            else
+            {
+                // Leaving an active or finished game: return to a clean lobby so clients switch view (#79).
+                ResetToLobby(room);
+            }
         }
         finally
         {

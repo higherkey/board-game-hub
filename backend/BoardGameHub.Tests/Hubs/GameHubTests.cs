@@ -110,7 +110,7 @@ public class GameHubTests
     public async Task StartGame_ShouldBroadcastGameStarted()
     {
         // Arrange
-        var room = new Room { Code = "TEST", IsPublic = true };
+        var room = new Room { Code = "TEST", IsPublic = true, IsHostOverride = true };
         var settings = new GameSettings();
         _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
         _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
@@ -122,6 +122,49 @@ public class GameHubTests
         // Assert
         _mockClientProxy.Verify(c => c.SendCoreAsync("GameStarted", new object[] { room }, default), Times.Once);
         _mockClientProxy.Verify(c => c.SendCoreAsync("PublicRoomDeleted", new object[] { "TEST" }, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task StartGame_FromLobby_WhenPlayersNotReady_ShouldThrowAndNotStart()
+    {
+        var room = new Room { Code = "TEST" };
+        room.Players.Add(new Player { ConnectionId = "conn2", IsReady = false });
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+
+        var act = () => _sut.StartGame("TEST", new GameSettings());
+
+        await act.Should().ThrowAsync<HubException>().WithMessage("*ready*");
+        _mockRoomService.Verify(r => r.StartGame(It.IsAny<string>(), It.IsAny<GameSettings?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task EndGame_WhenRoomReturnsToLobby_ShouldBroadcastGameTypeChangedAndPublicUpdate()
+    {
+        var room = new Room { Code = "TEST", IsPublic = true, State = GameState.Finished };
+        var lobbyRoom = new Room { Code = "TEST", IsPublic = true, State = GameState.Lobby, GameType = GameType.None };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+        _mockRoomService.Setup(r => r.EndGame("TEST")).ReturnsAsync(lobbyRoom);
+
+        await _sut.EndGame("TEST");
+
+        _mockClientProxy.Verify(c => c.SendCoreAsync("GameTypeChanged", new object[] { "None" }, default), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("PublicRoomUpdated", new object[] { lobbyRoom }, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task EndGame_WhenRoomMovesToResults_ShouldNotBroadcastLobbyEvents()
+    {
+        var room = new Room { Code = "TEST", IsPublic = true, State = GameState.Playing };
+        var finished = new Room { Code = "TEST", IsPublic = true, State = GameState.Finished };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+        _mockRoomService.Setup(r => r.EndGame("TEST")).ReturnsAsync(finished);
+
+        await _sut.EndGame("TEST");
+
+        _mockClientProxy.Verify(c => c.SendCoreAsync("GameTypeChanged", It.IsAny<object[]>(), default), Times.Never);
     }
 
     [Fact]
