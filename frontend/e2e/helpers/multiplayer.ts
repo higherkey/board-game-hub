@@ -70,3 +70,15 @@ export class MultiplayerTestHelper {
         return { page, context, roomCode, playerName: name };
     }
 }
+
+/** Marks a Hand player ready (or the Table as "FORCE ROOM READY"), so the host can start a new game. */
+export async function setReady(page: Page): Promise<void> {
+    const readyBtn = page.locator('button.ready-button:visible').first();
+    await readyBtn.waitFor({ state: 'visible', timeout: 10000 });
+    const label = ((await readyBtn.innerText()) || '').toUpperCase();
+    // Already toggled on ("I'M READY!" / "ROOM READY!"): clicking again would undo it.
+    if (label.includes('SET PERSONAL READY') || label.includes('FORCE ROOM READY')) {
+        await readyBtn.click();
+        await page.locator('button.ready-button:visible', { hasText: /I'M READY!|ROOM READY!/i }).first().waitFor({ timeout: 10000 });
+    }
+}

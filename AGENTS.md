@@ -110,13 +110,13 @@ Run commands from repo root unless noted.
 - **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
 
 ## Existing AI/workflow guidance to honor
-- `.cursor/rules/git-powershell.mdc` + `.agent/workflows/git-commands.md`:
+- `.cursor/rules/git-powershell.mdc`:
   - In PowerShell, chain commands with `;` (not `&&`).
   - Prefer `git commit -am` for tracked-file-only commits; use `git add` first for new files.
   - **Commit/PR Standards**: Follow **Conventional Commits** (e.g., `feat:`, `fix:`) and use **Imperative Tense** (e.g., `Update`, not `Updated`) for the **entire message** (header and body).
   - **Issue Reference**: Link GitHub Issues with `#123` or `fixes #123` where applicable.
   - **GitHub Enforcement**: PR titles are strictly linted via `.github/workflows/lint-pr.yml`.
-- `.cursor/rules/sonarqube-workflow.mdc` + `.agent/workflows/sonarqube-review.md`:
+- `.cursor/rules/sonarqube-workflow.mdc`:
   - Enforces the **Unified Monorepo Architecture**: Use `dotnet-sonarscanner` within `.github/workflows/sonar.yml` to sequence backend/frontend analysis.
   - **CRITICAL**: SonarCloud "Automatic Analysis" must remain OFF to prevent pipeline overriding and 0% coverage bugs.
   - Use Sonar Web API/MCP/UI for gates/issues/hotspots/transitions.
@@ -124,9 +124,6 @@ Run commands from repo root unless noted.
 - `.cursor/agents/deploy.md`:
   - Production deployments are expected from pushes to `main` via workflows in `.github/workflows/`.
   - Use `gh run list/watch` to inspect deployment runs when needed.
-- `.agent/workflows/peer-review.md`:
-  - Defines a full peer-review sequence (code/UX/accessibility/Sonar/build verification) for deep audit tasks.
-- `.agent/workflows/testing-workflow.md`:
-  - Dictates the monorepo approach to unit testing, execution verification, and coverage requirements.
-- `.agent/workflows/feature-tracking.md`:
-  - **MANDATORY**: Running branch notes document (`/docs/branch-notes/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`). Track Discoveries, 4a Blockers, 4b Quick Wins, and 4c Deferred Items with Pre-Commit Gate verification.
+- Shared skills in [`higherkey/ai-standards`](https://github.com/higherkey/ai-standards) (`skills/`): `github-commands`, `sonarqube-review`, `peer-review-with-quality`, `testing-workflow`, and `feature-tracking` replace the former `.agent/workflows/*.md` files.
+- Branch Notes (`docs/branch-notes/[normalized-branch-name]-notes.md`, per the `feature-tracking` skill):
+  - **MANDATORY**: Running branch notes document required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`). Sections: Discoveries & Deviations, Blockers & Risks (4a), Quick Wins (4b), Deferred Items (4c). Example: `docs/branch-notes/claude-app-overview-prod-dev-4fcj7x-notes.md`. The legacy `/docs/traces/` workflow has been removed.

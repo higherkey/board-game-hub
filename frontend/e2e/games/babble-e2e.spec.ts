@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { MultiplayerTestHelper } from '../helpers/multiplayer';
+import { MultiplayerTestHelper, setReady } from '../helpers/multiplayer';
 
 test.describe('Babble Multiplayer', () => {
     test('should synchronize the game grid between Host and Guest', async ({ browser }) => {
@@ -23,7 +23,9 @@ test.describe('Babble Multiplayer', () => {
         await babbleCard.click();
         await expect(babbleCard).toHaveClass(/selected/);
 
-        // 5. Host starts the game
+        // 5. Players ready up, then host starts the game
+        await setReady(hostPage);
+        await setReady(guestPage);
         const startButton = hostPage.locator('button:has-text("START GAME")');
         await expect(startButton).toBeEnabled();
         await startButton.click();
