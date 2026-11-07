@@ -40,3 +40,10 @@ Base: `origin/dev` @ `1727cf6`. Scope: #215 (Supabase variant), #112, #79, #66.
 - `ng build`: OK.
 - Release-build API boot with the worker enabled: listening, `Rehydrated 0`, `/health` 200.
 - Workflow YAML parses.
+
+## Local verification follow-up (e2e + migrations)
+- Dev API crash (`relation "ActiveRooms" does not exist`) root cause: migrations `AddActiveRoomsPersistence` and `HardenPublicSchemaRls` ran `REVOKE ... FROM anon, authenticated`, roles that exist only on Supabase. On Neon/plain Postgres the migration bundle failed before `ActiveRooms` was created. Both are now guarded with a `pg_roles` existence check.
+- `ClientLoggingLimiter` rate-limit policy was dropped by the Program.cs restore (#207), so every `POST /api/ClientLogging` returned 500. Policy restored (30 req/min per IP).
+- `ng serve` `development` configuration swapped in `environment.dev.ts` (hosted Render dev), bypassing the local proxy. Removed that file replacement so `npm start` targets the local API.
+- e2e specs were stale against the redesigned lobby: game picker is now a combobox (`selectGame` helper), desktop join defaults to Table (helpers now choose PLAYER explicitly), `setReady` detects state via `btn-success`, mobile roster is behind the PLAYERS tab. All 5 chromium specs pass; 371 backend tests pass.
+- Local run needs `PORT=5109` for the API (the proxy target) and `ConnectionStrings__DefaultConnection` pointing at the docker postgres.

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { MultiplayerTestHelper, setReady } from '../helpers/multiplayer';
+import { MultiplayerTestHelper, setReady, selectGame } from '../helpers/multiplayer';
 
 test.describe('Babble Multiplayer', () => {
     test('should synchronize the game grid between Host and Guest', async ({ browser }) => {
@@ -12,16 +12,13 @@ test.describe('Babble Multiplayer', () => {
         const { page: guestPage } = await helper.createGuest(roomCode, 'GuestBob');
 
         // 3. Verify both players are in the lobby
-        await expect(hostPage.locator('text=HostAlice')).toBeVisible();
-        await expect(hostPage.locator('text=GuestBob')).toBeVisible();
-        await expect(guestPage.locator('text=HostAlice')).toBeVisible();
-        await expect(guestPage.locator('text=GuestBob')).toBeVisible();
+        await expect(hostPage.locator('app-room-sidebar').getByText('HostAlice')).toBeVisible();
+        await expect(hostPage.locator('app-room-sidebar').getByText('GuestBob')).toBeVisible();
+        await expect(guestPage.locator('app-room-sidebar').getByText('HostAlice')).toBeVisible();
+        await expect(guestPage.locator('app-room-sidebar').getByText('GuestBob')).toBeVisible();
 
         // 4. Host selects Babble (if not already selected)
-        // Find the Babble card in the grid
-        const babbleCard = hostPage.locator('.game-card:has-text("Babble")');
-        await babbleCard.click();
-        await expect(babbleCard).toHaveClass(/selected/);
+        await selectGame(hostPage, 'Babble');
 
         // 5. Players ready up, then host starts the game
         await setReady(hostPage);
