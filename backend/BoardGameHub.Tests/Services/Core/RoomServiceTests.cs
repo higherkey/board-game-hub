@@ -245,6 +245,29 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkStateDirtyForBroadcast()
+    {
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Farkle);
+        mockService.Setup(s => s.HandleAction(It.IsAny<Room>(), It.IsAny<GameAction>(), It.IsAny<string>()))
+            .Callback<Room, GameAction, string>((r, _, _) => r.State = GameState.Finished)
+            .ReturnsAsync(true);
+        _gameServices.Add(mockService.Object);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Farkle);
+        room.State = GameState.Playing;
+        _mockGameStateManager.Setup(m => m.TrackRoom(It.IsAny<Room>())).CallBase();
+        _mockGameStateManager.Object.TrackRoom(room);
+        room.DirtyMembers.Clear();
+
+        await _sut.SubmitAction(room.Code, "conn1", "BANK", default);
+
+        room.DirtyMembers.Should().ContainKey(nameof(Room.GameData)); // sanity: room is tracked
+
+        room.State.Should().Be(GameState.Finished);
+        room.DirtyMembers.Should().ContainKey(nameof(Room.State));
+    }
+
+    [Fact]
     public async Task CalculateRoundScores_ShouldUpdateTotals()
     {
         // Arrange

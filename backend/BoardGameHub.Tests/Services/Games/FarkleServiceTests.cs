@@ -41,6 +41,51 @@ public class FarkleServiceTests
     }
 
     [Fact]
+    public async Task HandleAction_BankReachingTargetThenFinalTurnCompletes_SetsRoomFinished()
+    {
+        var room = new Room { Code = "FARK", State = GameState.Playing };
+        room.Players.Add(new Player { ConnectionId = "p1", Name = "One" });
+        room.Players.Add(new Player { ConnectionId = "p2", Name = "Two" });
+        var state = new FarkleState { RoomCode = "FARK", Phase = FarklePhase.Picking, ActivePlayerId = "p1" };
+        state.PlayerStates["p1"] = new FarklePlayerState { PlayerId = "p1", TotalScore = 9950 };
+        state.PlayerStates["p2"] = new FarklePlayerState { PlayerId = "p2", TotalScore = 600 };
+        state.Dice = Enumerable.Range(0, 6).Select(_ => new FarkleDie { Value = 2 }).ToList();
+        state.Dice[0].Value = 1;
+        state.Dice[0].IsReserved = true;
+        room.GameData = state;
+
+        (await _service.HandleAction(room, new GameAction("BANK", null), "p1")).Should().BeTrue();
+
+        // Target reached, but p2 still gets a final turn.
+        state.PlayerStates["p1"].IsFinalTurn.Should().BeTrue();
+        room.State.Should().Be(GameState.Playing);
+
+        state.ActivePlayerId.Should().Be("p2");
+        state.Phase = FarklePhase.Picking;
+        state.CurrentTurnScore = 0;
+        state.Dice = Enumerable.Range(0, 6).Select(_ => new FarkleDie { Value = 2 }).ToList();
+        state.Dice[0].Value = 1;
+        state.Dice[0].IsReserved = true;
+
+        (await _service.HandleAction(room, new GameAction("BANK", null), "p2")).Should().BeTrue();
+
+        state.Phase.Should().Be(FarklePhase.GameOver);
+        state.WinningPlayerId.Should().Be("p1");
+        room.State.Should().Be(GameState.Finished);
+        room.Players.First(p => p.ConnectionId == "p1").Score.Should().Be(10050);
+    }
+
+    [Fact]
+    public async Task EndRound_SetsRoomStateFinished()
+    {
+        var room = new Room { Code = "FARK", State = GameState.Playing };
+
+        await _service.EndRound(room);
+
+        room.State.Should().Be(GameState.Finished);
+    }
+
+    [Fact]
     public async Task StartRound_InitializesStateCorrectly()
     {
         // Arrange

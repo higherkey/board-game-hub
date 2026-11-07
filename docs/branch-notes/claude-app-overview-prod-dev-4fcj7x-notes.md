@@ -22,16 +22,19 @@ Base: `origin/dev` @ `1727cf6`. Scope: #215 (Supabase variant), #112, #79, #66.
 - `TestBase` now uses a unique in-memory DB per factory. Parallel web-host tests raced on startup seeding.
 - The Wisecrack "End Game" button on its Game Over screen was a no-op for the same reason as #79. It now returns to the lobby.
 - The DI regression test fails on the old wiring and passes on the new one.
+- Beta games audit (#79): Farkle and Clover-Minded never set `room.State = Finished` on natural game over, so they were stuck in Playing. Both are fixed, and Farkle now syncs `Player.Score`. Babble was already correct.
+- `SubmitAction` now marks `State` dirty. Without that, a game ending itself never reached clients through the patch.
+- E2E specs now ready players up via the `setReady` helper, plus a negative "won't start unready" test. The specs compile and are listed, but haven't been run against live servers.
 
 ## 4. Deferred Items (4c)
-- #188: per-connection state filtering for hidden-information games (architectural).
+- #188, audited for the beta games: Clover-Minded broadcasts `currentRoundSolution` and every player's board layout to all devices, which enables cheating (fix size M). Babble streams `playerAnswers` live, a minor spoiler (fix size S). Farkle has nothing hidden. Full-room sends in `GameHub` (`GameStarted`, `RoomUpdated`, `RoundEnded`, `JoinRoom` return) leak too, not only patches.
 - #92 / #157: JWT stored in localStorage, plus refresh-token rotation (auth redesign).
 - No GitHub Action clears `docs/branch-notes/` on `main` any more, since #216 removed the trace cleanup workflows. `AGENTS.md` still points to `/docs/traces/`.
 - `Finished` means both "round intermission" and "game over". A distinct `GameOver` state (or a flag) would make the lifecycle explicit across all 17 game services.
 - Close the stale issues #193 and #183, which merged PRs already resolved.
 
 ## 5. Verification
-- `dotnet test`: 365/365 passed, three consecutive runs.
+- `dotnet test`: 371/371 passed. Earlier: 365/365 on three consecutive runs.
 - `npm test` (ChromeHeadless): 401 passed, 1 skipped (pre-existing `xit`).
 - `ng build`: OK.
 - Release-build API boot with the worker enabled: listening, `Rehydrated 0`, `/health` 200.

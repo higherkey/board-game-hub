@@ -870,6 +870,8 @@ public class RoomService : IRoomService, IDisposable
                 _gameStateManager.MarkDirty(room.Code, "PlayerAnswers");
                 // And Players (e.g. ready state?)
                 _gameStateManager.MarkDirty(room.Code, "Players");
+                // Games end themselves (e.g. Farkle/Clover-Minded game over sets Finished), so State must sync too (#79).
+                _gameStateManager.MarkDirty(room.Code, nameof(Room.State));
 
                 NotifyStatsChanged();
                 return room;
