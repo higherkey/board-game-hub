@@ -124,9 +124,7 @@ Run commands from repo root unless noted.
 - `.cursor/agents/deploy.md`:
   - Production deployments are expected from pushes to `main` via workflows in `.github/workflows/`.
   - Use `gh run list/watch` to inspect deployment runs when needed.
-- `.agent/workflows/peer-review.md`:
-  - Defines a full peer-review sequence (code/UX/accessibility/Sonar/build verification) for deep audit tasks.
-- `.agent/workflows/testing-workflow.md`:
-  - Dictates the monorepo approach to unit testing, execution verification, and coverage requirements.
-- `.agent/workflows/feature-tracking.md`:
-  - **MANDATORY**: Running branch notes document (`/docs/branch-notes/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`). Track Discoveries, 4a Blockers, 4b Quick Wins, and 4c Deferred Items with Pre-Commit Gate verification.
+- Shared skills in [`higherkey/ai-standards`](https://github.com/higherkey/ai-standards) (`skills/`): `github-commands`, `sonarqube-review`, `peer-review-with-quality`, `testing-workflow`, and `feature-tracking` replace the former `.agent/workflows/*.md` files.
+- Branch Notes (`docs/branch-notes/[normalized-branch-name]-notes.md`, per the `feature-tracking` skill):
+  - **MANDATORY**: Running branch notes document required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`). Sections: Discoveries & Deviations, Blockers & Risks (4a), Quick Wins (4b), Deferred Items (4c).
+  - Merged branch notes on `main` are automatically pruned by [`.github/workflows/cleanup-branch-notes.yml`](.github/workflows/cleanup-branch-notes.yml) on promotion from `dev`.
