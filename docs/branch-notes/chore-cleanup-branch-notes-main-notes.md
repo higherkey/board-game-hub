@@ -1,48 +1,23 @@
 # Branch Notes: chore/cleanup-branch-notes-main
 
-> **Branch:** `chore/cleanup-branch-notes-main`  
-> **Base Branch:** `dev`  
-> **Delivery Target:** Pull Request into `dev`  
-> **Issue:** Fixes #220  
+> Base: `dev` · Delivery: PR into `dev` · Issue: #220
 
----
+## 1. Discoveries & Deviations
+- #216 removed `cleanup-traces.yml`, which had pruned branch notes on `main` and `dev`; nothing replaced it.
+- Deviation: the first approach pruned on push to `main`. Rejected because the bot commit exists only on `main`, so `main` diverges from `staging`/`dev` and needs back-merges. The release train is `dev` → `staging` → `main`, and `main` must stay an ancestor of `dev`.
+- Final: `cleanup-branch-notes.yml` prunes `docs/branch-notes/` (except `.gitkeep`) on every push to `dev`. A `refs/heads/dev` guard and a hardcoded `origin dev` push stop a manual dispatch from pruning other branches. Notes stay readable in each PR's diff.
+- Hotfix branches merge straight into `main`, bypassing `dev`; policy (`CONTRIBUTING.md` §6, `AGENTS.md`) says to remove their notes before merging.
+- `feature-tracking` skill says notes are "Cleared from `main` automatically via GitHub Actions cleanup"; dev-side pruning meets that outcome, but the wording invites a main-side workflow.
+- Verified: parsed the workflow and ran its real step scripts against a throwaway remote. Notes were pruned on `dev`, `.gitkeep` was kept, `dev` → `staging` → `main` fast-forwarded, and `main` had 0 commits missing from `dev`. No app code changed, so backend tests and the frontend build don't apply.
 
-## 1. Discoveries & Architectural Context
-- PR #216 (`chore(ci): Remove legacy trace workflows and documentation`) removed `.github/workflows/cleanup-traces.yml`, which previously pruned both traces and branch notes on `main` and `dev`.
-- Branch notes are mandatory on prefixed branches (`feat/`, `fix/`, `chore/`) but should never reach `main`.
-- First approach pruned on push to `main`. Rejected: the bot commit exists only on `main`, so `main` diverges from `staging` and `dev` and needs back-merges. The release train is `dev` → `staging` → `main`, and `main` must stay an ancestor of `dev`.
-- Final approach: `.github/workflows/cleanup-branch-notes.yml` prunes `docs/branch-notes/` (except `.gitkeep`) on every push to `dev`, matching how the old `cleanup-traces.yml` pruned `dev`. Notes are already gone when `dev` is promoted, so `main` never gets a bot commit.
-- Guard `if: github.ref == 'refs/heads/dev'` and a hardcoded `origin dev` push target keep a manual `workflow_dispatch` from pruning any other branch.
-- `touch docs/branch-notes/.gitkeep` keeps the directory tracked even if `.gitkeep` was missing.
-- Hotfix branches merge straight into `main`, bypassing `dev`; policy says to remove their notes before merging.
-- Documented the lifecycle policy in `CONTRIBUTING.md` §6 and `AGENTS.md`.
+## 2. Blockers & Risks (4a)
+- None. Risk: if `dev` has branch protection that requires PRs, the bot push fails; earlier bot pushes from `cleanup-traces.yml` (e.g. `333caf3`) suggest it does not.
 
----
+## 3. Quick Wins (4b)
+- `[skip ci]` on the bot commit; `workflow_dispatch` for manual runs; `touch .gitkeep` keeps the directory tracked.
 
-## 2. 4a Blockers
-- None.
-
----
-
-## 3. 4b Quick Wins
-- Added `[skip ci]` to the automated cleanup commit to prevent unnecessary CI triggering on `dev`.
-- Added `workflow_dispatch` to `.github/workflows/cleanup-branch-notes.yml` for manual execution when needed.
-- Pruned obsolete untracked branch notes from prior merged branches in the working tree.
-
----
-
-## 4. 4c Deferred Items
-- #219: `refactor(rooms): Split Finished into between-rounds and game-over states`.
-- #218: `fix(auth): Revisit auth token storage and refresh`.
-- #215: Render dev database connection update and active room persistence (pending manual dashboard configuration).
-- Manual: Watch the first `Cleanup Branch Notes on Dev` run after this PR merges to confirm the bot push to `dev` succeeds and this file is removed.
-- Manual: #220 closes on promotion to `main` (GitHub ignores `fixes #220` on `dev`); close it manually if needed sooner.
-
----
-
-## 5. Verification
-- Validated `.github/workflows/cleanup-branch-notes.yml` syntax via `js-yaml`.
-- Executed the prune commands against a throwaway git repo (top-level and nested notes plus `.gitkeep`): notes and the empty subfolder were deleted, `.gitkeep` was kept, and `git status --porcelain` reported only the deletions.
-- Not yet verified on GitHub: the bot push to `dev` happens only after merge; prior bot pushes from the removed `cleanup-traces.yml` (e.g. `333caf3`) show the token can push. See the 4c item for the first-run check.
-- Backend tests and the frontend build are unaffected by this change (no app code touched).
-- Checked documentation links and formatting.
+## 4. Deferred Items (4c)
+- CI check that fails PRs into `main` that add files under `docs/branch-notes/` (enforces the hotfix rule).
+- Reword the `feature-tracking` skill's Persistence line in `higherkey/ai-standards` to "pruned on `dev`, never reaches `staging`/`main`".
+- Manual: watch the first `Cleanup Branch Notes on Dev` run after merge; it should delete this file.
+- Manual: #220 auto-closes only on promotion to `main`; close it by hand if wanted sooner.
