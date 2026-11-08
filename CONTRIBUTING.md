@@ -58,7 +58,8 @@ All commit messages and PR titles must follow **Conventional Commits** using **I
 ### 6. Branch Notes & Lifecycle Policy
 - **Feature & Working Branches**: Work on prefixed branches (`feat/`, `fix/`, `chore/`, etc.) requires maintaining a running Branch Notes doc at `docs/branch-notes/[normalized-branch-name]-notes.md` with sections: Discoveries & Deviations, Blockers & Risks (4a), Quick Wins (4b), and Deferred Items (4c).
 - **PRs & `dev`**: Branch notes provide review context for PRs and are preserved on `dev` while the release bundle is accumulated.
-- **Production (`main`) Cleanup**: When changes are merged or promoted to `main`, the automated workflow [`.github/workflows/cleanup-branch-notes.yml`](.github/workflows/cleanup-branch-notes.yml) prunes transient branch notes from `docs/branch-notes/` (retaining `.gitkeep`), ensuring production documentation remains clean.
+- **Production (`main`) Cleanup**: The automated workflow [`.github/workflows/cleanup-branch-notes.yml`](.github/workflows/cleanup-branch-notes.yml) prunes transient branch notes from `docs/branch-notes/` (retaining `.gitkeep`) on every push to `main`, including hotfixes, ensuring production documentation remains clean.
+- **Back-merge `main` into `dev` after every promotion**: The cleanup runs only on `main`, so `dev` never prunes its own notes. Merge `main` back into `dev` immediately after each promotion so the cleanup commit (and its deletions) reaches `dev`. Skipping this lets already-promoted notes pile up on `dev` and causes modify/delete conflicts at the next promotion if a pruned note is edited on `dev` in the meantime. Promote with a merge commit, not a fast-forward, because `main` carries the bot's cleanup commit.
 - **Local Exclusions (Contribution Mode)**: External contributors may configure `/docs/branch-notes/` in `.git/info/exclude` to keep transient notes local without committing them upstream.
 
 ## ⚖️ License and CLA
