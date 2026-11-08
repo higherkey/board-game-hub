@@ -127,5 +127,4 @@ Run commands from repo root unless noted.
 - Shared skills in [`higherkey/ai-standards`](https://github.com/higherkey/ai-standards) (`skills/`): `github-commands`, `sonarqube-review`, `peer-review-with-quality`, `testing-workflow`, and `feature-tracking` replace the former `.agent/workflows/*.md` files.
 - Branch Notes (`docs/branch-notes/[normalized-branch-name]-notes.md`, per the `feature-tracking` skill):
   - **MANDATORY**: Running branch notes document required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`). Sections: Discoveries & Deviations, Blockers & Risks (4a), Quick Wins (4b), Deferred Items (4c).
-  - Merged branch notes on `main` are automatically pruned by [`.github/workflows/cleanup-branch-notes.yml`](.github/workflows/cleanup-branch-notes.yml) on every push to `main` (promotions and hotfixes).
-  - After each `dev` → `main` promotion (via merge commit), merge `main` back into `dev` so the pruning reaches `dev` and avoids modify/delete conflicts at the next promotion.
+  - Merged branch notes are automatically pruned on `dev` by [`.github/workflows/cleanup-branch-notes.yml`](.github/workflows/cleanup-branch-notes.yml), so they never reach `staging` or `main` and `main` gets no bot commits. Remove notes from `hotfix/` branches before merging them into `main`.
