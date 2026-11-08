@@ -13,6 +13,8 @@
 - Untracked local notes accumulated in developer environments because there was no unified policy or dedicated automation for `main`.
 - Created `.github/workflows/cleanup-branch-notes.yml` to automatically remove all files in `docs/branch-notes/` except `.gitkeep` on `push` to `main`.
 - Documented the branch notes lifecycle policy in `CONTRIBUTING.md` and `AGENTS.md`.
+- Added branch guard `if: github.ref == 'refs/heads/main'` and hardcoded push target `origin main` to prevent accidental manual `workflow_dispatch` triggers on `dev` or feature branches from deleting non-main branch notes.
+- Added explicit `touch docs/branch-notes/.gitkeep` prior to staging to ensure directory tracking is never lost even if `.gitkeep` was missing.
 
 ---
 
@@ -36,6 +38,8 @@
 ---
 
 ## 5. Verification
-- Validated `.github/workflows/cleanup-branch-notes.yml` syntax.
-- Verified file pruning logic with `.gitkeep` preservation.
+- Validated `.github/workflows/cleanup-branch-notes.yml` syntax via `js-yaml`.
+- Verified file pruning logic with `.gitkeep` preservation and directory retention.
+- Re-ran complete backend test suite (352 passed, 0 failed).
+- Verified Angular frontend build (`npm --prefix frontend run build`).
 - Checked documentation links and formatting.
