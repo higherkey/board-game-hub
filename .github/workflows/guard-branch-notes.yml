@@ -1,0 +1,33 @@
+name: Guard Branch Notes
+
+# Branch notes are pruned on dev (cleanup-branch-notes.yml) and must never be
+# promoted. Fail any PR into staging or main whose merged result still holds
+# notes: a hotfix that kept its notes, or a promotion opened before the dev
+# cleanup finished. The PR keeps the notes in its diff for reference.
+
+on:
+  pull_request:
+    branches:
+      - staging
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: No Branch Notes in Promotions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout merge result
+        uses: actions/checkout@v4
+
+      - name: Fail if branch notes are present
+        run: |
+          notes=$(git ls-tree -r --name-only HEAD -- docs/branch-notes/ | grep -v '/\.gitkeep$' || true)
+          if [ -n "$notes" ]; then
+            echo "::error::Branch notes must not reach staging or main. Remove these files (or wait for the dev cleanup to finish) and push again:"
+            echo "$notes"
+            exit 1
+          fi
+          echo "No branch notes in the merge result."

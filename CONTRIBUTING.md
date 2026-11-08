@@ -59,7 +59,7 @@ All commit messages and PR titles must follow **Conventional Commits** using **I
 - **Feature & Working Branches**: Work on prefixed branches (`feat/`, `fix/`, `chore/`, etc.) requires maintaining a running Branch Notes doc at `docs/branch-notes/[normalized-branch-name]-notes.md` with sections: Discoveries & Deviations, Blockers & Risks (4a), Quick Wins (4b), and Deferred Items (4c).
 - **PRs**: Branch notes provide review context in the PR diff and history; they are not kept on long-lived branches.
 - **`dev` Cleanup**: On every push to `dev`, the automated workflow [`.github/workflows/cleanup-branch-notes.yml`](.github/workflows/cleanup-branch-notes.yml) prunes merged branch notes from `docs/branch-notes/` (retaining `.gitkeep`). Notes are therefore already gone when `dev` is promoted to `staging` and `main`, so `main` never receives notes or a bot commit of its own and stays an ancestor of `dev`.
-- **Hotfixes**: Remove the hotfix branch's notes before merging it into `main`; the PR keeps them for reference.
+- **Promotion Guard**: [`.github/workflows/guard-branch-notes.yml`](.github/workflows/guard-branch-notes.yml) fails any PR into `staging` or `main` whose merge result still contains branch notes (for example a hotfix that kept its notes, or a promotion opened before the `dev` cleanup finished). Remove the files and push again; the PR keeps them for reference.
 - **Local Exclusions (Contribution Mode)**: External contributors may configure `/docs/branch-notes/` in `.git/info/exclude` to keep transient notes local without committing them upstream.
 
 ## ⚖️ License and CLA
