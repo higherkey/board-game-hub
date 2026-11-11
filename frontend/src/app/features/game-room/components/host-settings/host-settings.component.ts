@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,6 +19,7 @@ import { GameComboboxComponent } from '../game-combobox/game-combobox.component'
 })
 export class HostSettingsComponent implements OnChanges, OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toastService = inject(ToastService);
   @Input() roomCode!: string;
   @Input() currentGameType: string | undefined = 'None';
   @Input() compactMode = false;
@@ -222,26 +224,25 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     this.signalRService.updateUndoSettings(this.undoSettings);
   }
 
-  async startGame(event?: MouseEvent) {
+  /** A new game may start only when every player is ready, or the host forced room readiness (#66). */
+  get canStartNewGame(): boolean {
+    if (this.isHostOverride) return true;
     const playersOnly = this.players.filter(p => !p.isScreen);
-    const readyPlayers = playersOnly.filter(p => p.isReady).length;
-    const totalPlayers = playersOnly.length;
+    return playersOnly.length > 0 && playersOnly.every(p => p.isReady);
+  }
 
-    if (totalPlayers === 0) {
+  startGame(event?: MouseEvent) {
+    const playersOnly = this.players.filter(p => !p.isScreen);
+
+    if (playersOnly.length === 0) {
       alert('Cannot start the game! No players in the room.');
       return;
     }
 
-    // Relaxed Start: Show confirmation if not everyone is ready
-    if (readyPlayers < totalPlayers) {
-      const confirmed = await this.confirmService.confirm({
-        title: 'Players Not Ready!',
-        message: 'Some players haven\'t readied up yet. Starting now might leave them out or cause issues.',
-        confirmLabel: 'START ANYWAY',
-        cancelLabel: 'WAIT FOR OTHERS'
-      }, event);
-
-      if (!confirmed) return;
+    // Starting a new game requires readiness or the host override; next rounds are not gated.
+    if (!this.isIntermission && !this.canStartNewGame) {
+      this.toastService.showWarning('Waiting for players to ready up. Use "Force Room Ready" on the Table to start anyway.');
+      return;
     }
 
     this.confirmStart(event);

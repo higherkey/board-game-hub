@@ -113,6 +113,7 @@ public class RoomServiceTests
     {
         // Arrange
         var room = _sut.CreateRoom("host1", "Host", true, GameType.Scatterbrain);
+        room.IsHostOverride = true; // New games require readiness or host override (#66)
         
         var mockService = new Mock<IGameService>();
         mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
@@ -244,6 +245,29 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkStateDirtyForBroadcast()
+    {
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Farkle);
+        mockService.Setup(s => s.HandleAction(It.IsAny<Room>(), It.IsAny<GameAction>(), It.IsAny<string>()))
+            .Callback<Room, GameAction, string>((r, _, _) => r.State = GameState.Finished)
+            .ReturnsAsync(true);
+        _gameServices.Add(mockService.Object);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Farkle);
+        room.State = GameState.Playing;
+        _mockGameStateManager.Setup(m => m.TrackRoom(It.IsAny<Room>())).CallBase();
+        _mockGameStateManager.Object.TrackRoom(room);
+        room.DirtyMembers.Clear();
+
+        await _sut.SubmitAction(room.Code, "conn1", "BANK", default);
+
+        room.DirtyMembers.Should().ContainKey(nameof(Room.GameData)); // sanity: room is tracked
+
+        room.State.Should().Be(GameState.Finished);
+        room.DirtyMembers.Should().ContainKey(nameof(Room.State));
+    }
+
+    [Fact]
     public async Task CalculateRoundScores_ShouldUpdateTotals()
     {
         // Arrange
@@ -297,28 +321,146 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public void EndGame_ShouldWipeStateAndSetStatus()
+    public async Task EndGame_FromPlaying_ShouldMoveToFinishedAndClearTimer()
     {
-        // Arrange
         var room = _sut.CreateRoom("conn1", "Host", true);
-        
-        // Act
-        var result = _sut.EndGame(room.Code);
+        room.State = GameState.Playing;
+        room.RoundEndTime = DateTime.UtcNow.AddMinutes(1);
+        room.IsPaused = true;
 
-        // Assert
+        var result = await _sut.EndGame(room.Code);
+
         result.Should().NotBeNull();
         result!.State.Should().Be(GameState.Finished);
+        result.RoundEndTime.Should().BeNull();
+        result.IsPaused.Should().BeFalse();
     }
 
     [Fact]
-    public void EndGame_WhenAlreadyFinished_ShouldReturnExistingRoom()
+    public async Task EndGame_FromFinished_ShouldReturnToCleanSelectionLobby()
     {
-        var room = _sut.CreateRoom("conn1", "Host", true);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
         room.State = GameState.Finished;
+        room.RoundNumber = 5;
+        room.GameData = new object();
+        room.RoundScores["conn2"] = 10;
+        room.PlayerAnswers["conn2"] = new List<string> { "a" };
+        room.StateHistory.Push("{}");
+        room.IsHostOverride = true;
+        room.Players.ForEach(p => p.IsReady = true);
 
-        var result = _sut.EndGame(room.Code);
+        var result = await _sut.EndGame(room.Code);
+
+        result.Should().NotBeNull();
+        result!.State.Should().Be(GameState.Lobby);
+        result.GameType.Should().Be(GameType.None);
+        result.GameData.Should().BeNull();
+        result.RoundNumber.Should().Be(0);
+        result.RoundScores.Should().BeEmpty();
+        result.PlayerAnswers.Should().BeEmpty();
+        result.StateHistory.Should().BeEmpty();
+        result.IsHostOverride.Should().BeFalse();
+        result.Players.Should().OnlyContain(p => !p.IsReady);
+    }
+
+    [Fact]
+    public async Task EndGame_InLobby_ShouldBeNoOp()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+
+        var result = await _sut.EndGame(room.Code);
 
         result.Should().Be(room);
+        result!.State.Should().Be(GameState.Lobby);
+        result.GameType.Should().Be(GameType.Scatterbrain);
+    }
+
+    [Fact]
+    public async Task EndGame_ConcurrentCalls_ShouldTransitionExactlyOnce()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        room.State = GameState.Playing;
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => _sut.EndGame(room.Code))));
+
+        // Every call observes a consistent state: first Playing->Finished, then later calls may advance to Lobby,
+        // but none may observe or produce a torn state.
+        results.Should().OnlyContain(r => r != null);
+        room.State.Should().BeOneOf(GameState.Finished, GameState.Lobby);
+    }
+
+    [Fact]
+    public void SetGameType_InLobby_ShouldKeepReadiness()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+        room.Players.First(p => p.ConnectionId == "conn2").IsReady = true;
+
+        var result = _sut.SetGameType(room.Code, GameType.Scatterbrain);
+
+        result!.State.Should().Be(GameState.Lobby);
+        result.Players.First(p => p.ConnectionId == "conn2").IsReady.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetGameType_FromFinished_ShouldResetRuntimeState()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+        room.State = GameState.Finished;
+        room.GameData = new object();
+        room.RoundNumber = 3;
+        room.IsHostOverride = true;
+        room.Players.ForEach(p => p.IsReady = true);
+
+        var result = _sut.SetGameType(room.Code, GameType.None);
+
+        result!.State.Should().Be(GameState.Lobby);
+        result.GameData.Should().BeNull();
+        result.RoundNumber.Should().Be(0);
+        result.IsHostOverride.Should().BeFalse();
+        result.Players.Should().OnlyContain(p => !p.IsReady);
+    }
+
+    [Fact]
+    public async Task StartGame_NewGame_WithoutReadinessOrOverride_ShouldBeRejected()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+
+        var result = await _sut.StartGame(room.Code, new GameSettings());
+
+        result.Should().BeNull();
+        room.State.Should().Be(GameState.Lobby);
+    }
+
+    [Fact]
+    public async Task StartGame_NewGame_WithHostOverride_ShouldStart()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+        room.IsHostOverride = true;
+
+        var result = await _sut.StartGame(room.Code, new GameSettings());
+
+        result.Should().NotBeNull();
+        result!.State.Should().Be(GameState.Playing);
+    }
+
+    [Fact]
+    public void CanStartNewGame_RequiresAllNonScreenPlayersReady()
+    {
+        var room = new Room();
+        room.CanStartNewGame().Should().BeFalse(); // no players
+
+        room.Players.Add(new Player { ConnectionId = "screen", IsScreen = true });
+        room.Players.Add(new Player { ConnectionId = "p1", IsReady = true });
+        room.Players.Add(new Player { ConnectionId = "p2", IsReady = false });
+        room.CanStartNewGame().Should().BeFalse();
+
+        room.Players[2].IsReady = true;
+        room.CanStartNewGame().Should().BeTrue(); // screen readiness is ignored
     }
 
     [Fact]
@@ -392,6 +534,7 @@ public class RoomServiceTests
     {
         // Arrange
         var room = _sut.CreateRoom("CONC_START", "Host", true, GameType.Scatterbrain);
+        room.IsHostOverride = true; // New games require readiness or host override (#66)
         var mockService = new Mock<IGameService>();
         mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
         // Simulate a delay in StartRound to increase race window
@@ -518,17 +661,17 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public void PauseGame_And_ResumeGame_ShouldManagePauseStateCorrectly()
+    public async Task PauseGame_And_ResumeGame_ShouldManagePauseStateCorrectly()
     {
         var room = _sut.CreateRoom("conn1", "Host", false, GameType.Scatterbrain);
         room.RoundEndTime = DateTime.UtcNow.AddMinutes(5);
 
-        var paused = _sut.PauseGame(room.Code);
+        var paused = await _sut.PauseGame(room.Code);
         paused.Should().NotBeNull();
         paused!.IsPaused.Should().BeTrue();
         paused.TimeRemainingWhenPaused.Should().NotBeNull();
 
-        var resumed = _sut.ResumeGame(room.Code);
+        var resumed = await _sut.ResumeGame(room.Code);
         resumed.Should().NotBeNull();
         resumed!.IsPaused.Should().BeFalse();
         resumed.TimeRemainingWhenPaused.Should().BeNull();

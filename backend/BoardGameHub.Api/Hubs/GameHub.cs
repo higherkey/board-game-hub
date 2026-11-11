@@ -96,6 +96,11 @@ public class GameHub : Hub
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
 
+        if (existingRoom.State == GameState.Lobby && !existingRoom.CanStartNewGame())
+        {
+            throw new HubException("Cannot start yet: every player must be ready, or the host must force room ready.");
+        }
+
         var room = await _roomService.StartGame(roomCode, settings);
         if (room != null)
         {
@@ -115,41 +120,39 @@ public class GameHub : Hub
         }
     }
 
-    public Task PauseGame(string roomCode)
+    public async Task PauseGame(string roomCode)
     {
         var existingRoom = _roomService.GetRoom(roomCode);
-        if (existingRoom == null) return Task.CompletedTask;
+        if (existingRoom == null) return;
         EnsureHost(existingRoom);
 
-        _roomService.PauseGame(roomCode);
-        return Task.CompletedTask;
+        await _roomService.PauseGame(roomCode);
     }
 
-    public Task ResumeGame(string roomCode)
+    public async Task ResumeGame(string roomCode)
     {
         var existingRoom = _roomService.GetRoom(roomCode);
-        if (existingRoom == null) return Task.CompletedTask;
+        if (existingRoom == null) return;
         EnsureHost(existingRoom);
 
-        _roomService.ResumeGame(roomCode);
-        return Task.CompletedTask;
+        await _roomService.ResumeGame(roomCode);
     }
 
-    public Task EndGame(string roomCode)
+    public async Task EndGame(string roomCode)
     {
         var existingRoom = _roomService.GetRoom(roomCode);
-        if (existingRoom == null) return Task.CompletedTask;
+        if (existingRoom == null) return;
         EnsureHost(existingRoom);
 
-        var room = _roomService.EndGame(roomCode);
-        if (room != null && room.IsPublic && room.State == GameState.Finished)
+        var room = await _roomService.EndGame(roomCode);
+        if (room == null || room.State != GameState.Lobby) return;
+
+        // Ending from the results screen returns everyone to game selection (#79).
+        await Clients.Group(roomCode.ToUpper()).SendAsync("GameTypeChanged", room.GameType.ToString());
+        if (room.IsPublic)
         {
-             // Finished rooms are not public? 
-             // GetPublicRooms filters r.State == GameState.Lobby.
-             // So if it was Playing (not public) and becomes Finished (not public), no change.
-             // If we ever support seeing Finished games, we'd need an update.
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
         }
-        return Task.CompletedTask;
     }
 
     public async Task SetGameType(string roomCode, string gameType)

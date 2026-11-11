@@ -13,7 +13,7 @@ services:
       - key: ASPNETCORE_URLS
         value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
-        sync: false # Set in Render Dashboard (Neon Prod)
+        sync: false # Set in Render Dashboard (Supabase prod project)
       - key: Jwt__Key
         sync: false # Set in Render Dashboard
       - key: TurnServer__Url
@@ -37,7 +37,7 @@ services:
       - key: ASPNETCORE_URLS
         value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
-        sync: false # Set in Render Dashboard (Neon Dev)
+        sync: false # Set in Render Dashboard (Neon Dev — same database as NEON_CONNECTION_STRING_DEV used by CI migrations)
       - key: Jwt__Key
         sync: false # Set in Render Dashboard
       - key: TurnServer__Url
@@ -61,7 +61,7 @@ services:
       - key: ASPNETCORE_URLS
         value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
-        sync: false # Set in Render Dashboard (Neon Staging / Dev fallback)
+        sync: false # Set in Render Dashboard (Supabase staging, falls back to Supabase dev)
       - key: Jwt__Key
         sync: false # Set in Render Dashboard
       - key: TurnServer__Url

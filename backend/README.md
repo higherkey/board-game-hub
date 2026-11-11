@@ -53,7 +53,7 @@ Migrations are managed **out-of-band** from the API startup process.
 On every push to `main`, `staging`, or `dev`, the backend deployment workflow (`.github/workflows/deploy-backend-render.yml`) does the following **before** triggering Render deployment:
 
 1. Generates a self-contained **EF Core Migration Bundle** (`efbundle`) from all migrations in source.
-2. Runs the bundle against the target Neon PostgreSQL database using the branch-appropriate connection string.
+2. Runs the bundle against the branch's database: Supabase for `main` and `staging` (`SUPABASE_CONNECTION_STRING_PROD` / `_STAGING`), Neon for `dev` (`NEON_CONNECTION_STRING_DEV`).
 3. Only then triggers deployment on Render.
 
 This guarantees the schema is always up-to-date before new code runs. The `efbundle` binary is a transient build artifact — **do not commit it**.

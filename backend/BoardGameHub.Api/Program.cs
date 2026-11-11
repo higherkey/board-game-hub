@@ -129,6 +129,18 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 20;
     });
+
+    // Per-client throttle for the anonymous client log endpoint (ClientLoggingController).
+    options.AddPolicy("ClientLoggingLimiter", httpContext =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
 builder.Services.AddSingleton<IRoomService>(sp => new RoomService(
@@ -136,7 +148,10 @@ builder.Services.AddSingleton<IRoomService>(sp => new RoomService(
     sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub>>(),
     sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub>>(),
     sp.GetRequiredService<GameStateManager>(),
-    sp.GetRequiredService<ILogger<RoomService>>()
+    sp.GetRequiredService<ILogger<RoomService>>(),
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    sp.GetRequiredService<IRoomPersistenceService>(),
+    sp.GetRequiredService<IRoomStateSerializer>()
 ));
 builder.Services.AddSingleton<IBabbleService, BabbleService>();
 builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
@@ -167,12 +182,24 @@ builder.Services.AddSingleton<IRoomStateSerializer, RoomStateSerializer>();
 builder.Services.AddSingleton<GameStateManager>(sp => new GameStateManager(
     sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub>>(),
     sp.GetRequiredService<StateDiffService>(),
-    sp.GetRequiredService<ILogger<GameStateManager>>()
+    sp.GetRequiredService<ILogger<GameStateManager>>(),
+    sp.GetRequiredService<IRoomPersistenceService>(),
+    sp.GetRequiredService<IRoomStateSerializer>()
 ));
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GameStateManager>());
 
 // Room Persistence Engine
-builder.Services.AddSingleton<RoomPersistenceWorker>();
+// Dependency graph must stay acyclic: RoomService -> GameStateManager -> RoomPersistenceWorker.
+// The worker is built with its lean constructor and resolves IRoomService/GameStateManager lazily
+// (per scope) when it rehydrates or cleans up, so it never depends on them at construction time.
+// Do NOT switch this to AddSingleton<RoomPersistenceWorker>(): MS DI would pick the greedy constructor
+// and reintroduce the RoomService <-> RoomPersistenceWorker cycle that hung startup (#213, #214).
+builder.Services.AddSingleton(sp => new RoomPersistenceWorker(
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    sp.GetRequiredService<IRoomStateSerializer>(),
+    sp.GetServices<IGameService>(),
+    sp.GetRequiredService<ILogger<RoomPersistenceWorker>>()
+));
 builder.Services.AddSingleton<IRoomPersistenceService>(sp => sp.GetRequiredService<RoomPersistenceWorker>());
 if (!string.Equals(builder.Configuration["Testing:DisablePersistenceWorker"], "true", StringComparison.OrdinalIgnoreCase))
 {
@@ -227,6 +254,9 @@ using (var scope = app.Services.CreateScope())
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// Health check endpoint for Render / uptime monitoring and the frontend cold-start warmup (#191).
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 // Redirect root to admin dashboard
 app.MapGet("/", () => Results.Redirect("/admin"));
