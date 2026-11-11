@@ -12,7 +12,8 @@
 ## Quick Wins (4b)
 - None outstanding.
 
+- SonarCloud failed the PR on 0% new-code coverage; resolved by adding `design-concept.component.spec.ts` (10 specs, ~95% line coverage).
+
 ## Deferred Items (4c)
-- Add a unit spec for `DesignConceptComponent` (render, reduced-motion static mode, pause toggle).
 - Swap emoji in the Host picker for real game icons.
 - Promote the concept into `home-page` once approved and delete the legacy keyframe showcase.
