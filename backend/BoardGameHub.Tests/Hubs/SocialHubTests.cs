@@ -58,6 +58,46 @@ public class SocialHubTests
         _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", new object[] { "user123", "Global hello!" }, default), Times.Once);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SendMessage_TooLong_ThrowsAndDoesNotSave(bool global)
+    {
+        var message = new string('a', SocialHub.MaxMessageLength + 1);
+
+        var act = () => global ? _sut.SendGlobalMessage(message) : _sut.SendMessage("target123", message);
+
+        await act.Should().ThrowAsync<HubException>().WithMessage("Message is too long.");
+        _mockSocialService.Verify(s => s.SaveChatMessage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SendMessage_Whitespace_IsIgnored(bool global)
+    {
+        if (global) await _sut.SendGlobalMessage("   ");
+        else await _sut.SendMessage("target123", "   ");
+
+        _mockSocialService.Verify(s => s.SaveChatMessage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SendMessage_AtMaxLength_IsSaved(bool global)
+    {
+        var message = new string('a', SocialHub.MaxMessageLength);
+
+        if (global) await _sut.SendGlobalMessage(message);
+        else await _sut.SendMessage("target123", message);
+
+        if (global) _mockSocialService.Verify(s => s.SaveGlobalMessage("user123", message), Times.Once);
+        else _mockSocialService.Verify(s => s.SaveChatMessage("user123", "target123", message), Times.Once);
+    }
+
     [Fact]
     public async Task SendFriendRequest_ShouldSendAndBroadcast()
     {

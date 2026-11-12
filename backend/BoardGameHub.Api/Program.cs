@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -118,23 +119,41 @@ builder.Services.AddSignalR()
         options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
+// Behind Render's proxy the socket address is the proxy, so resolve the client IP from X-Forwarded-For.
+// ForwardLimit = 1 takes only the right-most address (the one Render's proxy appended), so any
+// client-supplied values to its left are ignored.
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.ForwardLimit = 1;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddSlidingWindowLimiter("HubRateLimit", opt =>
-    {
-        opt.PermitLimit = 100;
-        opt.Window = TimeSpan.FromSeconds(10);
-        opt.SegmentsPerWindow = 5;
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 20;
-    });
+    // Rate limits are partitioned per client IP (resolved by the forwarded-headers middleware).
+    static string ClientKey(HttpContext httpContext) =>
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    options.AddPolicy("HubRateLimit", httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            ClientKey(httpContext),
+            _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromSeconds(10),
+                SegmentsPerWindow = 5,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 20
+            }));
 
     // Per-client throttle for the anonymous client log endpoint (ClientLoggingController).
     options.AddPolicy("ClientLoggingLimiter", httpContext =>
-        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+        RateLimitPartition.GetFixedWindowLimiter(
+            ClientKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
@@ -233,6 +252,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Must run first so rate limiting, CORS and logging see the real client address.
+app.UseForwardedHeaders();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -272,7 +294,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<GameHub>("/gamehub").RequireRateLimiting("HubRateLimit");
-app.MapHub<SocialHub>("/socialhub");
+app.MapHub<SocialHub>("/socialhub").RequireRateLimiting("HubRateLimit");
 app.MapHub<AdminHub>("/adminhub")
     .RequireRateLimiting("HubRateLimit")
     .RequireAuthorization(p => p.RequireRole("Admin"));

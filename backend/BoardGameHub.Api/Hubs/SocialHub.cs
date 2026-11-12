@@ -9,6 +9,8 @@ namespace BoardGameHub.Api.Hubs;
 [Authorize]
 public class SocialHub : Hub
 {
+    public const int MaxMessageLength = 500;
+
     private readonly ISocialService _socialService;
 
     public SocialHub(ISocialService socialService)
@@ -21,6 +23,9 @@ public class SocialHub : Hub
         var senderId = Context.UserIdentifier;
         if (string.IsNullOrEmpty(senderId)) return;
 
+        if (string.IsNullOrWhiteSpace(message)) return;
+        if (message.Length > MaxMessageLength) throw new HubException("Message is too long.");
+
         await _socialService.SaveChatMessage(senderId, targetUserId, message);
         await Clients.User(targetUserId).SendAsync("ReceiveMessage", senderId, message);
     }
@@ -29,6 +34,9 @@ public class SocialHub : Hub
     {
         var senderId = Context.UserIdentifier;
         if (string.IsNullOrEmpty(senderId)) return;
+
+        if (string.IsNullOrWhiteSpace(message)) return;
+        if (message.Length > MaxMessageLength) throw new HubException("Message is too long.");
 
         await _socialService.SaveGlobalMessage(senderId, message);
         await Clients.All.SendAsync("ReceiveGlobalMessage", senderId, message);
