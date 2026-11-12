@@ -1,34 +1,26 @@
-# Four in a Row Game Flow
+# Four in a Row
 
-## 1. Game Setup (Lobby)
-- **Host**: Selects "Four in a Row".
-- **Players**: 2 Players (1v1).
-- **Start**: Click "Start Game".
+Two Hand players play an untimed match on a 7 × 6 board. Any shared Table is a read-only display and does not take a player slot. The first Hand is Red (1), the second Yellow (2).
 
-## 2. Gameplay Phase
-- **Grid**: 7 Columns x 6 Rows. Vertical Gravity.
-- **State**: `phase = Playing`.
-- **View**:
-    - **Board**: Shows grid with Red/Yellow tokens.
-    - **Active Player**: Indicated.
-- **Action**:
-    - **Active Player**: Clicks a Column.
-    - **Animation**: Token drops to lowest empty slot.
-    - **Switch**: Turn passes to opponent.
+## Flow
 
-## 3. Win Condition
-- **Check**: After every move.
-- **Rules**: 4 consecutive tokens (Horizontal, Vertical, Diagonal).
-- **Win**:
-    - **Winner**: Highlight winning line.
-    - **Draw**: Grid full, no winner.
+1. Select Four in a Row in the lobby, join two Hands, mark both ready, and start.
+2. The active Hand chooses a numbered column. The disc falls to its lowest empty cell. Full columns are disabled; the server rejects malformed, unauthorized, paused, and out-of-turn drops.
+3. Four adjacent discs horizontally, vertically, or along either diagonal win. The Table and both Hands highlight the winning line. A full board with no line is a draw.
+4. A win awards one point once, records round scores, and moves the room to Finished. A draw awards zero points. Generic timer/score requests cannot finish an unresolved board.
+5. Room controls can start the next match or return everyone to game selection. A new match clears the board and round scores; session totals follow the platform's new-game/next-round behavior.
 
-## 4. Game End
-- **View**: Victory Screen.
-- **Action**: Host clicks "Play Again".
+## Contract
 
----
+- Action: `DROP`, payload `{ "column": 0 }` (zero-based, 0–6).
+- Grid is column-major: `grid[column][row]`; row zero is at the top. Values: 0 empty, 1 Red, 2 Yellow.
+- State includes `phase` (`Playing`/`GameOver`), `playerOrder`, `currentPlayerId`, `winnerId`, `moveCount`, `lastMove`, and `winningCells`.
+- Reconnects rebind turn, winner, player order and round-score IDs while preserving disc colors. Undo history from before a reconnect is discarded because its snapshots contain old connection IDs; new moves remain undoable. Undoing a scored move restores the previous totals.
+- Catalog status becomes Testing through the accompanying EF migration; apply it using the normal deployment migration workflow.
 
-# Implementation Notes
-- **Gravity Logic**: Essential. `Row = max(filled) + 1`.
-- **Win Check**: O(1) or O(Grid) check after move.
+## Verification
+
+- Backend: `dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj --collect:"XPlat Code Coverage"`.
+- Frontend: `npm --prefix frontend test -- --watch=false --browsers=ChromeHeadlessNoSandbox`.
+- Live transport: start a disposable local API with `ConnectionStrings__DefaultConnection=InMemoryFourInARow`, then from `frontend/` run `npx playwright test e2e/games/four-in-a-row-realtime.spec.ts --project=chromium`. Override `BGH_API_URL` for a different local API port. This test uses real SignalR clients and needs no browser.
+- Visually check Table/Hand layout, keyboard column selection, reduced motion and touch targets at 360px, 768px, 1024px and 1440px.

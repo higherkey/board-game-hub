@@ -282,6 +282,9 @@ public class RoomService : IRoomService, IDisposable
         room.PlayerAnswers.RebindKey(oldConnectionId, newConnectionId);
         room.NextGameVotes.RebindKey(oldConnectionId, newConnectionId);
 
+        // Snapshots contain connection-bound IDs; older actions cannot safely be restored after a rebind.
+        room.StateHistory.Clear();
+
         // Rebind game-specific service state
         var gameService = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         gameService?.RebindPlayer(room, oldConnectionId, newConnectionId);
@@ -663,6 +666,10 @@ public class RoomService : IRoomService, IDisposable
         await room.StateLock.WaitAsync();
         try
         {
+            // Validate before changing room state, scores or round data, including host overrides.
+            if (room.GameType == GameType.FourInARow && room.Players.Count(p => !p.IsScreen) != 2)
+                return null;
+
             // A brand-new game from the lobby requires readiness or the host override (#66).
             if (settings != null && room.State == GameState.Lobby && !room.CanStartNewGame())
             {
@@ -1223,6 +1230,12 @@ public class RoomService : IRoomService, IDisposable
             currentRoom.GameData = oldState.GameData; // This is the big one (JsonElement or Object)
             currentRoom.RoundScores = oldState.RoundScores;
             currentRoom.PlayerAnswers = oldState.PlayerAnswers;
+            // Keep live connections and roles, but restore totals along with the scored board.
+            foreach (var player in currentRoom.Players)
+            {
+                var previous = oldState.Players.FirstOrDefault(p => p.ConnectionId == player.ConnectionId);
+                if (previous != null) player.Score = previous.Score;
+            }
             
             // Re-assign generic GameData requires careful deserialization if it became JsonElement
             if (currentRoom.GameData is JsonElement jsonElement)

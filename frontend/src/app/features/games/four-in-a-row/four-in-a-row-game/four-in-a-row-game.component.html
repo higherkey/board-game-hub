@@ -1,26 +1,17 @@
-<div class="four-in-a-row-container w-full h-full flex flex-col relative overflow-hidden bg-gray-900 text-white">
-    <!-- Rules Overlay -->
-    <app-four-in-a-row-rules *ngIf="showRules" (closeRules)="showRules = false">
-    </app-four-in-a-row-rules>
-
-    <!-- Header -->
-    <div class="p-2 bg-gray-800 flex justify-between items-center shrink-0 border-b border-gray-700">
-        <div class="flex items-center gap-4">
-            <span class="font-bold text-lg text-primary">FOUR IN A ROW</span>
-            <button (click)="showRules = true"
-                class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded border border-gray-600 transition-colors">
-                Help/Rules
-            </button>
-        </div>
-        <span class="text-sm opacity-75">Round {{room.roundNumber}}</span>
+<section class="four-game">
+    <header>
+        <h2>Four in a Row</h2>
+        <button type="button" (click)="showRules = !showRules" [attr.aria-expanded]="showRules">{{ showRules ? 'Hide rules' : 'How to play' }}</button>
+    </header>
+    <app-four-in-a-row-rules *ngIf="showRules" (closeRules)="showRules = false" />
+    <p class="status" role="status" aria-live="polite">{{ status }}</p>
+    <div class="players" aria-label="Players">
+        <span *ngFor="let id of room?.gameData?.playerOrder; let index = index"
+            [class.active]="id === room?.gameData?.currentPlayerId">
+            <strong>{{ index === 0 ? 'Red · 1' : 'Yellow · 2' }}</strong> {{ playerName(id) }}{{ id === myConnectionId ? ' (you)' : '' }}
+        </span>
     </div>
-
-    <!-- Main Content -->
-    <div class="flex-grow overflow-hidden relative">
-        <app-four-in-a-row-board *ngIf="isHost" [room]="room">
-        </app-four-in-a-row-board>
-
-        <app-four-in-a-row-player *ngIf="!isHost" [room]="room" [myConnectionId]="myConnectionId">
-        </app-four-in-a-row-player>
-    </div>
-</div>
+    <app-four-in-a-row-board *ngIf="isScreen" [room]="room" />
+    <app-four-in-a-row-player *ngIf="!isScreen" [room]="room" [myConnectionId]="myConnectionId" (columnDrop)="drop($event)" />
+    <p class="end-hint" *ngIf="room?.gameData?.phase === 'GameOver'">Use the room controls to play again or return to the lobby.</p>
+</section>

@@ -18,7 +18,7 @@ public class FourInARowGameServiceTests
     [Fact]
     public async Task StartRound_ShouldInitializeGrid()
     {
-        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" } } };
+        var room = new Room { Players = new List<Player> { new Player { ConnectionId = "p1" }, new Player { ConnectionId = "p2" } } };
         await _sut.StartRound(room, new GameSettings());
         var state = room.GameData as FourInARowState;
         state.Should().NotBeNull();
@@ -26,10 +26,10 @@ public class FourInARowGameServiceTests
     }
 
     [Fact]
-    public async Task EndRound_ShouldSetStateToFinished()
+    public async Task EndRound_ShouldNotFinishUnresolvedBoard()
     {
         var room = new Room { GameData = new FourInARowState() };
         await _sut.EndRound(room);
-        room.State.Should().Be(GameState.Finished);
+        room.State.Should().Be(GameState.Lobby);
     }
 }

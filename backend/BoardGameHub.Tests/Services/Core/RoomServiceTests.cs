@@ -51,6 +51,88 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public async Task FourInARow_UndoWinningDrop_RestoresTotalsBeforeReplay()
+    {
+        _gameServices.Add(new FourInARowGameService());
+        var room = _sut.CreateRoom("red", "Red", false, GameType.FourInARow);
+        _sut.JoinRoom(room.Code, "yellow", "Yellow");
+        room.IsHostOverride = true;
+        await _sut.StartGame(room.Code, new GameSettings());
+        room.Players[0].Score = 5;
+        room.Players[1].Score = 3;
+        foreach (var column in new[] { 0, 6, 1, 6, 2, 5, 3 })
+        {
+            var current = ((FourInARowState)room.GameData!).CurrentPlayerId;
+            await _sut.SubmitAction(room.Code, current, "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column }));
+        }
+        Assert.Equal(6, room.Players[0].Score);
+        var liveRed = room.Players[0];
+        Assert.Same(room, await _sut.RequestUndo(room.Code, "red"));
+        Assert.Same(liveRed, room.Players[0]);
+        Assert.Equal(GameState.Playing, room.State);
+        Assert.Equal(5, liveRed.Score);
+        Assert.Equal(3, room.Players[1].Score);
+        Assert.Empty(room.RoundScores);
+        await _sut.SubmitAction(room.Code, "red", "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column = 3 }));
+        Assert.Equal(GameState.Finished, room.State);
+        Assert.Equal(6, liveRed.Score);
+        Assert.Equal(1, room.RoundScores["red"]);
+    }
+
+    [Fact]
+    public async Task FourInARow_WinReconnectUndo_DiscardsStaleHistoryAndAcceptsNewHistory()
+    {
+        _gameServices.Add(new FourInARowGameService());
+        var room = _sut.CreateRoom("red", "Red", false, GameType.FourInARow);
+        _sut.JoinRoom(room.Code, "yellow", "Yellow");
+        room.IsHostOverride = true;
+        await _sut.StartGame(room.Code, new GameSettings());
+        foreach (var column in new[] { 0, 6, 1, 6, 2, 5, 3 })
+        {
+            var id = ((FourInARowState)room.GameData!).CurrentPlayerId;
+            await _sut.SubmitAction(room.Code, id, "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column }));
+        }
+        var session = room.Players[0].SessionId;
+        Assert.Same(room, _sut.JoinRoom(room.Code, "red-new", "Red", sessionId: session));
+        Assert.Empty(room.StateHistory);
+        Assert.Null(await _sut.RequestUndo(room.Code, "red-new"));
+        Assert.Equal(GameState.Finished, room.State);
+        Assert.Equal(1, room.Players[0].Score);
+        Assert.Equal("red-new", ((FourInARowState)room.GameData!).WinnerId);
+
+        await _sut.StartGame(room.Code);
+        await _sut.SubmitAction(room.Code, "red-new", "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column = 0 }));
+        Assert.Same(room, await _sut.RequestUndo(room.Code, "red-new"));
+        Assert.Equal("red-new", ((FourInARowState)room.GameData!).CurrentPlayerId);
+        Assert.Equal(0, ((FourInARowState)room.GameData!).MoveCount);
+        Assert.Equal(1, room.Players[0].Score);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    public async Task StartFourInARow_InvalidHands_DoesNotPartiallyStart(int count)
+    {
+        _gameServices.Add(new FourInARowGameService());
+        var room = _sut.CreateRoom("host", "Host", true, GameType.FourInARow);
+        for (var i = 1; i < count; i++) _sut.JoinRoom(room.Code, $"p{i}", $"Player {i}");
+        room.IsHostOverride = true;
+        room.Players[0].Score = 7;
+        room.RoundScores["host"] = 2;
+        room.RoundNumber = 4;
+        var originalSettings = room.Settings;
+
+        var result = await _sut.StartGame(room.Code, new GameSettings());
+
+        Assert.Null(result);
+        Assert.Equal(GameState.Lobby, room.State);
+        Assert.Equal(4, room.RoundNumber);
+        Assert.Equal(7, room.Players[0].Score);
+        Assert.Equal(2, room.RoundScores["host"]);
+        Assert.Same(originalSettings, room.Settings);
+    }
+
+    [Fact]
     public void CreateRoom_ShouldCreateRoom_WithCorrectHost()
     {
         // Act

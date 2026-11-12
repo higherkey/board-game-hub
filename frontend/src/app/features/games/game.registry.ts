@@ -85,6 +85,7 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
         tableComponent: WarshipsGameComponent
     },
     'FourInARow': {
+        handComponent: FourInARowGameComponent,
         tableComponent: FourInARowGameComponent
     },
     'Farkle': {
