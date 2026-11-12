@@ -8,7 +8,7 @@ p { margin: 0 0 12px; }
 .turn-badge { padding: 12px; border: 1px solid #bccdc9; white-space: nowrap; font-weight: 700; }
 .play-surface { color: #fff; background: var(--sea); padding: 24px 16px; text-align: center; border-bottom: 5px solid var(--gold); }
 .turn-status p { color: #d2e5e6; }
-.dice-tray { display: flex; justify-content: center; gap: clamp(6px, 2vw, 18px); margin: 24px 0; }
+.dice-tray { border: 0; padding: 0; display: flex; justify-content: center; gap: clamp(6px, 2vw, 18px); margin: 24px 0; }
 .die-slot { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .die { display: grid; place-items: center; min-width: 44px; width: clamp(44px, 10vw, 96px); height: clamp(52px, 11vw, 102px); padding: 0; border: 3px solid transparent; background: #fff9e9; color: var(--ink); font-size: clamp(40px, 8vw, 78px); line-height: 1; box-shadow: 0 5px 0 #0b2c37; transition: transform .15s, border-color .15s; }
 .die.held { border-color: var(--gold); transform: translateY(-6px); background: #ffe3a7; }
@@ -29,6 +29,7 @@ button:focus-visible, summary:focus-visible, .score-scroll:focus-visible { outli
 .category b { font-size: 1.5rem; }
 .category.selected { border: 2px solid var(--sea); background: #e1eeea; }
 .category:disabled { opacity: .6; }
+.score-message { display: block; margin-bottom: 12px; }
 .score-confirm { margin-top: 16px; padding: 16px; background: #e1eeea; border-left: 4px solid var(--sea); }
 .cancel-button { border: 1px solid var(--sea); background: transparent; padding: 10px 16px; margin-left: 8px; color: var(--ink); }
 .score-scroll { overflow-x: auto; }

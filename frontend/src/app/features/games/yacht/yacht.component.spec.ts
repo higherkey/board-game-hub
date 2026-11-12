@@ -44,6 +44,22 @@ describe('YachtComponent', () => {
     expect(transport.submitGameAction).not.toHaveBeenCalled();
   });
 
+  it('rejects null category tombstones from state patches while retaining zero scores', async () => {
+    state.availableScores['Chance'] = null;
+    fixture.componentRef.setInput('room', { ...component.room, gameData: { ...state } });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Sum of all dice');
+    component.chooseCategory('Chance');
+    expect(component.pendingCategory).toBeNull();
+    component.pendingCategory = 'Chance';
+    await component.confirmScore();
+    expect(transport.submitGameAction).not.toHaveBeenCalled();
+    component.ngOnChanges();
+    expect(component.pendingCategory).toBeNull();
+    component.chooseCategory('Yacht');
+    expect(component.pendingCategory).toBe('Yacht');
+  });
+
   it('confirms a zero before committing a category', async () => {
     component.chooseCategory('Yacht');
     fixture.detectChanges();

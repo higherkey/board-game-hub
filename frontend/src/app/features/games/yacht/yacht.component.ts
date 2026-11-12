@@ -46,8 +46,13 @@ export class YachtComponent implements OnChanges {
   get pendingLabel(): string { return this.categories.find(c => c.key === this.pendingCategory)?.label ?? ''; }
   get pendingPoints(): number { return this.state?.availableScores[this.pendingCategory ?? ''] ?? 0; }
 
+  isAvailableCategory(category: string): boolean {
+    // Merge patches retain removed dictionary keys as null; zero remains a legal score.
+    return typeof this.state?.availableScores[category] === 'number';
+  }
+
   ngOnChanges(): void {
-    if (!this.canAct || !Object.hasOwn(this.state?.availableScores ?? {}, this.pendingCategory ?? '')) {
+    if (!this.canAct || !this.isAvailableCategory(this.pendingCategory ?? '')) {
       this.pendingCategory = null;
     }
   }
@@ -64,7 +69,7 @@ export class YachtComponent implements OnChanges {
   }
 
   chooseCategory(category: string): void {
-    if (this.canAct && !this.busy && Object.hasOwn(this.state?.availableScores ?? {}, category)) {
+    if (this.canAct && !this.busy && this.isAvailableCategory(category)) {
       this.pendingCategory = category;
       this.changeDetector.markForCheck();
     }
@@ -72,7 +77,7 @@ export class YachtComponent implements OnChanges {
 
   async confirmScore(): Promise<void> {
     if (!this.canAct || this.busy || !this.pendingCategory ||
-      !Object.hasOwn(this.state?.availableScores ?? {}, this.pendingCategory)) return;
+      !this.isAvailableCategory(this.pendingCategory)) return;
     const category = this.pendingCategory;
     this.pendingCategory = null;
     await this.send('SCORE', { category });

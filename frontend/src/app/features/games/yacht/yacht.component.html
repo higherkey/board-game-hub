@@ -4,11 +4,11 @@
     <span class="turn-badge">Turn {{ game.turnNumber }} / 13</span>
   </header>
 
-  <div class="victory" *ngIf="game.phase === 'GameOver'" role="status">
+  <section class="victory" *ngIf="game.phase === 'GameOver'" aria-label="Final results">
     <span class="eyebrow">FINAL SCORES</span>
-    <h2>{{ winnerNames }} {{ game.winnerIds.length > 1 ? 'tie for the win!' : 'wins!' }}</h2>
+    <h2><output>{{ winnerNames }} {{ game.winnerIds.length > 1 ? 'tie for the win!' : 'wins!' }}</output></h2>
     <p>All scorecards are complete. Ready for another voyage?</p>
-  </div>
+  </section>
 
   <div class="play-surface" *ngIf="game.phase !== 'GameOver'">
     <div class="turn-status" aria-live="polite">
@@ -16,7 +16,8 @@
       <p *ngIf="room.isPaused">Game paused</p>
       <p *ngIf="!room.isPaused">{{ game.rollsUsed === 0 ? 'Roll five dice to get started.' : (3 - game.rollsUsed) + ' rolls left · choose dice to keep, or score now.' }}</p>
     </div>
-    <div class="dice-tray" role="group" aria-label="Five dice">
+    <fieldset class="dice-tray">
+      <legend class="visually-hidden">Five dice</legend>
       <div class="die-slot" *ngFor="let die of game.dice; let i = index">
         <button type="button" class="die" [class.held]="game.held[i]" [attr.aria-pressed]="game.held[i]"
           [attr.aria-label]="'Die ' + (i + 1) + ': ' + (die || 'not rolled') + (game.held[i] ? ', kept' : ', reroll')"
@@ -24,7 +25,7 @@
           (click)="toggleDie(i)"><span aria-hidden="true">{{ faces[die] }}</span></button>
         <span class="die-caption">{{ game.held[i] ? 'KEEP' : (die ? 'ROLL' : 'READY') }}</span>
       </div>
-    </div>
+    </fieldset>
     <button type="button" class="roll-button" *ngIf="!isScreen && !isTable" [disabled]="!canRoll" (click)="roll()">
       {{ game.rollsUsed === 0 ? 'Roll dice' : 'Roll again' }} <span>{{ game.rollsUsed }} / 3</span>
     </button>
@@ -44,7 +45,7 @@
       </p>
       <div class="category-grid">
         <ng-container *ngFor="let category of categories">
-          <button type="button" *ngIf="game.availableScores[category.key] !== undefined" class="category"
+          <button type="button" *ngIf="isAvailableCategory(category.key)" class="category"
             [class.selected]="pendingCategory === category.key" [disabled]="busy"
             [attr.aria-pressed]="pendingCategory === category.key" (click)="chooseCategory(category.key)">
             <span><strong>{{ category.label }}</strong><small>{{ category.hint }}</small></span>
@@ -52,8 +53,8 @@
           </button>
         </ng-container>
       </div>
-      <div class="score-confirm" *ngIf="pendingCategory" role="status">
-        <p>Score <strong>{{ pendingPoints }}</strong> in <strong>{{ pendingLabel }}</strong>?</p>
+      <div class="score-confirm" *ngIf="pendingCategory">
+        <output class="score-message">Score <strong>{{ pendingPoints }}</strong> in <strong>{{ pendingLabel }}</strong>?</output>
         <button type="button" class="roll-button" [disabled]="busy" (click)="confirmScore()">{{ pendingPoints === 0 ? 'Take zero & end turn' : 'Score & end turn' }}</button>
         <button type="button" class="cancel-button" [disabled]="busy" (click)="pendingCategory = null">Cancel</button>
       </div>
@@ -61,7 +62,7 @@
 
     <section class="scorecards" aria-label="Scorecards">
       <h2>The score deck</h2>
-      <div class="score-scroll" tabindex="0" role="region" aria-label="All player scores, scroll horizontally">
+      <section class="score-scroll" tabindex="0" aria-label="All player scores, scroll horizontally">
         <table>
           <caption>13 categories · 35-point bonus at 63 upper points</caption>
           <thead><tr><th scope="col">Category</th><th scope="col" *ngFor="let id of game.playerOrder" [class.active-column]="id === game.activePlayerId && game.phase === 'Playing'">{{ game.scorecards[id].playerName }}</th></tr></thead>
@@ -74,7 +75,7 @@
           </tbody>
           <tfoot><tr><th scope="row">Total</th><td *ngFor="let id of game.playerOrder">{{ game.scorecards[id].total }}</td></tr></tfoot>
         </table>
-      </div>
+      </section>
     </section>
   </div>
   <details class="rules"><summary>How to play Yacht</summary>

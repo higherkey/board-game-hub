@@ -75,9 +75,9 @@ public class Room
     public Dictionary<string, int> RoundScores { get; set; } = new();
 
     // Undo System
-    // Stack of JSON snapshots to revert to. Restrict to last 10?
+    // Ten latest JSON snapshots to revert to, newest first.
     [System.Text.Json.Serialization.JsonIgnore]
-    public Stack<string> StateHistory { get; set; } = new();
+    public UndoHistory StateHistory { get; } = new();
     public UndoSettings UndoSettings { get; set; } = new();
     
     public UndoVote? CurrentVote { get; set; }

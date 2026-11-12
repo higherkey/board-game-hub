@@ -32,7 +32,7 @@ export interface YachtState {
   rollsUsed: number;
   dice: number[];
   held: boolean[];
-  availableScores: Record<string, number>;
+  availableScores: Record<string, number | null>;
   winnerIds: string[];
   lastMove: string;
 }

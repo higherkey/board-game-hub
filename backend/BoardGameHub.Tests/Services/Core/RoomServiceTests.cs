@@ -464,6 +464,30 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public async Task SubmitAction_Overflow_ShouldUndoOnlyTenNewestSnapshots()
+    {
+        // Arrange
+        _gameServices.Add(new FourInARowGameService());
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.FourInARow);
+
+        // Act: exercise the real snapshot path beyond capacity and through multiple wraps.
+        for (var i = 0; i < 35; i++)
+        {
+            room.RoundNumber = i;
+            await _sut.SubmitAction(room.Code, "host1", "UNKNOWN", null);
+        }
+
+        // Assert
+        room.StateHistory.Count.Should().Be(10);
+        for (var i = 34; i >= 25; i--)
+        {
+            (await _sut.RequestUndo(room.Code, "host1")).Should().BeSameAs(room);
+            room.RoundNumber.Should().Be(i);
+        }
+        (await _sut.RequestUndo(room.Code, "host1")).Should().BeNull();
+    }
+
+    [Fact]
     public async Task RequestUndo_HostOnly_ShouldPerformUndoImmediately()
     {
         var room = _sut.CreateRoom("host1", "Host", true);
