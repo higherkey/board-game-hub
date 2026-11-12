@@ -4,7 +4,14 @@
  * It does not affect the site's functionality and can be safely ignored.
  */
 
+@use "sass:meta";
 @use "bootstrap/scss/bootstrap";
+@use "styles/dice-animations";
+
+// Share dice geometry once; keep it confined to the Farkle Table and Hand.
+:where(app-farkle-hand, app-farkle-table) {
+  @include meta.load-css("app/features/games/farkle/farkle-shared-dice");
+}
 
 /* Fonts */
 @font-face {
