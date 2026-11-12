@@ -315,12 +315,65 @@ public class GameStateManagerTests
         activeRooms.TryAdd("PERSIST3", room);
 
         // Mark only a single member dirty (not fullDiff)
-        room.DirtyMembers.TryAdd(nameof(Room.GameType), 0);
+        manager.MarkDirty("PERSIST3", nameof(Room.GameType));
 
         // Act
         await manager.ProcessRoomUpdateAsync("PERSIST3");
 
         // Assert
         mockPersistence.Verify(p => p.QueueSave(It.Is<RoomSnapshot>(s => s.RoomCode == "PERSIST3" && s.GameType == "Scatterbrain")), Times.Once);
+    }
+
+    private (GameStateManager Manager, Mock<IRoomPersistenceService> Persistence) CreatePersistingManager()
+    {
+        var mockPersistence = new Mock<IRoomPersistenceService>();
+        var mockSerializer = new Mock<IRoomStateSerializer>();
+        mockSerializer.Setup(s => s.Serialize(It.IsAny<Room>())).Returns("{}");
+        var manager = new GameStateManager(_mockHubContext.Object, _diffService, _mockLogger.Object,
+            mockPersistence.Object, mockSerializer.Object);
+        return (manager, mockPersistence);
+    }
+
+    [Fact]
+    public async Task ProcessRoomUpdateAsync_ShouldBroadcastAndSaveOnce_WhenFiveMarkDirtyCallsAreDrained()
+    {
+        var (manager, persistence) = CreatePersistingManager();
+        var room = new Room { Code = "DEDUPE1", GameType = GameType.None };
+        manager.TrackRoom(room);
+        await manager.ProcessRoomUpdateAsync("DEDUPE1");
+        _mockClientProxy.Invocations.Clear();
+        persistence.Invocations.Clear();
+
+        room.GameType = GameType.Babble;
+        manager.MarkDirty("DEDUPE1", nameof(Room.GameType));
+        manager.MarkDirty("DEDUPE1", nameof(Room.Players));
+        manager.MarkDirty("DEDUPE1", nameof(Room.GameData));
+        manager.MarkDirty("DEDUPE1", nameof(Room.RoundScores));
+        manager.MarkDirty("DEDUPE1", nameof(Room.PlayerAnswers));
+
+        // Drain one pass per channel entry, as the processing loop would.
+        for (int i = 0; i < 5; i++) await manager.ProcessRoomUpdateAsync("DEDUPE1");
+
+        _mockClientProxy.Verify(c => c.SendCoreAsync("RoomStatePatch", It.IsAny<object[]>(), It.IsAny<CancellationToken>()), Times.Once);
+        persistence.Verify(p => p.QueueSave(It.IsAny<RoomSnapshot>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessRoomUpdateAsync_ShouldBroadcastMemberMarkedAfterFlagConsumed()
+    {
+        var room = new Room { Code = "DEDUPE2", GameType = GameType.None };
+        _manager.TrackRoom(room);
+        await _manager.ProcessRoomUpdateAsync("DEDUPE2");
+        _manager.MarkDirty("DEDUPE2", nameof(Room.RoundNumber));
+        await _manager.ProcessRoomUpdateAsync("DEDUPE2");
+        _mockClientProxy.Invocations.Clear();
+
+        room.GameType = GameType.Babble;
+        _manager.MarkDirty("DEDUPE2", nameof(Room.GameType));
+        await _manager.ProcessRoomUpdateAsync("DEDUPE2");
+
+        _mockClientProxy.Verify(c => c.SendCoreAsync("RoomStatePatch",
+            It.Is<object[]>(a => ((JsonNode)a[0])["gameType"]!.GetValue<string>() == "Babble"),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }

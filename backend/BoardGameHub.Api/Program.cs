@@ -154,11 +154,9 @@ builder.Services.AddSingleton<IRoomService>(sp => new RoomService(
     sp.GetRequiredService<IRoomStateSerializer>()
 ));
 builder.Services.AddSingleton<IBabbleService, BabbleService>();
-builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
 builder.Services.AddSingleton<IDictionaryService, DictionaryService>();
 // Register Game Services
 builder.Services.AddSingleton<IGameService, DeepfakeGameService>();
-builder.Services.AddSingleton<DeepfakeGameService>(sp => (DeepfakeGameService)sp.GetServices<IGameService>().First(s => s is DeepfakeGameService));
 builder.Services.AddSingleton<IGameService, ScatterbrainGameService>();
 builder.Services.AddSingleton<IGameService, BabbleGameService>();
 builder.Services.AddSingleton<IGameService, OneAndOnlyService>();
