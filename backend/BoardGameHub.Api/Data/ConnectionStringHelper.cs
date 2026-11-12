@@ -102,8 +102,6 @@ public static class ConnectionStringHelper
                 builder.SslMode = SslMode.Require;
             }
 
-            builder.TrustServerCertificate = true;
-
             return builder.ConnectionString;
         }
         catch
