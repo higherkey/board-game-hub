@@ -285,6 +285,24 @@ public class RoomService : IRoomService, IDisposable
         // Rebind game-specific service state
         var gameService = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         gameService?.RebindPlayer(room, oldConnectionId, newConnectionId);
+
+        // Undo snapshots must follow reconnects too, without restoring obsolete socket IDs.
+        if (room.StateHistory.Count > 0)
+        {
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            var reboundHistory = room.StateHistory.Reverse().Select(json =>
+            {
+                var previous = JsonSerializer.Deserialize<Room>(json, options)
+                    ?? throw new JsonException("Invalid undo snapshot.");
+                foreach (var player in previous.Players.Where(p => p.ConnectionId == oldConnectionId))
+                    player.ConnectionId = newConnectionId;
+                // StateHistory is JsonIgnore: restored snapshots have no nested history.
+                RebindPlayerConnection(previous, oldConnectionId, newConnectionId);
+                return JsonSerializer.Serialize(previous, options);
+            }).ToArray();
+            room.StateHistory.Clear();
+            foreach (var snapshot in reboundHistory) room.StateHistory.Push(snapshot);
+        }
     }
 
     public Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false, string? sessionId = null)
@@ -670,6 +688,10 @@ public class RoomService : IRoomService, IDisposable
                 return null;
             }
 
+            // Validate before mutating the room: a failed Yacht start must remain in the lobby.
+            if (room.GameType == GameType.Yacht && room.Players.Count(p => !p.IsScreen) is < 1 or > 8)
+                throw new InvalidOperationException("Yacht requires 1–8 Hand players.");
+
             // Apply settings if provided (Start of Game)
             if (settings != null)
             {
@@ -695,7 +717,9 @@ public class RoomService : IRoomService, IDisposable
             }
 
             // Set Timer
-            room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
+            room.RoundEndTime = room.Settings.TimerDurationSeconds > 0
+                ? DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds)
+                : null;
         }
         finally
         {
@@ -1223,6 +1247,11 @@ public class RoomService : IRoomService, IDisposable
             currentRoom.GameData = oldState.GameData; // This is the big one (JsonElement or Object)
             currentRoom.RoundScores = oldState.RoundScores;
             currentRoom.PlayerAnswers = oldState.PlayerAnswers;
+            foreach (var player in currentRoom.Players)
+            {
+                var previousPlayer = oldState.Players.FirstOrDefault(p => p.ConnectionId == player.ConnectionId);
+                if (previousPlayer != null) player.Score = previousPlayer.Score;
+            }
             
             // Re-assign generic GameData requires careful deserialization if it became JsonElement
             if (currentRoom.GameData is JsonElement jsonElement)

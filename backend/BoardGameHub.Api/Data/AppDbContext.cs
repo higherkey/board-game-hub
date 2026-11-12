@@ -229,7 +229,7 @@ public class AppDbContext : IdentityDbContext<User>
                 TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
             },
             new GameDefinition { 
-                Id = "Yacht", Name = "Yacht", Icon = "⛵", Description = "Classic dice rolling strategy. Get five of a kind!", Status = GameStatus.Backlog,
+                Id = "Yacht", Name = "Yacht", Icon = "⛵", Description = "Classic dice rolling strategy. Get five of a kind!", Status = GameStatus.Testing,
                 MinPlayers = 1, MaxPlayers = 8, Complexity = 1, AveragePlayTime = 30, Tags = "Dice,Strategy,Classic",
                 TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
             },

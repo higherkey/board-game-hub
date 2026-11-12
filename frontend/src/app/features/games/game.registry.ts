@@ -1,4 +1,5 @@
 import { Type } from '@angular/core';
+import { YachtComponent } from './yacht/yacht.component';
 
 import { BabbleComponent } from './babble/babble-game/babble.component';
 import { ScatterbrainComponent } from './scatterbrain/scatterbrain-game/scatterbrain.component';
@@ -34,6 +35,10 @@ export interface GameConfig {
 }
 
 export const GAME_REGISTRY: Record<string, GameConfig> = {
+    'Yacht': {
+        tableComponent: YachtComponent,
+        handComponent: YachtComponent
+    },
     'Babble': {
         tableComponent: BabbleComponent
     },
