@@ -62,7 +62,7 @@ public class AuthControllerTests
         var model = new LoginDto { Email = "test@test.com", Password = "Password123!" };
         var user = new User { Id = "u1", Email = model.Email, DisplayName = "Tester" };
 
-        _mockSignInManager.Setup(s => s.PasswordSignInAsync(model.Email, model.Password, false, false))
+        _mockSignInManager.Setup(s => s.PasswordSignInAsync(model.Email, model.Password, false, true))
             .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
 
         _mockUserManager.Setup(u => u.FindByEmailAsync(model.Email))
@@ -78,6 +78,35 @@ public class AuthControllerTests
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         // Verify token logic if needed
+    }
+
+    [Fact]
+    public async Task Login_ShouldEnableLockoutOnFailure()
+    {
+        var model = new LoginDto { Email = "test@test.com", Password = "wrong" };
+        _mockSignInManager.Setup(s => s.PasswordSignInAsync(model.Email, model.Password, false, true))
+            .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
+
+        await _sut.Login(model);
+
+        _mockSignInManager.Verify(s => s.PasswordSignInAsync(model.Email, model.Password, false, true), Times.Once);
+    }
+
+    [Fact]
+    public async Task Login_ShouldReturnSameBadRequest_WhenLockedOutOrWrongPassword()
+    {
+        var model = new LoginDto { Email = "test@test.com", Password = "wrong" };
+        _mockSignInManager.SetupSequence(s => s.PasswordSignInAsync(model.Email, model.Password, false, true))
+            .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed)
+            .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.LockedOut);
+
+        var failed = await _sut.Login(model);
+        var lockedOut = await _sut.Login(model);
+
+        var failedBody = failed.Should().BeOfType<BadRequestObjectResult>().Subject;
+        var lockedBody = lockedOut.Should().BeOfType<BadRequestObjectResult>().Subject;
+        lockedBody.Value.Should().Be(failedBody.Value);
+        lockedBody.Value.Should().Be("Invalid login attempt");
     }
 
     private void SetupUserClaim(string? userId)

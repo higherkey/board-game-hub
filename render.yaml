@@ -14,6 +14,10 @@ services:
         value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Supabase prod project)
+      - key: Admin__Email
+        sync: false # Set in Render Dashboard
+      - key: Admin__Password
+        sync: false # Set in Render Dashboard
       - key: Jwt__Key
         sync: false # Set in Render Dashboard
       - key: TurnServer__Url
@@ -38,6 +42,10 @@ services:
         value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Neon Dev — same database as NEON_CONNECTION_STRING_DEV used by CI migrations)
+      - key: Admin__Email
+        sync: false # Set in Render Dashboard
+      - key: Admin__Password
+        sync: false # Set in Render Dashboard
       - key: Jwt__Key
         sync: false # Set in Render Dashboard
       - key: TurnServer__Url
@@ -62,6 +70,10 @@ services:
         value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
         sync: false # Set in Render Dashboard (Supabase staging, falls back to Supabase dev)
+      - key: Admin__Email
+        sync: false # Set in Render Dashboard
+      - key: Admin__Password
+        sync: false # Set in Render Dashboard
       - key: Jwt__Key
         sync: false # Set in Render Dashboard
       - key: TurnServer__Url
