@@ -56,8 +56,11 @@ public class GameHub : Hub
 
     public async Task<Room> CreateRoom(string playerName, bool isPublic, string gameType = "OneAndOnly", string? guestId = null, bool isScreen = false)
     {
-        Enum.TryParse<GameType>(gameType, true, out var type);
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
+        if (!Enum.TryParse<GameType>(gameType, true, out var type))
+        {
+            throw new HubException("Unknown game type.");
+        }
+        var userId = ResolveUserId(guestId);
         // If logged in, preferred username might come from claims, or they can override it. 
         // For now, let's prioritize the submitted name, but link the userId.
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
@@ -67,7 +70,7 @@ public class GameHub : Hub
         // Log creation
         _logger.LogInformation("[GameHub] Room Created: {Code}, GameType: {GameType}, Host: {Host}", room.Code, room.GameType, playerName);
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, room.Code.ToUpper());
+        await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
         // Send TURN credentials to the creator
         await SendTurnCredentialsToClient();
 
@@ -104,7 +107,7 @@ public class GameHub : Hub
         var room = await _roomService.StartGame(roomCode, settings);
         if (room != null)
         {
-            await Clients.Group(roomCode).SendAsync("GameStarted", room);
+            await Clients.Group(NormalizeCode(roomCode)).SendAsync("GameStarted", room);
             // If game starts, does it vanish from public lobby? Usually "Lobby" state rooms are shown.
             // When State becomes "Playing", it disappears from GetPublicRooms().
             // So we should broadcast this as a deletion (or update that implies removal).
@@ -148,7 +151,7 @@ public class GameHub : Hub
         if (room == null || room.State != GameState.Lobby) return;
 
         // Ending from the results screen returns everyone to game selection (#79).
-        await Clients.Group(roomCode.ToUpper()).SendAsync("GameTypeChanged", room.GameType.ToString());
+        await Clients.Group(NormalizeCode(roomCode)).SendAsync("GameTypeChanged", room.GameType.ToString());
         if (room.IsPublic)
         {
             await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
@@ -172,7 +175,7 @@ public class GameHub : Hub
             if (room != null)
             {
                 _logger.LogInformation("[GameHub] SetGameType Success: Room={Room}, Enum={Enum}", roomCode, type);
-                await Clients.Group(roomCode.ToUpper()).SendAsync("GameTypeChanged", type.ToString());
+                await Clients.Group(NormalizeCode(roomCode)).SendAsync("GameTypeChanged", type.ToString());
                 // Redundant broadcast removed? Or kept for legacy? 
                 // Clients.All is definitely bad. Removing it.
                 // await Clients.All.SendAsync("RoomGameTypeChanged", roomCode.ToUpper(), type.ToString());
@@ -216,7 +219,7 @@ public class GameHub : Hub
         var room = _roomService.RemoveHostPlayer(roomCode, Context.ConnectionId, targetConnectionId);
         if (room != null)
         {
-            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
+            await Clients.Group(NormalizeCode(roomCode)).SendAsync("RoomUpdated", room);
         }
     }
 
@@ -238,7 +241,7 @@ public class GameHub : Hub
         var room = _roomService.UpdateSettings(roomCode, settings);
         if (room != null)
         {
-            await Clients.Group(roomCode.ToUpper()).SendAsync("SettingsUpdated", settings);
+            await Clients.Group(NormalizeCode(roomCode)).SendAsync("SettingsUpdated", settings);
             if (room.IsPublic && room.State == GameState.Lobby)
             {
                  // Settings (like timer) don't show on card usually, but good to keep sync.
@@ -267,12 +270,12 @@ public class GameHub : Hub
             // If room returned, check if Vote started or Undo happened
             if (room.CurrentVote != null)
             {
-                await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteStarted", room.CurrentVote);
+                await Clients.Group(NormalizeCode(roomCode)).SendAsync("UndoVoteStarted", room.CurrentVote);
             }
             else
             {
                 // Immediate undo happened
-                // await Clients.Group(roomCode.ToUpper()).SendAsync("GameRestored", room); 
+                // await Clients.Group(NormalizeCode(roomCode)).SendAsync("GameRestored", room); 
                 // Let the GameStateManager handle the state update.
             }
         }
@@ -285,12 +288,12 @@ public class GameHub : Hub
 
         if (submission.Result == UndoVoteResult.Pending)
         {
-            await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteUpdate", submission.Room.CurrentVote);
+            await Clients.Group(NormalizeCode(roomCode)).SendAsync("UndoVoteUpdate", submission.Room.CurrentVote);
         }
         else
         {
             // Retain the event name and single string argument for older clients.
-            await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteFinished", submission.Result.ToString());
+            await Clients.Group(NormalizeCode(roomCode)).SendAsync("UndoVoteFinished", submission.Result.ToString());
         }
     }
 
@@ -301,7 +304,7 @@ public class GameHub : Hub
 
     public async Task<Room?> JoinRoom(string roomCode, string playerName, string? guestId = null, bool isScreen = false, string? sessionId = null)
     {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? guestId;
+        var userId = ResolveUserId(guestId);
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
         var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, playerName, userId, avatarUrl, isScreen, sessionId);
@@ -340,7 +343,7 @@ public class GameHub : Hub
         var room = _roomService.ToggleReady(roomCode, Context.ConnectionId, forcedState);
         if (room != null)
         {
-            await Clients.Group(roomCode.ToUpper()).SendAsync("RoomUpdated", room);
+            await Clients.Group(NormalizeCode(roomCode)).SendAsync("RoomUpdated", room);
         }
     }
 
@@ -523,7 +526,7 @@ public class GameHub : Hub
                     _logger.LogError(hex, "Error recording game history for room {RoomCode}", roomCode);
                 }
 
-                await Clients.Group(roomCode.ToUpper()).SendAsync("RoundEnded", room);
+                await Clients.Group(NormalizeCode(roomCode)).SendAsync("RoundEnded", room);
             }
         }
         catch (HubException)
@@ -549,7 +552,7 @@ public class GameHub : Hub
         var room = await _roomService.StartGame(roomCode, null); 
         if (room != null)
         {
-           await Clients.Group(roomCode).SendAsync("GameStarted", room);
+           await Clients.Group(NormalizeCode(roomCode)).SendAsync("GameStarted", room);
            
            if (room.IsPublic && room.State == GameState.Playing)
            {
@@ -561,34 +564,39 @@ public class GameHub : Hub
 
     public async Task SendMessage(string roomCode, string message)
     {
-         await Clients.Group(roomCode).SendAsync("ReceiveMessage", Context.ConnectionId, message);
+        var room = _roomService.GetRoom(NormalizeCode(roomCode));
+        if (room == null || !_roomService.IsRoomMember(room, Context.ConnectionId)) return;
+        await Clients.Group(room.Code).SendAsync("ReceiveMessage", Context.ConnectionId, message);
     }
 
-    // WebRTC Signaling Methods
+    // WebRTC Signaling Methods: relay only between connections in the same room.
     public async Task SendOffer(string targetConnectionId, string sdp)
     {
+        if (!_roomService.AreInSameRoom(Context.ConnectionId, targetConnectionId)) return;
         await Clients.Client(targetConnectionId).SendAsync("ReceiveOffer", Context.ConnectionId, sdp);
     }
 
     public async Task SendAnswer(string targetConnectionId, string sdp)
     {
+        if (!_roomService.AreInSameRoom(Context.ConnectionId, targetConnectionId)) return;
         await Clients.Client(targetConnectionId).SendAsync("ReceiveAnswer", Context.ConnectionId, sdp);
     }
 
     public async Task SendIceCandidate(string targetConnectionId, string candidate)
     {
+        if (!_roomService.AreInSameRoom(Context.ConnectionId, targetConnectionId)) return;
         await Clients.Client(targetConnectionId).SendAsync("ReceiveIceCandidate", Context.ConnectionId, candidate);
     }
     
     public async Task LeaveRoom(string roomCode)
     {
         var room = _roomService.RemovePlayer(Context.ConnectionId);
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomCode);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, NormalizeCode(roomCode));
         
         // Notify others that player left (if room still exists)
         if (room != null)
         {
-            await Clients.Group(roomCode).SendAsync("PlayerJoined", room.Players);
+            await Clients.Group(NormalizeCode(roomCode)).SendAsync("PlayerJoined", room.Players);
             
             if (room.IsPublic && room.State == GameState.Lobby)
             {
@@ -668,8 +676,10 @@ public class GameHub : Hub
 
     public async Task CloverDragMove(string roomCode, string cardId, double x, double y)
     {
+        var room = _roomService.GetRoom(NormalizeCode(roomCode));
+        if (room == null || !_roomService.IsRoomMember(room, Context.ConnectionId)) return;
         // Direct relay to others in the room to keep dragging smooth and bypass state persistence
-        await Clients.OthersInGroup(roomCode.ToUpper()).SendAsync("CloverCardMoved", Context.ConnectionId, cardId, x, y);
+        await Clients.OthersInGroup(room.Code).SendAsync("CloverCardMoved", Context.ConnectionId, cardId, x, y);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -699,6 +709,16 @@ public class GameHub : Hub
         {
             await Clients.Caller.SendAsync("ReceiveTurnCredentials", turnConfig);
         }
+    }
+
+    private static string NormalizeCode(string roomCode) => (roomCode ?? string.Empty).Trim().ToUpperInvariant();
+
+    // Authenticated callers use their account id; guests get a namespaced id that can never equal an account id.
+    private string? ResolveUserId(string? guestId)
+    {
+        var claimId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(claimId)) return claimId;
+        return string.IsNullOrWhiteSpace(guestId) ? null : "guest:" + guestId.Trim();
     }
 
     private void EnsureHost(Room room)

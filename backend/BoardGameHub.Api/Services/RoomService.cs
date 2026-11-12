@@ -132,6 +132,22 @@ public class RoomService : IRoomService, IDisposable
         return false;
     }
 
+    public bool IsRoomMember(Room room, string connectionId)
+    {
+        if (room == null || string.IsNullOrEmpty(connectionId)) return false;
+        return room.Players.Any(p => p.ConnectionId == connectionId)
+            || room.HostScreenId == connectionId
+            || room.CreatorConnectionId == connectionId;
+    }
+
+    public bool AreInSameRoom(string connectionIdA, string connectionIdB)
+    {
+        if (string.IsNullOrEmpty(connectionIdA) || string.IsNullOrEmpty(connectionIdB)) return false;
+        return _connectionRoomMap.TryGetValue(connectionIdA, out var roomA)
+            && _connectionRoomMap.TryGetValue(connectionIdB, out var roomB)
+            && string.Equals(roomA, roomB, StringComparison.OrdinalIgnoreCase);
+    }
+
     public Room? SetHostPlayer(string code, string connectionId)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
@@ -358,7 +374,7 @@ public class RoomService : IRoomService, IDisposable
                 // GameHub will re-emit the new token via the existing SessionAssigned flow.
                 existingPlayer.SessionId = Guid.NewGuid().ToString("N");
 
-                _connectionRoomMap.TryAdd(connectionId, code);
+                _connectionRoomMap.TryAdd(connectionId, room.Code);
                 _gameStateManager.MarkDirty(room.Code);
                 NotifyStatsChanged();
                 return room;
@@ -384,7 +400,7 @@ public class RoomService : IRoomService, IDisposable
             };
 
             room.Players.Add(newPlayer);
-            _connectionRoomMap.TryAdd(connectionId, code);
+            _connectionRoomMap.TryAdd(connectionId, room.Code);
             _logger.LogInformation("New player {Player} joined room {Code} (Host: {IsHost})", playerName, code, assignHost);
         }
         finally
@@ -863,7 +879,7 @@ public class RoomService : IRoomService, IDisposable
     public async Task<Room?> SubmitAction(string code, string connectionId, string actionType, System.Text.Json.JsonElement? payload)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
-        if (!room.Players.Any(p => p.ConnectionId == connectionId) && room.HostScreenId != connectionId && room.CreatorConnectionId != connectionId) return null;
+        if (!IsRoomMember(room, connectionId)) return null;
 
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         if (service != null)
@@ -1011,6 +1027,7 @@ public class RoomService : IRoomService, IDisposable
     public Room? VoteNextGame(string code, string playerId, GameType vote)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!IsRoomMember(room, playerId)) return null;
         
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
         {
@@ -1198,16 +1215,32 @@ public class RoomService : IRoomService, IDisposable
         await room.StateLock.WaitAsync();
         try
         {
-            if (room.CurrentVote == null) return null;
+            if (room.CurrentVote == null || !IsRoomMember(room, connectionId)) return null;
+
+            // Eligible voters are connected Hands; Tables and disconnected players do not count.
+            var eligibleIds = room.Players
+                .Where(p => p.IsConnected && !p.IsScreen)
+                .Select(p => p.ConnectionId)
+                .ToHashSet();
+
+            if (eligibleIds.Count == 0)
+            {
+                room.CurrentVote = null;
+                _gameStateManager.MarkDirty(room.Code);
+                NotifyStatsChanged();
+                return new UndoVoteSubmission(room, UndoVoteResult.Failed);
+            }
+
+            if (!eligibleIds.Contains(connectionId)) return null;
 
             room.CurrentVote.Votes[connectionId] = vote;
-            
-            // Check for Majority
-            var totalPlayers = room.Players.Count;
-            var castVotes = room.CurrentVote.Votes.Count;
-            var yesVotes = room.CurrentVote.Votes.Values.Count(v => v);
 
-            // If simple majority reached ( > 50% of TOTAL players)
+            var totalPlayers = eligibleIds.Count;
+            var eligibleVotes = room.CurrentVote.Votes.Where(kv => eligibleIds.Contains(kv.Key)).ToList();
+            var castVotes = eligibleVotes.Count;
+            var yesVotes = eligibleVotes.Count(kv => kv.Value);
+
+            // Simple majority of eligible voters
             if (yesVotes > totalPlayers / 2.0)
             {
                 room.CurrentVote = null;
