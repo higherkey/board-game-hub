@@ -121,7 +121,8 @@ builder.Services.AddSignalR()
 
 // Behind Render's proxy the socket address is the proxy, so resolve the client IP from X-Forwarded-For.
 // ForwardLimit = 1 takes only the right-most address (the one Render's proxy appended), so any
-// client-supplied values to its left are ignored.
+// client-supplied values to its left are ignored. Trusting X-Forwarded-For (all proxies are accepted)
+// relies on the service being reachable only through Render's proxy.
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
