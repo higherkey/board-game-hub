@@ -105,6 +105,7 @@ public class UndoVote
 
 public class GameSettings
 {
+    public int TotalRounds { get; set; } = 5;
     public int TimerDurationSeconds { get; set; } = 180;
     public int BoardSize { get; set; } = 4;
     public ScatterbrainData.LetterMode LetterMode { get; set; } = ScatterbrainData.LetterMode.Normal;
@@ -143,5 +144,6 @@ public enum GameType
     Warships = 14,
     FourInARow = 15,
     CloverMinded = 16,
-    Farkle = 17
+    Farkle = 17,
+    Yacht = 18
 }

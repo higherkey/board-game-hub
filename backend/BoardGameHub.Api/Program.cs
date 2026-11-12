@@ -175,6 +175,7 @@ builder.Services.AddSingleton<IGameService, WarshipsGameService>();
 builder.Services.AddSingleton<IGameService, FourInARowGameService>();
 builder.Services.AddSingleton<IGameService, CloverMindedGameService>();
 builder.Services.AddSingleton<IGameService, FarkleService>();
+builder.Services.AddSingleton<IGameService, YachtGameService>();
 
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();

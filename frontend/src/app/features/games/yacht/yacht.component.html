@@ -1,0 +1,85 @@
+<section class="yacht" [class.table-view]="isTable || isScreen" *ngIf="state as game" aria-label="Yacht dice game">
+  <header class="yacht-header">
+    <div><span class="eyebrow">FIVE DICE. EVERY CHOICE COUNTS.</span><h1>⛵ Yacht</h1></div>
+    <span class="turn-badge">Turn {{ game.turnNumber }} / 13</span>
+  </header>
+
+  <div class="victory" *ngIf="game.phase === 'GameOver'" role="status">
+    <span class="eyebrow">FINAL SCORES</span>
+    <h2>{{ winnerNames }} {{ game.winnerIds.length > 1 ? 'tie for the win!' : 'wins!' }}</h2>
+    <p>All scorecards are complete. Ready for another voyage?</p>
+  </div>
+
+  <div class="play-surface" *ngIf="game.phase !== 'GameOver'">
+    <div class="turn-status" aria-live="polite">
+      <h2>{{ canAct ? 'Your turn' : activeName + '’s turn' }}</h2>
+      <p *ngIf="room.isPaused">Game paused</p>
+      <p *ngIf="!room.isPaused">{{ game.rollsUsed === 0 ? 'Roll five dice to get started.' : (3 - game.rollsUsed) + ' rolls left · choose dice to keep, or score now.' }}</p>
+    </div>
+    <div class="dice-tray" role="group" aria-label="Five dice">
+      <div class="die-slot" *ngFor="let die of game.dice; let i = index">
+        <button type="button" class="die" [class.held]="game.held[i]" [attr.aria-pressed]="game.held[i]"
+          [attr.aria-label]="'Die ' + (i + 1) + ': ' + (die || 'not rolled') + (game.held[i] ? ', kept' : ', reroll')"
+          [disabled]="!canAct || busy || game.rollsUsed === 0 || game.rollsUsed >= 3"
+          (click)="toggleDie(i)"><span aria-hidden="true">{{ faces[die] }}</span></button>
+        <span class="die-caption">{{ game.held[i] ? 'KEEP' : (die ? 'ROLL' : 'READY') }}</span>
+      </div>
+    </div>
+    <button type="button" class="roll-button" *ngIf="!isScreen && !isTable" [disabled]="!canRoll" (click)="roll()">
+      {{ game.rollsUsed === 0 ? 'Roll dice' : 'Roll again' }} <span>{{ game.rollsUsed }} / 3</span>
+    </button>
+    <p class="table-instruction" *ngIf="isScreen || isTable">{{ activeName }}, use your Hand to roll and score.</p>
+    <p class="table-instruction" *ngIf="canAct && game.held.every(identity)">All dice kept. Release a die to roll again, or choose a category.</p>
+  </div>
+
+  <p class="last-move" aria-live="polite">{{ game.lastMove }}</p>
+  <p class="error" *ngIf="error" role="alert">{{ error }}</p>
+
+  <div class="scoring-layout">
+    <section class="category-picker" *ngIf="canAct && game.rollsUsed > 0" aria-label="Choose a scoring category">
+      <h2>Make it count</h2>
+      <p>Pick an unused category. A zero uses the slot, too.</p>
+      <p *ngIf="game.dice[0] && game.dice.every(sameAsFirst) && game.scorecards[game.activePlayerId].categories['Yacht'] === 50" class="bonus-note">
+        Bonus Yacht! +100 when you score. Joker rules limit the available slots.
+      </p>
+      <div class="category-grid">
+        <ng-container *ngFor="let category of categories">
+          <button type="button" *ngIf="game.availableScores[category.key] !== undefined" class="category"
+            [class.selected]="pendingCategory === category.key" [disabled]="busy"
+            [attr.aria-pressed]="pendingCategory === category.key" (click)="chooseCategory(category.key)">
+            <span><strong>{{ category.label }}</strong><small>{{ category.hint }}</small></span>
+            <b>{{ game.availableScores[category.key] }}</b>
+          </button>
+        </ng-container>
+      </div>
+      <div class="score-confirm" *ngIf="pendingCategory" role="status">
+        <p>Score <strong>{{ pendingPoints }}</strong> in <strong>{{ pendingLabel }}</strong>?</p>
+        <button type="button" class="roll-button" [disabled]="busy" (click)="confirmScore()">{{ pendingPoints === 0 ? 'Take zero & end turn' : 'Score & end turn' }}</button>
+        <button type="button" class="cancel-button" [disabled]="busy" (click)="pendingCategory = null">Cancel</button>
+      </div>
+    </section>
+
+    <section class="scorecards" aria-label="Scorecards">
+      <h2>The score deck</h2>
+      <div class="score-scroll" tabindex="0" role="region" aria-label="All player scores, scroll horizontally">
+        <table>
+          <caption>13 categories · 35-point bonus at 63 upper points</caption>
+          <thead><tr><th scope="col">Category</th><th scope="col" *ngFor="let id of game.playerOrder" [class.active-column]="id === game.activePlayerId && game.phase === 'Playing'">{{ game.scorecards[id].playerName }}</th></tr></thead>
+          <tbody>
+            <ng-container *ngFor="let category of categories; let i = index">
+              <tr><th scope="row">{{ category.label }}</th><td *ngFor="let id of game.playerOrder">{{ game.scorecards[id].categories[category.key] ?? '—' }}</td></tr>
+              <tr class="bonus-row" *ngIf="i === 5"><th scope="row">Upper bonus</th><td *ngFor="let id of game.playerOrder">{{ game.scorecards[id].upperBonus }} <small>({{ game.scorecards[id].upperSubtotal }}/63)</small></td></tr>
+            </ng-container>
+            <tr class="bonus-row"><th scope="row">Yacht bonuses</th><td *ngFor="let id of game.playerOrder">{{ game.scorecards[id].yachtBonus }}</td></tr>
+          </tbody>
+          <tfoot><tr><th scope="row">Total</th><td *ngFor="let id of game.playerOrder">{{ game.scorecards[id].total }}</td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+  <details class="rules"><summary>How to play Yacht</summary>
+    <p>Take turns rolling five dice up to three times. Tap dice to keep or release them between rolls. Choose one unused category to end your turn; you can score after any roll.</p>
+    <p>Complete all 13 categories. Earn 35 extra points for an upper subtotal of at least 63. Highest total wins; tied players share the win.</p>
+    <p>A repeat five of a kind earns 100 extra points only if your Yacht slot already contains 50. You must fill the matching upper slot if it is empty; otherwise choose a lower slot using Joker scores (25 / 30 / 40 for full house / small / large straight). If all lower slots are used, fill another upper slot with zero. A zero in Yacht disables these bonuses.</p>
+  </details>
+</section>

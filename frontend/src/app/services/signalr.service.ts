@@ -354,8 +354,13 @@ export class SignalRService {
     await this.hubConnection.invoke('StartGame', this.currentRoomSubject.value?.code, settings);
   }
 
+  /** Awaitable variant for controls that need pending/error feedback. */
+  public submitGameAction(actionType: string, payload: any): Promise<void> {
+    return this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value?.code, actionType, payload);
+  }
+
   public sendGameAction(actionType: string, payload: any) {
-    this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value?.code, actionType, payload)
+    this.submitGameAction(actionType, payload)
       .catch(err => console.error(err));
   }
 

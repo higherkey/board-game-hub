@@ -695,7 +695,9 @@ public class RoomService : IRoomService, IDisposable
             }
 
             // Set Timer
-            room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
+            room.RoundEndTime = room.Settings.TimerDurationSeconds > 0
+                ? DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds)
+                : null;
         }
         finally
         {
