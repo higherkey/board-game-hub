@@ -331,7 +331,7 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkStateDirtyForBroadcast()
+    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkFullDiffForBroadcast()
     {
         var mockService = new Mock<IGameService>();
         mockService.Setup(s => s.GameType).Returns(GameType.Farkle);
@@ -347,10 +347,10 @@ public class RoomServiceTests
 
         await _sut.SubmitAction(room.Code, "conn1", "BANK", default);
 
-        room.DirtyMembers.Should().ContainKey(nameof(Room.GameData)); // sanity: room is tracked
+        room.DirtyMembers.Should().ContainKey("ALL"); // sanity: room is tracked and marked for a full diff
 
         room.State.Should().Be(GameState.Finished);
-        room.DirtyMembers.Should().ContainKey(nameof(Room.State));
+        room.DirtyMembers.Should().ContainKey("ALL"); // full diff covers State
     }
 
     [Fact]

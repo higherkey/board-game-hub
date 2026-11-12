@@ -164,6 +164,23 @@ public class GameStateManagerTests
     }
 
     [Fact]
+    public async Task ProcessRoomUpdateAsync_WhenSendThrows_ReMarksRoomForFullDiff()
+    {
+        var room = new Room { Code = "FAIL1" };
+        _manager.TrackRoom(room);
+        _mockClientProxy
+            .Setup(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("boom"));
+
+        await _manager.ProcessRoomUpdateAsync("FAIL1");
+
+        room.DirtyMembers.Keys.Should().Contain("ALL");
+        var flags = (System.Collections.Concurrent.ConcurrentDictionary<string, bool>)typeof(GameStateManager)
+            .GetField("_dirtyRooms", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(_manager)!;
+        flags.ContainsKey("FAIL1").Should().BeTrue();
+    }
+
+    [Fact]
     public async Task MarkDirty_ConcurrentCalls_ShouldNotThrow()
     {
         // Arrange

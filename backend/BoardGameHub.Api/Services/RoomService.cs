@@ -888,18 +888,8 @@ public class RoomService : IRoomService, IDisposable
 
             if (success) 
             {
-                // Action could change anything. Usually GameData, Scores, Players.
-                // For safety on generic actions, we might need full diff? 
-                // Or GameService tells us what changed?
-                // Generic Action -> Assume GameData changed.
-                _gameStateManager.MarkDirty(room.Code, "GameData");
-                // Some actions change scores
-                _gameStateManager.MarkDirty(room.Code, "RoundScores");
-                _gameStateManager.MarkDirty(room.Code, "PlayerAnswers");
-                // And Players (e.g. ready state?)
-                _gameStateManager.MarkDirty(room.Code, "Players");
-                // Games end themselves (e.g. Farkle/Clover-Minded game over sets Finished), so State must sync too (#79).
-                _gameStateManager.MarkDirty(room.Code, nameof(Room.State));
+                // Game actions may change any Room field (RoundEndTime, RoundNumber, State...), so use a full diff.
+                _gameStateManager.MarkDirty(room.Code);
 
                 NotifyStatsChanged();
                 return room;

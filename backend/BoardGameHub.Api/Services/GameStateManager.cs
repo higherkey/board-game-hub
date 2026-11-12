@@ -321,6 +321,14 @@ public class GameStateManager : IHostedService, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing room update for room {RoomCode}", roomCode);
+
+            // The flag and members were consumed before the failure; re-mark for a full diff so the
+            // update is not lost. No channel write, to avoid a hot error loop.
+            if (_activeRooms.TryGetValue(roomCode, out var failedRoom))
+            {
+                failedRoom.DirtyMembers.TryAdd("ALL", 0);
+                _dirtyRooms[roomCode] = true;
+            }
         }
     }
 

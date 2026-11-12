@@ -7,6 +7,7 @@
 - Removed unused `BabbleService` / `DeepfakeGameService` concrete DI registrations (grep: nothing resolves them from DI; tests construct them with `new`).
 - Existing test `..._WhenNoBaselineSnapshot_OnPartialDiff` seeded `DirtyMembers` directly without the flag; it now calls `MarkDirty`.
 - Test count 467 -> 469 (two new tests).
+- Final review: `SubmitAction` now marks the room fully dirty (one `MarkDirty(room.Code)`) because game actions may change any Room field (e.g. `RoundEndTime`, `RoundNumber`); a failed pass re-flags the room with "ALL" (no channel write).
 
 ## 4a Blockers & Risks
 - None.
