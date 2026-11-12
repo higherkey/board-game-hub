@@ -76,6 +76,32 @@ describe('SignalRService', () => {
     expect(mockHubConnection.on).toHaveBeenCalled(); // Should register listeners in constructor
   });
 
+  describe('UndoVoteFinished', () => {
+    const outcomes: [string | undefined, string][] = [
+      ['Passed', 'Undo vote passed. Game state has been restored.'],
+      ['Failed', 'Undo request was rejected.'],
+      ['Vote Completed', 'Undo vote completed.'],
+      [undefined, 'Undo vote completed.']
+    ];
+
+    for (const [result, message] of outcomes) {
+      it(`clears the vote and shows feedback for ${result ?? 'legacy empty payload'}`, () => {
+        getCallback('RoomUpdated')({ code: 'TEST', players: [], currentVote: { votes: {} } });
+        const toast = TestBed.inject(ToastService);
+
+        getCallback('UndoVoteFinished')(result);
+
+        expect(service.currentRoomSubject.value?.currentVote).toBeNull();
+        expect(toast.showInfo).toHaveBeenCalledOnceWith(message);
+      });
+    }
+
+    it('handles completion before a room is available', () => {
+      expect(() => getCallback('UndoVoteFinished')('Failed')).not.toThrow();
+      expect(TestBed.inject(ToastService).showInfo).toHaveBeenCalledWith('Undo request was rejected.');
+    });
+  });
+
   describe('startConnection', () => {
     it('should start connection if disconnected', async () => {
       mockHubConnection.state = HubConnectionState.Disconnected;

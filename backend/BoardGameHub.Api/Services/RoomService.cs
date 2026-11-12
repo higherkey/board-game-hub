@@ -1172,7 +1172,7 @@ public class RoomService : IRoomService, IDisposable
         return null;
     }
 
-    public async Task<Room?> SubmitUndoVote(string code, string connectionId, bool vote)
+    public async Task<UndoVoteSubmission?> SubmitUndoVote(string code, string connectionId, bool vote)
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         
@@ -1191,8 +1191,15 @@ public class RoomService : IRoomService, IDisposable
             // If simple majority reached ( > 50% of TOTAL players)
             if (yesVotes > totalPlayers / 2.0)
             {
-                room.CurrentVote = null; // Vote passed
-                return PerformUndoLocked(room);
+                room.CurrentVote = null;
+                var restored = PerformUndoLocked(room);
+                if (restored == null)
+                {
+                    _gameStateManager.MarkDirty(room.Code);
+                    NotifyStatsChanged();
+                }
+                return new UndoVoteSubmission(room,
+                    restored != null ? UndoVoteResult.Passed : UndoVoteResult.Failed);
             }
             
             // If impossible to win (No votes >= 50%)
@@ -1205,7 +1212,8 @@ public class RoomService : IRoomService, IDisposable
 
             _gameStateManager.MarkDirty(room.Code);
             NotifyStatsChanged();
-            return room;
+            return new UndoVoteSubmission(room,
+                room.CurrentVote == null ? UndoVoteResult.Failed : UndoVoteResult.Pending);
         }
         finally
         {

@@ -241,13 +241,20 @@ export class SignalRService {
       }
     });
 
-    this.hubConnection.on('UndoVoteFinished', () => {
-      // Just a signal, room update comes separately usually, 
-      // but we can clear vote here locally to be safe.
+    this.hubConnection.on('UndoVoteFinished', (result?: string) => {
+      // State restoration arrives separately through the room state stream.
       const current = this.currentRoomSubject.value;
       if (current) {
         current.currentVote = null;
         this.currentRoomSubject.next({ ...current });
+      }
+      if (result === 'Passed') {
+        this.toastService.showInfo('Undo vote passed. Game state has been restored.');
+      } else if (result === 'Failed') {
+        this.toastService.showInfo('Undo request was rejected.');
+      } else {
+        // Older servers only announce completion, without an outcome.
+        this.toastService.showInfo('Undo vote completed.');
       }
     });
 
