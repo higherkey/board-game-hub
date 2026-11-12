@@ -337,7 +337,7 @@ public class GameHubTests
         // Arrange
         var vote = new UndoVote { InitiatorName = "P1" };
         var room = new Room { Code = "TEST", CurrentVote = vote };
-        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(room);
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(new UndoVoteSubmission(room, UndoVoteResult.Pending));
 
         // Act
         await _sut.SubmitUndoVote("TEST", true);
@@ -346,18 +346,19 @@ public class GameHubTests
         _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteUpdate", new object[] { vote }, default), Times.Once);
     }
 
-    [Fact]
-    public async Task SubmitUndoVote_ShouldBroadcastFinished_WhenVoteClosed()
+    [Theory]
+    [InlineData(UndoVoteResult.Passed, "Passed")]
+    [InlineData(UndoVoteResult.Failed, "Failed")]
+    public async Task SubmitUndoVote_ShouldBroadcastOutcome_WhenVoteClosed(UndoVoteResult result, string message)
     {
-        // Arrange
-        var room = new Room { Code = "TEST", CurrentVote = null };
-        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(room);
+        var room = new Room { Code = "TEST" };
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true))
+            .ReturnsAsync(new UndoVoteSubmission(room, result));
 
-        // Act
         await _sut.SubmitUndoVote("TEST", true);
 
-        // Assert
-        _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteFinished", new object[] { "Vote Completed" }, default), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteFinished", new object[] { message }, default), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteUpdate", It.IsAny<object[]>(), default), Times.Never);
     }
 
     [Fact]
@@ -473,7 +474,7 @@ public class GameHubTests
         _mockRoomService.Verify(r => r.RequestUndo("TEST", "conn1"), Times.Once);
 
         // Act & Assert - SubmitUndoVote
-        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(new Room { Code = "TEST", CurrentVote = null });
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(new UndoVoteSubmission(new Room { Code = "TEST" }, UndoVoteResult.Failed));
         await _sut.SubmitUndoVote("TEST", true);
         _mockRoomService.Verify(r => r.SubmitUndoVote("TEST", "conn1", true), Times.Once);
     }

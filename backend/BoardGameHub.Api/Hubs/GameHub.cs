@@ -280,26 +280,17 @@ public class GameHub : Hub
 
     public async Task SubmitUndoVote(string roomCode, bool vote)
     {
-        var room = await _roomService.SubmitUndoVote(roomCode, Context.ConnectionId, vote);
-        if (room != null)
+        var submission = await _roomService.SubmitUndoVote(roomCode, Context.ConnectionId, vote);
+        if (submission == null) return;
+
+        if (submission.Result == UndoVoteResult.Pending)
         {
-            if (room.CurrentVote == null)
-            {
-                // Logic: room.CurrentVote null means either Passed (Restored) or Failed (Reset).
-                // We should check if state changed? 
-                // Actually, if Vote passes, PerformUndo returns the restored room.
-                // If Vote fails (majority no), SubmitUndoVote returns the room with CurrentVote=null.
-                // How to distinguish for the client?
-                // Client gets "RoomUpdated" or "GameRestored".
-                // Let's send "GameRestored" if it worked (checking history stack change? No.)
-                // Let's just send "RoomUpdated" and an explicit "UndoVoteFinished" message?
-                await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteFinished", "Vote Completed"); // Generic
-            }
-            else
-            {
-                 // Vote updated but still ongoing
-                 await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteUpdate", room.CurrentVote);
-            }
+            await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteUpdate", submission.Room.CurrentVote);
+        }
+        else
+        {
+            // Retain the event name and single string argument for older clients.
+            await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteFinished", submission.Result.ToString());
         }
     }
 

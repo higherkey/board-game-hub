@@ -37,7 +37,7 @@ public interface IRoomService
     
     // Undo System
     Task<Room?> RequestUndo(string code, string connectionId);
-    Task<Room?> SubmitUndoVote(string code, string connectionId, bool vote);
+    Task<UndoVoteSubmission?> SubmitUndoVote(string code, string connectionId, bool vote);
 
     // Stats & Helpers
     List<string> ValidateRooms(List<string> codes);

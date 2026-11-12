@@ -308,7 +308,8 @@ public class RoomServiceTests
         var room = _sut.CreateRoom("host1", "Host", true);
         _sut.JoinRoom(room.Code, "conn2", "Player2");
         _sut.JoinRoom(room.Code, "conn3", "Player3"); // 3 players total, need 2 votes for majority (> 50% of 3 is 1.5 -> 2)
-        room.StateHistory.Push("{}");
+        room.StateHistory.Push("{\"RoundNumber\":1}");
+        room.RoundNumber = 2;
         _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
         await _sut.RequestUndo(room.Code, "conn2"); // Initiator conn2 votes Yes automatically
 
@@ -317,7 +318,52 @@ public class RoomServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.CurrentVote.Should().BeNull(); // Majority reached, vote closed
+        result!.Result.Should().Be(UndoVoteResult.Passed);
+        result.Room.CurrentVote.Should().BeNull(); // Majority reached, vote closed
+        room.StateHistory.Count.Should().Be(0);
+        room.RoundNumber.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task SubmitUndoVote_ShouldReportPending_WithoutRestoringState()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2");
+        _sut.JoinRoom(room.Code, "conn3", "Player3");
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+        await _sut.RequestUndo(room.Code, "conn2");
+
+        var result = await _sut.SubmitUndoVote(room.Code, "host1", false);
+
+        result!.Result.Should().Be(UndoVoteResult.Pending);
+        result.Room.CurrentVote.Should().NotBeNull();
+        room.StateHistory.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task SubmitUndoVote_ShouldReportFailed_WhenRestorationFails()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2");
+        room.StateHistory.Push("invalid snapshot");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+        await _sut.RequestUndo(room.Code, "conn2");
+
+        var result = await _sut.SubmitUndoVote(room.Code, "host1", true);
+
+        result!.Result.Should().Be(UndoVoteResult.Failed);
+        room.CurrentVote.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SubmitUndoVote_ShouldIgnoreVotes_AfterCompletion()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+
+        var result = await _sut.SubmitUndoVote(room.Code, "host1", true);
+
+        result.Should().BeNull();
     }
 
     [Fact]
@@ -526,7 +572,8 @@ public class RoomServiceTests
         var result = await _sut.SubmitUndoVote(room.Code, "host1", false); // host1 says No. 1 Yes, 1 No. 
 
         result.Should().NotBeNull();
-        result!.CurrentVote.Should().BeNull(); // Closed because everyone voted
+        result!.Result.Should().Be(UndoVoteResult.Failed);
+        result.Room.CurrentVote.Should().BeNull(); // Closed because everyone voted
         room.StateHistory.Count.Should().Be(1); // Not reverted
     }
 
