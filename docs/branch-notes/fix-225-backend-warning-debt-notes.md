@@ -12,6 +12,7 @@
 - Resolved: default SSL Require and all six explicit SSL modes remain unchanged, including VerifyCA/VerifyFull; no warning suppressions.
 
 ## 3. Quick Wins (4b)
+- Combined validation exposed a pre-existing random Farkle hot-dice test failure (valid bust resets score to zero). Add an internal Random constructor seam while the public constructor retains Random.Shared; exercise deterministic scoring and bust rerolls instead of assuming all random rolls score. Supplemental delta review checks unchanged public DI behavior and no production roll algorithm change. Supplemental independent adversarial review passes; own full backend suite 382/382 passes. Re-run the full combined suite before merge.
 - Include six explicit SSL-mode regression cases and verify normalized URI strings omit the obsolete certificate option.
 
 ## 4. Deferred Items (4c)

@@ -366,12 +366,16 @@ public class GameServicesUnitTests
         defaultState.Should().NotBeNull();
     }
 
-    [Fact]
-    public async Task FarkleService_FullGameFlow_And_ScoringRules_Test()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FarkleService_FullGameFlow_And_ScoringRules_Test(bool hotRollFarkles)
     {
         var logger = new Mock<ILogger<FarkleService>>();
         var serviceProvider = new Mock<IServiceProvider>();
-        var service = new FarkleService(logger.Object, serviceProvider.Object);
+        var random = new Mock<Random>();
+        random.Setup(r => r.Next(1, 7)).Returns(1);
+        var service = new FarkleService(logger.Object, serviceProvider.Object, random.Object);
         var room = CreateTestRoom(GameType.Farkle, 3);
         var settings = new GameSettings();
 
@@ -440,9 +444,16 @@ public class GameServicesUnitTests
             die.IsReserved = true;
             die.IsHeld = false;
         }
+        if (hotRollFarkles)
+        {
+            var reroll = new Queue<int>(new[] { 2, 3, 4, 6, 2, 3 });
+            random.Setup(r => r.Next(1, 7)).Returns(() => reroll.Count > 0 ? reroll.Dequeue() : 1);
+        }
         var hotRoll = await service.HandleAction(room, new GameAction("ROLL", null), "conn_1");
         hotRoll.Should().BeTrue();
-        state.CurrentTurnScore.Should().BeGreaterThan(0);
+        state.CurrentTurnScore.Should().Be(hotRollFarkles ? 0 : 3000);
+        state.Phase.Should().Be(hotRollFarkles ? FarklePhase.Farkled : FarklePhase.Picking);
+        state.Dice.Should().OnlyContain(d => !d.IsHeld && !d.IsReserved);
 
         // Test HandleBank edge cases:
         // 1. Initial turn requires at least 500 points when TotalScore == 0
