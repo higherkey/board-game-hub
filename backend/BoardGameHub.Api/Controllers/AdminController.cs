@@ -136,7 +136,8 @@ public class AdminController : ControllerBase
         if (req.Target == "global")
         {
              // Use the system user for global messages 
-             var adminEmail = _configuration["Admin:Email"] ?? "admin@boardgamehub.com";
+             var adminEmail = _configuration["Admin:Email"];
+             if (string.IsNullOrEmpty(adminEmail)) return BadRequest("Admin email is not configured.");
              var adminUser = await _userManager.FindByNameAsync(adminEmail);
              if (adminUser != null)
              {

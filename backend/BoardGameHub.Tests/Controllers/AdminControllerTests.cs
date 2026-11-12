@@ -157,4 +157,16 @@ public class AdminControllerTests : IDisposable
         _mockSocialService.Verify(s => s.SaveGlobalMessage("admin_id", "Test message"), Times.Once);
         _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", new object[] { "ADMIN", "Test message" }, default), Times.Once);
     }
+
+    [Fact]
+    public async Task SendMessage_WhenAdminEmailNotConfigured_ReturnsBadRequestAndSendsNothing()
+    {
+        _mockConfig.Setup(c => c["Admin:Email"]).Returns((string?)null);
+
+        var result = await _sut.SendMessage(new AdminController.MsgReq("Test message", "global"));
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", It.IsAny<object[]>(), default), Times.Never);
+    }
 }
