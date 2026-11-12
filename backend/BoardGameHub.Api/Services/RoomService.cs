@@ -1107,15 +1107,6 @@ public class RoomService : IRoomService, IDisposable
             var options = new JsonSerializerOptions { IncludeFields = true };
             var snapshot = JsonSerializer.Serialize(room, options);
             room.StateHistory.Push(snapshot);
-            
-            // Limit history
-            if (room.StateHistory.Count > 10)
-            {
-                var list = room.StateHistory.ToList();
-                list.RemoveAt(list.Count - 1); // Remove oldest
-                list.Reverse(); // Stack to List is reversed
-                room.StateHistory = new Stack<string>(list);
-            }
         }
         catch (Exception ex)
         {
