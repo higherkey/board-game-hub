@@ -699,6 +699,7 @@ public class RoomService : IRoomService, IDisposable
             // Apply settings if provided (Start of Game)
             if (settings != null)
             {
+                settings.Clamp();
                 room.Settings = settings;
                 room.RoundNumber = 0;
                 // Reset Total Scores on new game
@@ -976,6 +977,7 @@ public class RoomService : IRoomService, IDisposable
         }
         try
         {
+            settings.Clamp();
             room.Settings = settings;
         }
         finally
