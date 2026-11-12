@@ -33,6 +33,7 @@ public class FourInARowTests
         Assert.Equal("red", state.CurrentPlayerId);
         Assert.Equal(7, state.Grid.Length);
         Assert.All(state.Grid, column => Assert.Equal(new int[6], column));
+        Assert.Equal(1, room.Settings.TotalRounds);
         Assert.Equal(0, room.Settings.TimerDurationSeconds);
         await _service.EndRound(room);
         Assert.Equal(GameState.Playing, room.State);

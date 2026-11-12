@@ -538,7 +538,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 8,
                             MinPlayers = 1,
                             Name = "Yacht",
-                            Status = 3,
+                            Status = 1,
                             Tags = "Dice,Strategy,Classic",
                             TimerType = 0
                         },

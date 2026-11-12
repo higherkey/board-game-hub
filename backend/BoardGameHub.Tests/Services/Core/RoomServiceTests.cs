@@ -80,7 +80,7 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public async Task FourInARow_WinReconnectUndo_DiscardsStaleHistoryAndAcceptsNewHistory()
+    public async Task FourInARow_WinReconnectUndo_PreservesHistoryAndRestoresCurrentSeat()
     {
         _gameServices.Add(new FourInARowGameService());
         var room = _sut.CreateRoom("red", "Red", false, GameType.FourInARow);
@@ -94,11 +94,15 @@ public class RoomServiceTests
         }
         var session = room.Players[0].SessionId;
         Assert.Same(room, _sut.JoinRoom(room.Code, "red-new", "Red", sessionId: session));
-        Assert.Empty(room.StateHistory);
-        Assert.Null(await _sut.RequestUndo(room.Code, "red-new"));
+        Assert.NotEmpty(room.StateHistory);
+        Assert.Same(room, await _sut.RequestUndo(room.Code, "red-new"));
+        Assert.Equal(GameState.Playing, room.State);
+        Assert.Equal(0, room.Players[0].Score);
+        Assert.Equal("red-new", ((FourInARowState)room.GameData!).CurrentPlayerId);
+        Assert.DoesNotContain("red", ((FourInARowState)room.GameData!).PlayerOrder);
+        await _sut.SubmitAction(room.Code, "red-new", "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column = 3 }));
         Assert.Equal(GameState.Finished, room.State);
         Assert.Equal(1, room.Players[0].Score);
-        Assert.Equal("red-new", ((FourInARowState)room.GameData!).WinnerId);
 
         await _sut.StartGame(room.Code);
         await _sut.SubmitAction(room.Code, "red-new", "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column = 0 }));

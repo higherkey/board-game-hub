@@ -20,6 +20,7 @@ public class FourInARowGameService : BaseGameService<FourInARowState>
             CurrentPlayerId = players[0].ConnectionId
         };
         room.RoundScores.Clear();
+        settings.TotalRounds = 1;
         settings.TimerDurationSeconds = 0;
         return Task.CompletedTask;
     }

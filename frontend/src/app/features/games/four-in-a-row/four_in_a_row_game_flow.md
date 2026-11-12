@@ -15,7 +15,7 @@ Two Hand players play an untimed match on a 7 × 6 board. Any shared Table is a 
 - Action: `DROP`, payload `{ "column": 0 }` (zero-based, 0–6).
 - Grid is column-major: `grid[column][row]`; row zero is at the top. Values: 0 empty, 1 Red, 2 Yellow.
 - State includes `phase` (`Playing`/`GameOver`), `playerOrder`, `currentPlayerId`, `winnerId`, `moveCount`, `lastMove`, and `winningCells`.
-- Reconnects rebind turn, winner, player order and round-score IDs while preserving disc colors. Undo history from before a reconnect is discarded because its snapshots contain old connection IDs; new moves remain undoable. Undoing a scored move restores the previous totals.
+- Reconnects rebind turn, winner, player order and round-score IDs while preserving disc colors. The shared room service rebinds undo snapshots to the current connection IDs so undo remains available after reconnecting. Undoing a scored move restores the previous totals.
 - Catalog status becomes Testing through the accompanying EF migration; apply it using the normal deployment migration workflow.
 
 ## Verification
