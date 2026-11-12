@@ -824,6 +824,7 @@ public class RoomService : IRoomService, IDisposable
             return null;
         }
         var wasFinished = room.State == GameState.Finished;
+        Room? historySnapshot = null;
         try
         {
             // Guard is evaluated under the lock to avoid a check-then-act race (#112).
@@ -834,6 +835,7 @@ public class RoomService : IRoomService, IDisposable
                     room.IsPaused = false;
                     room.TimeRemainingWhenPaused = null;
                     room.RoundEndTime = null; // Clear timer
+                    historySnapshot = SnapshotForHistory(room);
                     break;
                 case GameState.Finished:
                     room.GameType = GameType.None;
@@ -848,11 +850,30 @@ public class RoomService : IRoomService, IDisposable
             room.StateLock.Release();
         }
 
-        if (!wasFinished && room.State == GameState.Finished) await RecordHistoryAsync(room);
-
         _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
+        if (historySnapshot != null) await RecordHistoryAsync(historySnapshot);
         return room;
+    }
+
+    /// <summary>
+    /// Copies the fields history needs. Caller must hold StateLock so the scores are those at the moment of finishing.
+    /// </summary>
+    private static Room SnapshotForHistory(Room room)
+    {
+        var snapshot = new Room { Code = room.Code, GameType = room.GameType, IsPublic = room.IsPublic };
+        foreach (var p in room.Players)
+        {
+            snapshot.Players.Add(new Player
+            {
+                Name = p.Name,
+                Score = p.Score,
+                UserId = p.UserId,
+                IsScreen = p.IsScreen,
+                ConnectionId = p.ConnectionId
+            });
+        }
+        return snapshot;
     }
 
     /// <summary>
@@ -910,14 +931,16 @@ public class RoomService : IRoomService, IDisposable
 
             await room.StateLock.WaitAsync();
             var wasFinished = room.State == GameState.Finished;
+            Room? historySnapshot = null;
             try
             {
-                if (actionType != "SUBMIT_STROKE") 
+                if (actionType != "SUBMIT_STROKE")
                 {
                     SaveStateLocked(room);
                 }
 
                 success = await service.HandleAction(room, action, connectionId);
+                if (success && !wasFinished && room.State == GameState.Finished) historySnapshot = SnapshotForHistory(room);
             }
             finally
             {
@@ -926,8 +949,6 @@ public class RoomService : IRoomService, IDisposable
 
             if (success)
             {
-                if (!wasFinished && room.State == GameState.Finished) await RecordHistoryAsync(room);
-
                 // Action could change anything. Usually GameData, Scores, Players.
                 // For safety on generic actions, we might need full diff? 
                 // Or GameService tells us what changed?
@@ -942,6 +963,7 @@ public class RoomService : IRoomService, IDisposable
                 _gameStateManager.MarkDirty(room.Code, nameof(Room.State));
 
                 NotifyStatsChanged();
+                if (historySnapshot != null) await RecordHistoryAsync(historySnapshot);
                 return room;
             }
         }
@@ -952,6 +974,7 @@ public class RoomService : IRoomService, IDisposable
     {
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
 
+        Room? historySnapshot = null;
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         if (service != null)
         {
@@ -960,17 +983,17 @@ public class RoomService : IRoomService, IDisposable
             try
             {
                 await service.EndRound(room);
+                if (!wasFinished && room.State == GameState.Finished) historySnapshot = SnapshotForHistory(room);
             }
             finally
             {
                 room.StateLock.Release();
             }
-
-            if (!wasFinished && room.State == GameState.Finished) await RecordHistoryAsync(room);
         }
-        
+
         _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
+        if (historySnapshot != null) await RecordHistoryAsync(historySnapshot);
         return room;
     }
 

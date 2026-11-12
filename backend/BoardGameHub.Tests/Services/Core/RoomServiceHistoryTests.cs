@@ -66,7 +66,7 @@ public class RoomServiceHistoryTests
         _history.Verify(h => h.RecordGameSession(It.IsAny<Room>()), Times.Never);
 
         await _sut.CalculateRoundScores(room.Code);
-        _history.Verify(h => h.RecordGameSession(room), Times.Once);
+        _history.Verify(h => h.RecordGameSession(It.Is<Room>(r => r.Code == room.Code)), Times.Once);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class RoomServiceHistoryTests
         }
 
         Assert.Equal(GameState.Finished, room.State);
-        _history.Verify(h => h.RecordGameSession(room), Times.Once);
+        _history.Verify(h => h.RecordGameSession(It.Is<Room>(r => r.Code == room.Code)), Times.Once);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class RoomServiceHistoryTests
         room.State = GameState.Playing;
 
         await _sut.EndGame(room.Code);
-        _history.Verify(h => h.RecordGameSession(room), Times.Once);
+        _history.Verify(h => h.RecordGameSession(It.Is<Room>(r => r.Code == room.Code)), Times.Once);
 
         await _sut.EndGame(room.Code);
         Assert.Equal(GameState.Lobby, room.State);
@@ -111,5 +111,24 @@ public class RoomServiceHistoryTests
         var result = await _sut.EndGame(room.Code);
 
         Assert.Same(room, result);
+    }
+
+    [Fact]
+    public async Task EndGame_RecordsSnapshotOfScoresAtFinish()
+    {
+        Room? captured = null;
+        _history.Setup(h => h.RecordGameSession(It.IsAny<Room>())).Callback<Room>(r => captured = r).Returns(Task.CompletedTask);
+        var room = _sut.CreateRoom("a", "A", false, GameType.Scatterbrain);
+        room.State = GameState.Playing;
+        room.Players[0].Score = 10;
+
+        await _sut.EndGame(room.Code);
+        room.Players[0].Score = 99;
+
+        Assert.NotNull(captured);
+        Assert.NotSame(room, captured);
+        Assert.Equal(room.Code, captured!.Code);
+        Assert.Equal(10, captured.Players[0].Score);
+        Assert.Equal("A", captured.Players[0].Name);
     }
 }

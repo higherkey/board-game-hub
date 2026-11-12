@@ -2,6 +2,7 @@
 
 ## Discoveries & Deviations
 - Game history is now recorded in `RoomService` when a room transitions into `Finished` (`SubmitAction`, `CalculateRoundScores`, `EndGame`), after the room lock is released. `GameHub.EndRound` no longer records; `IGameHistoryService` stays injected for `GetGameHistory`.
+- Final review: history is recorded after `MarkDirty`/`NotifyStatsChanged` (not before the broadcast) from a snapshot of the room (code, game type, players and scores) taken under the lock at the finishing transition.
 - Known edge case: undo from Finished, then finishing again, records a second session.
 
 ## 4a Blockers & Risks
