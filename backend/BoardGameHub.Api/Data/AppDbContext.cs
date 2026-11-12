@@ -139,7 +139,7 @@ public class AppDbContext : IdentityDbContext<User>
                 TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
             },
             new GameDefinition { 
-                Id = "FourInARow", Name = "Four in a Row", Icon = "🔴", Description = "Connect four of your checkers in a row.", Status = GameStatus.InDevelopment,
+                Id = "FourInARow", Name = "Four in a Row", Icon = "🔴", Description = "Connect four of your checkers in a row.", Status = GameStatus.Testing,
                 MinPlayers = 2, MaxPlayers = 2, Complexity = 1, AveragePlayTime = 5, Tags = "Strategy,Puzzle",
                 TimerType = TimerType.NotApplicable, DefaultRoundLengthSeconds = 0
             },

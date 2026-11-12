@@ -681,6 +681,10 @@ public class RoomService : IRoomService, IDisposable
         await room.StateLock.WaitAsync();
         try
         {
+            // Validate before changing room state, scores or round data, including host overrides.
+            if (room.GameType == GameType.FourInARow && room.Players.Count(p => !p.IsScreen) != 2)
+                return null;
+
             // A brand-new game from the lobby requires readiness or the host override (#66).
             if (settings != null && room.State == GameState.Lobby && !room.CanStartNewGame())
             {

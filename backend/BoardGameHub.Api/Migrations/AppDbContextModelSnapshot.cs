@@ -283,7 +283,7 @@ namespace BoardGameHub.Api.Migrations
                             MaxPlayers = 2,
                             MinPlayers = 2,
                             Name = "Four in a Row",
-                            Status = 2,
+                            Status = 1,
                             Tags = "Strategy,Puzzle",
                             TimerType = 0
                         },

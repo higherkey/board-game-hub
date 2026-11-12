@@ -1,4 +1,2 @@
-<div class="p-4 text-center">
-    <h2 class="h4 text-primary">Four in a Row Controller</h2>
-    <p>Waiting for game implementation...</p>
-</div>
+<p class="turn-hint">{{ canPlay ? 'Your turn. Choose a column to drop your disc.' : 'Watch the board while you wait for your turn.' }}</p>
+<app-four-in-a-row-board [room]="room" [interactive]="canPlay" (columnDrop)="columnDrop.emit($event)" />

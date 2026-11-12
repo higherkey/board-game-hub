@@ -1,3 +1,17 @@
-.four-in-a-row-board {
-    height: 100%;
-}
+:host { display: block; }
+.board-shell { max-width: 600px; margin: auto; }
+.drop-controls, .board-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.drop-controls { margin-bottom: 8px; }
+button { min-width: 44px; min-height: 44px; background: #dbeafe; color: #172554; border: 0; border-radius: 6px; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+button:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.board { background: #1d4ed8; padding: 8px; border-radius: 12px; display: grid; gap: 4px; box-shadow: 0 8px 0 #172554; }
+.cell { aspect-ratio: 1; border-radius: 50%; background: #0f172a; display: grid; place-items: center; }
+.token { width: 90%; height: 90%; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: clamp(1rem, 3vw, 1.7rem); }
+.red { background: #f87171; color: #450a0a; }
+.yellow { background: #facc15; color: #422006; }
+.winning { outline: 3px solid white; outline-offset: -2px; }
+.just-dropped { animation: drop .25s ease-out; }
+.board-caption { color: #cbd5e1; text-align: center; margin: 16px 0 0; font-size: .85rem; }
+@keyframes drop { from { transform: translateY(-45px); } to { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .just-dropped { animation: none; } }
