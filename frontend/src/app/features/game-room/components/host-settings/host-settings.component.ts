@@ -235,7 +235,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     const playersOnly = this.players.filter(p => !p.isScreen);
 
     if (playersOnly.length === 0) {
-      alert('Cannot start the game! No players in the room.');
+      this.toastService.showWarning('Cannot start the game! No players in the room.');
       return;
     }
 
@@ -276,7 +276,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       const newState = !this.isHostOverride;
       this.logger.info(`[HostSettings] Screen-Host triggering Room Ready override (forcedState: ${newState})`);
       if (newState && this.selectedGameType === 'None') {
-        alert('Please select a game first!');
+        this.toastService.showWarning('Please select a game first!');
         return;
       }
       // If we are the Screen (Table), toggle the room-level override
