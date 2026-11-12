@@ -823,6 +823,7 @@ public class RoomService : IRoomService, IDisposable
             _logger.LogWarning("Timeout waiting for StateLock in EndGame for room {Code}", code);
             return null;
         }
+        var wasFinished = room.State == GameState.Finished;
         try
         {
             // Guard is evaluated under the lock to avoid a check-then-act race (#112).
@@ -847,9 +848,29 @@ public class RoomService : IRoomService, IDisposable
             room.StateLock.Release();
         }
 
+        if (!wasFinished && room.State == GameState.Finished) await RecordHistoryAsync(room);
+
         _gameStateManager.MarkDirty(room.Code);
         NotifyStatsChanged();
         return room;
+    }
+
+    /// <summary>
+    /// Persists the finished game once, after the room lock is released. Failures are logged, never thrown.
+    /// </summary>
+    private async Task RecordHistoryAsync(Room room)
+    {
+        if (_scopeFactory == null) return;
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var history = scope.ServiceProvider.GetService<IGameHistoryService>();
+            if (history != null) await history.RecordGameSession(room);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error recording game history for room {RoomCode}", room.Code);
+        }
     }
 
     /// <summary>
@@ -886,8 +907,9 @@ public class RoomService : IRoomService, IDisposable
         {
             var action = new GameAction(actionType, payload);
             bool success = false;
-            
+
             await room.StateLock.WaitAsync();
+            var wasFinished = room.State == GameState.Finished;
             try
             {
                 if (actionType != "SUBMIT_STROKE") 
@@ -902,8 +924,10 @@ public class RoomService : IRoomService, IDisposable
                 room.StateLock.Release();
             }
 
-            if (success) 
+            if (success)
             {
+                if (!wasFinished && room.State == GameState.Finished) await RecordHistoryAsync(room);
+
                 // Action could change anything. Usually GameData, Scores, Players.
                 // For safety on generic actions, we might need full diff? 
                 // Or GameService tells us what changed?
@@ -932,6 +956,7 @@ public class RoomService : IRoomService, IDisposable
         if (service != null)
         {
             await room.StateLock.WaitAsync();
+            var wasFinished = room.State == GameState.Finished;
             try
             {
                 await service.EndRound(room);
@@ -940,6 +965,8 @@ public class RoomService : IRoomService, IDisposable
             {
                 room.StateLock.Release();
             }
+
+            if (!wasFinished && room.State == GameState.Finished) await RecordHistoryAsync(room);
         }
         
         _gameStateManager.MarkDirty(room.Code);

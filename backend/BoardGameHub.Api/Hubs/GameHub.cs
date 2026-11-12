@@ -513,19 +513,6 @@ public class GameHub : Hub
 
             if (room != null)
             {
-                // Record history with extra safety
-                try
-                {
-                    if (_historyService != null && room.Players.Any())
-                    {
-                        await _historyService.RecordGameSession(room);
-                    }
-                }
-                catch (Exception hex)
-                {
-                    _logger.LogError(hex, "Error recording game history for room {RoomCode}", roomCode);
-                }
-
                 await Clients.Group(NormalizeCode(roomCode)).SendAsync("RoundEnded", room);
             }
         }

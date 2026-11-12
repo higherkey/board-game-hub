@@ -258,7 +258,7 @@ public class GameHubTests
     }
 
     [Fact]
-    public async Task EndRound_ShouldCalculateScoresAndRecordHistory()
+    public async Task EndRound_ShouldCalculateScoresWithoutRecordingHistory()
     {
         // Arrange
         var room = new Room { Code = "TEST", Players = new List<Player> { new Player { Name = "P1" } } };
@@ -270,7 +270,7 @@ public class GameHubTests
         await _sut.EndRound("TEST");
 
         // Assert
-        _mockHistoryService.Verify(h => h.RecordGameSession(room), Times.Once);
+        _mockHistoryService.Verify(h => h.RecordGameSession(It.IsAny<Room>()), Times.Never);
         _mockClientProxy.Verify(c => c.SendCoreAsync("RoundEnded", new object[] { room }, default), Times.Once);
     }
 
