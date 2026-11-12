@@ -55,11 +55,14 @@ describe('HostSettingsComponent', () => {
         expect(component.exitGame.emit).toHaveBeenCalled();
     });
 
-    it('should alert if startGame is called with no players', () => {
-        spyOn(globalThis, 'alert');
+    it('should warn locally if startGame is called with no players', () => {
+        const toast = TestBed.inject(ToastService);
+        spyOn(toast, 'showWarning');
         component.players = [];
+        spyOn(component.gameStart, 'emit');
         component.startGame();
-        expect(globalThis.alert).toHaveBeenCalledWith('Cannot start the game! No players in the room.');
+        expect(component.gameStart.emit).not.toHaveBeenCalled();
+        expect(toast.showWarning).toHaveBeenCalledWith('Cannot start the game! No players in the room.');
     });
 
     it('should block startGame and warn when not all players are ready and no override (#66)', () => {
@@ -120,12 +123,15 @@ describe('HostSettingsComponent', () => {
         expect(mockSignalRService.setGameType).toHaveBeenCalledWith('ROOM1', 'Coup');
     });
 
-    it('should alert if onToggleReady is called without a game selected (as screen)', () => {
-        spyOn(globalThis, 'alert');
+    it('should warn locally if onToggleReady is called without a game selected (as screen)', () => {
+        const toast = TestBed.inject(ToastService);
+        spyOn(toast, 'showWarning');
         component.selectedGameType = 'None';
         component.isScreen = true;
         component.isHostOverride = false;
+        spyOn(component.toggleReady, 'emit');
         component.onToggleReady();
-        expect(globalThis.alert).toHaveBeenCalledWith('Please select a game first!');
+        expect(component.toggleReady.emit).not.toHaveBeenCalled();
+        expect(toast.showWarning).toHaveBeenCalledWith('Please select a game first!');
     });
 });
