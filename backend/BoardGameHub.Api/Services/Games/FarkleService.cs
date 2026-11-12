@@ -9,13 +9,20 @@ public class FarkleService : BaseGameService<FarkleState>
 {
     private readonly ILogger<FarkleService> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly Random _random;
 
     public override GameType GameType => GameType.Farkle;
 
     public FarkleService(ILogger<FarkleService> logger, IServiceProvider serviceProvider)
+        : this(logger, serviceProvider, Random.Shared)
+    {
+    }
+
+    internal FarkleService(ILogger<FarkleService> logger, IServiceProvider serviceProvider, Random random)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _random = random;
     }
 
     public override Task StartRound(Room room, GameSettings settings)
@@ -171,7 +178,7 @@ public class FarkleService : BaseGameService<FarkleState>
         state.Phase = FarklePhase.Rolling;
         foreach (var die in state.Dice.Where(d => !d.IsHeld))
         {
-            die.Value = Random.Shared.Next(1, 7);
+            die.Value = _random.Next(1, 7);
             die.IsReserved = false;
             die.IsScoring = false;
         }

@@ -767,12 +767,12 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public void Methods_ShouldReturnNullOrHandleGracefully_WhenStateLockTimesOut()
+    public async Task Methods_ShouldReturnNullOrHandleGracefully_WhenStateLockTimesOut()
     {
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
         
         // Artificially hold the lock on the room to simulate contention / timeout
-        room.StateLock.Wait();
+        await room.StateLock.WaitAsync();
         try
         {
             // Now attempt operations that acquire StateLock with a timeout
@@ -780,7 +780,7 @@ public class RoomServiceTests
             // But Wait(TimeSpan.FromSeconds(5)) would take 5 seconds.
             // Let's test non-blocking edge cases:
             // 1. SubmitAction from non-participant returns null immediately (tested above)
-            _sut.SubmitAction(room.Code, "unauthorized-conn", "ANY", null).Result.Should().BeNull();
+            (await _sut.SubmitAction(room.Code, "unauthorized-conn", "ANY", null)).Should().BeNull();
         }
         finally
         {

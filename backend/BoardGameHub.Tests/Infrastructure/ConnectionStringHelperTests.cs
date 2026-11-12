@@ -46,7 +46,7 @@ public class ConnectionStringHelperTests
         Assert.Equal("myuser", builder.Username);
         Assert.Equal("mypassword", builder.Password);
         Assert.Equal(SslMode.Require, builder.SslMode);
-        Assert.True(builder.TrustServerCertificate);
+        Assert.DoesNotContain("Trust Server Certificate", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class ConnectionStringHelperTests
         Assert.Equal("dbuser", builder.Username);
         Assert.Equal("secret", builder.Password);
         Assert.Equal(SslMode.Require, builder.SslMode);
-        Assert.True(builder.TrustServerCertificate);
+        Assert.DoesNotContain("Trust Server Certificate", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -76,5 +76,23 @@ public class ConnectionStringHelperTests
         var builder = new NpgsqlConnectionStringBuilder(result);
         Assert.Equal("user@test.com", builder.Username);
         Assert.Equal("p@ss#word", builder.Password);
+    }
+
+    [Theory]
+    [InlineData("disable", SslMode.Disable)]
+    [InlineData("allow", SslMode.Allow)]
+    [InlineData("prefer", SslMode.Prefer)]
+    [InlineData("require", SslMode.Require)]
+    [InlineData("verify-ca", SslMode.VerifyCA)]
+    [InlineData("verify-full", SslMode.VerifyFull)]
+    public void Normalize_ExplicitSslMode_PreservesTlsPolicy(string sslMode, SslMode expected)
+    {
+        var input = $"postgresql://user:password@db.example/game?sslmode={sslMode}";
+
+        var result = ConnectionStringHelper.Normalize(input);
+
+        var builder = new NpgsqlConnectionStringBuilder(result);
+        Assert.Equal(expected, builder.SslMode);
+        Assert.DoesNotContain("Trust Server Certificate", result!, StringComparison.OrdinalIgnoreCase);
     }
 }
