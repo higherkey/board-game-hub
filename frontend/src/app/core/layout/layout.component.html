@@ -3,19 +3,21 @@
     <header *ngIf="!(isGameRoom$ | async)" class="main-header" [class.scrolled]="isScrolled" role="banner">
         <div class="header-container">
             <div class="d-flex align-items-center header-left-group">
-                <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation">
-                    <i class="bi" [class.bi-list]="!mobileMenuOpen" [class.bi-x-lg]="mobileMenuOpen"></i>
+                <button #navToggle type="button" class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation"
+                    [attr.aria-expanded]="mobileMenuOpen" aria-controls="main-navigation">
+                    <i class="bi" aria-hidden="true" [class.bi-list]="!mobileMenuOpen" [class.bi-x-lg]="mobileMenuOpen"></i>
                 </button>
 
-                <a class="logo-container d-flex align-items-center" routerLink="/" (click)="closeMobileMenu()" aria-label="Go to Home">
-                    <app-logo [size]="36" class="text-primary"></app-logo>
-                    <div class="logo-text ms-2 d-none d-sm-block">BoardGame<span class="text-primary">Hub</span></div>
-                    <div class="logo-text ms-2 d-sm-none">BG<span class="text-primary">H</span></div>
+                <a class="logo-container d-flex align-items-center" routerLink="/" (click)="closeMobileMenu()">
+                    <app-logo [size]="36" class="text-primary" aria-hidden="true"></app-logo>
+                    <div class="logo-text ms-2 d-none d-sm-block">BoardGame<span class="logo-word-accent">Hub</span></div>
+                    <div class="logo-text ms-2 d-sm-none">BG<span class="logo-word-accent">H</span></div>
                     <span class="logo-beta-tag ms-2">BETA</span>
+                    <span class="visually-hidden"> home</span>
                 </a>
             </div>
 
-            <nav class="main-nav" [class.open]="mobileMenuOpen" role="navigation" aria-label="Main Navigation">
+            <nav id="main-navigation" class="main-nav" [class.open]="mobileMenuOpen" role="navigation" aria-label="Main Navigation">
                 <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item"
                     (click)="closeMobileMenu()">Home</a>
                 <a routerLink="/play" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Play</a>
@@ -64,8 +66,8 @@
             </div>
             
             <div class="footer-col col-nav">
-                <h4 class="col-title">Platform</h4>
-                <nav class="footer-nav">
+                <h2 class="col-title">Platform</h2>
+                <nav class="footer-nav" aria-label="Platform">
                     <a routerLink="/">Home</a>
                     <a routerLink="/play">Play</a>
                     <a routerLink="/games">Games</a>
@@ -74,8 +76,8 @@
             </div>
             
             <div class="footer-col col-legal">
-                <h4 class="col-title">Legal</h4>
-                <nav class="footer-nav">
+                <h2 class="col-title">Legal</h2>
+                <nav class="footer-nav" aria-label="Legal">
                     <a routerLink="/privacy-policy">Privacy Policy</a>
                     <a routerLink="/terms-of-service">Terms of Service</a>
                     <a routerLink="/data-privacy">Data Privacy</a>
@@ -84,7 +86,7 @@
             </div>
             
             <div class="footer-col col-studio">
-                <h4 class="col-title">Studio</h4>
+                <h2 class="col-title">Studio</h2>
                 <p class="mb-2">A product of <a href="https://eight1fivedesign.com" target="_blank" rel="noopener noreferrer" class="studio-link">eight1five design</a></p>
                 <div class="mb-3">
                     <a routerLink="/news" class="footer-beta-chip text-decoration-none" title="View latest release notes and updates">

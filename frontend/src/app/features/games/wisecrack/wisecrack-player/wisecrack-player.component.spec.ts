@@ -15,9 +15,9 @@ describe('WisecrackPlayerComponent', () => {
         mockSignalRService = {
             submitWisecrackAnswer: jasmine.createSpy('submitWisecrackAnswer'),
             submitWisecrackVote: jasmine.createSpy('submitWisecrackVote'),
-            pauseGame: jasmine.createSpy('pauseGame'),
-            resumeGame: jasmine.createSpy('resumeGame'),
-            endRound: jasmine.createSpy('endRound')
+            pauseGame: jasmine.createSpy('pauseGame').and.resolveTo(),
+            resumeGame: jasmine.createSpy('resumeGame').and.resolveTo(),
+            endRound: jasmine.createSpy('endRound').and.resolveTo()
         };
 
         await TestBed.configureTestingModule({
@@ -143,4 +143,19 @@ describe('WisecrackPlayerComponent', () => {
         component.endRound();
         expect(mockSignalRService.endRound).toHaveBeenCalled();
     });
+
+  it('handles rejected room controls without unhandled promises', async () => {
+    const failure = new Error('Disconnected');
+    const log = spyOn(console, 'error');
+    component.room = { code: 'TEST' } as any;
+    mockSignalRService.pauseGame = jasmine.createSpy('pauseGame').and.rejectWith(failure);
+    component.pauseGame();
+    mockSignalRService.resumeGame = jasmine.createSpy('resumeGame').and.rejectWith(failure);
+    component.resumeGame();
+    mockSignalRService.endRound = jasmine.createSpy('endRound').and.rejectWith(failure);
+    component.endRound();
+    await Promise.resolve();
+    expect(log).toHaveBeenCalledTimes(3);
+    expect(log).toHaveBeenCalledWith(failure);
+  });
 });

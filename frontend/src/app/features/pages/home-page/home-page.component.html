@@ -28,12 +28,12 @@
                 </div>
 
                 <div class="join-cap-wrap">
-                    <button type="button" (click)="toggleCodeEntry()" [disabled]="isValidating"
+                    <button type="button" (click)="onCodeCapClick()" [disabled]="isValidating"
                         class="btn join-cap-btn"
                         [class.is-active]="isCodeInputFocused || (roomCode && roomCode.length > 0)"
                         [class.bounce-echo]="!isCodeInputFocused && (!roomCode || roomCode.length === 0)"
-                        title="Enter an alpha room code directly"
-                        aria-label="Enter room code directly">
+                        [title]="isCodeInputFocused || roomCode ? 'Join room' : 'Enter room code directly'"
+                        [attr.aria-label]="isCodeInputFocused || roomCode ? 'Join room' : 'Enter room code directly'">
                         <span *ngIf="!isValidating" class="cap-icon-wrap">
                             <i class="bi bi-keyboard alpha-icon" *ngIf="!isCodeInputFocused && (!roomCode || roomCode.length === 0)"></i>
                             <i class="bi bi-arrow-right-short arrow-icon"></i>

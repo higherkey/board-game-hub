@@ -39,11 +39,11 @@ describe('PictophoneHandComponent', () => {
     signalRMock = {
       submitPictophoneDraft: jasmine.createSpy('submitPictophoneDraft'),
       submitPictophonePage: jasmine.createSpy('submitPictophonePage'),
-      revealPictophoneNext: jasmine.createSpy('revealPictophoneNext'),
-      starPictophonePage: jasmine.createSpy('starPictophonePage'),
-      pauseGame: jasmine.createSpy('pauseGame'),
-      resumeGame: jasmine.createSpy('resumeGame'),
-      forcePictophoneNext: jasmine.createSpy('forcePictophoneNext')
+      revealPictophoneNext: jasmine.createSpy('revealPictophoneNext').and.resolveTo(),
+      starPictophonePage: jasmine.createSpy('starPictophonePage').and.resolveTo(),
+      pauseGame: jasmine.createSpy('pauseGame').and.resolveTo(),
+      resumeGame: jasmine.createSpy('resumeGame').and.resolveTo(),
+      forcePictophoneNext: jasmine.createSpy('forcePictophoneNext').and.resolveTo()
     };
 
     await TestBed.configureTestingModule({
@@ -110,5 +110,24 @@ describe('PictophoneHandComponent', () => {
 
     component.forceNext();
     expect(signalRMock.forcePictophoneNext).toHaveBeenCalledWith('PICT');
+  });
+
+  it('handles rejected room controls without unhandled promises', async () => {
+    const failure = new Error('Disconnected');
+    const log = spyOn(console, 'error');
+    component.room = { code: 'TEST' } as any;
+    signalRMock.revealPictophoneNext = jasmine.createSpy('revealPictophoneNext').and.rejectWith(failure);
+    component.onRevealNext();
+    signalRMock.starPictophonePage = jasmine.createSpy('starPictophonePage').and.rejectWith(failure);
+    component.onStarPage({"bookIndex":0,"pageIndex":1});
+    signalRMock.pauseGame = jasmine.createSpy('pauseGame').and.rejectWith(failure);
+    component.pauseGame();
+    signalRMock.resumeGame = jasmine.createSpy('resumeGame').and.rejectWith(failure);
+    component.resumeGame();
+    signalRMock.forcePictophoneNext = jasmine.createSpy('forcePictophoneNext').and.rejectWith(failure);
+    component.forceNext();
+    await Promise.resolve();
+    expect(log).toHaveBeenCalledTimes(5);
+    expect(log).toHaveBeenCalledWith(failure);
   });
 });
