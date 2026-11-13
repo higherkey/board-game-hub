@@ -19,8 +19,9 @@ test('mobile navigation, filters and selected tags expose keyboard state', async
   await expect(page.getByRole('main')).toHaveCount(1);
   for (const target of [nav, tag, page.getByRole('link', { name: 'Sign Up', exact: true })]) {
     const box = await target.boundingBox();
-    expect(box!.height).toBeGreaterThanOrEqual(44);
-    expect(box!.width).toBeGreaterThanOrEqual(44);
+    // Chromium can report a 44px target as 43.999996px after transforms.
+    expect(Math.round(box!.height * 1000) / 1000).toBeGreaterThanOrEqual(44);
+    expect(Math.round(box!.width * 1000) / 1000).toBeGreaterThanOrEqual(44);
   }
 });
 

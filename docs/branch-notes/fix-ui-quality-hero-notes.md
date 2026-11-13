@@ -9,7 +9,7 @@
 - Authenticated diagnostics identified 27 existing dev reliability findings: floating promises, async OnInit and a pointer-only Clover slot. Add rejection handling, synchronous lifecycle subscriptions and a native keyboard control.
 
 ## 2. Blockers & Risks (4a)
-- Initial PR analysis: reliability A, new coverage 68% (required 80%). Add missing keyboard/focus and failure-path coverage; CI gate must pass before merge.
+- PR analysis after failure-path tests: gate OK, reliability A, new coverage 100%. Final CI rerun includes subpixel rounding in the 44px browser target assertion; verify dev gate after merge.
 - Preserve Table/Hand behavior, branded visual direction, hero pause/seek/resize and reduced-motion support.
 
 ## 3. Quick Wins (4b)
