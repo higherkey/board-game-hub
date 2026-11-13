@@ -9,13 +9,26 @@ test('reports PR and dev reliability metadata without exposing credentials', asy
       rule: 'rule', severity: 'MAJOR', component: 'file', line: 4, message: 'Fix behavior', source: 'never log source' }] }
       : { projectStatus: { status: 'ERROR', conditions: [] } }), { headers: { 'Content-Type': 'application/json' } });
   }, log: message => logs.push(message) });
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 6);
   assert.ok(calls[0].url.includes('pullRequest=244'));
-  assert.ok(calls[2].url.includes('branch=dev'));
-  assert.ok(calls[1].url.includes('types=BUG'));
+  assert.ok(calls[3].url.includes('branch=dev'));
+  assert.ok(calls[1].url.includes('types=BUG%2CVULNERABILITY'));
+  assert.ok(calls[2].url.includes('measures/component_tree'));
   assert.ok(logs.join('').includes('Fix behavior'));
   assert.ok(!logs.join('').includes('private-token'));
   assert.ok(!logs.join('').includes('never log source'));
+});
+test('reports duplicated-file metadata from both Sonar period formats', async () => {
+  const logs = [];
+  await report({ token: 'secret', branch: 'dev', fetchImpl: async url => new Response(JSON.stringify(
+    url.includes('component_tree') ? { components: [
+      { path: 'small.cs', measures: [{ metric: 'new_duplicated_lines', periods: [{ value: '2' }] }] },
+      { path: 'large.cs', measures: [{ metric: 'new_duplicated_lines', period: { value: '12' } }] },
+      { path: 'clean.cs', measures: [] }
+    ] } : {})), log: message => logs.push(JSON.parse(message)) });
+  assert.deepEqual(logs.at(-1).duplicatedFiles, [
+    { path: 'large.cs', duplicatedLines: 12 }, { path: 'small.cs', duplicatedLines: 2 }
+  ]);
 });
 test('rejects missing credentials before making requests', async () => {
   await assert.rejects(report({ token: '' }), /SONAR_TOKEN/);

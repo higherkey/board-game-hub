@@ -33,13 +33,13 @@ public class ClientLoggingController : ControllerBase
         {
             rawMessage = rawMessage.Substring(0, MaxMessageLength);
         }
-        var sanitizedMessage = System.Text.RegularExpressions.Regex.Replace(rawMessage, @"[\r\n\x00-\x1F\x7F]", " ");
+        var sanitizedMessage = System.Text.RegularExpressions.Regex.Replace(rawMessage, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
         var serializedData = entry?.Data != null ? System.Text.Json.JsonSerializer.Serialize(entry.Data) : string.Empty;
         if (serializedData.Length > MaxDataLength)
         {
             serializedData = serializedData.Substring(0, MaxDataLength);
         }
-        var sanitizedData = System.Text.RegularExpressions.Regex.Replace(serializedData, @"[\r\n\x00-\x1F\x7F]", " ");
+        var sanitizedData = System.Text.RegularExpressions.Regex.Replace(serializedData, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
 
         var logLevel = (entry?.Level ?? "Information").ToUpperInvariant();
         switch (logLevel)
