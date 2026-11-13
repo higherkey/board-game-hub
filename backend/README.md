@@ -63,6 +63,19 @@ This guarantees the schema is always up-to-date before new code runs. The `efbun
 
 ## 🧪 Testing
 
+### Bundled public game catalogue
+
+The frontend bundles a versioned snapshot of the canonical `GameDefinition` seed metadata so first-time visitors can browse while the API starts or is unavailable. Release builds scope the browser cache to their configured API URL; each tier receives the metadata in its checked-out source revision.
+
+After changing game seed metadata, regenerate and commit the snapshot:
+
+```powershell
+npm --prefix frontend run catalogue:generate
+npm --prefix frontend run catalogue:check
+```
+
+The exporter reads the EF design-time model directly without starting the API, opening database connections, or requiring secrets. Frontend CI rejects a snapshot that differs from the model. Ordinary frontend builds use the committed snapshot and require no database, API or .NET runtime. Successful background refreshes replace browsing data; room creation and gameplay remain authoritative on the backend.
+
 We use **xUnit** for our test suite. To run all backend tests:
 ```powershell
 dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj
