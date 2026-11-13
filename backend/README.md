@@ -54,7 +54,10 @@ On every push to `main`, `staging`, or `dev`, the backend deployment workflow (`
 
 1. Generates a self-contained **EF Core Migration Bundle** (`efbundle`) from all migrations in source.
 2. Runs the bundle against the branch's database: Supabase for `main` and `staging` (`SUPABASE_CONNECTION_STRING_PROD` / `_STAGING`), Neon for `dev` (`NEON_CONNECTION_STRING_DEV`).
-3. Only then triggers deployment on Render.
+3. Updates only Render's database connection variable to use that same target, then deploys the tested commit.
+4. Waits for Render to become live and verifies both `/health` and the database-backed `/api/games` route.
+
+Missing database secrets fail deployment; staging never falls back to the dev database. `RENDER_API_KEY` is required for configuration alignment and deploy verification.
 
 This guarantees the schema is always up-to-date before new code runs. The `efbundle` binary is a transient build artifact — **do not commit it**.
 
