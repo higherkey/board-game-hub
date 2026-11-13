@@ -3,13 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HomeHeroComponent } from '../../../components/home-hero/home-hero.component';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
 import { SignalRService } from '../../../services/signalr.service';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, HomeHeroComponent],
   templateUrl: './home-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './home-page.component.scss'

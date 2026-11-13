@@ -14,6 +14,7 @@ describe('LandingPageComponent', () => {
   let gamesSubject: BehaviorSubject<GameDefinition[] | null>;
 
   beforeEach(async () => {
+    spyOn(globalThis, 'matchMedia').and.returnValue({ matches: true } as MediaQueryList);
     gamesSubject = new BehaviorSubject<GameDefinition[] | null>([
       { id: '1', title: 'Game 1', status: 'Deployed' } as any,
       { id: '2', title: 'Game 2', status: 'Testing' } as any,
@@ -53,6 +54,27 @@ describe('LandingPageComponent', () => {
     expect(mockGameDataService.refreshGames).toHaveBeenCalled();
     expect(component.featuredGames.length).toBe(3);
     expect(component.featuredGames.map(g => g.id)).toEqual(['1', '2', '4']);
+  });
+
+  it('renders one shared hero heading without the concept banner or legacy showcase', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('app-home-hero').length).toBe(1);
+    expect(el.querySelectorAll('h1').length).toBe(1);
+    expect(el.querySelector('h1')?.textContent).toContain('Game night,');
+    expect(el.querySelector('.dc-concept-flag')).toBeNull();
+    expect(el.querySelector('.showcase-tv, .showcase-phone, .hero-steps-grid')).toBeNull();
+  });
+
+  it('keeps room controls, the beta note and lower page sections with the shared hero', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    const hero = el.querySelector('app-home-hero')!;
+    expect(hero.querySelector('[aria-label="Join a Room"]')).not.toBeNull();
+    expect(hero.querySelector('[aria-label="4-letter room code"]')).not.toBeNull();
+    expect(hero.querySelector('[aria-label="Enter room code directly"]')).not.toBeNull();
+    expect(el.querySelector('.hero-beta-note')?.textContent).toContain('Public Beta');
+    expect(el.querySelector('#hiw-heading')?.textContent).toContain('Table vs. Hand');
+    expect(el.querySelector('#games-preview-heading')?.textContent).toBe('Featured Games');
+    expect(el.querySelectorAll('.preview-card').length).toBe(3);
   });
 
   describe('toggleCodeEntry', () => {
@@ -117,6 +139,15 @@ describe('LandingPageComponent', () => {
       expect(router.navigate).not.toHaveBeenCalledWith(['/game', 'WXYZ']);
       expect(component.codeError).toContain('Room "WXYZ" not found');
       expect(component.isValidating).toBeFalse();
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const input = el.querySelector<HTMLInputElement>('[aria-label="4-letter room code"]')!;
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      const errorId = input.getAttribute('aria-describedby');
+      expect(errorId).toBeTruthy();
+      const error = errorId ? el.querySelector(`#${errorId}`) : null;
+      expect(error?.getAttribute('role')).toBe('alert');
+      expect(error?.textContent).toContain('Room "WXYZ" not found');
     });
 
     it('should display fallback error message when validateRoomCode throws an exception', async () => {
