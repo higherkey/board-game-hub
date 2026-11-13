@@ -315,7 +315,7 @@ public class RoomService : IRoomService, IDisposable
 
         if (room == null)
         {
-            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code, @"[\r\n\x00-\x1F\x7F]", " ");
             _logger.LogWarning("Player attempted to join room {Code}: Room not found", sanitizedCode);
             return null;
         }

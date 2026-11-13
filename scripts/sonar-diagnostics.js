@@ -14,11 +14,18 @@ async function report({ token, pr, branch = 'dev', fetchImpl = fetch, log = cons
     };
     const gate = await get('qualitygates/project_status', { projectKey: project });
     log(JSON.stringify({ scope, gate: gate.projectStatus?.status, conditions: gate.projectStatus?.conditions }));
-    const result = await get('issues/search', { componentKeys: project, types: 'BUG', resolved: 'false', sinceLeakPeriod: 'true', ps: '100' });
-    log(JSON.stringify({ scope, reliabilityIssues: result.total, issues: result.issues?.map(issue => ({
+    const result = await get('issues/search', { componentKeys: project, types: 'BUG,VULNERABILITY', resolved: 'false', sinceLeakPeriod: 'true', ps: '100' });
+    log(JSON.stringify({ scope, findings: result.total, issues: result.issues?.map(issue => ({
       key: issue.key, rule: issue.rule, severity: issue.severity, component: issue.component,
       line: issue.line, message: issue.message
     })) }));
+    const duplication = await get('measures/component_tree', { component: project,
+      metricKeys: 'new_duplicated_lines,new_lines', qualifiers: 'FIL', ps: '500' });
+    const files = duplication.components?.map(file => ({ path: file.path,
+      duplicatedLines: Number(file.measures?.find(m => m.metric === 'new_duplicated_lines')?.period?.value
+        ?? file.measures?.find(m => m.metric === 'new_duplicated_lines')?.periods?.[0]?.value ?? 0) }))
+      .filter(file => file.duplicatedLines > 0).sort((a, b) => b.duplicatedLines - a.duplicatedLines).slice(0, 10);
+    log(JSON.stringify({ scope, duplicatedFiles: files }));
   }
 }
 module.exports = { report };

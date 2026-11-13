@@ -160,7 +160,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         var written = _channel.Writer.TryWrite(RoomPersistenceMessage.Delete(roomCode.ToUpperInvariant()));
         if (!written)
         {
-            var sanitizedRoomCode = System.Text.RegularExpressions.Regex.Replace(roomCode ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            var sanitizedRoomCode = System.Text.RegularExpressions.Regex.Replace(roomCode, @"[\r\n\x00-\x1F\x7F]", " ");
             _logger.LogWarning(
                 "RoomPersistenceWorker channel full (capacity {Capacity}): dropped delete for room {RoomCode}. Consumer may be lagging.",
                 ChannelCapacity, sanitizedRoomCode);
