@@ -1,220 +1,11 @@
-<!-- ===================================================
-     HERO SECTION
-     =================================================== -->
-<section class="hero-section">
-    <div class="hero-content text-center">
-        <h1 class="hero-title">
-            GAME NIGHT,<br>
-            <span class="hero-accent">TOGETHER</span>
-        </h1>
-        <p class="hero-subtitle">
-            Host on your TV or laptop. Join on your phone. Zero setup, zero downloads.
-        </p>
-
-        <!-- Unified Hero Showcase Stage & 3 Steps -->
-        <div class="hero-showcase-container">
-            <!-- 1. Central Unified Showcase Animation Stage (1 TV + 2 Phones) -->
-            <div class="unified-showcase-stage" aria-hidden="true">
-                <!-- Flanking Phone 1: Navy (Camera Reticle / Lobby P1 / Card P1) -->
-                <div class="showcase-phone phone-navy p1-device">
-                    <div class="phone-notch-bar"></div>
-                    <div class="phone-display">
-                        <!-- Stage 1: Camera Reticle Scanner -->
-                        <div class="qr-viewfinder">
-                            <div class="shared-qr-matrix">
-                                <div class="qr-finder finder-tl"></div>
-                                <div class="qr-finder finder-tr"></div>
-                                <div class="qr-finder finder-bl"></div>
-                                <div class="qr-cell dark cell-br1"></div>
-                            </div>
-                            <div class="camera-reticle-box"></div>
-                        </div>
-                        <!-- Stage 2: Mobile Game Lobby (Navigated) -->
-                        <div class="hand-lobby-stage">
-                            <div class="mobile-lobby-header">
-                                <span class="m-room-code">ABCD</span>
-                                <div class="m-qr-badge">
-                                    <div class="shared-qr-matrix mini">
-                                        <div class="qr-finder finder-tl"></div>
-                                        <div class="qr-finder finder-tr"></div>
-                                        <div class="qr-finder finder-bl"></div>
-                                        <div class="qr-cell dark cell-br1"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mobile-player-list">
-                                <div class="m-player-row p1-row"><i class="bi bi-person-fill me-1"></i>P1</div>
-                                <div class="m-player-row p2-row"><i class="bi bi-person-fill me-1"></i>P2</div>
-                            </div>
-                        </div>
-                        <!-- Stage 3: Live Hand Controller Tile Card -->
-                        <div class="hand-controller-stage">
-                            <div class="hand-tile-card card-p1">
-                                <span class="h-tile-inner"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Central TV Monitor Display Wrapper -->
-                <div class="showcase-tv-wrapper">
-                    <div class="showcase-tv-frame">
-                        <!-- TV Display Inner Screen -->
-                        <div class="tv-inner-screen">
-                            <!-- Stage 1: 3x3 Game Picker Grid -->
-                            <div class="picker-stage-grid">
-                                <div class="picker-tile-grid">
-                                    <div class="picker-tile-card is-selected-tile">
-                                        <div class="mini-tile-grid"><span></span><span></span></div>
-                                    </div>
-                                    <div class="picker-tile-card"><div class="mini-hex-icon"></div></div>
-                                    <div class="picker-tile-card"><div class="mini-die-icon"></div></div>
-                                    <div class="picker-tile-card"><div class="mini-cards-icon"><span class="c-1"></span><span class="c-2"></span></div></div>
-                                    <div class="picker-tile-card"><div class="mini-letters-icon"><span>A</span><span>B</span></div></div>
-                                    <div class="picker-tile-card"><div class="mini-checker-icon"><span class="sq sq-1"></span><span class="sq sq-2"></span></div></div>
-                                    <div class="picker-tile-card"><div class="mini-pawn-icon"><i class="bi bi-person-fill"></i></div></div>
-                                    <div class="picker-tile-card"><div class="mini-domino-icon"><span class="d-dot"></span><span class="d-dot"></span></div></div>
-                                    <div class="picker-tile-card"><div class="mini-wheel-icon"></div></div>
-                                </div>
-                                <div class="picker-cursor"><i class="bi bi-hand-index-thumb-fill"></i></div>
-                            </div>
-
-                            <!-- Stage 2: Room Created Lobby Screen -->
-                            <div class="room-created-screen">
-                                <div class="full-tv-header">
-                                    <span class="header-code">ABCD</span>
-                                    <div class="mini-tv-qr">
-                                        <div class="shared-qr-matrix mini">
-                                            <div class="qr-finder finder-tl"></div>
-                                            <div class="qr-finder finder-tr"></div>
-                                            <div class="qr-finder finder-bl"></div>
-                                            <div class="qr-cell dark cell-br1"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="abstract-lobby-screen">
-                                    <div class="lobby-players-sidebar">
-                                        <div class="sidebar-player-row p1-row"><i class="bi bi-person-fill"></i></div>
-                                        <div class="sidebar-player-row p2-row"><i class="bi bi-person-fill"></i></div>
-                                    </div>
-                                    <div class="lobby-main-section">
-                                        <span class="main-room-code">ABCD</span>
-                                        <div class="start-game-btn-wrap">
-                                            <span class="tv-start-btn"><i class="bi bi-play-fill me-1"></i>START</span>
-                                            <div class="tv-start-cursor"><i class="bi bi-hand-index-thumb-fill"></i></div>
-                                        </div>
-                                    </div>
-                                    <div class="lobby-qr-sidebar">
-                                        <div class="shared-qr-matrix">
-                                            <div class="qr-finder finder-tl"></div>
-                                            <div class="qr-finder finder-tr"></div>
-                                            <div class="qr-finder finder-bl"></div>
-                                            <div class="qr-cell dark cell-br1"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Stage 3: Live Game Board Screen (Game Started: QR code gone) -->
-                            <div class="live-board-screen">
-                                <div class="full-tv-header">
-                                    <span class="header-code">ABCD</span>
-                                </div>
-                                <div class="tile-game-board">
-                                    <div class="open-board-slots">
-                                        <div class="board-slot slot-left"><span class="placed-tile tile-p1"></span></div>
-                                        <div class="board-slot slot-right"><span class="placed-tile tile-p2"></span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tv-base-stand"></div>
-
-                    <!-- Turn Trajectories -->
-                    <div class="sync-beam-connectors">
-                        <div class="sliding-tile-p1"></div>
-                        <div class="sliding-tile-p2"></div>
-                    </div>
-                </div>
-
-                <!-- Flanking Phone 2: Teal (Code Typist / Lobby P1+P2 / Card P2) -->
-                <div class="showcase-phone phone-teal p2-device">
-                    <div class="phone-notch-bar"></div>
-                    <div class="phone-display">
-                        <!-- Stage 1: Code Typist Input -->
-                        <div class="code-type-stage">
-                            <div class="phone-text-box">
-                                <span class="typed-code">ABCD</span>
-                                <span class="type-cursor"></span>
-                            </div>
-                            <div class="phone-join-btn"><i class="bi bi-arrow-right-short"></i></div>
-                        </div>
-                        <!-- Stage 2: Mobile Game Lobby (Navigated) -->
-                        <div class="hand-lobby-stage">
-                            <div class="mobile-lobby-header">
-                                <span class="m-room-code">ABCD</span>
-                                <div class="m-qr-badge">
-                                    <div class="shared-qr-matrix mini">
-                                        <div class="qr-finder finder-tl"></div>
-                                        <div class="qr-finder finder-tr"></div>
-                                        <div class="qr-finder finder-bl"></div>
-                                        <div class="qr-cell dark cell-br1"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mobile-player-list">
-                                <div class="m-player-row p1-row"><i class="bi bi-person-fill me-1"></i>P1</div>
-                                <div class="m-player-row p2-row"><i class="bi bi-person-fill me-1"></i>P2</div>
-                            </div>
-                        </div>
-                        <!-- Stage 3: Live Hand Controller Tile Card -->
-                        <div class="hand-controller-stage">
-                            <div class="hand-tile-card card-p2">
-                                <span class="h-tile-inner"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. Step Text Cards (01, 02, 03) -->
-            <div class="hero-steps-grid">
-                <div class="step-item step-card-1">
-                    <div class="step-num" aria-hidden="true">01</div>
-                    <h3 class="step-title">Host on the Big Screen</h3>
-                    <p class="step-desc">
-                        Open BoardGameHub on your TV, laptop, or tablet. Pick a game and create a room &mdash;
-                        you&rsquo;ll get a unique 4-letter code and QR code to share with players.
-                    </p>
-                </div>
-
-                <div class="step-item step-card-2">
-                    <div class="step-num" aria-hidden="true">02</div>
-                    <h3 class="step-title">Join on Your Phone</h3>
-                    <p class="step-desc">
-                        Players scan the QR code or enter the room code on their phone. No app download needed &mdash;
-                        your phone becomes your private game controller instantly.
-                    </p>
-                </div>
-
-                <div class="step-item step-card-3">
-                    <div class="step-num" aria-hidden="true">03</div>
-                    <h3 class="step-title">Play Together, In Sync</h3>
-                    <p class="step-desc">
-                        The TV displays the shared game board while players interact live on their phones.
-                        Real-time, synchronized, zero lag.
-                    </p>
-                </div>
-            </div>
-        </div>
-
+<app-home-hero>
+    <div class="hero-content">
         <!-- Primary Action CTAs underneath the 3 steps (Matching /about page styling) -->
         <div class="hero-ctas mt-4">
             <button routerLink="/games" class="btn btn-primary btn-lg px-4 hero-create-btn shadow-sm">
                 <i class="bi bi-controller me-2" aria-hidden="true"></i>Choose a Game
             </button>
-            
+
             <div class="hero-join-pill shadow-sm" [class.is-expanded]="isCodeInputFocused || (roomCode && roomCode.length > 0)" [class.has-error]="!!codeError">
                 <button type="button" (click)="onJoinBtnClick()" [disabled]="isValidating" class="btn btn-outline-primary btn-lg px-4 join-left-action" aria-label="Join a Room">
                     <i class="bi bi-door-open-fill me-2" aria-hidden="true"></i>
@@ -223,20 +14,22 @@
 
                 <div class="join-input-expand">
                     <span class="join-divider"></span>
-                    <input #codeInput type="text" [(ngModel)]="roomCode" 
-                        (focus)="onCodeFocus()" 
-                        (blur)="onCodeBlur()" 
-                        (ngModelChange)="onCodeInput()" 
+                    <input #codeInput type="text" [(ngModel)]="roomCode"
+                        (focus)="onCodeFocus()"
+                        (blur)="onCodeBlur()"
+                        (ngModelChange)="onCodeInput()"
                         (keyup.enter)="onJoinBtnClick()"
-                        placeholder="CODE" 
+                        placeholder="CODE"
                         maxlength="4"
                         aria-label="4-letter room code"
+                        [attr.aria-invalid]="codeError ? 'true' : null"
+                        [attr.aria-describedby]="codeError ? 'home-room-code-error' : null"
                         class="join-code-input">
                 </div>
 
                 <div class="join-cap-wrap">
                     <button type="button" (click)="toggleCodeEntry()" [disabled]="isValidating"
-                        class="btn join-cap-btn" 
+                        class="btn join-cap-btn"
                         [class.is-active]="isCodeInputFocused || (roomCode && roomCode.length > 0)"
                         [class.bounce-echo]="!isCodeInputFocused && (!roomCode || roomCode.length === 0)"
                         title="Enter an alpha room code directly"
@@ -245,7 +38,7 @@
                             <i class="bi bi-keyboard alpha-icon" *ngIf="!isCodeInputFocused && (!roomCode || roomCode.length === 0)"></i>
                             <i class="bi bi-arrow-right-short arrow-icon"></i>
                         </span>
-                        <span *ngIf="isValidating" class="spinner-border spinner-border-sm" role="status"></span>
+                        <span *ngIf="isValidating" class="spinner-border spinner-border-sm" role="status" aria-label="Checking room code"></span>
                     </button>
                 </div>
             </div>
@@ -256,11 +49,11 @@
             Currently in Public Beta - Thanks for enjoying and helping grow the site!
         </p>
 
-        <div *ngIf="codeError" class="hero-code-error mt-2">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ codeError }}
+        <div *ngIf="codeError" id="home-room-code-error" class="hero-code-error mt-2" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i> {{ codeError }}
         </div>
     </div>
-</section>
+</app-home-hero>
 
 <!-- ===================================================
      TABLE VS HAND BREAKDOWN (Concise Concept Detail)

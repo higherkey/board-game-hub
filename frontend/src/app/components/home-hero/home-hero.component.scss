@@ -1,0 +1,685 @@
+/* =========================================================
+   Shared Home hero: Host, Join and Play
+   All motion is driven by the GSAP timeline in the component.
+   CSS defines the START state; `.dc-static` defines the END state
+   (used for prefers-reduced-motion).
+   ========================================================= */
+
+:host {
+    --dc-player-a: var(--contrast-pink);
+    --dc-player-b: var(--accent);
+    --dc-screen: var(--primary-dark);
+    --dc-bezel: var(--primary);
+
+    display: block;
+}
+
+/* ---------- Layout ---------- */
+.dc-hero {
+    max-inline-size: 1400px;
+    margin-inline: auto;
+    padding: var(--space-lg) var(--space-md) var(--space-xl);
+
+    @media (max-width: 992px) {
+        padding: var(--space-md) var(--space-sm) var(--space-lg);
+    }
+}
+
+.dc-head {
+    text-align: center;
+    margin-block-end: var(--space-lg);
+}
+
+.dc-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    text-wrap: balance;
+    color: var(--primary);
+    margin-block-end: var(--space-md);
+}
+
+.dc-accent {
+    color: var(--accent-dark);
+}
+
+.dc-sub {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.dc-stages {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: none;
+
+    /* Narrow screens: compact rows (scene | caption) so all three stages stay in view together. */
+    @media (max-width: 992px) {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-sm);
+        max-inline-size: 720px;
+        margin-inline: auto;
+    }
+}
+
+/* Stages are borderless: the scene is a soft filled panel and the active one lifts. */
+.dc-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------- Scene canvas ---------- */
+.dc-scene {
+    /* Every bezel, radius and in-scene size uses cqi so the drawing scales as one piece. */
+    container-type: inline-size;
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: var(--bg-surface-2);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 8% 8% 0;
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+
+    .is-active & {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-4px);
+    }
+
+    .dc-static .is-active & {
+        box-shadow: none;
+        transform: none;
+    }
+}
+
+/* ---------- TV ---------- */
+.dc-tv {
+    inline-size: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &--compact {
+        inline-size: 72%;
+    }
+}
+
+.dc-tv-screen {
+    container-type: inline-size;
+    position: relative;
+    inline-size: 100%;
+    aspect-ratio: 16 / 10;
+    background: var(--dc-screen);
+    border: 1.4cqi solid var(--dc-bezel);
+    border-radius: 2.4cqi;
+    overflow: hidden;
+}
+
+.dc-tv-stand {
+    inline-size: 28%;
+    block-size: 1.6cqi;
+    margin-block-start: 0.8cqi;
+    background: var(--dc-bezel);
+    border-radius: 0 0 1cqi 1cqi;
+}
+
+/* ---------- Stage 1: Host ---------- */
+.dc-picker {
+    position: absolute;
+    inset: 8%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8%;
+}
+
+.dc-pick {
+    position: relative;
+    display: grid;
+    place-items: center;
+    background: var(--primary-light);
+    border-radius: 2cqi;
+    font-size: 9cqi;
+    line-height: 1;
+}
+
+/* A sibling of the picker (not inside a tile) so it always paints above every tile.
+   Rests bottom-right; the timeline glides its tip onto the chosen game. */
+.dc-cursor {
+    position: absolute;
+    z-index: 2;
+    inset-inline-start: 80%;
+    inset-block-start: 78%;
+    display: block;
+    font-size: 10cqi;
+    line-height: 1;
+    color: var(--bg-surface);
+    opacity: 0;
+    filter: drop-shadow(0.4cqi 0.8cqi 0 oklch(0% 0 0 / 0.45));
+    pointer-events: none;
+
+    .bi {
+        display: block;
+    }
+}
+
+.dc-roomcard {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10%;
+    opacity: 0;
+}
+
+.dc-roomcard-code {
+    display: flex;
+    gap: 0.1em;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 12cqi;
+    color: var(--bg-surface);
+    letter-spacing: 0.04em;
+}
+
+.dc-qr {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.6cqi;
+    inline-size: 26%;
+    aspect-ratio: 1;
+    padding: 1.4cqi;
+    background: var(--bg-surface);
+    border-radius: 1.6cqi;
+
+    &--mini {
+        inline-size: 70%;
+        padding: 0.6cqi;
+        gap: 0.25cqi;
+        border-radius: 0.6cqi;
+    }
+}
+
+.dc-qr-cell {
+    border-radius: 0.2cqi;
+
+    &.is-dark {
+        background: var(--primary-dark);
+    }
+}
+
+.dc-scene--host .dc-qr,
+.dc-scene--host .dc-qr-cell,
+.dc-scene--host .dc-code-letter {
+    opacity: 0;
+}
+
+/* ---------- Phones (Stages 2 & 3) ---------- */
+.dc-phone {
+    position: absolute;
+    inset-block-end: 5%;
+    inline-size: 18%;
+    aspect-ratio: 9 / 16;
+    padding: 1cqi;
+    background: var(--dc-bezel);
+    border-radius: 3.2cqi;
+    box-shadow: var(--shadow-md);
+
+    &--a {
+        inset-inline-start: 7%;
+
+        --dc-player: var(--dc-player-a);
+    }
+
+    &--b {
+        inset-inline-end: 7%;
+
+        --dc-player: var(--dc-player-b);
+    }
+}
+
+.dc-phone-screen {
+    position: relative;
+    block-size: 100%;
+    background: var(--bg-surface);
+    border-radius: 2.4cqi;
+    border-block-start: 1.6cqi solid var(--dc-player);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10%;
+}
+
+.dc-joined {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--dc-player);
+    color: var(--bg-surface);
+    font-size: 7cqi;
+    opacity: 0;
+}
+
+/* ---------- Stage 2: Join ---------- */
+.dc-viewfinder {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 80%;
+    aspect-ratio: 1;
+    background: var(--bg-surface-2);
+    border-radius: 1cqi;
+}
+
+.dc-scanline {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    block-size: 0.5cqi;
+    background: var(--dc-player);
+    box-shadow: 0 0 1.5cqi var(--dc-player);
+}
+
+.dc-typebox {
+    display: flex;
+    justify-content: center;
+    gap: 0.4cqi;
+    inline-size: 84%;
+    min-block-size: 1.4em;
+    padding: 0.4cqi;
+    background: var(--bg-surface-2);
+    border-radius: 1cqi;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 3.2cqi;
+    color: var(--primary);
+}
+
+.dc-type-letter {
+    opacity: 0;
+}
+
+.dc-join-btn {
+    display: grid;
+    place-items: center;
+    inline-size: 50%;
+    aspect-ratio: 2 / 1;
+    background: var(--dc-player);
+    color: var(--bg-surface);
+    border-radius: var(--radius-pill);
+    font-size: 5cqi;
+}
+
+.dc-lobby {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10%;
+}
+
+.dc-lobby-code {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 11cqi;
+    color: var(--bg-surface);
+    letter-spacing: 0.06em;
+}
+
+.dc-seats {
+    display: flex;
+    gap: 14%;
+    inline-size: 60%;
+    justify-content: center;
+}
+
+.dc-seat {
+    display: grid;
+    place-items: center;
+    inline-size: 32%;
+    aspect-ratio: 1;
+    background: var(--primary);
+    border-radius: 50%;
+
+    &--a {
+        --dc-player: var(--dc-player-a);
+    }
+
+    &--b {
+        --dc-player: var(--dc-player-b);
+    }
+}
+
+.dc-avatar {
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    block-size: 100%;
+    background: var(--dc-player);
+    color: var(--bg-surface);
+    border-radius: 50%;
+    font-size: 8cqi;
+    opacity: 0;
+    transform: scale(0.4);
+}
+
+.dc-lobby-ready {
+    position: absolute;
+    inset-block-start: 6%;
+    inset-inline-end: 5%;
+    color: var(--success);
+    font-size: 8cqi;
+    opacity: 0;
+}
+
+/* ---------- Stage 3: Play ---------- */
+.dc-board {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto;
+    column-gap: 14%;
+    row-gap: 6%;
+    padding: 9% 18% 6%;
+}
+
+.dc-slot {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    justify-self: center;
+    block-size: 100%;
+    background: var(--primary);
+    border-radius: 1.6cqi;
+
+    &--a {
+        --dc-player: var(--dc-player-a);
+    }
+
+    &--b {
+        --dc-player: var(--dc-player-b);
+    }
+}
+
+.dc-placed,
+.dc-card {
+    border-radius: 1cqi;
+    background:
+        radial-gradient(circle at 50% 50%, oklch(100% 0 0 / 0.55) 0 18%, transparent 19%),
+        var(--dc-player);
+}
+
+.dc-placed {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+}
+
+.dc-score {
+    position: relative;
+    justify-self: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 13cqi;
+    color: var(--bg-surface);
+
+    &--a {
+        --dc-player: var(--dc-player-a);
+    }
+
+    &--b {
+        --dc-player: var(--dc-player-b);
+    }
+}
+
+.dc-plus {
+    position: absolute;
+    inset-inline-start: 120%;
+    inset-block-start: 0;
+    color: var(--dc-player);
+    white-space: nowrap;
+    opacity: 0;
+}
+
+.dc-board-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1.2cqi var(--accent-light);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dc-hand {
+    // Cards fly across the scene; only the outer scene clips their journey.
+    overflow: visible;
+    flex-direction: row;
+    gap: 0;
+    align-items: flex-end;
+    padding-block-end: 22%;
+}
+
+.dc-scene--play .dc-phone {
+    z-index: 1;
+}
+
+.dc-card {
+    inline-size: 30%;
+    aspect-ratio: 2 / 3;
+    margin-inline: -3%;
+    box-shadow: 0 0.3cqi 0.6cqi oklch(0% 0 0 / 0.25);
+
+    &--0 {
+        transform: rotate(-12deg) translateY(6%);
+        filter: saturate(0.5);
+    }
+
+    &--1 {
+        position: relative;
+        z-index: 1;
+    }
+
+    &--2 {
+        transform: rotate(12deg) translateY(6%);
+        filter: saturate(0.5);
+    }
+}
+
+/* ---------- Caption & progress ---------- */
+.dc-caption {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    inline-size: 100%;
+    min-block-size: 48px;
+    padding: var(--space-md) var(--space-xs) var(--space-sm);
+    border: 0;
+    background: transparent;
+    text-align: start;
+    color: inherit;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--accent-dark);
+        outline-offset: -3px;
+    }
+}
+
+.dc-num {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-secondary);
+    transition: color 0.35s ease;
+
+    .is-active & {
+        color: var(--accent-dark);
+    }
+}
+
+.dc-caption-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dc-caption-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--primary);
+}
+
+.dc-caption-desc {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.dc-progress {
+    display: block;
+    block-size: 3px;
+    margin-inline: var(--space-xs);
+    background: var(--bg-surface-2);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.dc-progress-fill {
+    display: block;
+    block-size: 100%;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+
+/* ---------- Actions ---------- */
+.dc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-md);
+    margin-block-start: var(--space-xl);
+}
+
+.dc-playback {
+    text-align: center;
+    margin-block-start: var(--space-sm);
+}
+
+.dc-pause {
+    color: var(--text-secondary);
+    min-block-size: 48px;
+    min-inline-size: 48px;
+
+    &:focus-visible {
+        outline: 3px solid var(--accent-dark);
+        outline-offset: 3px;
+    }
+}
+
+/* Narrow screens: compact rows (scene | caption). Kept after the base rules so it wins the cascade. */
+@media (max-width: 992px) {
+    .dc-stage {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .dc-scene {
+        flex: 0 0 56%;
+        border-radius: var(--radius-md);
+
+        .is-active & {
+            transform: none;
+            box-shadow: var(--shadow-md);
+        }
+    }
+
+    .dc-caption {
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--space-xs);
+        padding: var(--space-xs) 0 var(--space-xs) var(--space-sm);
+    }
+
+    .dc-num {
+        font-size: 1.1rem;
+    }
+
+    .dc-caption-desc {
+        font-size: 0.85rem;
+    }
+
+    .dc-progress {
+        position: absolute;
+        inset-inline: calc(56% + var(--space-sm)) 0;
+        inset-block-end: var(--space-xs);
+        margin-inline: 0;
+    }
+}
+
+/* =========================================================
+   Static END state (prefers-reduced-motion): every stage shows
+   its outcome so the story still reads without motion.
+   ========================================================= */
+.dc-static {
+    .dc-pick,
+    .dc-cursor {
+        opacity: 0;
+    }
+
+    .dc-roomcard,
+    .dc-scene--host .dc-qr,
+    .dc-scene--host .dc-qr-cell,
+    .dc-scene--host .dc-code-letter,
+    .dc-type-letter,
+    .dc-lobby-ready,
+    .dc-placed,
+    .dc-plus {
+        opacity: 1;
+    }
+
+    .dc-avatar {
+        opacity: 1;
+        transform: none;
+    }
+
+    .dc-joined {
+        opacity: 1;
+    }
+
+    .dc-card--chosen {
+        opacity: 0;
+    }
+
+    .dc-progress-fill {
+        transform: scaleX(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dc-scene,
+    .dc-num {
+        transition: none;
+    }
+}
