@@ -57,7 +57,7 @@ jobs:
             /d:sonar.scanner.scanAll=true \
             /d:sonar.exclusions="**/node_modules/**,**/obj/**,**/bin/**,**/*.spec.ts,backend/BoardGameHub.Tests/**,frontend/e2e/**,frontend/dist/**,frontend/coverage/**,**/wwwroot/**,scripts/**,docs/**,.github/**,frontend/playwright*.ts" \
             /d:sonar.coverage.exclusions="**/Migrations/**,backend/BoardGameHub.Api/Program.cs,**/*.spec.ts,backend/BoardGameHub.Api/Models/Dtos/**,backend/BoardGameHub.Api/Services/ScatterbrainData.cs,backend/BoardGameHub.Api/Services/RoomService.cs" \
-            /d:sonar.cpd.exclusions="**/*.spec.ts,**/*.html" \
+            /d:sonar.cpd.exclusions="**/*.spec.ts,**/*.html,supabase/migrations/20260509000000_pending_ef_migrations.sql" \
             /d:sonar.cs.opencover.reportsPaths="coverage.opencover.xml" \
             /d:sonar.javascript.lcov.reportPaths="frontend/coverage/frontend/lcov.info" \
             /d:sonar.qualitygate.wait=true /d:sonar.qualitygate.timeout=300

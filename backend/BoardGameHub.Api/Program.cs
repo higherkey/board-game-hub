@@ -19,7 +19,9 @@ var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrWhiteSpace(port))
 {
-    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+    // Render terminates public TLS at its edge; bind the internal listener explicitly.
+    builder.WebHost.ConfigureKestrel(options => options.Listen(System.Net.IPAddress.Any,
+        int.Parse(port, System.Globalization.CultureInfo.InvariantCulture)));
 }
 
 // Ensure hosted services run concurrently and do not block Kestrel socket binding
