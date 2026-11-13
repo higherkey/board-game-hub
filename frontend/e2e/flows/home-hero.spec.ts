@@ -40,6 +40,13 @@ for (const width of [360, 768, 1024, 1440]) {
     await play.focus();
     await page.keyboard.press('Enter');
     await expect(play).toHaveAttribute('aria-current', 'step');
+    await expect.poll(() => hero.locator('[data-progress="join"]').evaluate(el =>
+      new DOMMatrix(getComputedStyle(el).transform).a)).toBeGreaterThanOrEqual(0.999);
+    await expect(hero.locator('.dc-room-game')).toContainText('Card game');
+    if (width >= 1024) {
+      const lines = await hero.locator('.dc-progress').evaluateAll(elements => elements.map(el => el.getBoundingClientRect().top));
+      expect(Math.max(...lines) - Math.min(...lines)).toBeLessThanOrEqual(1);
+    }
 
     await hero.screenshot({ path: testInfo.outputPath('home-' + width + '.png') });
     const toggle = hero.getByRole('button', { name: 'Enter room code directly' });

@@ -70,7 +70,7 @@
     }
 }
 
-/* Stages are borderless: the scene is a soft filled panel and the active one lifts. */
+/* Stages share aligned canvases; a shadow emphasizes the active scene. */
 .dc-stage {
     position: relative;
     display: flex;
@@ -79,6 +79,7 @@
 
 /* ---------- Scene canvas ---------- */
 .dc-scene {
+    flex-shrink: 0;
     /* Every bezel, radius and in-scene size uses cqi so the drawing scales as one piece. */
     container-type: inline-size;
     position: relative;
@@ -94,7 +95,6 @@
 
     .is-active & {
         box-shadow: var(--shadow-lg);
-        transform: translateY(-4px);
     }
 
     .dc-static .is-active & {
@@ -177,19 +177,46 @@
 .dc-roomcard {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34%;
+    grid-template-rows: auto 1fr;
+    gap: 4cqi;
+    padding: 4cqi;
     opacity: 0;
 }
+
+.dc-room-game {
+    grid-column: 1 / -1;
+    font: 800 6cqi 'Outfit', sans-serif;
+    color: var(--bg-surface);
+    border-block-end: 0.6cqi solid var(--primary-light);
+    padding-block-end: 2cqi;
+}
+
+.dc-room-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-content: center;
+    align-items: center;
+    gap: 2cqi;
+    border: 0.6cqi solid var(--primary-light);
+    border-radius: 3cqi;
+    background: var(--primary);
+    padding: 3cqi;
+}
+
+.dc-room-seat { color: var(--accent-light); font-size: 7cqi; text-align: center; }
+.dc-room-deck { background: var(--dc-player-b); color: var(--bg-surface); padding: 2cqi; border-radius: 1cqi; text-align: center; font-size: 6cqi; }
+.dc-room-waiting { grid-column: 1 / -1; color: var(--bg-surface); font-size: 3.5cqi; text-align: center; }
+.dc-room-invite { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3cqi; }
+.dc-room-invite .dc-qr { inline-size: 80%; }
 
 .dc-roomcard-code {
     display: flex;
     gap: 0.1em;
     font-family: 'Outfit', sans-serif;
     font-weight: 800;
-    font-size: 12cqi;
+    font-size: 8cqi;
     color: var(--bg-surface);
     letter-spacing: 0.04em;
 }
@@ -449,7 +476,7 @@
     position: absolute;
     inset-inline-start: 120%;
     inset-block-start: 0;
-    color: var(--dc-player);
+    color: color-mix(in oklch, var(--dc-player) 90%, white);
     white-space: nowrap;
     opacity: 0;
 }
@@ -500,6 +527,7 @@
 
 /* ---------- Caption & progress ---------- */
 .dc-caption {
+    flex: 1;
     display: flex;
     align-items: flex-start;
     gap: var(--space-sm);

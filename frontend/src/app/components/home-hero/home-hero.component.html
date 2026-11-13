@@ -19,6 +19,14 @@
                                         }
                                     </div>
                                     <div class="dc-roomcard">
+                                        <span class="dc-room-game"><i class="bi bi-suit-spade-fill"></i> Card game</span>
+                                        <div class="dc-room-table">
+                                            <span class="dc-room-seat"><i class="bi bi-person"></i></span>
+                                            <span class="dc-room-deck"><i class="bi bi-suit-spade-fill"></i></span>
+                                            <span class="dc-room-seat"><i class="bi bi-person"></i></span>
+                                            <span class="dc-room-waiting">Waiting for players</span>
+                                        </div>
+                                        <div class="dc-room-invite">
                                         <span class="dc-roomcard-code">
                                             @for (letter of codeLetters; track $index) {
                                                 <span class="dc-code-letter">{{ letter }}</span>
@@ -29,6 +37,7 @@
                                                 <span class="dc-qr-cell" [class.is-dark]="cell === 1"></span>
                                             }
                                         </span>
+                                        </div>
                                     </div>
                                     <span class="dc-cursor"><i class="bi bi-cursor-fill"></i></span>
                                 </div>

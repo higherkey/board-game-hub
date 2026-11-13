@@ -45,6 +45,22 @@ describe('HomeHeroComponent', () => {
 
   const timelineOf = (c: HomeHeroComponent) => (c as any).timeline as gsap.core.Timeline | undefined;
 
+  it('finishes Join progress and readiness before Play starts', fakeAsync(() => {
+    setReducedMotion(false); create(); tick(20);
+    const tl = timelineOf(component)!;
+    tl.pause().seek(tl.labels['play'], false);
+    const progress = fixture.nativeElement.querySelector('[data-progress="join"]');
+    expect(new DOMMatrix(getComputedStyle(progress).transform).a).toBeCloseTo(1, 3);
+    expect(Number(getComputedStyle(fixture.nativeElement.querySelector('.dc-lobby-ready')).opacity)).toBe(1);
+  }));
+
+  it('shows the selected card game in a recognizable waiting room', () => {
+    setReducedMotion(true); create();
+    expect(fixture.nativeElement.querySelector('.dc-room-game')?.textContent).toContain('Card game');
+    expect(fixture.nativeElement.querySelector('.dc-room-table')).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.dc-room-seat').length).toBe(2);
+  });
+
   beforeEach(async () => {
     FakeObserver.instances = [];
     originalResize = (globalThis as any).ResizeObserver;
