@@ -15,9 +15,12 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Bind explicitly to Render dynamic PORT or fallback to 8080
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+// Render supplies PORT; otherwise honor launch profiles, ASPNETCORE_URLS and container defaults.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
 
 // Ensure hosted services run concurrently and do not block Kestrel socket binding
 builder.Services.Configure<HostOptions>(options =>
