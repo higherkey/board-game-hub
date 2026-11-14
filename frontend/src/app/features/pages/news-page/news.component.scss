@@ -1,12 +1,12 @@
 .news-container {
   max-width: 860px;
   margin: 0 auto;
-  padding: 3rem 1.5rem 5rem;
+  padding-block: var(--space-xl);
 }
 
 .news-header {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-block-end: var(--space-xl);
 
   .header-badge {
     display: inline-flex;

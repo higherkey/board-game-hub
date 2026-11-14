@@ -292,13 +292,17 @@
     padding-inline: var(--space-lg);
 
     @media (max-width: 768px) {
-        padding-block: 3rem;
+        padding-block: var(--space-lg);
         padding-inline: var(--space-md);
     }
 }
 
 .section-header {
     margin-block-end: 3rem;
+
+    @media (max-width: 768px) {
+        margin-block-end: var(--space-lg);
+    }
 }
 
 .section-title {
@@ -335,6 +339,10 @@
 
 .games-preview-section {
     padding-block: 1rem 4rem;
+
+    @media (max-width: 768px) {
+        padding-block: var(--space-md) var(--space-xl);
+    }
 }
 
 .games-preview-grid {
