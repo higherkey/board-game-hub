@@ -86,3 +86,17 @@ For CI/CD scanning, tests are run with `/p:CollectCoverage=true` to generate Ope
 
 ## 🔐 Authentication
 The API uses **JWT-based authentication** integrated with **ASP.NET Core Identity**. Tokens are passed via the SignalR `access_token` query parameter during the negotiation phase.
+
+### Admin account
+The admin user is seeded only when `Admin__Email` and `Admin__Password` are provided through environment variables or `dotnet user-secrets`. If either is missing, the Admin role is still created but no admin user is seeded. For local development:
+
+```
+dotnet user-secrets set "Admin:Email" "you@example.com" --project backend/BoardGameHub.Api
+dotnet user-secrets set "Admin:Password" "<choose-a-strong-password>" --project backend/BoardGameHub.Api
+```
+
+On Render, set both `Admin__Email` and `Admin__Password` for each service (prod, dev and staging). These values create a missing account; changing the environment password does **not** rotate the password of an existing stored account.
+
+Before deployment, an authorized operator must reset any existing admin account that used the former committed password through ASP.NET Core Identity (`UserManager.GeneratePasswordResetTokenAsync` and `ResetPasswordAsync`), then verify the old password is rejected. Check that account's `LockoutEnabled` through `UserManager.GetLockoutEnabledAsync` and, if needed, enable it with `SetLockoutEnabledAsync`. This is an operational gate; startup does not reset existing passwords or globally change existing accounts' lockout settings. Password reset does not invalidate previously issued stateless JWTs: they remain valid until expiry unless a signing-key rotation is planned through the authentication rollout (#218).
+
+Login attempts are locked out for 15 minutes after 5 consecutive failures.

@@ -48,7 +48,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto model)
     {
-        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
+        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, lockoutOnFailure: true);
 
         if (result.Succeeded)
         {
