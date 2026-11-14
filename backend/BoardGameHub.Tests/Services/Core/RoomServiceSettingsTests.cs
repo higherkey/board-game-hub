@@ -50,7 +50,7 @@ public class RoomServiceSettingsTests : IDisposable
     {
         var room = _sut.CreateRoom("host", "Host", false, GameType.Babble);
 
-        _sut.UpdateSettings(room.Code, new GameSettings { BoardSize = 40000, TotalRounds = 999 });
+        _sut.UpdateSettings(" " + room.Code.ToLowerInvariant() + " ", new GameSettings { BoardSize = 40000, TotalRounds = 999 });
 
         room.Settings.BoardSize.Should().Be(6);
         room.Settings.TotalRounds.Should().Be(20);
