@@ -14,6 +14,7 @@
 - Tests use the ignored generated runtime config MSTest.EnableParentProcessQuery=false to bypass this host's parent process query restriction; no tracked runner configuration changes.
 
 ## 4b Quick Wins
+- Keep integration with #249/#250 independent: reject null settings before the normalized lookup and position admin enum regressions before existing tests. Follow-up backend build and all 13 affected tests pass.
 - Skip the Cloudflare deploy step for draft PRs while keeping its build/tests active, as authorized.
 - Add explicit 24px avatar dimensions matching existing CSS to clear the touched-template Sitewright audit without changing layout.
 - Verify canonical code handling, defined enum inputs, active host authority, concurrent cross-room joins, same-room retries, reconnect mapping ownership, WebRTC relays, and persistence identity.

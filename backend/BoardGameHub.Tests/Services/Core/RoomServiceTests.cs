@@ -268,6 +268,17 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public void UpdateSettings_NullDoesNotReplaceExistingSettings()
+    {
+        var room = _sut.CreateRoom("host", "Host", false);
+        var original = room.Settings;
+
+        _sut.UpdateSettings(room.Code, null!).Should().BeNull();
+
+        room.Settings.Should().BeSameAs(original);
+    }
+
+    [Fact]
     public void UpdateSettings_ShouldApplyNewSettings()
     {
         // Arrange

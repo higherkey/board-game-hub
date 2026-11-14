@@ -1003,6 +1003,7 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? UpdateSettings(string code, GameSettings settings)
     {
+        if (settings == null) return null;
         if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
         {
