@@ -10,8 +10,11 @@ namespace BoardGameHub.Tests.Data;
 
 public class DbInitializerTests
 {
-    [Fact]
-    public async Task SeedAsync_ShouldCreateAdminRoleButNoUser_WhenAdminConfigMissing()
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("admin@example.test", null)]
+    [InlineData(null, "SyntheticPassword123!")]
+    public async Task SeedAsync_ShouldCreateAdminRoleButNoUser_WhenAdminConfigMissing(string? email, string? password)
     {
         var roleManager = new Mock<RoleManager<IdentityRole>>(
             new Mock<IRoleStore<IdentityRole>>().Object, null!, null!, null!, null!);
@@ -24,7 +27,11 @@ public class DbInitializerTests
         var services = new ServiceCollection()
             .AddSingleton(roleManager.Object)
             .AddSingleton(userManager.Object)
-            .AddSingleton<IConfiguration>(new ConfigurationBuilder().Build())
+            .AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Admin:Email"] = email,
+                ["Admin:Password"] = password
+            }).Build())
             .BuildServiceProvider();
 
         await DbInitializer.SeedAsync(services);
