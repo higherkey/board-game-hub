@@ -267,7 +267,7 @@ public class RoomService : IRoomService, IDisposable
             throw new InvalidOperationException("Failed to generate a unique room code after 10 attempts.");
         }
 
-        var sanitizedHostName = System.Text.RegularExpressions.Regex.Replace(hostName ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+        var sanitizedHostName = System.Text.RegularExpressions.Regex.Replace(hostName ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
         _logger.LogInformation("Room created: {Code} by {Host} (Type: {GameType})", code, sanitizedHostName, gameType);
         _connectionRoomMap.TryAdd(hostConnectionId, code);
         
@@ -331,7 +331,7 @@ public class RoomService : IRoomService, IDisposable
 
         if (room == null)
         {
-            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
             _logger.LogWarning("Player attempted to join room {Code}: Room not found", sanitizedCode);
             return null;
         }
@@ -507,7 +507,7 @@ public class RoomService : IRoomService, IDisposable
         }
         catch (Exception ex)
         {
-            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            var sanitizedCode = System.Text.RegularExpressions.Regex.Replace(code ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
             _logger.LogError(ex, "Failed on-demand rehydration for room {RoomCode} from database.", sanitizedCode);
             return null;
         }

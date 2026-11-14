@@ -12,6 +12,11 @@ on:
       - dev
     paths:
       - 'frontend/**'
+      - 'backend/BoardGameHub.CatalogueExport/**'
+      - 'backend/BoardGameHub.Api/Data/AppDbContext.cs'
+      - 'backend/BoardGameHub.Api/Models/GameDefinition.cs'
+      - 'scripts/serve-catalogue-test.cjs'
+      - 'scripts/catalogue-export.test.cjs'
       - '.github/workflows/deploy-frontend-cloudflare.yml'
   pull_request:
     branches:
@@ -20,12 +25,22 @@ on:
       - dev
     paths:
       - 'frontend/**'
+      - 'backend/BoardGameHub.CatalogueExport/**'
+      - 'backend/BoardGameHub.Api/Data/AppDbContext.cs'
+      - 'backend/BoardGameHub.Api/Models/GameDefinition.cs'
+      - 'scripts/serve-catalogue-test.cjs'
+      - 'scripts/catalogue-export.test.cjs'
       - '.github/workflows/deploy-frontend-cloudflare.yml'
   workflow_dispatch:
+
+concurrency:
+  group: frontend-deploy-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: ${{ github.event_name == 'pull_request' && 'preview' || (github.ref_name == 'main' && 'production' || (github.ref_name == 'staging' && 'staging' || 'development')) }}
       url: ${{ steps.deploy.outputs.deployment_url }}
@@ -40,39 +55,64 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Dependencies
         run: npm ci
 
+      - name: Setup .NET for catalogue verification
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Verify bundled catalogue matches backend metadata
+        run: npm run catalogue:check
+
+      - name: Verify catalogue exporter failure handling
+        run: node --test ../scripts/catalogue-export.test.cjs
+
       - name: Build Application
+        env:
+          TARGET_BRANCH: ${{ github.event_name == 'pull_request' && 'dev' || github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "main" ]; then
+          set -euo pipefail
+          if [ "$TARGET_BRANCH" = "main" ]; then
             npm run build -- --configuration=production
-          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "staging" ]; then
+          elif [ "$TARGET_BRANCH" = "staging" ]; then
             npm run build -- --configuration=staging
           else
-            npm run build -- --configuration=development
+            npm run build -- --configuration=azure_dev
           fi
+
+      - name: Install catalogue test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify catalogue without a running backend
+        run: npm run test:catalogue
+
+      - name: Verify public UI and hero sequencing
+        run: npm run test:quality
 
       - name: Deploy to Cloudflare Pages
         id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
+          set -euo pipefail
           # Deploy and capture output
-          DEPLOY_OUTPUT=$(npx wrangler pages deploy dist/frontend/browser --project-name=board-game-hub-frontend --branch=${{ github.head_ref || github.ref_name }})
+          DEPLOY_OUTPUT=$(npx wrangler pages deploy dist/frontend/browser --project-name=board-game-hub-frontend --branch="$DEPLOY_BRANCH")
           echo "$DEPLOY_OUTPUT"
 
           # Extract deployment URL (e.g., https://abc12345.board-game-hub-frontend.pages.dev)
-          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -Eo 'https://[a-zA-Z0-9.-]+\.pages\.dev' | head -n 1)
+          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -Eo 'https://[a-zA-Z0-9.-]+\.pages\.dev' | head -n 1 || true)
 
           if [ -z "$DEPLOY_URL" ]; then
             # Fallback to branch-based pages.dev subdomain if specific hash regex did not match
-            CLEAN_BRANCH=$(echo "${{ github.head_ref || github.ref_name }}" | tr '/' '-' | tr '_' '-' | tr '[:upper:]' '[:lower:]' | cut -c 1-28)
+            CLEAN_BRANCH=$(echo "$DEPLOY_BRANCH" | tr '/' '-' | tr '_' '-' | tr '[:upper:]' '[:lower:]' | cut -c 1-28)
             DEPLOY_URL="https://${CLEAN_BRANCH}.board-game-hub-frontend.pages.dev"
           fi
 

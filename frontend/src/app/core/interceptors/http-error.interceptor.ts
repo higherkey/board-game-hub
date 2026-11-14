@@ -20,10 +20,10 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
             if (error.status === 401 && !isAuthEndpoint) {
                 authService.logout();
                 toastService.showError('Session expired. Please log in again.');
-                router.navigate(['/login']);
+                router.navigate(['/login']).catch(err => logger.error('Failed to navigate to login', err));
             } else if (error.status === 403) {
                 toastService.showError('You do not have permission to perform this action.');
-                router.navigate(['/']);
+                router.navigate(['/']).catch(err => logger.error('Failed to navigate home', err));
             } else if (error.status >= 500) {
                 logger.error(`[HTTP ${error.status}] ${req.method} ${req.urlWithParams}`, error.message);
                 toastService.showError('A server error occurred. Please try again later.');

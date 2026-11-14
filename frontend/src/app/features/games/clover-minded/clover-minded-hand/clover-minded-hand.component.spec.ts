@@ -59,6 +59,24 @@ describe('CloverMindedHandComponent', () => {
         expect(component).toBeTruthy();
     });
 
+    it('uses a native placement button separate from slot actions', () => {
+        component.room!.gameData = { participantIds: ['p1'], phase: component.phases.Resolution,
+            slots: [{ cardId: 'c1', rotation: 0 }], pool: [] } as any;
+        fixture.detectChanges();
+        const place = fixture.nativeElement.querySelector('.slot-placement') as HTMLButtonElement;
+        expect(place.tagName).toBe('BUTTON');
+        expect(place.type).toBe('button');
+        expect(place.getAttribute('aria-label')).toContain('slot 1');
+        expect(place.querySelector('button')).toBeNull();
+        const activate = spyOn(component, 'onSlotClick');
+        place.click();
+        expect(activate).toHaveBeenCalledOnceWith(0);
+        const rotate = spyOn(component, 'rotateSlot');
+        fixture.nativeElement.querySelector('.slot-actions button').click();
+        expect(rotate).toHaveBeenCalledWith(0);
+        expect(activate).toHaveBeenCalledTimes(1);
+    });
+
     it('should check if player can submit clues', () => {
         expect(component.canSubmitClues(component.state!)).toBeFalse();
         component.draftClues = ['Clue1', 'Clue2', 'Clue3', 'Clue4'];
