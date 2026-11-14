@@ -38,6 +38,7 @@
         @media (max-width: 992px) {
             padding: 0 1.25rem;
         }
+        @media (max-width: 576px) { padding-inline: 0.5rem; }
     }
 
     .header-container {
@@ -70,11 +71,12 @@
         display: flex;
         align-items: center;
         cursor: pointer;
-        outline: none;
+        min-block-size: 44px;
         text-decoration: none;
 
-        &:focus {
-            opacity: 0.8;
+        &:focus-visible {
+            outline: 3px solid var(--accent-dark);
+            outline-offset: 3px;
         }
 
         app-logo ::ng-deep img {
@@ -103,6 +105,8 @@
         }
     }
 
+    .logo-word-accent { color: var(--primary-light); }
+
     .logo-beta-tag {
         font-size: 0.6rem;
         font-weight: 800;
@@ -114,6 +118,7 @@
         padding: 0.15rem 0.45rem;
         border-radius: 999px;
         transform: translateY(-6px);
+        @media (max-width: 380px) { display: none; }
     }
 
     .mobile-toggle {
@@ -125,7 +130,8 @@
         cursor: pointer;
         padding: 0.25rem;
         margin-left: -0.25rem;
-        display: flex;
+        min-inline-size: 44px;
+        min-block-size: 44px;
         align-items: center;
         justify-content: center;
 
@@ -176,6 +182,10 @@
         }
 
         .nav-item {
+            min-block-size: 44px;
+            min-inline-size: 44px;
+            display: inline-flex;
+            align-items: center;
             color: var(--text-secondary);
             text-decoration: none;
             font-weight: 600;
@@ -307,6 +317,10 @@
             gap: 0.75rem;
 
             a {
+                display: inline-flex;
+                align-items: center;
+                min-block-size: 44px;
+                min-inline-size: 44px;
                 color: rgba(255, 255, 255, 0.7);
                 text-decoration: none;
                 transition: color 0.2s ease;
@@ -332,6 +346,10 @@
 
         .col-studio {
             a.studio-link, a.github-link {
+                display: inline-flex;
+                align-items: center;
+                min-block-size: 44px;
+                min-inline-size: 44px;
                 color: var(--accent);
                 text-decoration: none;
                 
@@ -341,6 +359,7 @@
             }
 
             .footer-beta-chip {
+                min-block-size: 44px;
                 display: inline-flex;
                 align-items: center;
                 gap: 0.4rem;

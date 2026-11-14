@@ -115,23 +115,26 @@
                                 *ngFor="let idx of [0,1,2,3]"
                                 [id]="'slot-' + idx"
                                 [class.filled]="s.slots?.[idx]?.cardId"
-                                [class.drag-over]="isDragging && currentHoverSlot === idx"
-                                (click)="onSlotClick(idx)">
+                                [class.drag-over]="isDragging && currentHoverSlot === idx">
 
-                                <div class="slot-title">Slot {{ idx + 1 }}</div>
+                                <button type="button" class="slot-placement"
+                                    [attr.aria-label]="'Place or rotate card in slot ' + (idx + 1)"
+                                    (click)="onSlotClick(idx)">
+                                <span class="slot-title">Slot {{ idx + 1 }}</span>
 
-                                <div class="slot-card" *ngIf="getSlotCard(s, idx) as card">
+                                <span class="slot-card" *ngIf="getSlotCard(s, idx) as card">
                                     <app-keyword-card-3d
                                         [card]="card"
                                         [rotation]="s.slots?.[idx]?.rotation || 0"
                                         [sizePx]="90"
                                         [placed]="true">
                                     </app-keyword-card-3d>
-                                </div>
+                                </span>
 
-                                <div class="slot-empty" *ngIf="!getSlotCard(s, idx)">
+                                <span class="slot-empty" *ngIf="!getSlotCard(s, idx)">
                                     {{ selectedCardId ? 'Tap to Place' : 'Drop / Tap' }}
-                                </div>
+                                </span>
+                                </button>
 
                                 <div class="slot-actions" *ngIf="s.slots?.[idx]?.cardId">
                                     <button class="mini-btn"
