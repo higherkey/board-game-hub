@@ -809,8 +809,10 @@ public class RoomServiceTests
         // Host connection
         _sut.IsAuthorizedHost(room, "conn1").Should().BeTrue();
         
-        // User ID match
-        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeTrue();
+        // Account identity alone does not grant authority to an unjoined connection.
+        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeFalse();
+        _sut.JoinRoom(room.Code, "table", "Table", "user1", isScreen: true);
+        _sut.IsAuthorizedHost(room, "table", "user1").Should().BeTrue();
 
         // Non-host connection
         _sut.IsAuthorizedHost(room, "conn2", "user2").Should().BeFalse();

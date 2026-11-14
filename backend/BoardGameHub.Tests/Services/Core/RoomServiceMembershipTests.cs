@@ -12,6 +12,7 @@ namespace BoardGameHub.Tests.Services.Core;
 public class RoomServiceMembershipTests
 {
     private readonly RoomService _sut;
+    private readonly Mock<IGameService> _game = new();
 
     public RoomServiceMembershipTests()
     {
@@ -26,7 +27,8 @@ public class RoomServiceMembershipTests
         mockClients.Setup(c => c.All).Returns(mockProxy.Object);
         mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(mockProxy.Object);
 
-        _sut = new RoomService(new List<IGameService>(), mockAdminHub.Object, mockGameHub.Object, gsm.Object, new Mock<ILogger<RoomService>>().Object);
+        _game.Setup(g => g.GameType).Returns(GameType.Babble);
+        _sut = new RoomService(new[] { _game.Object }, mockAdminHub.Object, mockGameHub.Object, gsm.Object, new Mock<ILogger<RoomService>>().Object);
     }
 
     private static readonly UndoSettings VotingOn = new() { AllowVoting = true, HostOnly = false };
@@ -186,5 +188,150 @@ public class RoomServiceMembershipTests
         _sut.VoteNextGame(room.Code, "host1", GameType.Babble);
 
         room.NextGameVotes.Should().ContainKey("host1");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DepartedCreator_LosesMembershipAndMutationAuthority(bool isScreen)
+    {
+        var room = _sut.CreateRoom("creator", "Host", false, userId: "account", isScreen: isScreen);
+        _sut.JoinRoom(room.Code, "remaining", "Remaining");
+        _sut.RemovePlayer("creator");
+
+        _sut.IsRoomMember(room, "creator").Should().BeFalse();
+        _sut.IsAuthorizedHost(room, "creator", "account").Should().BeFalse();
+        _sut.AreInSameRoom("creator", "remaining").Should().BeFalse();
+        _sut.ToggleReady(room.Code, "creator", true).Should().BeNull();
+        _sut.ChangeRole("creator", !isScreen).Should().BeNull();
+        _sut.RenamePlayer("creator", "Changed").Should().BeNull();
+        _sut.SetHostPlayer(room.Code, "creator").Should().BeNull();
+        _sut.RemoveHostPlayer(room.Code, "creator", "remaining").Should().BeNull();
+        _sut.VoteNextGame(room.Code, "creator", GameType.Babble).Should().BeNull();
+        (await _sut.RequestUndo(room.Code, "creator")).Should().BeNull();
+        room.IsHostOverride.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ReconnectedCreator_OnlyNewConnectionHasAuthority()
+    {
+        var room = _sut.CreateRoom("old", "Host", false, userId: "account");
+        _sut.JoinRoom(room.Code, "other", "Other");
+        var token = room.Players[0].SessionId;
+        room.Players[0].Score = 17;
+
+        _sut.JoinRoom(room.Code, "new", "Host", sessionId: token);
+
+        _sut.IsRoomMember(room, "old").Should().BeFalse();
+        _sut.IsAuthorizedHost(room, "old", "account").Should().BeFalse();
+        _sut.AreInSameRoom("old", "other").Should().BeFalse();
+        _sut.IsAuthorizedHost(room, "new", "account").Should().BeTrue();
+        room.Players[0].UserId.Should().Be("account");
+        room.Players[0].Score.Should().Be(17);
+        room.Players[0].SessionId.Should().NotBe(token);
+    }
+
+    [Fact]
+    public void SameRoomRetry_PreservesSeatIdentityRoleAndSession()
+    {
+        var room = _sut.CreateRoom("conn", "Original", false, userId: "account");
+        var token = room.Players[0].SessionId;
+
+        _sut.JoinRoom(" " + room.Code.ToLowerInvariant() + " ", "conn", "Changed", "guest:other", isScreen: true)
+            .Should().BeSameAs(room);
+
+        room.Players.Should().ContainSingle();
+        room.Players[0].Name.Should().Be("Original");
+        room.Players[0].UserId.Should().Be("account");
+        room.Players[0].IsScreen.Should().BeFalse();
+        room.Players[0].SessionId.Should().Be(token);
+    }
+
+    [Fact]
+    public async Task ConcurrentCrossRoomJoins_ReserveOnlyOneSeat()
+    {
+        var a = _sut.CreateRoom("a", "A", false);
+        var b = _sut.CreateRoom("b", "B", false);
+        using var start = new Barrier(2);
+        var results = await Task.WhenAll(new[] { a, b }.Select(room => Task.Run(() =>
+        {
+            start.SignalAndWait();
+            return _sut.JoinRoom(room.Code, "same", "Same");
+        })));
+
+        results.Count(r => r != null).Should().Be(1);
+        a.Players.Concat(b.Players).Count(p => p.ConnectionId == "same").Should().Be(1);
+    }
+
+    [Fact]
+    public void DuplicateCreate_DoesNotCreateAnotherRoomOrChangeMembership()
+    {
+        var room = _sut.CreateRoom("conn", "Original", true);
+        var create = () => _sut.CreateRoom("conn", "Duplicate", true);
+
+        create.Should().Throw<InvalidOperationException>();
+
+        _sut.GetPublicRooms().Should().ContainSingle().Which.Should().BeSameAs(room);
+        _sut.IsRoomMember(room, "conn").Should().BeTrue();
+    }
+
+    [Fact]
+    public void ReconnectingOldSeat_DoesNotRemoveOldSocketNewRoomMapping()
+    {
+        var oldRoom = _sut.CreateRoom("socket", "Original", false, userId: "account");
+        var token = oldRoom.Players[0].SessionId;
+        _sut.RemovePlayer("socket");
+        var newRoom = _sut.CreateRoom("socket", "New room", false);
+
+        _sut.JoinRoom(oldRoom.Code, "reconnected", "Original", sessionId: token);
+
+        _sut.IsRoomMember(newRoom, "socket").Should().BeTrue();
+        _sut.RemovePlayer("socket").Should().BeSameAs(newRoom);
+        _sut.IsRoomMember(oldRoom, "reconnected").Should().BeTrue();
+    }
+
+    [Fact]
+    public void StaleRoomOrDisconnectedSeat_IsNotMembership()
+    {
+        var room = _sut.CreateRoom("conn", "Original", false);
+        _sut.JoinRoom(room.Code, "other", "Other");
+        room.Players[0].IsConnected = false;
+        _sut.IsRoomMember(room, "conn").Should().BeFalse();
+        _sut.AreInSameRoom("conn", "other").Should().BeFalse();
+        room.Players[0].IsConnected = true;
+        _sut.RehydrateRoom(new Room { Code = room.Code, Players = room.Players });
+        _sut.IsRoomMember(room, "conn").Should().BeFalse();
+    }
+
+    [Fact]
+    public void CodesAndGameTypes_AreCanonicalAndDefinedIncludingNone()
+    {
+        var room = _sut.CreateRoom("conn", "Original", false, GameType.None);
+        var code = " " + room.Code.ToLowerInvariant() + " ";
+        _sut.GetRoom(code).Should().BeSameAs(room);
+        _sut.ValidateRooms(new List<string> { code }).Should().Equal(room.Code);
+        _sut.SetGameType(code, (GameType)int.MaxValue).Should().BeNull();
+        _sut.VoteNextGame(code, "conn", (GameType)int.MaxValue).Should().BeNull();
+        _sut.SetGameType(code, GameType.None).Should().BeSameAs(room);
+        _sut.VoteNextGame(code, "conn", GameType.None).Should().BeSameAs(room);
+        var create = () => _sut.CreateRoom("invalid", "Invalid", false, (GameType)int.MaxValue);
+        create.Should().Throw<ArgumentOutOfRangeException>();
+        room.GameType.Should().Be(GameType.None);
+    }
+
+    [Fact]
+    public async Task SubmitAction_RechecksMembershipAfterWaitingForMutationLock()
+    {
+        var room = _sut.CreateRoom("conn", "Host", false, GameType.Babble);
+        await room.StateLock.WaitAsync();
+        var pending = _sut.SubmitAction(room.Code, "conn", "ACTION", null);
+        pending.IsCompleted.Should().BeFalse();
+        // A queued disconnect/reconnect can invalidate the seat before the action obtains the lock.
+        room.Players[0].IsConnected = false;
+        room.StateLock.Release();
+
+        (await pending).Should().BeNull();
+        room.StateHistory.Should().BeEmpty();
+        _game.Verify(g => g.HandleAction(It.IsAny<Room>(), It.IsAny<GameAction>(), It.IsAny<string>()), Times.Never);
     }
 }

@@ -114,43 +114,37 @@ public class RoomService : IRoomService, IDisposable
 
     public bool IsAuthorizedHost(Room room, string connectionId, string? userId = null)
     {
-        if (room == null || string.IsNullOrWhiteSpace(connectionId)) return false;
-
-        // Creator connection or primary host pointer matches
-        if (room.CreatorConnectionId == connectionId || room.HostPlayerId == connectionId || room.HostScreenId == connectionId)
-            return true;
-
-        // Player matching connectionId has IsHost flag
-        var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
-        if (player != null && player.IsHost)
-            return true;
-
-        // If authenticated user, check if any host player shares the same UserId (e.g. Table vs Hand)
-        if (!string.IsNullOrEmpty(userId) && room.Players.Any(p => p.UserId == userId && p.IsHost))
-            return true;
-
-        return false;
+        if (!IsRoomMember(room, connectionId)) return false;
+        var player = room.Players.First(p => p.ConnectionId == connectionId);
+        return player.IsHost
+            || room.CreatorConnectionId == connectionId
+            || room.HostPlayerId == connectionId
+            || room.HostScreenId == connectionId
+            || (!string.IsNullOrEmpty(userId) && player.UserId == userId
+                && room.Players.Any(p => p.IsConnected && p.IsHost && p.UserId == userId));
     }
 
     public bool IsRoomMember(Room room, string connectionId)
     {
-        if (room == null || string.IsNullOrEmpty(connectionId)) return false;
-        return room.Players.Any(p => p.ConnectionId == connectionId)
-            || room.HostScreenId == connectionId
-            || room.CreatorConnectionId == connectionId;
+        return room != null && !string.IsNullOrEmpty(connectionId)
+            && _rooms.TryGetValue(room.Code, out var current) && ReferenceEquals(current, room)
+            && _connectionRoomMap.TryGetValue(connectionId, out var code) && code == room.Code
+            && room.Players.Any(p => p.ConnectionId == connectionId && p.IsConnected);
     }
 
     public bool AreInSameRoom(string connectionIdA, string connectionIdB)
     {
-        if (string.IsNullOrEmpty(connectionIdA) || string.IsNullOrEmpty(connectionIdB)) return false;
-        return _connectionRoomMap.TryGetValue(connectionIdA, out var roomA)
-            && _connectionRoomMap.TryGetValue(connectionIdB, out var roomB)
-            && string.Equals(roomA, roomB, StringComparison.OrdinalIgnoreCase);
+        return !string.IsNullOrEmpty(connectionIdA) && !string.IsNullOrEmpty(connectionIdB)
+            && _connectionRoomMap.TryGetValue(connectionIdA, out var code)
+            && _rooms.TryGetValue(code, out var room)
+            && IsRoomMember(room, connectionIdA) && IsRoomMember(room, connectionIdB);
     }
+
+    private static string NormalizeCode(string code) => (code ?? string.Empty).Trim().ToUpperInvariant();
 
     public Room? SetHostPlayer(string code, string connectionId)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
 
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
         {
@@ -159,6 +153,7 @@ public class RoomService : IRoomService, IDisposable
         }
         try
         {
+            if (!IsRoomMember(room, connectionId)) return null;
             var newHost = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
             if (newHost == null) return null;
 
@@ -187,7 +182,7 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? RemoveHostPlayer(string code, string requesterConnectionId, string targetConnectionId)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
 
         // Only the room creator can remove host status
         if (room.CreatorConnectionId != requesterConnectionId) return null;
@@ -202,6 +197,7 @@ public class RoomService : IRoomService, IDisposable
         }
         try
         {
+            if (!IsRoomMember(room, requesterConnectionId) || !IsRoomMember(room, targetConnectionId)) return null;
             var target = room.Players.FirstOrDefault(p => p.ConnectionId == targetConnectionId);
             if (target == null) return null;
 
@@ -224,6 +220,9 @@ public class RoomService : IRoomService, IDisposable
 
     public Room CreateRoom(string hostConnectionId, string hostName, bool isPublic, GameType gameType = GameType.Scatterbrain, string? userId = null, string? avatarUrl = null, bool isScreen = false)
     {
+        if (!Enum.IsDefined(gameType)) throw new ArgumentOutOfRangeException(nameof(gameType));
+        if (_connectionRoomMap.ContainsKey(hostConnectionId))
+            throw new InvalidOperationException("Connection already belongs to a room.");
         string code = string.Empty;
         Room? room = null;
         for (int i = 0; i < 10; i++)
@@ -254,12 +253,15 @@ public class RoomService : IRoomService, IDisposable
                 CreatorConnectionId = hostConnectionId // Set the creator
             };
 
+            if (!_connectionRoomMap.TryAdd(hostConnectionId, candidateCode))
+                throw new InvalidOperationException("Connection already belongs to a room.");
             if (_rooms.TryAdd(candidateCode, candidateRoom))
             {
                 code = candidateCode;
                 room = candidateRoom;
                 break;
             }
+            _connectionRoomMap.TryRemove(new KeyValuePair<string, string>(hostConnectionId, candidateCode));
         }
 
         if (room == null)
@@ -269,7 +271,6 @@ public class RoomService : IRoomService, IDisposable
 
         var sanitizedHostName = System.Text.RegularExpressions.Regex.Replace(hostName ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
         _logger.LogInformation("Room created: {Code} by {Host} (Type: {GameType})", code, sanitizedHostName, gameType);
-        _connectionRoomMap.TryAdd(hostConnectionId, code);
         
         // Start State Tracking
         _gameStateManager.TrackRoom(room);
@@ -323,10 +324,12 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? JoinRoom(string code, string connectionId, string playerName, string? userId = null, string? avatarUrl = null, bool isScreen = false, string? sessionId = null)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room))
+        code = NormalizeCode(code);
+        if (_connectionRoomMap.TryGetValue(connectionId, out var mappedCode) && mappedCode != code) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room))
         {
-            HydrateRoomFromDatabase(code.ToUpper());
-            _rooms.TryGetValue(code.ToUpper(), out room);
+            HydrateRoomFromDatabase(NormalizeCode(code));
+            _rooms.TryGetValue(NormalizeCode(code), out room);
         }
 
         if (room == null)
@@ -345,8 +348,14 @@ public class RoomService : IRoomService, IDisposable
             _logger.LogWarning("Timeout waiting for StateLock in JoinRoom for room {Code}", code);
             return null;
         }
+        bool reserved = false;
         try
         {
+            if (!_rooms.TryGetValue(code, out var current) || !ReferenceEquals(current, room)) return null;
+            // Retrying a join must not change the existing seat, identity or bearer token.
+            if (IsRoomMember(room, connectionId)) return room;
+            if (!_connectionRoomMap.TryAdd(connectionId, room.Code)) return null;
+            reserved = true;
             // 1. RECONNECTION LOGIC: Check if player exists by ID (UserId or SessionId) AND matching role (Table vs Hand)
             var existingPlayer = room.Players.FirstOrDefault(p => 
                 p.IsScreen == isScreen && (
@@ -359,7 +368,7 @@ public class RoomService : IRoomService, IDisposable
                 if (oldConnectionId != connectionId)
                 {
                     RebindPlayerConnection(room, oldConnectionId, connectionId);
-                    _connectionRoomMap.TryRemove(oldConnectionId, out _);
+                    _connectionRoomMap.TryRemove(new KeyValuePair<string, string>(oldConnectionId, room.Code));
                 }
                 
                 existingPlayer.ConnectionId = connectionId;
@@ -374,7 +383,6 @@ public class RoomService : IRoomService, IDisposable
                 // GameHub will re-emit the new token via the existing SessionAssigned flow.
                 existingPlayer.SessionId = Guid.NewGuid().ToString("N");
 
-                _connectionRoomMap.TryAdd(connectionId, room.Code);
                 _gameStateManager.MarkDirty(room.Code);
                 NotifyStatsChanged();
                 return room;
@@ -400,8 +408,12 @@ public class RoomService : IRoomService, IDisposable
             };
 
             room.Players.Add(newPlayer);
-            _connectionRoomMap.TryAdd(connectionId, room.Code);
             _logger.LogInformation("New player {Player} joined room {Code} (Host: {IsHost})", playerName, code, assignHost);
+        }
+        catch
+        {
+            if (reserved) _connectionRoomMap.TryRemove(new KeyValuePair<string, string>(connectionId, room.Code));
+            throw;
         }
         finally
         {
@@ -429,6 +441,7 @@ public class RoomService : IRoomService, IDisposable
                     }
                     try
                     {
+                        if (!IsRoomMember(room, connectionId)) return null;
                         player.IsScreen = isScreen;
                     }
                     finally
@@ -447,7 +460,7 @@ public class RoomService : IRoomService, IDisposable
     public Room? GetRoom(string code)
     {
         if (string.IsNullOrWhiteSpace(code)) return null;
-        var upperCode = code.ToUpperInvariant();
+        var upperCode = NormalizeCode(code);
         if (_rooms.TryGetValue(upperCode, out var room))
         {
             return room;
@@ -459,14 +472,15 @@ public class RoomService : IRoomService, IDisposable
     public void RehydrateRoom(Room room)
     {
         if (room == null || string.IsNullOrWhiteSpace(room.Code)) return;
-        _rooms.AddOrUpdate(room.Code.ToUpperInvariant(), room, (_, _) => room);
+        room.Code = NormalizeCode(room.Code);
+        _rooms.AddOrUpdate(room.Code, room, (_, _) => room);
         NotifyStatsChanged();
     }
 
     public void EvictRoom(string code)
     {
         if (string.IsNullOrWhiteSpace(code)) return;
-        var upperCode = code.ToUpperInvariant();
+        var upperCode = NormalizeCode(code);
         _rooms.TryRemove(upperCode, out _);
         _gameStateManager.UntrackRoom(upperCode);
         NotifyStatsChanged();
@@ -486,6 +500,7 @@ public class RoomService : IRoomService, IDisposable
 
             var serializer = _serializer ?? new RoomStateSerializer(_gameServices);
             var room = serializer.Deserialize(entity.RoomEnvelopeJson, _gameServices);
+            room.Code = NormalizeCode(room.Code);
             room.Revision = entity.Revision;
             room.CreatedAt = entity.CreatedAt;
             room.UpdatedAt = entity.UpdatedAt;
@@ -496,14 +511,14 @@ public class RoomService : IRoomService, IDisposable
                 player.IsConnected = false;
             }
 
-            if (_rooms.TryAdd(room.Code.ToUpperInvariant(), room))
+            if (_rooms.TryAdd(NormalizeCode(room.Code), room))
             {
                 _gameStateManager.TrackRoom(room);
                 NotifyStatsChanged();
                 return room;
             }
 
-            return _rooms.GetValueOrDefault(room.Code.ToUpperInvariant());
+            return _rooms.GetValueOrDefault(NormalizeCode(room.Code));
         }
         catch (Exception ex)
         {
@@ -529,6 +544,7 @@ public class RoomService : IRoomService, IDisposable
                     }
                     try
                     {
+                        if (!IsRoomMember(room, connectionId)) return null;
                         player.Name = newName;
                     }
                     finally
@@ -646,17 +662,17 @@ public class RoomService : IRoomService, IDisposable
 
     public void TerminateRoom(string code)
     {
-        _rooms.TryRemove(code.ToUpper(), out _);
-        _ = _gameHubContext.Clients.Group(code.ToUpper()).SendAsync("RoomTerminated", "Room terminated by administrator");
-        _ = _gameHubContext.Clients.All.SendAsync("RoomDeleted", code.ToUpper());
-        _gameStateManager.UntrackRoom(code.ToUpper());
-        _persistenceService?.QueueDelete(code.ToUpper());
+        _rooms.TryRemove(NormalizeCode(code), out _);
+        _ = _gameHubContext.Clients.Group(NormalizeCode(code)).SendAsync("RoomTerminated", "Room terminated by administrator");
+        _ = _gameHubContext.Clients.All.SendAsync("RoomDeleted", NormalizeCode(code));
+        _gameStateManager.UntrackRoom(NormalizeCode(code));
+        _persistenceService?.QueueDelete(NormalizeCode(code));
         NotifyStatsChanged();
     }
 
     public Room? ToggleReady(string code, string connectionId, bool? forcedState = null)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
 
         var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
         if (player == null) return null;
@@ -668,6 +684,7 @@ public class RoomService : IRoomService, IDisposable
         }
         try
         {
+            if (!IsRoomMember(room, connectionId)) return null;
             // If forcedState is set and requester is HOST, set the room-level override
             if (forcedState != null && player.IsHost)
             {
@@ -692,7 +709,7 @@ public class RoomService : IRoomService, IDisposable
 
     public async Task<Room?> StartGame(string code, GameSettings? settings = null)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         
         await room.StateLock.WaitAsync();
         try
@@ -753,7 +770,7 @@ public class RoomService : IRoomService, IDisposable
 
     public async Task<Room?> PauseGame(string code)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!await room.StateLock.WaitAsync(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in PauseGame for room {Code}", code);
@@ -782,7 +799,7 @@ public class RoomService : IRoomService, IDisposable
 
     public async Task<Room?> ResumeGame(string code)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!await room.StateLock.WaitAsync(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in ResumeGame for room {Code}", code);
@@ -816,7 +833,7 @@ public class RoomService : IRoomService, IDisposable
     /// </summary>
     public async Task<Room?> EndGame(string code)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
 
         if (!await room.StateLock.WaitAsync(TimeSpan.FromSeconds(5)))
         {
@@ -878,7 +895,7 @@ public class RoomService : IRoomService, IDisposable
 
     public async Task<Room?> SubmitAction(string code, string connectionId, string actionType, System.Text.Json.JsonElement? payload)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!IsRoomMember(room, connectionId)) return null;
 
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
@@ -890,6 +907,7 @@ public class RoomService : IRoomService, IDisposable
             await room.StateLock.WaitAsync();
             try
             {
+                if (!IsRoomMember(room, connectionId)) return null;
                 if (actionType != "SUBMIT_STROKE") 
                 {
                     SaveStateLocked(room);
@@ -926,7 +944,7 @@ public class RoomService : IRoomService, IDisposable
 
     public async Task<Room?> CalculateRoundScores(string code)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
 
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
         if (service != null)
@@ -949,7 +967,8 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? SetGameType(string code, GameType gameType)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!Enum.IsDefined(gameType)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         // Only allow changing game type in Lobby or Finished state?
         // if (room.State != GameState.Lobby && room.State != GameState.Finished) return null;
 
@@ -984,7 +1003,7 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? UpdateSettings(string code, GameSettings settings)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in UpdateSettings for room {Code}", code);
@@ -1005,7 +1024,7 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? UpdateUndoSettings(string code, UndoSettings settings)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in UpdateUndoSettings for room {Code}", code);
@@ -1026,7 +1045,8 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? VoteNextGame(string code, string playerId, GameType vote)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!Enum.IsDefined(vote)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!IsRoomMember(room, playerId)) return null;
         
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
@@ -1036,6 +1056,7 @@ public class RoomService : IRoomService, IDisposable
         }
         try
         {
+            if (!IsRoomMember(room, playerId)) return null;
             room.NextGameVotes[playerId] = vote;
         }
         finally
@@ -1050,8 +1071,8 @@ public class RoomService : IRoomService, IDisposable
     public List<string> ValidateRooms(List<string> codes)
     {
         return codes
-            .Where(c => _rooms.ContainsKey(c.ToUpper()))
-            .Select(c => c.ToUpper())
+            .Where(c => _rooms.ContainsKey(NormalizeCode(c)))
+            .Select(c => NormalizeCode(c))
             .ToList();
     }
 
@@ -1161,11 +1182,12 @@ public class RoomService : IRoomService, IDisposable
 
     public async Task<Room?> RequestUndo(string code, string connectionId)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         
         await room.StateLock.WaitAsync();
         try
         {
+            if (!IsRoomMember(room, connectionId)) return null;
             // If no history, can't undo
             if (room.StateHistory.Count == 0) return null;
 
@@ -1210,7 +1232,7 @@ public class RoomService : IRoomService, IDisposable
 
     public async Task<UndoVoteSubmission?> SubmitUndoVote(string code, string connectionId, bool vote)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         
         await room.StateLock.WaitAsync();
         try

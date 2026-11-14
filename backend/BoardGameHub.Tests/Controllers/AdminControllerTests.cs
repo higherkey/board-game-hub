@@ -157,4 +157,25 @@ public class AdminControllerTests : IDisposable
         _mockSocialService.Verify(s => s.SaveGlobalMessage("admin_id", "Test message"), Times.Once);
         _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", new object[] { "ADMIN", "Test message" }, default), Times.Once);
     }
+
+    [Theory]
+    [InlineData("Unknown")]
+    [InlineData("2147483647")]
+    public void CreateRoom_RejectsUnknownOrUndefinedGameTypes(string gameType)
+    {
+        var result = _sut.CreateRoom(new AdminController.CreateRoomAuth("Host", gameType));
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        _mockRoomService.Verify(r => r.CreateRoom(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(),
+            It.IsAny<GameType>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<bool>()), Times.Never);
+    }
+
+    [Fact]
+    public void CreateRoom_PreservesNoneLobbySelection()
+    {
+        _mockRoomService.Setup(r => r.CreateRoom(It.IsAny<string>(), "Host", true, GameType.None, null, null, false))
+            .Returns(new Room { Code = "TEST" });
+
+        _sut.CreateRoom(new AdminController.CreateRoomAuth("Host", "None")).Should().BeOfType<OkObjectResult>();
+    }
 }

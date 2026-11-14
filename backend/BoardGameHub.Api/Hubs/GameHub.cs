@@ -25,6 +25,7 @@ public class GameHub : Hub
 
     public async Task SubmitAction(string roomCode, string actionType, JsonElement payload)
     {
+        roomCode = NormalizeCode(roomCode);
         // State update broadcast via GameStateManager
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, actionType, payload);
     }
@@ -56,7 +57,7 @@ public class GameHub : Hub
 
     public async Task<Room> CreateRoom(string playerName, bool isPublic, string gameType = "OneAndOnly", string? guestId = null, bool isScreen = false)
     {
-        if (!Enum.TryParse<GameType>(gameType, true, out var type))
+        if (!Enum.TryParse<GameType>(gameType, true, out var type) || !Enum.IsDefined(type))
         {
             throw new HubException("Unknown game type.");
         }
@@ -95,6 +96,7 @@ public class GameHub : Hub
 
     public async Task StartGame(string roomCode, GameSettings settings)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -125,6 +127,7 @@ public class GameHub : Hub
 
     public async Task PauseGame(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -134,6 +137,7 @@ public class GameHub : Hub
 
     public async Task ResumeGame(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -143,6 +147,7 @@ public class GameHub : Hub
 
     public async Task EndGame(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -160,8 +165,9 @@ public class GameHub : Hub
 
     public async Task SetGameType(string roomCode, string gameType)
     {
+        roomCode = NormalizeCode(roomCode);
         _logger.LogInformation("[GameHub] SetGameType Request: Room={Room}, Type={GameType}", roomCode, gameType);
-        if (Enum.TryParse<GameType>(gameType, true, out var type))
+        if (Enum.TryParse<GameType>(gameType, true, out var type) && Enum.IsDefined(type))
         {
             var existingRoom = _roomService.GetRoom(roomCode);
             if (existingRoom == null)
@@ -203,6 +209,7 @@ public class GameHub : Hub
 
     public async Task SetHostPlayer(string roomCode, string targetConnectionId)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -216,6 +223,7 @@ public class GameHub : Hub
 
     public async Task RemoveHostPlayer(string roomCode, string targetConnectionId)
     {
+        roomCode = NormalizeCode(roomCode);
         var room = _roomService.RemoveHostPlayer(roomCode, Context.ConnectionId, targetConnectionId);
         if (room != null)
         {
@@ -225,7 +233,8 @@ public class GameHub : Hub
 
     public Task VoteNextGame(string roomCode, string gameType)
     {
-        if (Enum.TryParse<GameType>(gameType, true, out var type))
+        roomCode = NormalizeCode(roomCode);
+        if (Enum.TryParse<GameType>(gameType, true, out var type) && Enum.IsDefined(type))
         {
             _roomService.VoteNextGame(roomCode, Context.ConnectionId, type);
         }
@@ -234,6 +243,7 @@ public class GameHub : Hub
     
     public async Task UpdateSettings(string roomCode, GameSettings settings)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -254,6 +264,7 @@ public class GameHub : Hub
 
     public Task UpdateUndoSettings(string roomCode, UndoSettings settings)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return Task.CompletedTask;
         EnsureHost(existingRoom);
@@ -264,6 +275,7 @@ public class GameHub : Hub
 
     public async Task RequestUndo(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         var room = await _roomService.RequestUndo(roomCode, Context.ConnectionId);
         if (room != null)
         {
@@ -283,6 +295,7 @@ public class GameHub : Hub
 
     public async Task SubmitUndoVote(string roomCode, bool vote)
     {
+        roomCode = NormalizeCode(roomCode);
         var submission = await _roomService.SubmitUndoVote(roomCode, Context.ConnectionId, vote);
         if (submission == null) return;
 
@@ -304,6 +317,7 @@ public class GameHub : Hub
 
     public async Task<Room?> JoinRoom(string roomCode, string playerName, string? guestId = null, bool isScreen = false, string? sessionId = null)
     {
+        roomCode = NormalizeCode(roomCode);
         var userId = ResolveUserId(guestId);
         var avatarUrl = Context.User?.FindFirst("AvatarUrl")?.Value;
 
@@ -336,6 +350,7 @@ public class GameHub : Hub
 
     public async Task ToggleReady(string roomCode, bool? forcedState = null)
     {
+        roomCode = NormalizeCode(roomCode);
         if (forcedState != null)
         {
             _logger.LogInformation("[Hub] Host override ToggleReady: {RoomCode}, ForcedState: {State}", roomCode, forcedState);
@@ -375,24 +390,28 @@ public class GameHub : Hub
 
     public async Task SubmitAnswers(string roomCode, List<string> answers)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { answers });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWERS", payload);
     }
 
     public async Task SubmitClue(string roomCode, string clue)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { clue });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_CLUE", payload);
     }
 
     public async Task SubmitGuess(string roomCode, string guess)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { guess });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_GUESS", payload);
     }
 
     public async Task SubmitBreakingNewsSlot(string roomCode, int slotId, string value)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { slotId, value });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SLOT", payload);
     }
@@ -401,28 +420,33 @@ public class GameHub : Hub
     
     public async Task SubmitPictophonePage(string roomCode, string content)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { content });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_PAGE", payload);
     }
 
     public async Task SubmitPictophoneDraft(string roomCode, string content)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { content });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_DRAFT", payload);
     }
 
     public async Task ForcePictophoneNext(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_NEXT_PHASE", null);
     }
 
     public async Task RevealPictophoneNext(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REVEAL_NEXT", null);
     }
 
     public async Task StarPictophonePage(string roomCode, int bookIndex, int pageIndex)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { bookIndex, pageIndex });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "STAR_PAGE", payload);
     }
@@ -440,6 +464,7 @@ public class GameHub : Hub
 
     public async Task DeepfakeStroke(string roomCode, string pathData, string color)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { pathData, color });
         var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_STROKE", payload);
         // Stroke is handled by optimized path? 
@@ -453,12 +478,14 @@ public class GameHub : Hub
 
     public async Task DeepfakeVote(string roomCode, string accusedId)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { accusedId });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
 
     public async Task DeepfakeAiGuess(string roomCode, string guess)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { guess });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_AI_GUESS", payload);
     }
@@ -467,18 +494,21 @@ public class GameHub : Hub
 
     public async Task SubmitWisecrackAnswer(string roomCode, string promptId, string answer)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { promptId, answer });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_ANSWER", payload);
     }
 
     public async Task SubmitWisecrackVote(string roomCode, int choice)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { choice });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
 
     public async Task NextWisecrackBattle(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -489,18 +519,21 @@ public class GameHub : Hub
 
     public async Task SubmitPoppycockDefinition(string roomCode, string definition)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { definition });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_DEFINITION", payload);
     }
 
     public async Task SubmitPoppycockVote(string roomCode, string votedId)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { votedId });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
 
     public async Task EndRound(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         try
         {
             if (string.IsNullOrEmpty(roomCode)) return;
@@ -542,6 +575,7 @@ public class GameHub : Hub
 
     public async Task NextRound(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         if (string.IsNullOrEmpty(roomCode)) return;
 
         var existingRoom = _roomService.GetRoom(roomCode);
@@ -564,6 +598,7 @@ public class GameHub : Hub
 
     public async Task SendMessage(string roomCode, string message)
     {
+        roomCode = NormalizeCode(roomCode);
         var room = _roomService.GetRoom(NormalizeCode(roomCode));
         if (room == null || !_roomService.IsRoomMember(room, Context.ConnectionId)) return;
         await Clients.Group(room.Code).SendAsync("ReceiveMessage", Context.ConnectionId, message);
@@ -590,13 +625,13 @@ public class GameHub : Hub
     
     public async Task LeaveRoom(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         var room = _roomService.RemovePlayer(Context.ConnectionId);
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, NormalizeCode(roomCode));
-        
-        // Notify others that player left (if room still exists)
+        // The connection map determines the room being left, even if the supplied code is wrong.
         if (room != null)
         {
-            await Clients.Group(NormalizeCode(roomCode)).SendAsync("PlayerJoined", room.Players);
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Code);
+            await Clients.Group(room.Code).SendAsync("PlayerJoined", room.Players);
             
             if (room.IsPublic && room.State == GameState.Lobby)
             {
@@ -609,30 +644,35 @@ public class GameHub : Hub
 
     public async Task SymbologyPlaceMarker(string roomCode, string icon, string markerType, string color)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { icon, markerType, color });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PLACE_MARKER", payload);
     }
 
     public async Task SymbologyRemoveMarker(string roomCode, string markerId)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { markerId });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "REMOVE_MARKER", payload);
     }
 
     public async Task UniversalTranslatorToken(string roomCode, string token)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { token });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_TOKEN", payload);
     }
 
     public async Task UniversalTranslatorVote(string roomCode, string targetId)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { accusedId = targetId });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_VOTE", payload);
     }
     
     public async Task UniversalTranslatorForcePhase(string roomCode, string phaseName)
     {
+        roomCode = NormalizeCode(roomCode);
         var existingRoom = _roomService.GetRoom(roomCode);
         if (existingRoom == null) return;
         EnsureHost(existingRoom);
@@ -643,23 +683,27 @@ public class GameHub : Hub
 
     public async Task UniversalTranslatorPickWord(string roomCode, string word)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { word });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PICK_WORD", payload);
     }
 
     public async Task SubmitSushiTrainSelection(string roomCode, string cardId)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { cardId });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SUBMIT_SELECTION", payload);
     }
 
     public async Task ToggleSushiTrainChopsticks(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "TOGGLE_CHOPSTICKS", null);
     }
 
     public async Task SubmitGreatMindsCard(string roomCode, int cardValue)
     {
+        roomCode = NormalizeCode(roomCode);
         var payload = JsonSerializer.SerializeToElement(new { cardValue });
         var room = await _roomService.SubmitAction(roomCode, Context.ConnectionId, "PLAY_CARD", payload);
         // Room update is handled by specialized broadcasts in GameService
@@ -671,11 +715,13 @@ public class GameHub : Hub
 
     public async Task SubmitGreatMindsSync(string roomCode)
     {
+        roomCode = NormalizeCode(roomCode);
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "SYNC_TOKEN", null);
     }
 
     public async Task CloverDragMove(string roomCode, string cardId, double x, double y)
     {
+        roomCode = NormalizeCode(roomCode);
         var room = _roomService.GetRoom(NormalizeCode(roomCode));
         if (room == null || !_roomService.IsRoomMember(room, Context.ConnectionId)) return;
         // Direct relay to others in the room to keep dragging smooth and bypass state persistence

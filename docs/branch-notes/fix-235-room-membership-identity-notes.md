@@ -1,19 +1,23 @@
 # Branch notes: fix/235-room-membership-identity
 
 ## Discoveries & Deviations
-- No pre-existing test needed changes. `PlayerSessionRebindTests` and all other existing tests pass unmodified (guest ids are only namespaced at the hub layer; `RoomService` stores whatever it is given).
-- New test files: `GameHubIdentityTests`, `RoomServiceMembershipTests`, `PlayerIdentityPersistenceTests`; one new spec case in `room-sidebar.component.spec.ts`.
-- `RequestUndo` keeps its player lookup (it needs the player's name and host flag, and Table-screen players are already allowed); `IsRoomMember` is not added there because it would be redundant.
-- `SubmitUndoVote`: zero eligible voters (no connected Hands) closes the vote as Failed for any room member; otherwise non-eligible voters (Tables, disconnected) are ignored.
-- `Player.UserId` is `[JsonIgnore]`: undo snapshots only restore `Score`, and persistence uses `PersistedPlayer`, so nothing reads it back from JSON. Round trip verified by test.
-- Hub group names use `Trim().ToUpperInvariant()`; `JoinRoom` stores `room.Code` in the connection map.
+- Membership requires the current room instance, its connection map entry, and a connected player seat; creator and host pointers cannot restore departed authority. Joined same-account Table hosts remain supported.
+- Create/join reserve one connection map entry before room or seat mutation. Same-room retries preserve the seat and session; reconnects remove only the matching old room mapping and rotate the bearer token.
+- Every hub room-code entry and service lookup uses trimmed invariant uppercase codes. Create/set/vote reject undefined enum values and keep the defined None lobby option.
+- Leave broadcasts and group removal use the authoritative room returned by RemovePlayer. Offer, answer and ICE relay only between active room members.
+- Player.UserId stays private; IsRegistered is public. Persistence round trips retain account/guest identity and SessionId; sidebar badge consumes IsRegistered.
 
 ## 4a Blockers & Risks
-- Clients that previously relied on `userId` in room payloads must use `isRegistered` (frontend updated).
-- Existing persisted guest seats hold raw (un-prefixed) ids; they still reconnect via SessionId.
+- No active blockers. Escalated execution and the generated runtime config resolved local tool restrictions.
+- Clients that consumed userId must use isRegistered. Legacy guest seats with raw ids reconnect through SessionId.
+- The local C: drive is full. Verification uses a worktree dependency junction with matching lockfile and redirected process temp/npm cache; dependencies are not reinstalled.
+- Tests use the ignored generated runtime config MSTest.EnableParentProcessQuery=false to bypass this host's parent process query restriction; no tracked runner configuration changes.
 
 ## 4b Quick Wins
-- None.
+- Skip the Cloudflare deploy step for draft PRs while keeping its build/tests active, as authorized.
+- Add explicit 24px avatar dimensions matching existing CSS to clear the touched-template Sitewright audit without changing layout.
+- Verify canonical code handling, defined enum inputs, active host authority, concurrent cross-room joins, same-room retries, reconnect mapping ownership, WebRTC relays, and persistence identity.
+- Validation: backend build and all 511 tests pass; frontend production build and all 9 sidebar specs pass. Sitewright token contrast and typography assessment pass; touched-template audit reports zero errors. Fresh adversarial review reports no actionable findings.
 
 ## 4c Deferred Items
-- Game-specific hub methods still forward `roomCode` as-is to `RoomService`, which uppercases but does not trim.
+- Undo-majority reevaluation when membership changes remains with #77/#219; retain the existing history implementation in this fix.

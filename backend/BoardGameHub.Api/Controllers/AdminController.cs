@@ -89,7 +89,7 @@ public class AdminController : ControllerBase
     [HttpPost("rooms/create")]
     public IActionResult CreateRoom([FromBody] CreateRoomAuth req)
     {
-        if (!Enum.TryParse<GameType>(req.GameType, true, out var type))
+        if (!Enum.TryParse<GameType>(req.GameType, true, out var type) || !Enum.IsDefined(type))
         {
             return BadRequest("Unknown game type.");
         }

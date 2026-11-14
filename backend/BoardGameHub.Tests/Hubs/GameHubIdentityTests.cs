@@ -20,6 +20,7 @@ public class GameHubIdentityTests
     private readonly Mock<IClientProxy> _others = new();
     private readonly Mock<ISingleClientProxy> _single = new();
     private readonly Mock<HubCallerContext> _context = new();
+    private readonly Mock<IGroupManager> _groups = new();
     private readonly GameHub _sut;
 
     public GameHubIdentityTests()
@@ -31,7 +32,7 @@ public class GameHubIdentityTests
         _clients.Setup(c => c.Client(It.IsAny<string>())).Returns(_single.Object);
         _clients.Setup(c => c.Caller).Returns(_single.Object);
         _sut.Clients = _clients.Object;
-        _sut.Groups = new Mock<IGroupManager>().Object;
+        _sut.Groups = _groups.Object;
         _context.Setup(c => c.ConnectionId).Returns("conn1");
         _sut.Context = _context.Object;
     }
@@ -75,12 +76,14 @@ public class GameHubIdentityTests
         _rooms.Verify(r => r.JoinRoom("TEST", "conn1", "G", null, null, false, null), Times.Once);
     }
 
-    [Fact]
-    public async Task CreateRoom_UnknownGameType_Throws()
+    [Theory]
+    [InlineData("NotAGame")]
+    [InlineData("2147483647")]
+    public async Task CreateRoom_UnknownGameType_Throws(string gameType)
     {
         SignInAs(null);
 
-        var act = () => _sut.CreateRoom("P", true, "NotAGame");
+        var act = () => _sut.CreateRoom("P", true, gameType);
 
         (await act.Should().ThrowAsync<HubException>()).WithMessage("Unknown game type.");
     }
@@ -155,5 +158,55 @@ public class GameHubIdentityTests
         registered.Should().NotContain("userId");
 
         JsonSerializer.Serialize(new Player { UserId = "guest:x" }, options).Should().Contain("\"isRegistered\":false");
+    }
+
+    [Theory]
+    [InlineData("answer", false)]
+    [InlineData("answer", true)]
+    [InlineData("ice", false)]
+    [InlineData("ice", true)]
+    public async Task Signaling_RequiresSameRoomForAnswersAndIce(string kind, bool sameRoom)
+    {
+        _rooms.Setup(r => r.AreInSameRoom("conn1", "target")).Returns(sameRoom);
+        if (kind == "answer") await _sut.SendAnswer("target", "payload");
+        else await _sut.SendIceCandidate("target", "payload");
+        _single.Verify(c => c.SendCoreAsync(kind == "answer" ? "ReceiveAnswer" : "ReceiveIceCandidate",
+            It.Is<object[]>(args => (string)args[0] == "conn1" && (string)args[1] == "payload"), default),
+            sameRoom ? Times.Once() : Times.Never());
+    }
+
+    [Fact]
+    public async Task LeaveRoom_UsesActualMembershipRoomForBroadcastAndGroupRemoval()
+    {
+        var room = new Room { Code = "ACTUAL", IsPublic = true };
+        _rooms.Setup(r => r.RemovePlayer("conn1")).Returns(room);
+
+        await _sut.LeaveRoom("OTHER");
+
+        _groups.Verify(g => g.RemoveFromGroupAsync("conn1", "ACTUAL", default), Times.Once);
+        _groups.Verify(g => g.RemoveFromGroupAsync("conn1", "OTHER", default), Times.Never);
+        _clients.Verify(c => c.Group("OTHER"), Times.Never);
+        _clients.Verify(c => c.Group("ACTUAL"), Times.Once);
+        _group.Verify(c => c.SendCoreAsync("PublicRoomUpdated", It.Is<object[]>(args => args[0] == room), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CodeEntries_NormalizeBeforeCallingService()
+    {
+        await _sut.JoinRoom(" test ", "Guest");
+        await _sut.SubmitGuess(" test ", "Guess");
+        await _sut.VoteNextGame(" test ", "None");
+        _rooms.Verify(r => r.JoinRoom("TEST", "conn1", "Guest", null, null, false, null), Times.Once);
+        _rooms.Verify(r => r.SubmitAction("TEST", "conn1", "SUBMIT_GUESS", It.IsAny<JsonElement?>()), Times.Once);
+        _rooms.Verify(r => r.VoteNextGame("TEST", "conn1", GameType.None), Times.Once);
+    }
+
+    [Fact]
+    public async Task UndefinedEnum_SetAndVoteDoNotMutateService()
+    {
+        await _sut.SetGameType("TEST", "2147483647");
+        await _sut.VoteNextGame("TEST", "2147483647");
+        _rooms.Verify(r => r.SetGameType(It.IsAny<string>(), It.IsAny<GameType>()), Times.Never);
+        _rooms.Verify(r => r.VoteNextGame(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<GameType>()), Times.Never);
     }
 }

@@ -18,5 +18,7 @@ public class PlayerIdentityPersistenceTests
         var restored = serializer.Deserialize(serializer.Serialize(room));
 
         restored.Players.Select(p => p.UserId).Should().Equal("acct-1", "guest:xyz");
+        restored.Players.Select(p => p.SessionId).Should().Equal(room.Players.Select(p => p.SessionId));
+        restored.Players.Select(p => p.IsRegistered).Should().Equal(true, false);
     }
 }
