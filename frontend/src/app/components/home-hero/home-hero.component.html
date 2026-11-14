@@ -1,0 +1,147 @@
+<section #hero class="dc-hero" [class.dc-static]="isStatic()" aria-labelledby="dc-title">
+    <header class="dc-head">
+        <h1 id="dc-title" class="dc-title">Game night, <span class="dc-accent">together</span></h1>
+        <p class="dc-sub">One screen for the table. A phone for every hand.</p>
+    </header>
+
+    <ol class="dc-stages">
+        @for (stage of stages; track stage.id) {
+            <li class="dc-stage" [class.is-active]="activeStage() === stage.id">
+                <div class="dc-scene dc-scene--{{ stage.id }}" aria-hidden="true">
+                    @switch (stage.id) {
+                        <!-- ============ HOST: pick a game, get a room code ============ -->
+                        @case ('host') {
+                            <div class="dc-tv">
+                                <div class="dc-tv-screen">
+                                    <div class="dc-picker">
+                                        @for (game of pickerGames; track game.key) {
+                                            <span class="dc-pick" [class.dc-pick--chosen]="game.key === chosenGame"><i [class]="'bi ' + game.icon"></i></span>
+                                        }
+                                    </div>
+                                    <div class="dc-roomcard">
+                                        <span class="dc-room-game"><i class="bi bi-suit-spade-fill"></i> Card game</span>
+                                        <div class="dc-room-table">
+                                            <span class="dc-room-seat"><i class="bi bi-person"></i></span>
+                                            <span class="dc-room-deck"><i class="bi bi-suit-spade-fill"></i></span>
+                                            <span class="dc-room-seat"><i class="bi bi-person"></i></span>
+                                            <span class="dc-room-waiting">Waiting for players</span>
+                                        </div>
+                                        <div class="dc-room-invite">
+                                        <span class="dc-roomcard-code">
+                                            @for (letter of codeLetters; track $index) {
+                                                <span class="dc-code-letter">{{ letter }}</span>
+                                            }
+                                        </span>
+                                        <span class="dc-qr">
+                                            @for (cell of qrCells; track $index) {
+                                                <span class="dc-qr-cell" [class.is-dark]="cell === 1"></span>
+                                            }
+                                        </span>
+                                        </div>
+                                    </div>
+                                    <span class="dc-cursor"><i class="bi bi-cursor-fill"></i></span>
+                                </div>
+                                <span class="dc-tv-stand"></span>
+                            </div>
+                        }
+
+                        <!-- ============ JOIN: phones scan / type, seats fill on the TV ============ -->
+                        @case ('join') {
+                            <div class="dc-tv dc-tv--compact">
+                                <div class="dc-tv-screen dc-lobby">
+                                    <span class="dc-lobby-code">ABCD</span>
+                                    <div class="dc-seats">
+                                        <span class="dc-seat dc-seat--a"><span class="dc-avatar"><i class="bi bi-person-fill"></i></span></span>
+                                        <span class="dc-seat dc-seat--b"><span class="dc-avatar"><i class="bi bi-person-fill"></i></span></span>
+                                    </div>
+                                    <span class="dc-lobby-ready"><i class="bi bi-check2-all"></i></span>
+                                </div>
+                                <span class="dc-tv-stand"></span>
+                            </div>
+
+                            <div class="dc-phone dc-phone--a">
+                                <div class="dc-phone-screen">
+                                    <span class="dc-viewfinder">
+                                        <span class="dc-qr dc-qr--mini">
+                                            @for (cell of qrCells; track $index) {
+                                                <span class="dc-qr-cell " [class.is-dark]="cell === 1"></span>
+                                            }
+                                        </span>
+                                        <span class="dc-scanline"></span>
+                                    </span>
+                                    <span class="dc-joined"><i class="bi bi-person-check-fill"></i></span>
+                                </div>
+                            </div>
+
+                            <div class="dc-phone dc-phone--b">
+                                <div class="dc-phone-screen">
+                                    <span class="dc-typebox">
+                                        @for (letter of codeLetters; track $index) {
+                                            <span class="dc-type-letter">{{ letter }}</span>
+                                        }
+                                    </span>
+                                    <span class="dc-join-btn"><i class="bi bi-arrow-right-short"></i></span>
+                                    <span class="dc-joined"><i class="bi bi-person-check-fill"></i></span>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- ============ PLAY: cards fly from hands to the table ============ -->
+                        @case ('play') {
+                            <div class="dc-tv dc-tv--compact">
+                                <div class="dc-tv-screen dc-board">
+                                    <span class="dc-slot dc-slot--a"><span class="dc-placed"></span></span>
+                                    <span class="dc-slot dc-slot--b"><span class="dc-placed"></span></span>
+                                    <span class="dc-score dc-score--a">0<span class="dc-plus">+1</span></span>
+                                    <span class="dc-score dc-score--b">0<span class="dc-plus">+1</span></span>
+                                    <span class="dc-board-glow"></span>
+                                </div>
+                                <span class="dc-tv-stand"></span>
+                            </div>
+
+                            <div class="dc-phone dc-phone--a">
+                                <div class="dc-phone-screen dc-hand dc-hand--a">
+                                    @for (card of handCards; track card) {
+                                        <span class="dc-card dc-card--{{ card }}" [class.dc-card--chosen]="card === 1"></span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="dc-phone dc-phone--b">
+                                <div class="dc-phone-screen dc-hand dc-hand--b">
+                                    @for (card of handCards; track card) {
+                                        <span class="dc-card dc-card--{{ card }}" [class.dc-card--chosen]="card === 1"></span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <button type="button" class="dc-caption" (click)="jumpTo(stage.id)"
+                    [attr.aria-current]="activeStage() === stage.id ? 'step' : null"
+                    [disabled]="isStatic()">
+                    <span class="dc-num" aria-hidden="true">{{ stage.num }}</span>
+                    <span class="dc-caption-text">
+                        <span class="dc-caption-title">{{ stage.title }}</span>
+                        <span class="dc-caption-desc">{{ stage.caption }}</span>
+                    </span>
+                </button>
+                <span class="dc-progress" aria-hidden="true"><span class="dc-progress-fill" [attr.data-progress]="stage.id"></span></span>
+            </li>
+        }
+    </ol>
+
+    <div class="dc-actions">
+        <ng-content></ng-content>
+    </div>
+    @if (!isStatic()) {
+        <div class="dc-playback">
+            <button type="button" class="btn btn-link dc-pause" (click)="togglePause()"
+                [attr.aria-pressed]="isPaused()">
+                <i class="bi" [class.bi-pause-fill]="!isPaused()" [class.bi-play-fill]="isPaused()" aria-hidden="true"></i>
+                {{ isPaused() ? 'Play animation' : 'Pause animation' }}
+            </button>
+        </div>
+    }
+</section>

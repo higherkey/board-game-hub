@@ -61,7 +61,7 @@ services:
       - key: ASPNETCORE_URLS
         value: http://+:8080
       - key: ConnectionStrings__DefaultConnection
-        sync: false # Set in Render Dashboard (Supabase staging, falls back to Supabase dev)
+        sync: false # Set in Render Dashboard (dedicated Supabase staging database)
       - key: Jwt__Key
         sync: false # Set in Render Dashboard
       - key: TurnServer__Url
