@@ -178,5 +178,4 @@ public class AdminControllerTests : IDisposable
         _mockSocialService.Verify(s => s.SaveGlobalMessage("admin_id", "Test message"), Times.Once);
         _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", new object[] { "ADMIN", "Test message" }, default), Times.Once);
     }
-
 }
