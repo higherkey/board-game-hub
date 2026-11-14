@@ -705,6 +705,7 @@ public class RoomService : IRoomService, IDisposable
                 foreach(var p in room.Players) p.Score = 0;
             }
 
+            room.Settings.Clamp();
             room.RoundNumber++;
             room.State = GameState.Playing;
             room.IsPaused = false;
@@ -968,7 +969,8 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? UpdateSettings(string code, GameSettings settings)
     {
-        if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
+        if (settings == null) return null;
+        if (!_rooms.TryGetValue((code ?? string.Empty).Trim().ToUpperInvariant(), out var room)) return null;
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
         {
             _logger.LogWarning("Timeout waiting for StateLock in UpdateSettings for room {Code}", code);
@@ -976,6 +978,7 @@ public class RoomService : IRoomService, IDisposable
         }
         try
         {
+            settings.Clamp();
             room.Settings = settings;
         }
         finally
