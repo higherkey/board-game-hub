@@ -54,7 +54,7 @@
                 *ngFor="let p of players" [class.border-success]="p.isReady"
                 [class.border-start]="p.isReady" [class.thick-border-left]="p.isReady">
                 <div class="position-relative me-2">
-                    <img [src]="p.avatarUrl || '/assets/avatars/default.webp'" alt=""
+                    <img [src]="p.avatarUrl || '/assets/avatars/default.webp'" alt="" width="24" height="24"
                         class="rounded-circle border border-white shadow-sm avatar-sm">
                     <div *ngIf="p.isReady"
                         class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-white status-dot"></div>
@@ -72,7 +72,7 @@
                               class="badge bg-warning text-dark x-small fw-bold p-1 font-micro">HOST</span>
                     </div>
                     <div class="x-small text-muted text-uppercase ls-wide font-xxs">
-                        {{ p.userId ? 'User' : 'Guest' }}
+                        {{ p.isRegistered ? 'User' : 'Guest' }}
                     </div>
                 </div>
                 <div class="ms-auto d-flex align-items-center gap-1 text-white">

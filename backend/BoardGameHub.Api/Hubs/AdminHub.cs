@@ -22,6 +22,7 @@ public class AdminHub : Hub
 
     public async Task KickPlayer(string roomCode, string connectionId)
     {
+        roomCode = (roomCode ?? string.Empty).Trim().ToUpperInvariant();
         // This should probably notify the kicked player and the room
         _roomService.RemovePlayer(connectionId);
         
@@ -35,6 +36,7 @@ public class AdminHub : Hub
 
     public async Task SetHostPlayer(string roomCode, string connectionId)
     {
+        roomCode = (roomCode ?? string.Empty).Trim().ToUpperInvariant();
         var room = _roomService.SetHostPlayer(roomCode, connectionId);
         if (room != null)
         {
@@ -45,6 +47,7 @@ public class AdminHub : Hub
 
     public async Task ForceAddPlayer(string roomCode, string playerName)
     {
+        roomCode = (roomCode ?? string.Empty).Trim().ToUpperInvariant();
          // Debug method to add a fake player
          var room = _roomService.JoinRoom(roomCode, Guid.NewGuid().ToString(), playerName, null, null);
          if (room != null)

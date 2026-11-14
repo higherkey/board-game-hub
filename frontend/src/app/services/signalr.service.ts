@@ -28,7 +28,7 @@ export interface Player {
   isReady: boolean;
   isScreen: boolean;
   avatarUrl?: string;
-  userId?: string;
+  isRegistered?: boolean;
 }
 
 export type RoomState = 'Lobby' | 'Playing' | 'Finished';
