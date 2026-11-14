@@ -9,7 +9,7 @@ using Xunit;
 
 namespace BoardGameHub.Tests.Services.Core;
 
-public class RoomServiceSettingsTests
+public class RoomServiceSettingsTests : IDisposable
 {
     private readonly RoomService _sut;
 
@@ -53,6 +53,62 @@ public class RoomServiceSettingsTests
         _sut.UpdateSettings(room.Code, new GameSettings { BoardSize = 40000, TotalRounds = 999 });
 
         room.Settings.BoardSize.Should().Be(6);
-        room.Settings.TotalRounds.Should().Be(50);
+        room.Settings.TotalRounds.Should().Be(20);
     }
+
+    [Fact]
+    public async Task StartGame_RetainedSettings_AreClampedWithoutResettingGameProgress()
+    {
+        var room = _sut.CreateRoom("host", "Host", false, GameType.Babble);
+        room.Settings = new GameSettings
+        {
+            BoardSize = 7,
+            TotalRounds = 999,
+            TimerDurationSeconds = 100000,
+            CustomCategories = Enumerable.Repeat(new string('x', 500), 30).ToList(),
+            GenerativeSeed = new string('s', 500),
+            LetterMode = (ScatterbrainData.LetterMode)999,
+            CloverAllowPerPlayerSingleCardRotation = false
+        };
+        room.State = GameState.Finished;
+        room.RoundNumber = 3;
+        room.Players[0].Score = 42;
+
+        var result = await _sut.StartGame(room.Code, null);
+
+        result.Should().BeSameAs(room);
+        room.Settings.BoardSize.Should().Be(6);
+        room.Settings.TotalRounds.Should().Be(20);
+        room.Settings.TimerDurationSeconds.Should().Be(3600);
+        room.Settings.CustomCategories.Should().HaveCount(20).And.OnlyContain(c => c.Length == 100);
+        room.Settings.GenerativeSeed.Should().HaveLength(100);
+        room.Settings.LetterMode.Should().Be(ScatterbrainData.LetterMode.Normal);
+        room.Settings.CloverAllowPerPlayerSingleCardRotation.Should().BeFalse();
+        room.RoundNumber.Should().Be(4);
+        room.Players[0].Score.Should().Be(42);
+        var state = (BabbleState)room.GameData!;
+        state.Grid.Should().HaveCount(36);
+        state.TimeLeft.Should().Be(3600);
+    }
+
+    [Fact]
+    public void UpdateSettings_Null_DoesNotMutateRoom()
+    {
+        var room = _sut.CreateRoom("host", "Host", false, GameType.Babble);
+        var settings = room.Settings;
+        room.RoundNumber = 3;
+        room.Players[0].Score = 42;
+        room.DirtyMembers.Clear();
+
+        var result = _sut.UpdateSettings(room.Code, null!);
+
+        result.Should().BeNull();
+        room.Settings.Should().BeSameAs(settings);
+        room.RoundNumber.Should().Be(3);
+        room.Players[0].Score.Should().Be(42);
+        room.DirtyMembers.Should().BeEmpty();
+        room.StateLock.CurrentCount.Should().Be(1);
+    }
+
+    public void Dispose() => _sut.Dispose();
 }

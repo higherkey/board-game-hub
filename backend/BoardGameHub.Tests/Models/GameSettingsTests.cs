@@ -20,7 +20,9 @@ public class GameSettingsTests
 
     [Theory]
     [InlineData(0, 1)]
-    [InlineData(999, 50)]
+    [InlineData(999, 20)]
+    [InlineData(20, 20)]
+    [InlineData(21, 20)]
     [InlineData(7, 7)]
     public void Clamp_TotalRounds_IsBounded(int input, int expected)
     {
@@ -80,5 +82,29 @@ public class GameSettingsTests
         var s = new GameSettings { LetterMode = (ScatterbrainData.LetterMode)999 };
         s.Clamp();
         s.LetterMode.Should().Be(ScatterbrainData.LetterMode.Normal);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Clamp_ValidGameOptions_ArePreserved(bool allowRotation)
+    {
+        var mode = Enum.GetValues<ScatterbrainData.LetterMode>().Last();
+        var s = new GameSettings
+        {
+            ListId = 42,
+            LetterMode = mode,
+            IsGenerative = true,
+            GenerativeSeed = "Ocean",
+            CloverAllowPerPlayerSingleCardRotation = allowRotation
+        };
+
+        s.Clamp();
+
+        s.ListId.Should().Be(42);
+        s.LetterMode.Should().Be(mode);
+        s.IsGenerative.Should().BeTrue();
+        s.GenerativeSeed.Should().Be("Ocean");
+        s.CloverAllowPerPlayerSingleCardRotation.Should().Be(allowRotation);
     }
 }

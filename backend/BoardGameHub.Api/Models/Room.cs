@@ -118,7 +118,7 @@ public class GameSettings
     public bool CloverAllowPerPlayerSingleCardRotation { get; set; } = true;
 
     public const int MinTotalRounds = 1;
-    public const int MaxTotalRounds = 50;
+    public const int MaxTotalRounds = 20;
     public const int MinTimerDurationSeconds = 0;
     public const int MaxTimerDurationSeconds = 3600;
     public const int MinBoardSize = 4;

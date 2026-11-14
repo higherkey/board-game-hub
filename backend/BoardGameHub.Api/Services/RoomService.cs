@@ -699,13 +699,13 @@ public class RoomService : IRoomService, IDisposable
             // Apply settings if provided (Start of Game)
             if (settings != null)
             {
-                settings.Clamp();
                 room.Settings = settings;
                 room.RoundNumber = 0;
                 // Reset Total Scores on new game
                 foreach(var p in room.Players) p.Score = 0;
             }
 
+            room.Settings.Clamp();
             room.RoundNumber++;
             room.State = GameState.Playing;
             room.IsPaused = false;
@@ -969,6 +969,7 @@ public class RoomService : IRoomService, IDisposable
 
     public Room? UpdateSettings(string code, GameSettings settings)
     {
+        if (settings == null) return null;
         if (!_rooms.TryGetValue(code.ToUpper(), out var room)) return null;
         if (!room.StateLock.Wait(TimeSpan.FromSeconds(5)))
         {
