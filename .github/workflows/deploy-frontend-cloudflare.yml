@@ -92,6 +92,9 @@ jobs:
       - name: Verify catalogue without a running backend
         run: npm run test:catalogue
 
+      - name: Verify public UI and hero sequencing
+        run: npm run test:quality
+
       - name: Deploy to Cloudflare Pages
         id: deploy
         env:

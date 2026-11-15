@@ -8,6 +8,7 @@
     "catalogue:generate": "dotnet run --project ../backend/BoardGameHub.CatalogueExport -- --output src/app/data/game-catalogue.generated.ts",
     "catalogue:check": "dotnet run --project ../backend/BoardGameHub.CatalogueExport -- --check src/app/data/game-catalogue.generated.ts",
     "test:catalogue": "playwright test --config playwright.catalogue.config.ts",
+    "test:quality": "playwright test --config playwright.quality.config.ts",
     "deploy": "ng build && powershell -Command \"Remove-Item -Path '../backend/BoardGameHub.Api/wwwroot/*' -Exclude 'Untitled.xcf','assets' -Recurse -Force; Copy-Item -Path './dist/frontend/browser/*' -Destination '../backend/BoardGameHub.Api/wwwroot' -Recurse -Force\"",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

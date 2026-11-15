@@ -56,6 +56,44 @@ describe('LandingPageComponent', () => {
     expect(component.featuredGames.map(g => g.id)).toEqual(['1', '2', '4']);
   });
 
+  it('submits a typed room code when the expanded arrow is clicked', async () => {
+    component.isCodeInputFocused = true;
+    component.roomCode = 'ABCD';
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.join-cap-btn').click();
+    await fixture.whenStable();
+    expect(mockSignalRService.validateRoomCode).toHaveBeenCalledWith('ABCD');
+    expect(component.roomCode).toBe('ABCD');
+  });
+
+  it('opens and focuses the code tray from its collapsed arrow', fakeAsync(() => {
+    const input = component.codeInputRef!.nativeElement;
+    const focus = spyOn(input, 'focus');
+    fixture.nativeElement.querySelector('.join-cap-btn').click();
+    tick(50);
+    expect(component.isCodeInputFocused).toBeTrue();
+    expect(focus).toHaveBeenCalled();
+    expect(mockSignalRService.validateRoomCode).not.toHaveBeenCalled();
+  }));
+
+  it('submits a retained code even after the input loses focus', async () => {
+    component.roomCode = 'ABCD';
+    component.isCodeInputFocused = false;
+    component.onCodeCapClick();
+    await fixture.whenStable();
+    expect(mockSignalRService.validateRoomCode).toHaveBeenCalledWith('ABCD');
+  });
+
+  it('cancels delayed tray focus and blur when destroyed', fakeAsync(() => {
+    const focus = spyOn(component.codeInputRef!.nativeElement, 'focus');
+    component.toggleCodeEntry();
+    component.onCodeBlur();
+    fixture.destroy();
+    tick(200);
+    expect(focus).not.toHaveBeenCalled();
+    expect(component.isCodeInputFocused).toBeTrue();
+  }));
+
   it('renders one shared hero heading without the concept banner or legacy showcase', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('app-home-hero').length).toBe(1);

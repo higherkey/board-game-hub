@@ -20,7 +20,7 @@
        url('/assets/fonts/outfit-300.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
@@ -29,7 +29,7 @@
        url('/assets/fonts/outfit-400.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
@@ -38,7 +38,7 @@
        url('/assets/fonts/outfit-600.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
@@ -47,7 +47,7 @@
        url('/assets/fonts/outfit-800.ttf') format('truetype');
   font-weight: 800;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
@@ -133,8 +133,8 @@
 
   /* Typography Tokens (Neutral Hierarchy) */
   --text-primary: oklch(20% 0.08 var(--brand-hue-primary));
-  --text-secondary: oklch(50% 0.04 250);
-  --text-light: oklch(68% 0.03 250);
+  --text-secondary: oklch(44% 0.04 250);
+  --text-light: oklch(48% 0.03 250);
   --text-on-primary: oklch(100% 0 0);
 
   /* UI Elements */
@@ -289,11 +289,11 @@ p {
 
 .btn-secondary {
   --bs-btn-color: var(--text-on-primary);
-  --bs-btn-bg: var(--secondary);
-  --bs-btn-border-color: var(--secondary);
+  --bs-btn-bg: var(--accent-dark);
+  --bs-btn-border-color: var(--accent-dark);
   --bs-btn-hover-color: var(--text-on-primary);
-  --bs-btn-hover-bg: var(--accent-hover);
-  --bs-btn-hover-border-color: var(--accent-hover);
+  --bs-btn-hover-bg: var(--primary);
+  --bs-btn-hover-border-color: var(--primary);
   --bs-btn-active-color: var(--text-on-primary);
   --bs-btn-active-bg: var(--accent-dark);
   --bs-btn-active-border-color: var(--accent-dark);
@@ -373,8 +373,8 @@ p {
 
 /* Small Button Scale Variant */
 .btn-sm {
-  min-inline-size: 32px;
-  min-block-size: 32px;
+  min-inline-size: 44px;
+  min-block-size: 44px;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
 }

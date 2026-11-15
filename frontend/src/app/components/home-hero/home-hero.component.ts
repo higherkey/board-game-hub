@@ -286,7 +286,6 @@ export class HomeHeroComponent implements AfterViewInit, OnDestroy {
     // ---------- Stage 2: JOIN ----------
     tl.addLabel('join', joinAt)
       .call(() => this.activeStage.set('join'), [], 'join')
-      .to(one('[data-progress="join"]'), { scaleX: 1, duration: 4.2, ease: 'none' }, 'join')
       // Phone A scans the QR code
       .fromTo(one('.dc-scanline'), { insetBlockStart: '0%' }, { insetBlockStart: '100%', duration: 0.8, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 'join+=0.2')
       .to(one('.dc-phone--a .dc-joined'), { opacity: 1, duration: 0.3 }, '>')
@@ -299,9 +298,10 @@ export class HomeHeroComponent implements AfterViewInit, OnDestroy {
       .to(one('.dc-lobby-ready'), { opacity: 1, duration: 0.3 }, '>+0.1');
 
     // ---------- Stage 3: PLAY ----------
-    tl.addLabel('play', '>+0.6')
+    const playAt = tl.duration() + 0.8;
+    tl.to(one('[data-progress="join"]'), { scaleX: 1, duration: playAt - joinAt, ease: 'none' }, 'join');
+    tl.addLabel('play', playAt)
       .call(() => this.activeStage.set('play'), [], 'play')
-      .to(one('[data-progress="play"]'), { scaleX: 1, duration: 4, ease: 'none' }, 'play')
       .to(one('.dc-hand--a .dc-card--chosen'), { y: -10, rotation: 0, duration: 0.3 }, 'play+=0.3')
       .to(one('.dc-hand--a .dc-card--chosen'), {
         x: flightA.x, y: flightA.y, scale: flightA.scale, duration: 0.8, ease: 'power3.inOut'
@@ -317,6 +317,9 @@ export class HomeHeroComponent implements AfterViewInit, OnDestroy {
       .set(one('.dc-hand--b .dc-card--chosen'), { opacity: 0 }, '<')
       .fromTo(one('.dc-score--b .dc-plus'), { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3, ease: 'back.out(3)' }, '<')
       .fromTo(one('.dc-board-glow'), { opacity: 0 }, { opacity: 1, duration: 0.3, yoyo: true, repeat: 1 }, '>+0.1');
+
+    const playEnd = tl.duration() + 0.6;
+    tl.to(one('[data-progress="play"]'), { scaleX: 1, duration: playEnd - playAt, ease: 'none' }, 'play');
 
     this.timeline = tl;
     this.syncPlayback();

@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './core/layout/layout.component';
-import { GameRoomComponent } from './features/game-room/game-room.component';
 import { GamesComponent } from './features/pages/games-page/games.component';
 import { LandingPageComponent } from './features/pages/home-page/home-page.component';
 import { AuthComponent } from './features/pages/login-page/login.component';
@@ -38,7 +37,7 @@ export const routes: Routes = [
             { path: 'news', loadComponent: () => import('./features/pages/news-page/news.component').then(m => m.NewsComponent), title: 'What\'s New' },
             { path: 'design-concept', loadComponent: () => import('./features/pages/design-concept-page/design-concept.component').then(m => m.DesignConceptComponent), title: 'Design Concept: Hero' },
             { path: 'design-consent', redirectTo: 'design-concept', pathMatch: 'full' },
-            { path: 'game/:code', component: GameRoomComponent, title: 'Game Room' },
+            { path: 'game/:code', loadComponent: () => import('./features/game-room/game-room.component').then(m => m.GameRoomComponent), title: 'Game Room' },
             { path: 'not-found', component: NotFoundComponent, title: '404 - Page Not Found' }
         ]
     },

@@ -34,6 +34,14 @@ describe('GamesComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('exposes the filter disclosure state and controls one top-level content landmark', () => {
+    const button = fixture.nativeElement.querySelector('.filter-header');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    button.click(); fixture.detectChanges();
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(fixture.nativeElement.querySelector('main')).toBeNull();
+  });
+
   it('should load and sort games', () => {
     expect(mockGameDataService.refreshGames).toHaveBeenCalled();
     expect(component.games.length).toBe(2);
