@@ -13,12 +13,16 @@
 - The local C: drive is full. Verification uses a worktree dependency junction with matching lockfile and redirected process temp/npm cache; dependencies are not reinstalled.
 - Tests use the ignored generated runtime config MSTest.EnableParentProcessQuery=false to bypass this host's parent process query restriction; no tracked runner configuration changes.
 
+- Coverage follow-up: the prior Sonar new-code result was 76.1% against the 80% gate. New hub tests raise the local changed-source OpenCover estimate to 86.96% (79/90 changed lines, 41/48 changed branch points); the next CI Sonar result remains authoritative.
+
 ## 4b Quick Wins
 - Keep integration with #249/#250 independent: reject null settings before the normalized lookup and position admin enum regressions before existing tests. Follow-up backend build and all 13 affected tests pass.
 - Skip the Cloudflare deploy step for draft PRs while keeping its build/tests active, as authorized.
 - Add explicit 24px avatar dimensions matching existing CSS to clear the touched-template Sitewright audit without changing layout.
 - Verify canonical code handling, defined enum inputs, active host authority, concurrent cross-room joins, same-room retries, reconnect mapping ownership, WebRTC relays, and persistence identity.
 - Validation: backend build and all 511 tests pass; frontend production build and all 9 sidebar specs pass. Sitewright token contrast and typography assessment pass; touched-template audit reports zero errors. Fresh adversarial review reports no actionable findings.
+
+- Cover 13 typed game-action transport contracts, checking normalized room codes, caller identity and exact payloads; cover both authorized Clover movement relay and rejection of an outsider in an existing room. Focused identity tests pass 33/33; full backend tests pass 534/534, with no skips. Production code and coverage policy are unchanged.
 
 ## 4c Deferred Items
 - Undo-majority reevaluation when membership changes remains with #77/#219; retain the existing history implementation in this fix.
