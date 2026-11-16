@@ -1,4 +1,9 @@
 using BoardGameHub.Api.Models;
+using BoardGameHub.Api.Hubs;
+using BoardGameHub.Api.Services;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using BoardGameHub.Api.Services.Games;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -19,6 +24,97 @@ public class FarkleServiceTests
         _loggerMock = new Mock<ILogger<FarkleService>>();
         _serviceProviderMock = new Mock<IServiceProvider>();
         _service = new FarkleService(_loggerMock.Object, _serviceProviderMock.Object);
+    }
+
+    private static (ServiceProvider Provider, GameStateManager Manager) CallbackDependencies(Room room)
+    {
+        var rooms = new Mock<IRoomService>();
+        rooms.Setup(r => r.GetRoom(room.Code)).Returns(room);
+        var clients = new Mock<IHubClients>();
+        clients.Setup(c => c.Group(It.IsAny<string>())).Returns(Mock.Of<IClientProxy>());
+        var hub = new Mock<IHubContext<GameHub>>();
+        hub.Setup(h => h.Clients).Returns(clients.Object);
+        var manager = new GameStateManager(hub.Object, new StateDiffService(), NullLogger<GameStateManager>.Instance);
+        var services = new ServiceCollection();
+        services.AddSingleton(rooms.Object);
+        services.AddSingleton(manager);
+        return (services.BuildServiceProvider(), manager);
+    }
+
+    private static FarkleState ScheduledFinalTurn() => new()
+    {
+        RoomCode = "FARK", Phase = FarklePhase.Farkled, ActivePlayerId = "p2",
+        PlayerStates = new()
+        {
+            ["p1"] = new() { PlayerId = "p1", TotalScore = 10000, IsFinalTurn = true },
+            ["p2"] = new() { PlayerId = "p2", TotalScore = 500 }
+        }
+    };
+
+    [Theory]
+    [InlineData("finished")]
+    [InlineData("lobby")]
+    [InlineData("replay")]
+    [InlineData("undo")]
+    [InlineData("phase")]
+    public async Task DelayedCallback_RechecksCurrentRoomUnderLockAndRejectsStaleWork(string transition)
+    {
+        var scheduled = ScheduledFinalTurn();
+        var room = new Room { Code = "FARK", GameType = GameType.Farkle, State = GameState.Playing, GameData = scheduled };
+        var (provider, manager) = CallbackDependencies(room);
+        using (provider)
+        using (manager)
+        {
+            var plugin = new FarkleService(NullLogger<FarkleService>.Instance, provider);
+            manager.TrackRoom(room);
+            await manager.ProcessRoomUpdateAsync(room.Code);
+            await room.StateLock.WaitAsync();
+            Task callback;
+            string expected;
+            try
+            {
+                callback = plugin.ExecuteAutoAdvance(room.Code, scheduled);
+                Assert.False(callback.IsCompleted);
+                switch (transition)
+                {
+                    case "finished": room.State = GameState.Finished; room.ResultPhase = ResultPhase.GameOver; break;
+                    case "lobby": room.State = GameState.Lobby; break;
+                    case "replay": room.GameData = ScheduledFinalTurn(); break;
+                    case "undo": room.GameData = JsonSerializer.Deserialize<FarkleState>(JsonSerializer.Serialize(scheduled)); break;
+                    case "phase": scheduled.Phase = FarklePhase.Picking; break;
+                }
+                expected = JsonSerializer.Serialize(room);
+            }
+            finally { room.StateLock.Release(); }
+            await callback;
+            Assert.Equal(expected, JsonSerializer.Serialize(room));
+            Assert.Empty(room.DirtyMembers);
+        }
+    }
+
+    [Fact]
+    public async Task DelayedCallback_CurrentFarkleCompletesAndBroadcastsGameOver()
+    {
+        var scheduled = ScheduledFinalTurn();
+        var room = new Room
+        {
+            Code = "FARK", GameType = GameType.Farkle, State = GameState.Playing, GameData = scheduled,
+            Players = new() { new() { ConnectionId = "p1" }, new() { ConnectionId = "p2" } }
+        };
+        var (provider, manager) = CallbackDependencies(room);
+        using (provider)
+        using (manager)
+        {
+            var plugin = new FarkleService(NullLogger<FarkleService>.Instance, provider);
+            manager.TrackRoom(room);
+            await manager.ProcessRoomUpdateAsync(room.Code);
+            await plugin.ExecuteAutoAdvance(room.Code, scheduled);
+            Assert.Equal(GameState.Finished, room.State);
+            Assert.Equal(FarklePhase.GameOver, scheduled.Phase);
+            Assert.Equal(10000, room.Players[0].Score);
+            await manager.ProcessRoomUpdateAsync(room.Code);
+            Assert.Equal(ResultPhase.GameOver, room.ResultPhase);
+        }
     }
 
     [Theory]

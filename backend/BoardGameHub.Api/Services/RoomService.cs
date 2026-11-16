@@ -707,19 +707,36 @@ public class RoomService : IRoomService, IDisposable
         return room;
     }
 
-    public async Task<Room?> StartGame(string code, GameSettings? settings = null)
+    public Task<Room?> StartGame(string code, GameSettings? settings = null) => StartRound(code, settings, false);
+
+    public Task<Room?> NextRound(string code) => StartRound(code, null, true);
+
+    public Task<Room?> PlayAgain(string code) => StartRound(code, null, false, true);
+
+    private async Task<Room?> StartRound(string code, GameSettings? settings, bool nextRound, bool playAgain = false)
     {
         if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         
         await room.StateLock.WaitAsync();
         try
         {
+            if (RoomLifecyclePolicy.Normalize(room)) _gameStateManager.MarkDirty(room.Code);
+            if (nextRound)
+            {
+                if (room.State != GameState.Finished || room.ResultPhase != ResultPhase.RoundResults) return null;
+            }
+            else if ((room.State != GameState.Lobby && !(room.State == GameState.Finished && room.ResultPhase == ResultPhase.GameOver))
+                || (playAgain && room.State != GameState.Finished))
+            {
+                return null;
+            }
+
             // Validate before changing room state, scores or round data, including host overrides.
             if (room.GameType == GameType.FourInARow && room.Players.Count(p => !p.IsScreen) != 2)
                 return null;
 
             // A brand-new game from the lobby requires readiness or the host override (#66).
-            if (settings != null && room.State == GameState.Lobby && !room.CanStartNewGame())
+            if (room.State == GameState.Lobby && !room.CanStartNewGame())
             {
                 _logger.LogInformation("StartGame rejected for room {Code}: players not ready and no host override.", room.Code);
                 return null;
@@ -729,18 +746,21 @@ public class RoomService : IRoomService, IDisposable
             if (room.GameType == GameType.Yacht && room.Players.Count(p => !p.IsScreen) is < 1 or > 8)
                 throw new InvalidOperationException("Yacht requires 1–8 Hand players.");
 
-            // Apply settings if provided (Start of Game)
-            if (settings != null)
+            if (!nextRound)
             {
-                room.Settings = settings;
+                room.Settings = settings ?? room.Settings;
                 room.RoundNumber = 0;
-                // Reset Total Scores on new game
-                foreach(var p in room.Players) p.Score = 0;
+                room.GameData = null;
+                room.StateHistory.Clear();
+                room.CurrentVote = null;
+                room.NextGameVotes.Clear();
+                foreach (var p in room.Players) p.Score = 0;
             }
 
             room.Settings.Clamp();
             room.RoundNumber++;
             room.State = GameState.Playing;
+            room.ResultPhase = null;
             room.IsPaused = false;
             room.TimeRemainingWhenPaused = null;
             
@@ -754,8 +774,9 @@ public class RoomService : IRoomService, IDisposable
                 await service.StartRound(room, room.Settings);
             }
 
+            RoomLifecyclePolicy.Normalize(room);
             // Set Timer
-            room.RoundEndTime = room.Settings.TimerDurationSeconds > 0
+            room.RoundEndTime = room.State == GameState.Playing && room.Settings.TimerDurationSeconds > 0
                 ? DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds)
                 : null;
         }
@@ -848,6 +869,7 @@ public class RoomService : IRoomService, IDisposable
             {
                 case GameState.Playing:
                     room.State = GameState.Finished;
+                    room.ResultPhase = ResultPhase.GameOver;
                     room.IsPaused = false;
                     room.TimeRemainingWhenPaused = null;
                     room.RoundEndTime = null; // Clear timer
@@ -877,6 +899,7 @@ public class RoomService : IRoomService, IDisposable
     private static void ResetToLobby(Room room)
     {
         room.State = GameState.Lobby;
+        room.ResultPhase = null;
         room.GameData = null;
         room.RoundNumber = 0;
         room.RoundEndTime = null;
@@ -899,38 +922,34 @@ public class RoomService : IRoomService, IDisposable
         if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
         if (!IsRoomMember(room, connectionId)) return null;
 
-        var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
-        if (service != null)
+        var action = new GameAction(actionType, payload);
+        bool success;
+        await room.StateLock.WaitAsync();
+        try
         {
-            var action = new GameAction(actionType, payload);
-            bool success = false;
-            
-            await room.StateLock.WaitAsync();
-            try
-            {
-                if (!IsRoomMember(room, connectionId)) return null;
-                if (actionType != "SUBMIT_STROKE") 
-                {
-                    SaveStateLocked(room);
-                }
+            if (!IsRoomMember(room, connectionId)) return null;
+            var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
+            if (service == null) return null;
+            if (RoomLifecyclePolicy.Normalize(room)) _gameStateManager.MarkDirty(room.Code);
+            var resultReview = room.GameType == GameType.Babble && actionType == "VALIDATE_WORD"
+                || room.GameType == GameType.Pictophone && actionType is "REVEAL_NEXT" or "STAR_PAGE";
+            if (room.State != GameState.Playing && !(room.State == GameState.Finished && resultReview)) return null;
 
-                success = await service.HandleAction(room, action, connectionId);
-            }
-            finally
-            {
-                room.StateLock.Release();
-            }
-
-            if (success) 
-            {
-                // Game actions may change any Room field (RoundEndTime, RoundNumber, State...), so use a full diff.
-                _gameStateManager.MarkDirty(room.Code);
-
-                NotifyStatsChanged();
-                return room;
-            }
+            var snapshot = actionType != "SUBMIT_STROKE" ? CaptureUndoStateLocked(room) : null;
+            success = await service.HandleAction(room, action, connectionId);
+            if (success && snapshot != null) room.StateHistory.Push(snapshot);
+            success |= RoomLifecyclePolicy.Normalize(room);
         }
-        return null;
+        finally
+        {
+            room.StateLock.Release();
+        }
+
+        if (!success) return null;
+        // Game actions may change any Room field, so use a full diff.
+        _gameStateManager.MarkDirty(room.Code);
+        NotifyStatsChanged();
+        return room;
     }
 
     public async Task<Room?> CalculateRoundScores(string code)
@@ -938,17 +957,18 @@ public class RoomService : IRoomService, IDisposable
         if (!_rooms.TryGetValue(NormalizeCode(code), out var room)) return null;
 
         var service = _gameServices.FirstOrDefault(s => s.GameType == room.GameType);
-        if (service != null)
+        if (service == null) return null;
+        await room.StateLock.WaitAsync();
+        try
         {
-            await room.StateLock.WaitAsync();
-            try
-            {
-                await service.EndRound(room);
-            }
-            finally
-            {
-                room.StateLock.Release();
-            }
+            if (RoomLifecyclePolicy.Normalize(room)) _gameStateManager.MarkDirty(room.Code);
+            if (room.State != GameState.Playing) return null;
+            await service.EndRound(room);
+            RoomLifecyclePolicy.Normalize(room);
+        }
+        finally
+        {
+            room.StateLock.Release();
         }
         
         _gameStateManager.MarkDirty(room.Code);
@@ -1145,7 +1165,7 @@ public class RoomService : IRoomService, IDisposable
     // --- UNDO SYSTEM ---
     // Note: All Save/Undo methods MUST be called within a room.StateLock context.
 
-    private void SaveStateLocked(Room room)
+    private string? CaptureUndoStateLocked(Room room)
     {
         // Snapshot the State, RoundNumber, and GameData
         // We serialize the specific properties relevant to gameplay restore
@@ -1164,12 +1184,12 @@ public class RoomService : IRoomService, IDisposable
         try 
         {
             var options = new JsonSerializerOptions { IncludeFields = true };
-            var snapshot = JsonSerializer.Serialize(room, options);
-            room.StateHistory.Push(snapshot);
+            return JsonSerializer.Serialize(room, options);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving state for room {RoomCode}", room.Code);
+            return null;
         }
     }
 
@@ -1303,6 +1323,7 @@ public class RoomService : IRoomService, IDisposable
             // Overwrite properties
             currentRoom.GameType = oldState.GameType;
             currentRoom.State = oldState.State;
+            currentRoom.ResultPhase = oldState.ResultPhase;
             currentRoom.RoundNumber = oldState.RoundNumber;
             currentRoom.GameData = oldState.GameData; // This is the big one (JsonElement or Object)
             currentRoom.RoundScores = oldState.RoundScores;
@@ -1323,6 +1344,7 @@ public class RoomService : IRoomService, IDisposable
                  }
             }
 
+            RoomLifecyclePolicy.Normalize(currentRoom);
             _gameStateManager.MarkDirty(currentRoom.Code);
             NotifyStatsChanged();
             return currentRoom;

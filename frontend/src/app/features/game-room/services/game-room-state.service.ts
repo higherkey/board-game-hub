@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, map } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { GameDataService } from '../../../services/game-data.service';
-import { GameSettings, Room, SignalRService } from '../../../services/signalr.service';
+import { GameSettings, Room, SignalRService, getRoomResultPhase } from '../../../services/signalr.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { SoundService } from '../../../core/services/sound.service';
@@ -67,17 +67,9 @@ export class GameRoomStateService {
   }
 
   private previousRoomState: string = 'Lobby';
+  private previousGameOver = false;
 
   private syncRoomState(room: Room) {
-    // Sound cue on game finished / victory: prioritize Table screen, fallback to Hand if no screen is present
-    if (room.state === 'Finished' && this.previousRoomState === 'Playing') {
-      const hasScreen = room.players.some(p => p.isScreen);
-      if (this.isScreen || !hasScreen) {
-        this.soundService.playVictory();
-      }
-    }
-    this.previousRoomState = room.state;
-
     // Sync local isScreen state with the server-side player state
     const me = room.players.find(p => p.connectionId === this.signalRService.getConnectionId());
     if (me && !this.needsName) {
@@ -85,6 +77,16 @@ export class GameRoomStateService {
         this.isScreen = me.isScreen;
       }
     }
+
+    const finalGameOver = room.state === 'Finished' && getRoomResultPhase(room, 'GameOver') === 'GameOver';
+    const victoryTransition = room.resultPhase != null
+      ? finalGameOver && !this.previousGameOver
+      : finalGameOver && this.previousRoomState === 'Playing';
+    if (victoryTransition && (this.isScreen || !room.players.some(p => p.isScreen))) {
+      this.soundService.playVictory();
+    }
+    this.previousRoomState = room.state;
+    this.previousGameOver = finalGameOver;
 
     // Sync selected game type (respecting local override window if we decide to keep that logic here)
     if (room.gameType && this.selectedGameType !== room.gameType) {
@@ -233,6 +235,16 @@ export class GameRoomStateService {
     } catch (err) {
       this.logger.error('Failed to start game', err);
       this.toastService.showError('Failed to start game.');
+    }
+  }
+
+  async playAgain(settings: GameSettings) {
+    try {
+      await this.signalRService.updateSettings(settings);
+      await this.signalRService.playAgain();
+    } catch (err) {
+      this.logger.error('Play again failed', err);
+      this.toastService.showError('Failed to play again.');
     }
   }
 

@@ -62,17 +62,6 @@ public class SushiTrainGameService : BaseGameService<SushiTrainState>
                 }
             }
 
-            // Final game-end scoring (Puddings)
-            if (state.IsGameOver)
-            {
-                ScorePuddings(state);
-                // Sync again after puddings
-                foreach (var pState in state.PlayerStates.Values)
-                {
-                    var player = room.Players.FirstOrDefault(pl => pl.ConnectionId == pState.PlayerId);
-                    if (player != null) player.Score = pState.TotalScore;
-                }
-            }
         }
         catch (Exception ex)
         {
@@ -149,6 +138,7 @@ public class SushiTrainGameService : BaseGameService<SushiTrainState>
         if (state.PlayerStates.Values.All(p => p.HasSelected))
         {
             ProcessTurn(state);
+            _ = CalculateScores(room);
         }
     }
 

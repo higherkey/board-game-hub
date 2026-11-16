@@ -15,7 +15,9 @@ describe('GreatMindsBoardComponent', () => {
         mockGameEvents$ = new Subject<any>();
         mockSignalRService = {
             gameEvents$: mockGameEvents$.asObservable(),
-            startGame: jasmine.createSpy('startGame')
+            startGame: jasmine.createSpy('startGame'),
+            playAgain: jasmine.createSpy('playAgain'),
+            currentRoomSubject: { value: null }
         };
 
         await TestBed.configureTestingModule({
@@ -29,6 +31,13 @@ describe('GreatMindsBoardComponent', () => {
         component = fixture.componentInstance;
         component.gameState = { phase: 0, currentLevel: 1, lives: 3 };
         fixture.detectChanges();
+    });
+
+    it('replays an authoritative final result without the legacy start action', () => {
+        mockSignalRService.currentRoomSubject.value = { resultPhase: 'GameOver' };
+        component.restartGame();
+        expect(mockSignalRService.playAgain).toHaveBeenCalled();
+        expect(mockSignalRService.startGame).not.toHaveBeenCalled();
     });
 
     it('should create', () => {

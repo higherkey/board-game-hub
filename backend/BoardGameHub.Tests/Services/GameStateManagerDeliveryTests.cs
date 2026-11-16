@@ -46,6 +46,45 @@ public class GameStateManagerDeliveryTests
         public int Value { get { Reads++; return 1; } }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DelayedFarkleCompletion_NormalizesBeforeBroadcastAndPersistence(bool partial)
+    {
+        var state = new FarkleState { Phase = FarklePhase.Farkled };
+        var room = new Room { Code = "FARKLE", GameType = GameType.Farkle, State = GameState.Playing, GameData = state };
+        await EstablishBaseline(room);
+        // The delayed Farkle callback writes directly to the room rather than passing through SubmitAction.
+        state.Phase = FarklePhase.GameOver;
+        room.State = GameState.Finished;
+        _manager.MarkDirty(room.Code, partial ? nameof(Room.GameData) : null);
+        await _manager.ProcessRoomUpdateAsync(room.Code);
+        Assert.Equal(ResultPhase.GameOver, room.ResultPhase);
+        _proxy.Verify(c => c.SendCoreAsync("RoomStatePatch",
+            It.Is<object[]>(args => ((JsonNode)args[0])["state"]!.GetValue<string>() == "Finished"
+                && ((JsonNode)args[0])["resultPhase"]!.GetValue<string>() == "GameOver"),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _persistence.Verify(p => p.QueueSave(It.Is<RoomSnapshot>(snapshot => snapshot.State == "Finished" && snapshot.SchemaVersion == 2)), Times.Once);
+        _serializer.Verify(s => s.Serialize(It.Is<Room>(r => r.ResultPhase == ResultPhase.GameOver)), Times.Once);
+    }
+
+    [Fact]
+    public async Task PartialPhaseClear_EmitsNullAndUpdatesBaseline()
+    {
+        var room = new Room { Code = "CLEAR", State = GameState.Finished, ResultPhase = ResultPhase.GameOver };
+        await EstablishBaseline(room);
+        room.State = GameState.Playing;
+        _manager.MarkDirty(room.Code, nameof(Room.State));
+        await _manager.ProcessRoomUpdateAsync(room.Code);
+        var patch = (JsonObject)((object[])_proxy.Invocations.Single().Arguments[1])[0];
+        Assert.True(patch.ContainsKey("resultPhase"));
+        Assert.Null(patch["resultPhase"]);
+        _proxy.Invocations.Clear();
+        _manager.MarkDirty(room.Code, nameof(Room.ResultPhase));
+        await _manager.ProcessRoomUpdateAsync(room.Code);
+        Assert.Empty(_proxy.Invocations);
+    }
+
     [Fact]
     public async Task FiveQueuedMarks_SerializeBroadcastAndSaveOnce()
     {

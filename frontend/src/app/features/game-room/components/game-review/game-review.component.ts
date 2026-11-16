@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, OnChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SignalRService, Room, Player } from '../../../../services/signalr.service';
+import { SignalRService, Room, getRoomResultPhase, Player } from '../../../../services/signalr.service';
 
 interface AnswerReview {
     categoryIndex: number;
@@ -109,7 +109,9 @@ export class GameReviewComponent implements OnInit, OnChanges {
         });
     }
 
+    get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
+
     nextRound() {
-        this.signalRService.nextRound();
+        this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound();
     }
 }

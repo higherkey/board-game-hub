@@ -115,6 +115,43 @@ describe('HostSettingsComponent', () => {
         expect(component.gameStart.emit).toHaveBeenCalled();
     });
 
+    for (const compactMode of [false, true]) {
+        for (const resultPhase of ['RoundResults', 'GameOver'] as const) {
+            it('uses ' + resultPhase + ' despite edited round settings in ' + (compactMode ? 'compact' : 'expanded') + ' controls', () => {
+                component.compactMode = compactMode;
+                component.isIntermission = true;
+                component.resultPhase = resultPhase;
+                component.selectedGameType = 'Babble';
+                component.currentRound = resultPhase === 'RoundResults' ? 50 : 1;
+                component.settings.totalRounds = resultPhase === 'RoundResults' ? 1 : 50;
+                component.players = [{ isReady: false, isScreen: false }] as any;
+                spyOn(component.nextRound, 'emit');
+                spyOn(component.playAgain, 'emit');
+                spyOn(component.endGame, 'emit');
+                fixture.detectChanges();
+                const button = Array.from(fixture.nativeElement.querySelectorAll('button'))
+                    .find((b: any) => b.textContent.includes(resultPhase === 'GameOver' ? 'PLAY AGAIN' : 'NEXT ROUND')) as HTMLButtonElement;
+                expect(button).toBeTruthy();
+                button.click();
+                expect(resultPhase === 'GameOver' ? component.playAgain.emit : component.nextRound.emit).toHaveBeenCalledWith(component.settings);
+                expect(component.endGame.emit).not.toHaveBeenCalled();
+                if (resultPhase === 'GameOver') expect(fixture.nativeElement.textContent).toContain('END SESSION');
+            });
+        }
+    }
+
+    for (const resultPhase of [undefined, null]) {
+        it('preserves legacy final-round action for phase ' + resultPhase, () => {
+            component.resultPhase = resultPhase;
+            component.isIntermission = true;
+            component.currentRound = 5;
+            component.settings.totalRounds = 5;
+            spyOn(component.endGame, 'emit');
+            component.confirmStart();
+            expect(component.endGame.emit).toHaveBeenCalled();
+        });
+    }
+
     it('should call signalRService.setGameType when changeGameType is called', async () => {
         mockSignalRService.setGameType = jasmine.createSpy('setGameType').and.returnValue(Promise.resolve());
         component.roomCode = 'ROOM1';

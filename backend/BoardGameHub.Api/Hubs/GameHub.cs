@@ -583,7 +583,7 @@ public class GameHub : Hub
         EnsureHost(existingRoom);
 
         // Start next round with same settings, but new letter/list
-        var room = await _roomService.StartGame(roomCode, null); 
+        var room = await _roomService.NextRound(roomCode);
         if (room != null)
         {
            await Clients.Group(NormalizeCode(roomCode)).SendAsync("GameStarted", room);
@@ -594,6 +594,19 @@ public class GameHub : Hub
                 await Clients.Group("LobbyGroup").SendAsync("PublicRoomDeleted", roomCode);
            }
         }
+    }
+
+    public async Task PlayAgain(string roomCode)
+    {
+        roomCode = NormalizeCode(roomCode);
+        if (string.IsNullOrEmpty(roomCode)) return;
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
+        var room = await _roomService.PlayAgain(roomCode);
+        if (room != null)
+            await Clients.Group(room.Code).SendAsync("GameStarted", room);
     }
 
     public async Task SendMessage(string roomCode, string message)

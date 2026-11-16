@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges, OnDestroy, ViewChild, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Room, SignalRService } from '../../../../services/signalr.service';
+import { Room, SignalRService, getRoomResultPhase } from '../../../../services/signalr.service';
 import { EndRoundButtonComponent } from '../../shared/components/end-round-button/end-round-button.component';
 
 @Component({
@@ -219,9 +219,11 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     }
   }
 
+  get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
+
   handleNextRound() {
     if (this.isHost && this.room) {
-      this.signalRService.nextRound();
+      this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound();
     }
   }
 

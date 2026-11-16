@@ -51,6 +51,7 @@ public class GameStateManager : IHostedService, IDisposable
             [nameof(Room.Code)] = ("code", r => r.Code),
             [nameof(Room.Players)] = ("players", r => r.Players),
             [nameof(Room.State)] = ("state", r => r.State),
+            [nameof(Room.ResultPhase)] = ("resultPhase", r => r.ResultPhase),
             [nameof(Room.Settings)] = ("settings", r => r.Settings),
             [nameof(Room.GameType)] = ("gameType", r => r.GameType),
             [nameof(Room.IsPublic)] = ("isPublic", r => r.IsPublic),
@@ -243,6 +244,7 @@ public class GameStateManager : IHostedService, IDisposable
                 await liveRoom.StateLock.WaitAsync(ct);
                 try
                 {
+                    RoomLifecyclePolicy.Normalize(liveRoom);
                     currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
                     snapshot = BuildSnapshot(liveRoom);
                 }
@@ -267,6 +269,7 @@ public class GameStateManager : IHostedService, IDisposable
                     await liveRoom.StateLock.WaitAsync(ct);
                     try
                     {
+                        RoomLifecyclePolicy.Normalize(liveRoom);
                         currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
                         snapshot = BuildSnapshot(liveRoom);
                     }
@@ -281,6 +284,11 @@ public class GameStateManager : IHostedService, IDisposable
                     await liveRoom.StateLock.WaitAsync(ct);
                     try
                     {
+                        if (RoomLifecyclePolicy.Normalize(liveRoom))
+                        {
+                            dirtyMembers.Add(nameof(Room.State));
+                            dirtyMembers.Add(nameof(Room.ResultPhase));
+                        }
                         snapshot = BuildSnapshot(liveRoom);
 
                         foreach (var member in dirtyMembers)
@@ -294,7 +302,7 @@ public class GameStateManager : IHostedService, IDisposable
                                 var oldVal = lastJson[key];
                                 var partialDiff = _diffService.GetDiff(oldVal, valNode);
                                 
-                                if (partialDiff != null)
+                                if (partialDiff != null || (oldVal != null && valNode == null))
                                 {
                                     patchObj[key] = partialDiff;
                                     if (lastJson is JsonObject oldObj)
@@ -360,7 +368,7 @@ public class GameStateManager : IHostedService, IDisposable
             RoomCode = room.Code,
             GameType = room.GameType.ToString(),
             State = room.State.ToString(),
-            SchemaVersion = 1,
+            SchemaVersion = 2,
             Revision = room.Revision,
             RoomEnvelopeJson = _serializer.Serialize(room),
             CreatedAt = room.CreatedAt,

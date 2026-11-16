@@ -105,7 +105,8 @@ export class GreatMindsBoardComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   restartGame() {
-    this.signalR.startGame();
+    if (this.signalR.currentRoomSubject?.value?.resultPhase === 'GameOver') this.signalR.playAgain();
+    else this.signalR.startGame();
   }
 
   getPresence(connectionId: string): number {

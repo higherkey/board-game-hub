@@ -12,7 +12,7 @@
 
             <div class="header-actions">
                 <button class="icon-btn help-btn" (click)="showRules = true" title="How to play">
-                    <span class="icon">❓</span>
+                    <i class="icon bi bi-question-circle" aria-hidden="true"></i>
                 </button>
                 <div class="turn-indicator" *ngIf="state.phase === 0">
                     <span class="mr-3 badge bg-gray-100 text-gray-800">Round {{ currentRound }}/{{ state.totalRounds ||
@@ -76,10 +76,10 @@
                         <div class="color-dot" [style.background-color]="getPlayerColor(pid)"></div>
                         <span class="player-name" [class.font-bold]="pid === myId">{{ getPlayerName(pid) }}</span>
                         <!-- Status Icons -->
-                        <span
+                        <i
                             *ngIf="state.phase === 0 && state.playerOrder[state.currentTurnIndex % state.playerOrder.length] === pid"
-                            class="ml-auto">✏️</span>
-                        <span *ngIf="hasVoted(pid) && state.phase === 1" class="ml-auto">🗳️</span>
+                            class="ml-auto bi bi-pencil" aria-label="Drawing"></i>
+                        <i *ngIf="hasVoted(pid) && state.phase === 1" class="ml-auto bi bi-check-square" aria-label="Voted"></i>
                     </li>
                 </ul>
             </div>
@@ -153,7 +153,7 @@
 
                     <div *ngIf="amIHost" class="mt-4 pt-4 border-t border-gray-100 flex justify-center">
                         <button (click)="handleNextRound()" class="primary-btn bg-blue-600 w-full">
-                            Next Round
+                            {{ isGameOver ? 'Play Again' : 'Next Round' }}
                         </button>
                     </div>
                 </div>

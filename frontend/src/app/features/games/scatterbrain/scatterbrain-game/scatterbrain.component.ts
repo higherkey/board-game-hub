@@ -80,7 +80,9 @@ export class ScatterbrainComponent implements OnInit, OnChanges {
         if (this.room?.gameData?.activeChallenge) return;
 
         if (this.phase === 'Result') {
-            this.signalRService.startGame();
+            if (this.room.resultPhase === 'RoundResults') this.signalRService.nextRound();
+            else if (this.room.resultPhase === 'GameOver') this.signalRService.playAgain();
+            else this.signalRService.startGame();
         } else {
             this.signalRService.sendGameAction('NEXT_PHASE', {});
         }
