@@ -183,3 +183,11 @@ lerna-debug.log*
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# Local artifacts and third-party rulebooks
+backend/BoardGameHub.Api/build_*.txt
+backend/BoardGameHub.Api/startup_log*.txt
+backend/coverage_summary.csv
+frontend/So Clover! Rules.pdf
+frontend/rule_fakeartist_e.pdf
+docs/Farkle-Rules.pdf
