@@ -179,7 +179,17 @@ public class GameStateManager : IHostedService, IDisposable
                 while (_channel.Reader.TryRead(out var roomCode))
                 {
                     if (ct.IsCancellationRequested) break;
-                    await ProcessRoomUpdateAsync(roomCode, ct);
+                    for (var attempt = 0; attempt < 3; attempt++)
+                    {
+                        if (await ProcessRoomUpdateAsync(roomCode, ct)) break;
+                        if (!_activeRooms.ContainsKey(roomCode)) break;
+                        if (attempt == 2)
+                        {
+                            _logger.LogWarning("Retry budget exhausted for room {RoomCode}; retaining dirty state until another notification", roomCode);
+                            break;
+                        }
+                        await Task.Delay(100, ct);
+                    }
                 }
             }
         }
@@ -193,20 +203,20 @@ public class GameStateManager : IHostedService, IDisposable
         }
     }
 
-    internal async Task ProcessRoomUpdateAsync(string roomCode, CancellationToken ct = default)
+    internal async Task<bool> ProcessRoomUpdateAsync(string roomCode, CancellationToken ct = default)
     {
         try 
         {
             if (!_activeRooms.TryGetValue(roomCode, out var liveRoom))
             {
                 _dirtyRooms.TryRemove(roomCode, out _);
-                return;
+                return true;
             }
 
             // Flag already consumed by an earlier pass: nothing pending.
             if (!_dirtyRooms.TryRemove(roomCode, out _))
             {
-                return;
+                return true;
             }
 
             // Check Dirty Members - Extract and clear atomically
@@ -241,7 +251,7 @@ public class GameStateManager : IHostedService, IDisposable
                     liveRoom.StateLock.Release();
                 }
                 
-                if (currentJson == null) return;
+                if (currentJson == null) return true;
 
                 patch = _diffService.GetDiff(lastJson, currentJson);
                 
@@ -261,7 +271,7 @@ public class GameStateManager : IHostedService, IDisposable
                         snapshot = BuildSnapshot(liveRoom);
                     }
                     finally { liveRoom.StateLock.Release(); }
-                    if (currentJson == null) return;
+                    if (currentJson == null) return true;
                     _lastSnapshots[roomCode] = currentJson;
                     patch = currentJson;
                 }
@@ -317,18 +327,27 @@ public class GameStateManager : IHostedService, IDisposable
             {
                 _persistenceService?.QueueSave(snapshot);
             }
+            return true;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing room update for room {RoomCode}", roomCode);
 
             // The flag and members were consumed before the failure; re-mark for a full diff so the
-            // update is not lost. No channel write, to avoid a hot error loop.
+            // update is not lost. The consumer retries within its bounded budget.
             if (_activeRooms.TryGetValue(roomCode, out var failedRoom))
             {
+                // The cached baseline may contain a patch whose send failed; retry from the full state.
+                _lastSnapshots.TryRemove(roomCode, out _);
                 failedRoom.DirtyMembers.TryAdd("ALL", 0);
                 _dirtyRooms[roomCode] = true;
+                return false;
             }
+            return true;
         }
     }
 
