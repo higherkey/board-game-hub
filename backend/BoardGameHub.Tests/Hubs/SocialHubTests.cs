@@ -61,7 +61,7 @@ public class SocialHubTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task SendMessage_TooLong_ThrowsAndDoesNotSave(bool global)
+    public async Task SendMessage_TooLong_ThrowsAndDoesNotSaveOrBroadcast(bool global)
     {
         var message = new string('a', SocialHub.MaxMessageLength + 1);
 
@@ -70,18 +70,24 @@ public class SocialHubTests
         await act.Should().ThrowAsync<HubException>().WithMessage("Message is too long.");
         _mockSocialService.Verify(s => s.SaveChatMessage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default), Times.Never);
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task SendMessage_Whitespace_IsIgnored(bool global)
+    [InlineData(true, null)]
+    [InlineData(false, null)]
+    [InlineData(true, "")]
+    [InlineData(false, "")]
+    [InlineData(true, "   ")]
+    [InlineData(false, "   ")]
+    public async Task SendMessage_Blank_IsIgnored(bool global, string? message)
     {
-        if (global) await _sut.SendGlobalMessage("   ");
-        else await _sut.SendMessage("target123", "   ");
+        if (global) await _sut.SendGlobalMessage(message!);
+        else await _sut.SendMessage("target123", message!);
 
         _mockSocialService.Verify(s => s.SaveChatMessage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default), Times.Never);
     }
 
     [Theory]
@@ -96,6 +102,8 @@ public class SocialHubTests
 
         if (global) _mockSocialService.Verify(s => s.SaveGlobalMessage("user123", message), Times.Once);
         else _mockSocialService.Verify(s => s.SaveChatMessage("user123", "target123", message), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync(global ? "ReceiveGlobalMessage" : "ReceiveMessage",
+            new object[] { "user123", message }, default), Times.Once);
     }
 
     [Fact]

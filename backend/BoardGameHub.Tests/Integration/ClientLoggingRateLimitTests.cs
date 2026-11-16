@@ -24,7 +24,7 @@ public class ClientLoggingRateLimitTests : IClassFixture<TestBase>
     [Fact]
     public async Task ClientLogging_IsRateLimitedPerForwardedClientIp()
     {
-        var client = _factory.CreateClient();
+        using var client = _factory.CreateClient();
 
         for (var i = 1; i <= 30; i++)
         {
@@ -32,6 +32,9 @@ public class ClientLoggingRateLimitTests : IClassFixture<TestBase>
         }
 
         Assert.Equal(HttpStatusCode.TooManyRequests, await PostLogAsync(client, "203.0.113.1"));
+
+        // A client-supplied prefix cannot bypass the ingress-appended address's bucket.
+        Assert.Equal(HttpStatusCode.TooManyRequests, await PostLogAsync(client, "198.51.100.99, 203.0.113.1"));
 
         // A different client IP has its own partition and is unaffected.
         Assert.Equal(HttpStatusCode.OK, await PostLogAsync(client, "203.0.113.2"));
