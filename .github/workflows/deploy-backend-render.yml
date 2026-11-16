@@ -12,6 +12,9 @@ on:
     paths:
       - 'backend/**'
       - 'render.yaml'
+      - 'scripts/render-deploy*'
+      - 'scripts/api-binding.test.js'
+      - 'scripts/normalize-connection-string.js'
       - '.github/workflows/deploy-backend-render.yml'
   pull_request:
     branches:
@@ -21,13 +24,21 @@ on:
     paths:
       - 'backend/**'
       - 'render.yaml'
+      - 'scripts/render-deploy*'
+      - 'scripts/api-binding.test.js'
+      - 'scripts/normalize-connection-string.js'
       - '.github/workflows/deploy-backend-render.yml'
   workflow_dispatch:
+
+concurrency:
+  group: backend-deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   test-and-build:
     name: Backend Build & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -46,11 +57,22 @@ jobs:
       - name: Run Backend Tests
         run: dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj --no-build -c Release
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Test deployment guardrails
+        env:
+          BGH_API_DLL: backend/BoardGameHub.Api/bin/Release/net10.0/BoardGameHub.Api.dll
+        run: node --test scripts/render-deploy.test.js scripts/api-binding.test.js
+
   deploy:
     name: Apply Migrations & Deploy
     needs: test-and-build
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     environment:
       name: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'staging' && 'staging' || 'development') }}
       url: ${{ github.ref_name == 'main' && 'https://board-game-hub-api.onrender.com' || (github.ref_name == 'staging' && 'https://board-game-hub-api-staging.onrender.com' || 'https://board-game-hub-api-dev.onrender.com') }}
@@ -70,74 +92,56 @@ jobs:
         run: dotnet tool install --global dotnet-ef --version 10.*
 
       - name: Determine Target Environment & DB Connection
-        id: determine_env
+        env:
+          TARGET_BRANCH: ${{ github.ref_name }}
+          PROD_CONNECTION: ${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}
+          STAGING_CONNECTION: ${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}
+          DEV_CONNECTION: ${{ secrets.NEON_CONNECTION_STRING_DEV }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          # Database per tier (#215): dev runs on Neon Dev; staging and prod run on Supabase.
-          # No cross-provider fallback: migrations must target the same database the Render service uses.
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}"
-            echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
-            echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_PROD }}" >> "$GITHUB_OUTPUT"
-            echo "env_name=production" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.ref_name }}" = "staging" ]; then
-            DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}"
-            if [ -z "$DB_CONN" ]; then
-              DB_CONN="${{ secrets.SUPABASE_CONNECTION_STRING_DEV }}"
-            fi
-            echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
-            echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_STAGING }}" >> "$GITHUB_OUTPUT"
-            echo "env_name=staging" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.ref_name }}" = "dev" ]; then
-            DB_CONN="${{ secrets.NEON_CONNECTION_STRING_DEV }}"
-            echo "db_connection=$DB_CONN" >> "$GITHUB_OUTPUT"
-            echo "deploy_hook=${{ secrets.RENDER_DEPLOY_HOOK_URL_DEV }}" >> "$GITHUB_OUTPUT"
-            echo "env_name=development" >> "$GITHUB_OUTPUT"
-          else
-            echo "Branch '${{ github.ref_name }}' is not configured for automatic deployment."
+          set -euo pipefail
+          : "${RENDER_API_KEY:?RENDER_API_KEY is required to align and verify the deployment}"
+          case "$TARGET_BRANCH" in
+            main) DB_CONN="$PROD_CONNECTION" ;;
+            staging) DB_CONN="$STAGING_CONNECTION" ;;
+            dev) DB_CONN="$DEV_CONNECTION" ;;
+            *) echo "::error::Unsupported deployment branch"; exit 1 ;;
+          esac
+          if [ -z "$DB_CONN" ] || [[ "$DB_CONN" == *$'\n'* ]] || [[ "$DB_CONN" == *$'\r'* ]]; then
+            echo "::error::A single-line database connection is required for this tier. No fallback is allowed."
             exit 1
           fi
-          if [ -z "$DB_CONN" ]; then
-            echo "::warning::No database connection string secret is set for '${{ github.ref_name }}'; database migrations will be skipped."
-          fi
+          echo "::add-mask::$DB_CONN"
+          printf 'RAW_CONNECTION_STRING=%s\n' "$DB_CONN" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
       - name: Normalize DB Connection String
-        if: steps.determine_env.outputs.db_connection != ''
-        id: normalize_conn
-        env:
-          RAW_CONNECTION_STRING: ${{ steps.determine_env.outputs.db_connection }}
         run: |
+          set -euo pipefail
           NORMALIZED=$(node scripts/normalize-connection-string.js)
           echo "::add-mask::$NORMALIZED"
-          echo "normalized_connection=$NORMALIZED" >> "$GITHUB_OUTPUT"
+          printf 'NORMALIZED_CONNECTION=%s\n' "$NORMALIZED" >> "$GITHUB_ENV"
 
       - name: Apply Database Migrations
-        if: steps.normalize_conn.outputs.normalized_connection != ''
         env:
           Jwt__Key: "TemporaryCiBuildTimeDesignKeyForEfCoreMigrations1234567890!"
           DOTNET_ENVIRONMENT: "Production"
-          ConnectionStrings__DefaultConnection: "${{ steps.normalize_conn.outputs.normalized_connection }}"
         run: |
+          set -euo pipefail
+          export ConnectionStrings__DefaultConnection="$NORMALIZED_CONNECTION"
           dotnet ef migrations bundle --project backend/BoardGameHub.Api --force
           chmod +x ./efbundle
-          ./efbundle --connection "${{ steps.normalize_conn.outputs.normalized_connection }}"
+          ./efbundle --connection "$NORMALIZED_CONNECTION"
 
 
-      - name: Trigger Render Deploy
-        run: |
-          if [ -n "${{ steps.determine_env.outputs.deploy_hook }}" ]; then
-            echo "Triggering deployment via Deploy Hook..."
-            curl -s -X POST "${{ steps.determine_env.outputs.deploy_hook }}"
-          elif [ -n "${{ secrets.RENDER_API_KEY }}" ]; then
-            echo "Triggering deployment via Render REST API..."
-            SERVICE_NAME="${{ github.ref_name == 'main' && 'board-game-hub-api' || (github.ref_name == 'staging' && 'board-game-hub-api-staging' || 'board-game-hub-api-dev') }}"
-            SERVICES=$(curl -s -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" "https://api.render.com/v1/services?limit=20")
-            SERVICE_ID=$(echo "$SERVICES" | node scripts/find-render-service.js "$SERVICE_NAME")
-            if [ -n "$SERVICE_ID" ]; then
-              echo "Found Render service ID: $SERVICE_ID for $SERVICE_NAME. Triggering deploy..."
-              curl -s -X POST -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" -H "Content-Type: application/json" -d "{}" "https://api.render.com/v1/services/$SERVICE_ID/deploys"
-            else
-              echo "Service $SERVICE_NAME not found on Render."
-            fi
-          else
-            echo "Neither deploy hook nor Render API key configured."
-          fi
+      - name: Align Render database, deploy and verify
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_NAME: ${{ github.ref_name == 'main' && 'board-game-hub-api' || (github.ref_name == 'staging' && 'board-game-hub-api-staging' || 'board-game-hub-api-dev') }}
+          TARGET_BRANCH: ${{ github.ref_name }}
+          DEPLOY_COMMIT: ${{ github.sha }}
+        run: node scripts/render-deploy.js

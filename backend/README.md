@@ -54,11 +54,27 @@ On every push to `main`, `staging`, or `dev`, the backend deployment workflow (`
 
 1. Generates a self-contained **EF Core Migration Bundle** (`efbundle`) from all migrations in source.
 2. Runs the bundle against the branch's database: Supabase for `main` and `staging` (`SUPABASE_CONNECTION_STRING_PROD` / `_STAGING`), Neon for `dev` (`NEON_CONNECTION_STRING_DEV`).
-3. Only then triggers deployment on Render.
+3. Updates only Render's database connection variable to use that same target, then deploys the tested commit.
+4. Waits for Render to become live and verifies both `/health` and the database-backed `/api/games` route.
+
+Missing database secrets fail deployment; staging never falls back to the dev database. `RENDER_API_KEY` is required for configuration alignment and deploy verification.
 
 This guarantees the schema is always up-to-date before new code runs. The `efbundle` binary is a transient build artifact — **do not commit it**.
 
 ## 🧪 Testing
+
+### Bundled public game catalogue
+
+The frontend bundles a versioned snapshot of the canonical `GameDefinition` seed metadata so first-time visitors can browse while the API starts or is unavailable. Release builds scope the browser cache to their configured API URL; each tier receives the metadata in its checked-out source revision.
+
+After changing game seed metadata, regenerate and commit the snapshot:
+
+```powershell
+npm --prefix frontend run catalogue:generate
+npm --prefix frontend run catalogue:check
+```
+
+The exporter reads the EF design-time model directly without starting the API, opening database connections, or requiring secrets. Frontend CI rejects a snapshot that differs from the model. Ordinary frontend builds use the committed snapshot and require no database, API or .NET runtime. Successful background refreshes replace browsing data; room creation and gameplay remain authoritative on the backend.
 
 We use **xUnit** for our test suite. To run all backend tests:
 ```powershell
@@ -70,3 +86,17 @@ For CI/CD scanning, tests are run with `/p:CollectCoverage=true` to generate Ope
 
 ## 🔐 Authentication
 The API uses **JWT-based authentication** integrated with **ASP.NET Core Identity**. Tokens are passed via the SignalR `access_token` query parameter during the negotiation phase.
+
+### Admin account
+The admin user is seeded only when `Admin__Email` and `Admin__Password` are provided through environment variables or `dotnet user-secrets`. If either is missing, the Admin role is still created but no admin user is seeded. For local development:
+
+```
+dotnet user-secrets set "Admin:Email" "you@example.com" --project backend/BoardGameHub.Api
+dotnet user-secrets set "Admin:Password" "<choose-a-strong-password>" --project backend/BoardGameHub.Api
+```
+
+On Render, set both `Admin__Email` and `Admin__Password` for each service (prod, dev and staging). These values create a missing account; changing the environment password does **not** rotate the password of an existing stored account.
+
+Before deployment, an authorized operator must reset any existing admin account that used the former committed password through ASP.NET Core Identity (`UserManager.GeneratePasswordResetTokenAsync` and `ResetPasswordAsync`), then verify the old password is rejected. Check that account's `LockoutEnabled` through `UserManager.GetLockoutEnabledAsync` and, if needed, enable it with `SetLockoutEnabledAsync`. This is an operational gate; startup does not reset existing passwords or globally change existing accounts' lockout settings. Password reset does not invalidate previously issued stateless JWTs: they remain valid until expiry unless a signing-key rotation is planned through the authentication rollout (#218).
+
+Login attempts are locked out for 15 minutes after 5 consecutive failures.

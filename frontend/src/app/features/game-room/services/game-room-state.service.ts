@@ -136,10 +136,16 @@ export class GameRoomStateService {
    * Initialize the room lifecycle: start connection and handle auto-join logic.
    */
   async initializeRoom(roomCode: string, isCreating: boolean) {
-    this.signalRService.startConnection();
-
     if (isCreating) {
       this.signalRService.clearState();
+    }
+
+    try {
+      await this.signalRService.startConnection();
+    } catch (err) {
+      this.logger.error('Failed to connect to room', err);
+      this.toastService.showError('Failed to connect. Please try again.');
+      return;
     }
 
     const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
@@ -157,13 +163,13 @@ export class GameRoomStateService {
           if (!success) {
             this.toastService.showError(`Room ${roomCode} not found or no longer active.`);
             this.signalRService.removeActiveRoom(roomCode);
-            this.router.navigate(['/games']);
+            this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
           }
         })
         .catch(err => {
           this.logger.error(`[GameRoomStateService] Auto-join failed for ${roomCode}`, err);
           this.toastService.showError('Failed to join room automatically.');
-          this.router.navigate(['/games']);
+          this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
         });
     }
   }
@@ -182,14 +188,14 @@ export class GameRoomStateService {
         );
         this.logger.info(`Room created successfully: ${newCode}`);
         this.signalRService.updateIsHostStatus();
-        this.router.navigate(['/game', newCode]);
+        await this.router.navigate(['/game', newCode]);
         return true;
       } else {
         this.logger.info(`User submitting entry to join room: ${roomCode}`);
         const success = await this.signalRService.joinRoom(roomCode, entryData.name, isScreen);
         if (!success) {
           this.toastService.showError(`Room "${roomCode}" not found or no longer active.`);
-          this.router.navigate(['/play']);
+          await this.router.navigate(['/play']);
           return false;
         }
         return true;
@@ -274,7 +280,7 @@ export class GameRoomStateService {
     } catch (err) {
       this.logger.error('Failed to leave room', err);
     } finally {
-      this.router.navigate(['/games']);
+      this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
     }
   }
 
