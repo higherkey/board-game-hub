@@ -1,26 +1,34 @@
-import { Component, OnInit, ViewChild, ElementRef, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HomeHeroComponent } from '../../../components/home-hero/home-hero.component';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
 import { SignalRService } from '../../../services/signalr.service';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, HomeHeroComponent],
   templateUrl: './home-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './home-page.component.scss'
 })
-export class LandingPageComponent implements OnInit {
+export class LandingPageComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   featuredGames: GameDefinition[] = [];
   roomCode: string = '';
   isCodeInputFocused: boolean = false;
   isValidating: boolean = false;
   codeError: string | null = null;
+  private focusTimer?: ReturnType<typeof setTimeout>;
+  private blurTimer?: ReturnType<typeof setTimeout>;
+
+  ngOnDestroy(): void {
+    clearTimeout(this.focusTimer);
+    clearTimeout(this.blurTimer);
+  }
 
   @ViewChild('codeInput') codeInputRef?: ElementRef<HTMLInputElement>;
 
@@ -39,7 +47,16 @@ export class LandingPageComponent implements OnInit {
       this.isCodeInputFocused = true;
       this.codeError = null;
       // Auto-focus the input after the tray appears
-      setTimeout(() => this.codeInputRef?.nativeElement.focus(), 50);
+      clearTimeout(this.focusTimer);
+      this.focusTimer = setTimeout(() => this.codeInputRef?.nativeElement.focus(), 50);
+    }
+  }
+
+  onCodeCapClick(): void {
+    if (this.isCodeInputFocused || this.roomCode) {
+      void this.onJoinBtnClick();
+    } else {
+      this.toggleCodeEntry();
     }
   }
 
@@ -75,6 +92,7 @@ export class LandingPageComponent implements OnInit {
   }
 
   onCodeFocus(): void {
+    clearTimeout(this.blurTimer);
     this.isCodeInputFocused = true;
     this.codeError = null;
   }
@@ -82,7 +100,8 @@ export class LandingPageComponent implements OnInit {
   onCodeBlur(): void {
     // Only close if the tray input loses focus AND no code was typed
     // Delay to allow click on the Go button to fire first
-    setTimeout(() => {
+    clearTimeout(this.blurTimer);
+    this.blurTimer = setTimeout(() => {
       if (!this.roomCode || this.roomCode.trim().length === 0) {
         this.isCodeInputFocused = false;
       }

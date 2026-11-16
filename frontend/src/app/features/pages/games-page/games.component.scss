@@ -9,6 +9,8 @@
     z-index: 900;
 }
 
+.catalogue-secondary { color: var(--text-secondary); }
+
 .filter-header {
     user-select: none;
     min-block-size: 44px;
@@ -42,7 +44,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--secondary);
+    color: var(--accent-dark);
     margin-block-end: 0.5rem;
 }
 
@@ -62,7 +64,7 @@
     color: var(--text-primary);
     transition: all 0.15s ease;
     min-inline-size: 44px;
-    min-block-size: 38px;
+    min-block-size: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -108,10 +110,17 @@
     min-block-size: 200px;
 }
 
+.game-card .card-body { padding: 1rem; }
+.game-card-title { font-size: 1.25rem; line-height: 1.2; }
+.game-card-description { font-size: 0.8rem; line-height: 1.4; }
+.game-create-btn { font-size: 0.75rem; letter-spacing: 0.02em; }
+.game-backlog-badge { font-size: 0.7rem; }
+.catalogue-spinner { inline-size: 3rem; block-size: 3rem; }
+
 /* Container Query Breakpoint Adaptation */
 @container game-card (inline-size >= 320px) {
     .game-card .card-body {
-        padding: 1.25rem !important;
+        padding: 1.25rem;
     }
 }
 
