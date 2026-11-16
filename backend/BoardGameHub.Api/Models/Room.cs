@@ -15,8 +15,11 @@ public class Player
     public bool IsReady { get; set; } = false;
     public bool IsScreen { get; set; } = false;
     
-    // Optional Auth Info
+    // Optional Auth Info. Kept server-side only; clients receive IsRegistered instead.
+    [System.Text.Json.Serialization.JsonIgnore]
     public string? UserId { get; set; }
+
+    public bool IsRegistered => !string.IsNullOrEmpty(UserId) && !UserId.StartsWith("guest:", StringComparison.Ordinal);
     public string? AvatarUrl { get; set; }
 }
 
