@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SocialService, ChatMessage, FriendRequest } from '../../../services/social.service';
 import { AuthService } from '../../../services/auth.service';
 import { Subject, takeUntil } from 'rxjs';
+import { LoggerService } from '../../../core/services/logger.service';
 
 @Component({
   selector: 'app-social-sidebar',
@@ -22,13 +23,12 @@ export class SocialSidebarComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly socialService: SocialService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly logger: LoggerService
   ) { }
 
-  async ngOnInit() {
+  ngOnInit(): void {
     if (this.authService.isAuthenticated()) {
-      await this.socialService.startConnection();
-
       this.socialService.messages$
         .pipe(takeUntil(this.destroy$))
         .subscribe(messages => this.messages = messages);
@@ -36,13 +36,15 @@ export class SocialSidebarComponent implements OnInit, OnDestroy {
       this.socialService.friendRequests$
         .pipe(takeUntil(this.destroy$))
         .subscribe(requests => this.friendRequests = requests);
+
+      this.socialService.startConnection().catch(err => this.logger.error('Failed to connect social sidebar', err));
     }
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    this.socialService.stopConnection();
+    this.socialService.stopConnection().catch(err => this.logger.error('Failed to disconnect social sidebar', err));
   }
 
   toggleSidebar() {

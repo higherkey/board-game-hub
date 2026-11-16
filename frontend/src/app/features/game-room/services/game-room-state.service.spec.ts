@@ -72,7 +72,7 @@ describe('GameRoomStateService', () => {
     };
 
     routerMock = {
-      navigate: jasmine.createSpy('navigate')
+      navigate: jasmine.createSpy('navigate').and.returnValue(Promise.resolve(true))
     };
 
     toastMock = {
@@ -135,6 +135,37 @@ describe('GameRoomStateService', () => {
       expect(signalRMock.startConnection).toHaveBeenCalled();
     });
 
+    it('does not auto-join when the initial connection fails', async () => {
+      signalRMock.startConnection.and.rejectWith('offline');
+      await service.initializeRoom('ABCD', false);
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      expect(loggerMock.error).toHaveBeenCalledWith('Failed to connect to room', 'offline');
+      expect(toastMock.showError).toHaveBeenCalledWith('Failed to connect. Please try again.');
+    });
+
+    it('clears stale room state before connection startup finishes for room creation', async () => {
+      let finishConnection!: () => void;
+      signalRMock.startConnection.and.returnValue(new Promise<void>(resolve => finishConnection = resolve));
+      const initialization = service.initializeRoom('CREATE', true);
+      expect(signalRMock.clearState).toHaveBeenCalled();
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      finishConnection();
+      await initialization;
+    });
+
+    for (const rejectedJoin of [false, true]) {
+      it(`handles an auto-join ${rejectedJoin ? 'rejection' : 'missing room'} when navigation also rejects`, fakeAsync(() => {
+        if (rejectedJoin) signalRMock.joinRoom.and.rejectWith('offline');
+        else signalRMock.joinRoom.and.resolveTo(false);
+        routerMock.navigate.and.rejectWith('route failure');
+        void service.initializeRoom('ABCD', false);
+        tick();
+        expect(toastMock.showError).toHaveBeenCalled();
+        expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to games', 'route failure');
+        expect(signalRMock.removeActiveRoom).toHaveBeenCalledTimes(rejectedJoin ? 0 : 1);
+      }));
+    }
+
     it('should create room and navigate on submitEntry (isCreating=true)', async () => {
       const entry = { name: 'NewRoom', joinType: 'player' as const, isPublic: true };
       const success = await service.submitEntry('ABCD', true, entry, 'Scatterbrain');
@@ -190,6 +221,13 @@ describe('GameRoomStateService', () => {
       expect(signalRMock.leaveRoom).toHaveBeenCalledWith('ABCD');
       expect(routerMock.navigate).toHaveBeenCalledWith(['/games']);
     });
+
+    it('reports failed navigation after leaving without an unhandled rejection', fakeAsync(() => {
+      routerMock.navigate.and.rejectWith('route failure');
+      void service.leaveRoom('ABCD');
+      tick();
+      expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to games', 'route failure');
+    }));
 
     it('should call changeRole', async () => {
       await service.changeRole(true);

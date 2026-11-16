@@ -95,14 +95,14 @@ export class ScatterbrainHandComponent implements OnInit, OnChanges {
     }
 
     pauseGame() {
-        this.signalRService.pauseGame();
+        this.signalRService.pauseGame().catch(error => console.error(error));
     }
 
     resumeGame() {
-        this.signalRService.resumeGame();
+        this.signalRService.resumeGame().catch(error => console.error(error));
     }
 
     endRound() {
-        this.signalRService.endRound();
+        this.signalRService.endRound().catch(error => console.error(error));
     }
 }

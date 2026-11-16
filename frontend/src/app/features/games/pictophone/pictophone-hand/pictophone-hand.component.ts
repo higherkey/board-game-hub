@@ -65,22 +65,22 @@ export class PictophoneHandComponent {
     }
 
     onRevealNext() {
-        if (this.room) this.signalR.revealPictophoneNext(this.room.code);
+        if (this.room) this.signalR.revealPictophoneNext(this.room.code).catch(error => console.error(error));
     }
 
     onStarPage(event: { bookIndex: number, pageIndex: number }) {
-        if (this.room) this.signalR.starPictophonePage(this.room.code, event.bookIndex, event.pageIndex);
+        if (this.room) this.signalR.starPictophonePage(this.room.code, event.bookIndex, event.pageIndex).catch(error => console.error(error));
     }
 
     pauseGame() {
-        this.signalR.pauseGame();
+        this.signalR.pauseGame().catch(error => console.error(error));
     }
 
     resumeGame() {
-        this.signalR.resumeGame();
+        this.signalR.resumeGame().catch(error => console.error(error));
     }
 
     forceNext() {
-        if (this.room) this.signalR.forcePictophoneNext(this.room.code);
+        if (this.room) this.signalR.forcePictophoneNext(this.room.code).catch(error => console.error(error));
     }
 }

@@ -52,6 +52,25 @@ describe('LayoutComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('closes an open menu on Escape and returns focus to its toggle', () => {
+    component.toggleMobileMenu();
+    const toggle = component.navToggle!.nativeElement;
+    const focus = spyOn(toggle, 'focus');
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    document.dispatchEvent(event);
+    expect(component.mobileMenuOpen).toBeFalse();
+    expect(focus).toHaveBeenCalled();
+    expect(event.defaultPrevented).toBeTrue();
+  });
+
+  it('leaves Escape available to other controls while the menu is closed', () => {
+    const focus = spyOn(component.navToggle!.nativeElement, 'focus');
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    document.dispatchEvent(event);
+    expect(focus).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBeFalse();
+  });
+
   it('should render the dynamic environment version in the footer chip', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const betaChip = compiled.querySelector('.footer-beta-chip');

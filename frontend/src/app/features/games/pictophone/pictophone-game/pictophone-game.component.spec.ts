@@ -29,4 +29,23 @@ describe('PictophoneGameComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy();
     });
+
+  it('handles rejected room controls without unhandled promises', async () => {
+    const failure = new Error('Disconnected');
+    const log = spyOn(console, 'error');
+    component.room = { code: 'TEST' } as any;
+    mockSignalRService.revealPictophoneNext = jasmine.createSpy('revealPictophoneNext').and.rejectWith(failure);
+    component.onRevealNext();
+    mockSignalRService.starPictophonePage = jasmine.createSpy('starPictophonePage').and.rejectWith(failure);
+    component.onStarPage({"bookIndex":0,"pageIndex":1});
+    mockSignalRService.pauseGame = jasmine.createSpy('pauseGame').and.rejectWith(failure);
+    component.pauseGame();
+    mockSignalRService.resumeGame = jasmine.createSpy('resumeGame').and.rejectWith(failure);
+    component.resumeGame();
+    mockSignalRService.forcePictophoneNext = jasmine.createSpy('forcePictophoneNext').and.rejectWith(failure);
+    component.forceNext();
+    await Promise.resolve();
+    expect(log).toHaveBeenCalledTimes(5);
+    expect(log).toHaveBeenCalledWith(failure);
+  });
 });

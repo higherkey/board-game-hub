@@ -25,7 +25,7 @@ We follow **[Automated Conventional Semantic Versioning](CONTRIBUTING.md#️-dev
 | Tier | Branch | Frontend (Cloudflare Pages) | Backend API (Render) | Database (Postgres) | Version Tagging |
 |---|---|---|---|---|---|
 | **prod** | `main` | [boardgamehub.eight1fivedesign.com](https://boardgamehub.eight1fivedesign.com) | `https://board-game-hub-api.onrender.com` | Supabase Prod | Milestone Release (`v0.25.0`) |
-| **staging** | `staging` | `https://staging.board-game-hub-frontend.pages.dev` | `https://board-game-hub-api-staging.onrender.com` | Supabase Staging (dev fallback) | Release Candidate (`v0.25.0-rc.1`) |
+| **staging** | `staging` | `https://staging.board-game-hub-frontend.pages.dev` | `https://board-game-hub-api-staging.onrender.com` | Supabase Staging | Release Candidate (`v0.25.0-rc.1`) |
 | **dev** | `dev` | [dev.board-game-hub-frontend.pages.dev](https://dev.board-game-hub-frontend.pages.dev) | `https://board-game-hub-api-dev.onrender.com` | Neon Dev | Dev Pre-Release (`v0.25.0-dev.1`) |
 | **feature PRs** | `feat/*`, `fix/*` | Cloudflare Branch Preview | PR Build / Unit Tests | Local / Test InMemory | Ephemeral |
 

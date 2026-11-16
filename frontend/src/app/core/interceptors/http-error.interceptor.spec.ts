@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
@@ -34,7 +34,7 @@ describe('httpErrorInterceptor', () => {
         httpClient = TestBed.inject(HttpClient);
         httpMock = TestBed.inject(HttpTestingController);
         router = TestBed.inject(Router);
-        spyOn(router, 'navigate');
+        spyOn(router, 'navigate').and.resolveTo(true);
     });
 
     afterEach(() => {
@@ -116,6 +116,19 @@ describe('httpErrorInterceptor', () => {
         expect(toastServiceSpy.showError).toHaveBeenCalledWith('You do not have permission to perform this action.');
         expect(router.navigate).toHaveBeenCalledWith(['/']);
     });
+
+    for (const status of [401, 403]) {
+        it(`preserves HTTP ${status} when its redirect rejects`, fakeAsync(() => {
+            (router.navigate as jasmine.Spy).and.rejectWith('route failure');
+            let receivedStatus = 0;
+            httpClient.get('/api/protected-resource').subscribe({ error: err => receivedStatus = err.status });
+            httpMock.expectOne('/api/protected-resource').flush({}, { status, statusText: 'Denied' });
+            tick();
+            expect(receivedStatus).toBe(status);
+            expect(loggerServiceSpy.error).toHaveBeenCalledWith(
+                status === 401 ? 'Failed to navigate to login' : 'Failed to navigate home', 'route failure');
+        }));
+    }
 
     it('should log error and show server error toast on 500 error', () => {
         httpClient.get('/api/server-break').subscribe({

@@ -37,9 +37,9 @@ describe('ScatterbrainHandComponent', () => {
     signalRMock = {
       submitAnswers: jasmine.createSpy('submitAnswers'),
       sendGameAction: jasmine.createSpy('sendGameAction'),
-      pauseGame: jasmine.createSpy('pauseGame'),
-      resumeGame: jasmine.createSpy('resumeGame'),
-      endRound: jasmine.createSpy('endRound')
+      pauseGame: jasmine.createSpy('pauseGame').and.resolveTo(),
+      resumeGame: jasmine.createSpy('resumeGame').and.resolveTo(),
+      endRound: jasmine.createSpy('endRound').and.resolveTo()
     };
 
     await TestBed.configureTestingModule({
@@ -126,5 +126,20 @@ describe('ScatterbrainHandComponent', () => {
 
     component.endRound();
     expect(signalRMock.endRound).toHaveBeenCalled();
+  });
+
+  it('handles rejected room controls without unhandled promises', async () => {
+    const failure = new Error('Disconnected');
+    const log = spyOn(console, 'error');
+    component.room = { code: 'TEST' } as any;
+    signalRMock.pauseGame = jasmine.createSpy('pauseGame').and.rejectWith(failure);
+    component.pauseGame();
+    signalRMock.resumeGame = jasmine.createSpy('resumeGame').and.rejectWith(failure);
+    component.resumeGame();
+    signalRMock.endRound = jasmine.createSpy('endRound').and.rejectWith(failure);
+    component.endRound();
+    await Promise.resolve();
+    expect(log).toHaveBeenCalledTimes(3);
+    expect(log).toHaveBeenCalledWith(failure);
   });
 });
