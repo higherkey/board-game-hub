@@ -100,3 +100,28 @@ On Render, set both `Admin__Email` and `Admin__Password` for each service (prod,
 Before deployment, an authorized operator must reset any existing admin account that used the former committed password through ASP.NET Core Identity (`UserManager.GeneratePasswordResetTokenAsync` and `ResetPasswordAsync`), then verify the old password is rejected. Check that account's `LockoutEnabled` through `UserManager.GetLockoutEnabledAsync` and, if needed, enable it with `SetLockoutEnabledAsync`. This is an operational gate; startup does not reset existing passwords or globally change existing accounts' lockout settings. Password reset does not invalidate previously issued stateless JWTs: they remain valid until expiry unless a signing-key rotation is planned through the authentication rollout (#218).
 
 Login attempts are locked out for 15 minutes after 5 consecutive failures.
+
+### Client IP and HTTP rate limits
+
+Hub HTTP requests (including negotiation and transport setup) share a per-IP budget of 100 requests per 10 seconds with a 20-request queue. Client logging has a separate per-IP budget of 30 requests per minute. Overflow returns HTTP 429. Users behind the same public IP share a budget; counters are local to each API process. These HTTP policies do not throttle messages on an established WebSocket. SocialHub direct and global chat drop blank messages and reject messages longer than 500 characters before saving or broadcasting.
+
+Forwarded headers run before rate limiting and consume only the right-most `X-Forwarded-For` entry (`ForwardLimit = 1`). Clearing the known-proxy lists assumes all incoming connections are trusted Render ingress, that ingress supplies the client address in that entry, and no untrusted caller can reach Kestrel directly (including over a private network). This is a deployment assumption, not a verified Render topology. Before enabling direct access or another ingress, configure explicit trusted proxy addresses/networks and verify the header chain. Never remove the forwarding limit to compensate for an unknown chain.
+
+[Microsoft documents the right-to-left processing and spoofing risk](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-10.0); [Render documents forwarding client IPs](https://render.com/articles/how-render-handles-ddos-attacks) but does not establish this one-hop assumption. After deploying to dev, use two genuinely different public client IPs to verify the resolved client addresses and independent hub/logging budgets. An unmerged PR and local TestServer checks cannot satisfy that operational gate.
+
+Current application request logs do not include the post-forwarding `HttpContext.Connection.RemoteIpAddress`; Render edge logs or a raw forwarded header alone cannot prove this setting. For a short operator-controlled dev verification window, temporarily insert the following immediately after `app.UseForwardedHeaders()`, replacing the nonce with a freshly generated value shared only with the two testers:
+
+```csharp
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/health" &&
+        context.Request.Headers["X-RateLimit-Verification"] == "<one-time-random-nonce>")
+    {
+        app.Logger.LogInformation("RateLimitVerification: resolved client {ClientIp}",
+            context.Connection.RemoteIpAddress);
+    }
+    await next(context);
+});
+```
+
+Send one `/health` request from each known public client IP with that header, and confirm the two logged resolved addresses match those clients rather than an ingress/proxy address. Repeat with an added spoofed left-hand `X-Forwarded-For` value to confirm ingress still supplies the final address. Then exercise the hub and logging budgets from both clients: overflowing A must return 429 while B remains usable. Remove the temporary middleware and nonce immediately afterward; keep any IP-containing diagnostic evidence private and limited to that verification window. If either resolved address is a proxy or spoofable, block rollout and obtain the actual trusted ingress addresses/header chain before changing the forwarding configuration.
