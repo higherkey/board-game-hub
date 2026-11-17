@@ -140,6 +140,16 @@ export class GameRoomStateService {
   async initializeRoom(roomCode: string, isCreating: boolean) {
     if (isCreating) {
       this.signalRService.clearState();
+      this.needsName = true;
+      return;
+    }
+
+    const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
+
+    if (guestName) {
+      this.needsName = false;
+    } else {
+      this.needsName = true;
     }
 
     try {
@@ -150,9 +160,7 @@ export class GameRoomStateService {
       return;
     }
 
-    const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
-
-    if (!isCreating && guestName) {
+    if (guestName) {
       this.autoJoin(roomCode, guestName);
     }
   }
@@ -160,25 +168,39 @@ export class GameRoomStateService {
   private autoJoin(roomCode: string, name: string) {
     const currentRoom = this.signalRService.currentRoomSubject.value;
     if (currentRoom?.code !== roomCode) {
-      this.signalRService.joinRoom(roomCode, name, this.signalRService.isScreenMode)
+      const savedRole = typeof localStorage !== 'undefined' ? localStorage.getItem('bgh_preferred_role') : null;
+      const isScreen = savedRole ? savedRole === 'table' : this.isScreen;
+      this.isScreen = isScreen;
+
+      this.signalRService.joinRoom(roomCode, name, isScreen)
         .then(success => {
-          if (!success) {
+          if (success) {
+            this.needsName = false;
+          } else {
+            this.needsName = true;
             this.toastService.showError(`Room ${roomCode} not found or no longer active.`);
             this.signalRService.removeActiveRoom(roomCode);
             this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
           }
         })
         .catch(err => {
+          this.needsName = true;
           this.logger.error(`[GameRoomStateService] Auto-join failed for ${roomCode}`, err);
           this.toastService.showError('Failed to join room automatically.');
           this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
         });
+    } else {
+      this.needsName = false;
     }
   }
 
   async submitEntry(roomCode: string, isCreating: boolean, entryData: { name: string, joinType: 'player' | 'table', isPublic: boolean }, selectedGameType: string) {
     this.authService.setGuestName(entryData.name);
     const isScreen = entryData.joinType === 'table';
+    this.isScreen = isScreen;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('bgh_preferred_role', entryData.joinType);
+    }
 
     try {
       if (isCreating) {
@@ -298,6 +320,10 @@ export class GameRoomStateService {
 
   async changeRole(isScreen: boolean) {
     try {
+      this.isScreen = isScreen;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('bgh_preferred_role', isScreen ? 'table' : 'player');
+      }
       await this.signalRService.changeRole(isScreen);
     } catch (err) {
       this.logger.error('Failed to change role', err);

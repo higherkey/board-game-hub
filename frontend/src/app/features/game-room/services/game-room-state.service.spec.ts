@@ -166,8 +166,25 @@ describe('GameRoomStateService', () => {
         expect(toastMock.showError).toHaveBeenCalled();
         expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to games', 'route failure');
         expect(signalRMock.removeActiveRoom).toHaveBeenCalledTimes(rejectedJoin ? 0 : 1);
+        expect(service.needsName).toBeTrue();
       }));
     }
+
+    it('auto-joins and clears needsName when guest has a stored name', fakeAsync(() => {
+      signalRMock.joinRoom.and.returnValue(Promise.resolve(true));
+      void service.initializeRoom('ABCD', false);
+      tick();
+      expect(signalRMock.joinRoom).toHaveBeenCalledWith('ABCD', 'Tester', jasmine.any(Boolean));
+      expect(service.needsName).toBeFalse();
+    }));
+
+    it('sets needsName to true when no stored name exists', async () => {
+      authMock.getGuestName.and.returnValue(null);
+      authMock.currentUserValue = null;
+      await service.initializeRoom('ABCD', false);
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      expect(service.needsName).toBeTrue();
+    });
 
     it('should create room and navigate on submitEntry (isCreating=true)', async () => {
       const entry = { name: 'NewRoom', joinType: 'player' as const, isPublic: true };

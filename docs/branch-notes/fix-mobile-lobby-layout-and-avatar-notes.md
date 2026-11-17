@@ -7,6 +7,7 @@ Resolve mobile layout and design defects in the game room/lobby and fix avatar n
 3. Fix the bottom tab bar overlaying and hiding the lobby controls/parameters.
 4. Remove unwanted rounded corners and outer margins around the lobby section.
 5. Fix avatar not appearing for newly entered guests or authenticated users until refreshing.
+6. Prevent guest/user in an active room from being redirected back to the entry form ("Your Display Name" / Player vs Table role selection) on page refresh.
 
 ## Discoveries & Deviations
 - `:host` in `game-room.component.scss` used `height: 100vh;` instead of `100dvh`, exceeding mobile browser viewport when address bars are visible, causing `window` scrolling and pushing `app-room-header` off screen.
@@ -15,10 +16,11 @@ Resolve mobile layout and design defects in the game room/lobby and fix avatar n
 - In `auth.service.ts`, `setGuestName` did not initialize or query `getGuestId()`, so initial guest session had `avatarUrl: undefined`. When `getGuestId()` later created the avatar in `localStorage`, it did not notify `sessionSubject`, so the UI only loaded the avatar on subsequent page reloads. Updated `getGuestId()` and `setGuestName()` to immediately populate and emit the avatar in `session$`.
 - In `AuthController.cs`, `GenerateJwtTokenAsync` did not include the `AvatarUrl` claim in JWT tokens, causing `GameHub` to receive null avatar URLs for registered users. Added `AvatarUrl` claim to JWT tokens.
 - Global scrollbars were refined from an intrusive 10px bright blue bar to a sleek 8px semi-transparent thumb (`color-mix`).
+- On page refresh, `game-room.component.ts` unconditionally executed `this.stateService.needsName = true`, and `game-room-state.service.ts` autoJoin did not clear `needsName` on successful room rejoin. Guests with existing sessions were sent back to `RoomEntryComponent`. Updated `initializeRoom` and `autoJoin` to maintain `needsName = false` for users with stored names, persist role preference (`bgh_preferred_role`), and prefill `promptPlayerName`.
 
 ## Verification
 - Backend tests: `dotnet test` passed (583 passed).
-- Frontend tests: `ng test` passed (512 passed).
+- Frontend tests: `ng test` passed (514 passed).
 - Frontend build: `ng build` succeeded cleanly.
 
 ## 4a. Blockers & Risks
@@ -27,6 +29,7 @@ Resolve mobile layout and design defects in the game room/lobby and fix avatar n
 ## 4b. Quick Wins
 - Placing `app-mobile-tab-bar` in-flow cleanly resolves bottom bar overlap without brittle padding calculations.
 - Adding `overflow-hidden` to body during `GameRoomComponent` lifecycle permanently prevents address-bar scroll bouncing from hiding the room header.
+- Remembering `bgh_preferred_role` ensures seamless rejoining across refreshes preserving Table vs Player mode.
 
 ## 4c. Deferred Items
 - None.
