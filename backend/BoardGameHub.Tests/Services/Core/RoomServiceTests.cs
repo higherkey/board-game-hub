@@ -268,6 +268,17 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public void UpdateSettings_NullDoesNotReplaceExistingSettings()
+    {
+        var room = _sut.CreateRoom("host", "Host", false);
+        var original = room.Settings;
+
+        _sut.UpdateSettings(room.Code, null!).Should().BeNull();
+
+        room.Settings.Should().BeSameAs(original);
+    }
+
+    [Fact]
     public void UpdateSettings_ShouldApplyNewSettings()
     {
         // Arrange
@@ -331,7 +342,7 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkStateDirtyForBroadcast()
+    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkFullDiffForBroadcast()
     {
         var mockService = new Mock<IGameService>();
         mockService.Setup(s => s.GameType).Returns(GameType.Farkle);
@@ -347,10 +358,10 @@ public class RoomServiceTests
 
         await _sut.SubmitAction(room.Code, "conn1", "BANK", default);
 
-        room.DirtyMembers.Should().ContainKey(nameof(Room.GameData)); // sanity: room is tracked
+        room.DirtyMembers.Should().ContainKey("ALL"); // sanity: room is tracked and marked for a full diff
 
         room.State.Should().Be(GameState.Finished);
-        room.DirtyMembers.Should().ContainKey(nameof(Room.State));
+        room.DirtyMembers.Should().ContainKey("ALL"); // full diff covers State
     }
 
     [Fact]
@@ -809,8 +820,10 @@ public class RoomServiceTests
         // Host connection
         _sut.IsAuthorizedHost(room, "conn1").Should().BeTrue();
         
-        // User ID match
-        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeTrue();
+        // Account identity alone does not grant authority to an unjoined connection.
+        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeFalse();
+        _sut.JoinRoom(room.Code, "table", "Table", "user1", isScreen: true);
+        _sut.IsAuthorizedHost(room, "table", "user1").Should().BeTrue();
 
         // Non-host connection
         _sut.IsAuthorizedHost(room, "conn2", "user2").Should().BeFalse();

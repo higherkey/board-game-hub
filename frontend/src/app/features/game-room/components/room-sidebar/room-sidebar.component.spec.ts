@@ -58,4 +58,15 @@ describe('RoomSidebarComponent', () => {
     const playerListCard = fixture.nativeElement.querySelector('.player-list-card');
     expect(playerListCard).toBeTruthy();
   });
+
+  it('should label registered players as User and others as Guest', () => {
+    component.players = [
+      { connectionId: 'a', name: 'A', score: 0, isHost: false, isConnected: true, isRegistered: true } as any,
+      { connectionId: 'b', name: 'B', score: 0, isHost: false, isConnected: true, isRegistered: false } as any
+    ];
+    fixture.detectChanges();
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('.ls-wide'))
+      .map((el: any) => el.textContent.trim());
+    expect(labels).toEqual(['User', 'Guest']);
+  });
 });
