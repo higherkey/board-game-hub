@@ -221,7 +221,7 @@
                 </div>
                 <div class="card-footer bg-white border-0 text-center pb-4">
                     <button *ngIf="isHost" class="btn btn-primary btn-lg px-5 fw-bold shadow-sm" (click)="nextPhase()">
-                        Next Round <i class="bi bi-arrow-right-circle ms-2"></i>
+                        {{ room.resultPhase === 'GameOver' ? 'Play Again' : 'Next Round' }} <i class="bi bi-arrow-right-circle ms-2"></i>
                     </button>
                     <p *ngIf="!isHost" class="text-secondary italic">Waiting for host to start next round...</p>
                 </div>

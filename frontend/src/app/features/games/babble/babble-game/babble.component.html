@@ -182,7 +182,7 @@
 
             <div class="results-footer d-flex justify-content-center pt-3" *ngIf="isHost">
                 <button class="btn btn-primary fw-bold shadow-sm px-4 py-2" (click)="handleNextRound()">
-                    Next Round <i class="bi bi-arrow-right-circle ms-2"></i>
+                    {{ isGameOver ? 'Play Again' : 'Next Round' }} <i class="bi bi-arrow-right-circle ms-2"></i>
                 </button>
             </div>
         </div>

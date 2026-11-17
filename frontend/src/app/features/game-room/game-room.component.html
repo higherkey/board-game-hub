@@ -88,6 +88,9 @@
                                 <!-- Host Only Controls -->
                                 <div class="w-100 h-100 d-flex flex-column" *ngIf="stateService.isHost$ | async">
                                     <app-host-settings [roomCode]="roomCode"
+                                        [resultPhase]="(stateService.currentRoom$ | async)?.resultPhase"
+                                        [isIntermission]="(stateService.isIntermission$ | async) || false"
+                                        (playAgain)="stateService.playAgain($event)"
                                         [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
                                         [players]="(stateService.players$ | async) || []" [isHost]="true"
                                         [meReady]="(stateService.me$ | async)?.isReady || false"
@@ -132,7 +135,10 @@
                 <div *ngIf="(stateService.isIntermission$ | async) && (stateService.isHost$ | async)"
                     class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 border-top border-secondary d-none d-md-block intermission-bar-style">
                     <div class="container-fluid d-flex align-items-center justify-content-center">
-                        <app-host-settings [roomCode]="roomCode" [compactMode]="true" [isIntermission]="true"
+                        <app-host-settings [roomCode]="roomCode"
+                                        [resultPhase]="(stateService.currentRoom$ | async)?.resultPhase"
+                                        [isIntermission]="(stateService.isIntermission$ | async) || false"
+                                        (playAgain)="stateService.playAgain($event)" [compactMode]="true"
                             [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
                             [currentRound]="(stateService.currentRoom$ | async)?.roundNumber || 0"
                             [totalRounds]="(stateService.currentRoom$ | async)?.totalRounds || (stateService.currentRoom$ | async)?.settings?.totalRounds || 5"
@@ -156,8 +162,14 @@
                                     <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
                                 </div>
 
-                                <app-host-settings [roomCode]="roomCode" [compactMode]="true"
+                                <app-host-settings [roomCode]="roomCode"
+                                        [resultPhase]="(stateService.currentRoom$ | async)?.resultPhase"
+                                        [isIntermission]="(stateService.isIntermission$ | async) || false"
+                                        (playAgain)="stateService.playAgain($event)" [compactMode]="true"
                                     [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
+                                    [players]="(stateService.players$ | async) || []"
+                                    [currentRound]="(stateService.currentRoom$ | async)?.roundNumber || 0"
+                                    [totalRounds]="(stateService.currentRoom$ | async)?.totalRounds || (stateService.currentRoom$ | async)?.settings?.totalRounds || 5"
                                     [meReady]="(stateService.me$ | async)?.isReady || false" [isHost]="(stateService.isHost$ | async) || false"
                                     [isScreen]="(stateService.me$ | async)?.isScreen || false"
                                     [isHostOverride]="(stateService.currentRoom$ | async)?.isHostOverride || false"

@@ -57,7 +57,7 @@ public class RoomServiceSettingsTests : IDisposable
     }
 
     [Fact]
-    public async Task StartGame_RetainedSettings_AreClampedWithoutResettingGameProgress()
+    public async Task NextRound_RetainedSettings_AreClampedWithoutResettingGameProgress()
     {
         var room = _sut.CreateRoom("host", "Host", false, GameType.Babble);
         room.Settings = new GameSettings
@@ -74,7 +74,7 @@ public class RoomServiceSettingsTests : IDisposable
         room.RoundNumber = 3;
         room.Players[0].Score = 42;
 
-        var result = await _sut.StartGame(room.Code, null);
+        var result = await _sut.NextRound(room.Code);
 
         result.Should().BeSameAs(room);
         room.Settings.BoardSize.Should().Be(6);
