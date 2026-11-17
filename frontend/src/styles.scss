@@ -186,6 +186,12 @@ body {
   overflow-x: hidden;
 }
 
+app-root {
+  display: block;
+  block-size: 100%;
+  min-block-size: 100dvh;
+}
+
 body {
   font-family: 'Quicksand', sans-serif;
   color: var(--text-primary);
@@ -451,20 +457,21 @@ p {
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  inline-size: 10px;
+  inline-size: 8px;
+  block-size: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-base);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--brand-blue);
-  border-radius: 5px;
+  background: color-mix(in oklch, var(--primary) 35%, transparent);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: color-mix(in oklch, var(--primary) 60%, transparent);
 }
 
 /* Shared Animations */

@@ -76,6 +76,26 @@ describe('AuthService', () => {
             expect(localStorage.getItem('auth_token')).toBeNull();
             expect(router.navigate).toHaveBeenCalledWith(['/']);
         });
+
+        it('should immediately provide avatar in session when setting guest name', () => {
+            service.setGuestName('GuestPlayer');
+            let currentSession: any = null;
+            service.session$.subscribe(s => currentSession = s);
+
+            expect(currentSession).toBeTruthy();
+            expect(currentSession?.name).toBe('GuestPlayer');
+            expect(currentSession?.isGuest).toBeTrue();
+            expect(currentSession?.avatarUrl).toBeTruthy();
+            expect(currentSession?.avatarUrl).toContain('dicebear.com');
+        });
+
+        it('should generate avatar when calling getGuestId if missing', () => {
+            const guestId = service.getGuestId();
+            expect(guestId).toBeTruthy();
+            const storedAvatar = localStorage.getItem('guest_avatar');
+            expect(storedAvatar).toBeTruthy();
+            expect(storedAvatar).toContain(guestId);
+        });
     });
 
     describe('Register', () => {

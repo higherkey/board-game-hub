@@ -84,9 +84,14 @@ export class AuthService {
         if (!id) {
             id = crypto.randomUUID();
             localStorage.setItem(this.guestIdKey, id);
-            // Assign a random avatar for new guests
-            const newAvatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${id}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`;
-            localStorage.setItem(this.guestAvatarKey, newAvatar);
+        }
+        let avatar = localStorage.getItem(this.guestAvatarKey);
+        if (!avatar) {
+            avatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${id}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`;
+            localStorage.setItem(this.guestAvatarKey, avatar);
+            if (this.getGuestName()) {
+                this.updateSession();
+            }
         }
         this.refreshGuestSession();
         return id;
@@ -94,6 +99,7 @@ export class AuthService {
 
     setGuestName(name: string) {
         localStorage.setItem(this.guestNameKey, name);
+        this.getGuestId();
         this.refreshGuestSession();
         this.updateSession();
     }
