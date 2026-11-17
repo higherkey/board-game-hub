@@ -169,6 +169,11 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit() {
+    document.body.classList.add('overflow-hidden');
+    this.destroyRef.onDestroy(() => {
+      document.body.classList.remove('overflow-hidden');
+    });
+
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       this.roomCode = (params.get('code') || '').toUpperCase();
       this.isCreating = this.roomCode === 'CREATE';

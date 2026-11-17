@@ -10,9 +10,9 @@
 .settings-panel {
     background: white;
     padding: 1rem;
-    border-radius: var(--radius-lg, 12px);
-    border: 1px solid var(--border-color, #eee);
-    box-shadow: var(--shadow-sm, 2px 2px 0px rgba(0, 0, 0, 0.05));
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
     width: 100%;
     height: 100%;
     box-sizing: border-box;
@@ -20,6 +20,49 @@
     flex-direction: column;
     justify-content: space-between;
     overflow-y: auto;
+
+    @media (max-width: 768px) {
+        padding: 0.5rem 0.75rem;
+
+        .settings-grid {
+            gap: 0.5rem;
+        }
+
+        .settings-col {
+            gap: 0.35rem;
+        }
+
+        .room-info-col {
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border-light, #eee);
+        }
+
+        .qr-box {
+            padding: 0.25rem !important;
+        }
+
+        .qr-img {
+            width: 60px;
+            height: 60px;
+        }
+
+        .ready-button {
+            padding: 0.45rem 0.75rem !important;
+            font-size: 0.95rem;
+            margin-bottom: 0 !important;
+        }
+
+        .btn-start {
+            padding: 0.55rem 1rem;
+            font-size: 1rem;
+            margin-bottom: 0 !important;
+        }
+
+        .group-label {
+            margin-bottom: 0.25rem !important;
+            font-size: 0.7rem;
+        }
+    }
 
     h3 {
         margin: 0;
