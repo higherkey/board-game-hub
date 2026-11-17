@@ -80,7 +80,7 @@ export class WisecrackBoardComponent {
   get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
 
   nextRound() {
-    this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound();
+    void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
   }
 
   endGame() {

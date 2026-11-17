@@ -47,7 +47,7 @@ export class SushiTrainBoardComponent {
     }
 
     restartGame() {
-        if (this.room?.resultPhase === 'GameOver') this.signalRService.playAgain();
-        else this.signalRService.startGame();
+        if (this.room?.resultPhase === 'GameOver') void this.signalRService.playAgain();
+        else void this.signalRService.startGame();
     }
 }

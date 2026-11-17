@@ -27,7 +27,7 @@ export class PoppycockBoardComponent implements OnChanges {
     get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
 
     nextRound() {
-        this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound();
+        void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
     }
 
     ngOnChanges(changes: SimpleChanges): void {

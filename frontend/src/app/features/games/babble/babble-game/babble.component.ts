@@ -223,7 +223,7 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
   handleNextRound() {
     if (this.isHost && this.room) {
-      this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound();
+      void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
     }
   }
 

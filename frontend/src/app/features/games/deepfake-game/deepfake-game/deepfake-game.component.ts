@@ -268,7 +268,7 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
   get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
 
   handleNextRound() {
-    this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound();
+    void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
   }
 
   // Voting Status
