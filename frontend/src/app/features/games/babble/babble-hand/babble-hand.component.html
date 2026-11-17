@@ -1,0 +1,252 @@
+<div class="babble-hand-container">
+  <!-- Host Toolbar (Only when Hand player is Host and game is active) -->
+  <aside *ngIf="isHost && isPlaying" class="host-toolbar" aria-label="Host Actions">
+    <div class="host-label">
+      <i class="bi bi-shield-lock-fill"></i>
+      <span>Host</span>
+    </div>
+    <div class="host-actions">
+      <button type="button" class="btn btn-sm btn-outline-warning" *ngIf="!isPaused" (click)="handlePause()" aria-label="Pause round">
+        <i class="bi bi-pause-fill"></i>
+        <span>Pause</span>
+      </button>
+      <button type="button" class="btn btn-sm btn-warning" *ngIf="isPaused" (click)="handleResume()" aria-label="Resume round">
+        <i class="bi bi-play-fill"></i>
+        <span>Resume</span>
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="handleEndRound()" [disabled]="isEnding" aria-label="End round early">
+        <i class="bi bi-stop-fill"></i>
+        <span>Skip</span>
+      </button>
+      <span *ngIf="isEnding" class="spinner-border spinner-border-sm text-danger ms-1" role="status" aria-label="Ending round"></span>
+    </div>
+  </aside>
+
+  <!-- 1. PLAYING PHASE -->
+  <div *ngIf="isPlaying" class="play-phase">
+    <!-- Hand Header: Round & Timer -->
+    <header class="hand-header">
+      <div class="game-meta">
+        <h2 class="game-name">Babble</h2>
+        <span class="round-pill">Round {{ room?.roundNumber || 1 }}</span>
+      </div>
+      <div class="timer-card" [class.urgent]="isUrgent">
+        <i class="bi bi-stopwatch-fill"></i>
+        <span class="timer-digits">{{ timerText }}</span>
+      </div>
+    </header>
+
+    <!-- Letter Grid (Compact & Touch-Friendly) -->
+    <section class="grid-section" aria-label="Letter Grid">
+      <div class="hand-grid" [class]="'size-' + boardSize" [class.blurred-board]="isBlurred">
+        <button
+          type="button"
+          *ngFor="let char of gridChars; let i = index"
+          class="hand-tile"
+          [attr.data-letter]="char === 'Q' ? 'Qu' : char"
+          (click)="addLetter(char)"
+          [disabled]="isBlurred || isPaused"
+          [attr.aria-label]="'Letter ' + (char === 'Q' ? 'Qu' : char)">
+          {{ char === 'Q' ? 'Qu' : char }}
+        </button>
+      </div>
+
+      <!-- Countdown Overlay -->
+      <div *ngIf="isBlurred && countdownSeconds > 0" class="countdown-overlay">
+        <div class="countdown-value">{{ countdownSeconds }}</div>
+        <div class="countdown-message">Get Ready!</div>
+      </div>
+    </section>
+
+    <!-- Word Entry Controls -->
+    <section class="entry-section" aria-label="Word Submission">
+      <form class="word-input-row" (ngSubmit)="submitWord()">
+        <input
+          id="babbleHandWord"
+          type="text"
+          class="form-control word-input"
+          [(ngModel)]="currentWord"
+          name="currentWord"
+          placeholder="Type or tap letters..."
+          [disabled]="!isPlaying || isPaused || isBlurred"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          aria-label="Enter word"
+        />
+        <button
+          type="button"
+          class="btn btn-action-backspace"
+          (click)="backspace()"
+          [disabled]="!currentWord || isPaused || isBlurred"
+          aria-label="Delete last letter">
+          <i class="bi bi-backspace-fill"></i>
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary btn-submit-word"
+          [disabled]="currentWord.trim().length < 3 || isPaused || isBlurred"
+          aria-label="Submit word">
+          <i class="bi bi-plus-lg"></i>
+          <span>ADD</span>
+        </button>
+      </form>
+
+      <!-- Found Words Chips -->
+      <div class="found-words-box">
+        <div class="found-words-heading">
+          <span class="heading-title">Found Words</span>
+          <span class="badge bg-primary text-white count-badge">{{ foundWords.length }}</span>
+        </div>
+        <div class="chips-scroll" *ngIf="foundWords.length > 0">
+          <span class="word-chip" *ngFor="let word of foundWords">{{ word }}</span>
+        </div>
+        <p *ngIf="foundWords.length === 0" class="empty-note">
+          Words you submit will appear here.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <!-- 2. RESULTS PHASE -->
+  <div *ngIf="isFinished" class="results-phase fade-in">
+    <header class="results-header">
+      <div class="results-title-group">
+        <h3 class="results-title">Round {{ room?.roundNumber || 1 }} Results</h3>
+        <p class="results-summary">
+          Your round score: <span class="score-highlight">{{ myRoundScore }} pts</span>
+        </p>
+      </div>
+
+      <!-- Filter Toggle: MINE vs ALL -->
+      <div class="filter-toggle-pill" role="group" aria-label="Results filter">
+        <button
+          type="button"
+          class="btn btn-filter"
+          [class.active]="showOnlyMyWords"
+          (click)="showOnlyMyWords = true">
+          MINE ({{ myWordsCount }})
+        </button>
+        <button
+          type="button"
+          class="btn btn-filter"
+          [class.active]="!showOnlyMyWords"
+          (click)="showOnlyMyWords = false">
+          ALL ({{ lastRoundResults.length }})
+        </button>
+      </div>
+    </header>
+
+    <!-- Word Results List -->
+    <div class="results-list" role="list">
+      <div class="result-item" *ngFor="let res of displayResults">
+        <button
+          type="button"
+          class="result-card-btn"
+          (click)="showDefinition(res)"
+          [class.is-mine]="isMyWord(res)"
+          [attr.aria-label]="'View definition for ' + res.word">
+          <div class="word-col">
+            <span
+              class="word-text"
+              [class.strike]="!res.isOnGrid || res.isDuplicate || res.isHostRejected"
+              [class.text-success]="res.isHostValidated && !res.isDuplicate"
+              [class.text-danger]="res.isHostRejected">
+              {{ res.word }}
+            </span>
+            <div class="tags-row">
+              <span class="badge-tag bg-warning text-dark" *ngIf="!res.isOnGrid">Not on Grid</span>
+              <span class="badge-tag bg-danger" *ngIf="!res.isInDictionary && !res.isHostValidated">Unknown</span>
+              <span class="badge-tag bg-success" *ngIf="res.isHostValidated">Host Accepted</span>
+              <span class="badge-tag bg-danger" *ngIf="res.isHostRejected">Host Rejected</span>
+              <span class="badge-tag bg-secondary" *ngIf="res.isDuplicate && !res.isHostRejected && !res.isHostValidated">Duplicate</span>
+            </div>
+          </div>
+
+          <div class="meta-col">
+            <div class="d-flex align-items-center gap-2">
+              <!-- Inline Host Validation Controls -->
+              <div *ngIf="isHost && res.showMenu" class="host-val-inline">
+                <button
+                  type="button"
+                  class="btn-val text-success"
+                  (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, true)"
+                  title="Accept"
+                  aria-label="Accept word">
+                  <i class="bi bi-check-circle-fill"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-val text-danger"
+                  (click)="$event.stopPropagation(); res.showMenu = false; toggleValidation(res, false)"
+                  title="Reject"
+                  aria-label="Reject word">
+                  <i class="bi bi-x-circle-fill"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-val text-muted ms-1"
+                  (click)="$event.stopPropagation(); res.showMenu = false"
+                  title="Cancel"
+                  aria-label="Cancel">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+
+              <button
+                *ngIf="isHost && !res.showMenu"
+                type="button"
+                class="btn-more-options"
+                (click)="$event.stopPropagation(); res.showMenu = true"
+                aria-label="Word options">
+                <i class="bi bi-three-dots-vertical"></i>
+              </button>
+
+              <span *ngIf="!res.showMenu" class="points-badge" [class.zero]="res.points === 0">
+                +{{ res.points }}
+              </span>
+            </div>
+
+            <!-- Player attribution for words found by others -->
+            <div *ngIf="!showOnlyMyWords && res.foundBy" class="players-row">
+              <span
+                class="player-mini-chip"
+                [class.is-me]="pid === myConnectionId"
+                *ngFor="let pid of res.foundBy"
+                [title]="getPlayerName(pid)">
+                {{ getPlayerName(pid) }}
+              </span>
+            </div>
+          </div>
+        </button>
+
+        <!-- Definition Drawer -->
+        <div class="definition-drawer" *ngIf="selectedWord === res">
+          <i class="bi bi-info-circle me-2 text-primary"></i>
+          <span>{{ res.definition || 'No definition found in library.' }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="displayResults.length === 0" class="empty-results">
+        <i class="bi bi-search fs-2 text-muted mb-2"></i>
+        <p class="m-0 text-muted">
+          {{ showOnlyMyWords ? "You didn't find any words this round." : "No words were found this round." }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Host Next Round Button -->
+    <footer *ngIf="isHost" class="results-footer">
+      <button type="button" class="btn btn-primary fw-bold shadow-sm px-4 py-2" (click)="handleNextRound()">
+        <span>Next Round</span>
+        <i class="bi bi-arrow-right-circle ms-2"></i>
+      </button>
+    </footer>
+
+    <!-- Guest Waiting Indicator -->
+    <footer *ngIf="!isHost" class="results-waiting-footer">
+      <span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span>
+      <span class="text-white-50">Waiting for host to start next round...</span>
+    </footer>
+  </div>
+</div>
