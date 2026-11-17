@@ -196,7 +196,7 @@ public class FarkleService : BaseGameService<FarkleState>
             var roomCode = state.RoomCode; 
             _ = Task.Run(async () => {
                 await Task.Delay(3000);
-                await ExecuteAutoAdvance(roomCode);
+                await ExecuteAutoAdvance(roomCode, state);
             });
         }
         else
@@ -205,24 +205,22 @@ public class FarkleService : BaseGameService<FarkleState>
         }
     }
 
-    private async Task ExecuteAutoAdvance(string roomCode)
+    internal async Task ExecuteAutoAdvance(string roomCode, FarkleState scheduledState)
     {
         using var scope = _serviceProvider.CreateScope();
         var roomService = scope.ServiceProvider.GetRequiredService<IRoomService>();
         var gameStateManager = scope.ServiceProvider.GetRequiredService<GameStateManager>();
         
         var room = roomService.GetRoom(roomCode);
-        if (room == null || room.GameData is not FarkleState state || state.Phase != FarklePhase.Farkled) return;
+        if (room == null) return;
 
         await room.StateLock.WaitAsync();
         try
         {
-            // Re-verify phase under lock
-            if (state.Phase == FarklePhase.Farkled)
-            {
-                AdvanceTurn(room, state);
-                gameStateManager.MarkDirty(room.Code);
-            }
+            if (room.State != GameState.Playing || !ReferenceEquals(room.GameData, scheduledState)
+                || scheduledState.Phase != FarklePhase.Farkled) return;
+            AdvanceTurn(room, scheduledState);
+            gameStateManager.MarkDirty(room.Code);
         }
         finally
         {

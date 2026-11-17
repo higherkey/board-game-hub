@@ -32,11 +32,18 @@ export interface Player {
 }
 
 export type RoomState = 'Lobby' | 'Playing' | 'Finished';
+export type RoomResultPhase = 'RoundResults' | 'GameOver';
+
+/** Null or absent phases preserve each caller's legacy continuation. */
+export function getRoomResultPhase(room: Pick<Room, 'resultPhase'> | null | undefined, legacyPhase: RoomResultPhase | null = null): RoomResultPhase | null {
+  return room?.resultPhase ?? legacyPhase;
+}
 
 export interface Room {
   code: string;
   players: Player[];
   state: RoomState;
+  resultPhase?: RoomResultPhase | null;
   settings: GameSettings;
   gameType: string;
 
@@ -404,6 +411,11 @@ export class SignalRService {
   public async endGame(): Promise<void> {
     const roomCode = this.currentRoomSubject.value?.code;
     if (roomCode) await this.hubConnection.invoke('EndGame', roomCode);
+  }
+
+  public async playAgain(): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) await this.hubConnection.invoke('PlayAgain', roomCode);
   }
 
   public async nextRound(): Promise<void> {

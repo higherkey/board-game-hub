@@ -17,6 +17,7 @@ public class RoomStateEnvelope
     public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddHours(4);
     public GameType GameType { get; set; } = GameType.None;
     public GameState State { get; set; } = GameState.Lobby;
+    public ResultPhase? ResultPhase { get; set; }
     public GameSettings Settings { get; set; } = new();
     public bool IsPublic { get; set; }
     public string? HostScreenId { get; set; }

@@ -10,7 +10,10 @@ describe('ScatterbrainComponent', () => {
 
     beforeEach(async () => {
         mockSignalRService = {
-            // Mock methods as needed
+            nextRound: jasmine.createSpy('nextRound'),
+            playAgain: jasmine.createSpy('playAgain'),
+            startGame: jasmine.createSpy('startGame'),
+            sendGameAction: jasmine.createSpy('sendGameAction')
         };
 
         await TestBed.configureTestingModule({
@@ -43,6 +46,28 @@ describe('ScatterbrainComponent', () => {
 
         fixture.detectChanges();
     });
+
+    it('keeps internal validation continuation within the game', () => {
+        component.isHost = true;
+        component.room.gameData.phase = 'Validation';
+        component.nextPhase();
+        expect(mockSignalRService.sendGameAction).toHaveBeenCalledWith('NEXT_PHASE', {});
+        expect(mockSignalRService.nextRound).not.toHaveBeenCalled();
+    });
+
+    for (const resultPhase of ['RoundResults', 'GameOver', null, undefined] as const) {
+        it('continues result phase ' + resultPhase + ' with its matching action', () => {
+            component.isHost = true;
+            component.room.state = 'Finished';
+            component.room.gameData.phase = 'Result';
+            component.room.resultPhase = resultPhase;
+            component.nextPhase();
+            const expected = resultPhase === 'RoundResults' ? mockSignalRService.nextRound
+                : resultPhase === 'GameOver' ? mockSignalRService.playAgain : mockSignalRService.startGame;
+            expect(expected).toHaveBeenCalled();
+            expect(mockSignalRService.sendGameAction).not.toHaveBeenCalled();
+        });
+    }
 
     it('should create', () => {
         expect(component).toBeTruthy();

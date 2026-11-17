@@ -70,6 +70,7 @@ public class RoomServiceTests
         Assert.Same(room, await _sut.RequestUndo(room.Code, "red"));
         Assert.Same(liveRed, room.Players[0]);
         Assert.Equal(GameState.Playing, room.State);
+        Assert.Null(room.ResultPhase);
         Assert.Equal(5, liveRed.Score);
         Assert.Equal(3, room.Players[1].Score);
         Assert.Empty(room.RoundScores);
@@ -109,7 +110,7 @@ public class RoomServiceTests
         Assert.Same(room, await _sut.RequestUndo(room.Code, "red-new"));
         Assert.Equal("red-new", ((FourInARowState)room.GameData!).CurrentPlayerId);
         Assert.Equal(0, ((FourInARowState)room.GameData!).MoveCount);
-        Assert.Equal(1, room.Players[0].Score);
+        Assert.Equal(0, room.Players[0].Score);
     }
 
     [Theory]
@@ -333,6 +334,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         // Act
         await _sut.SubmitAction(room.Code, "conn1", "SOME_ACTION", default);
@@ -372,6 +374,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         // Act
         await _sut.CalculateRoundScores(room.Code);
@@ -610,14 +613,18 @@ public class RoomServiceTests
     public async Task SubmitAction_Overflow_ShouldUndoOnlyTenNewestSnapshots()
     {
         // Arrange
-        _gameServices.Add(new FourInARowGameService());
+        var plugin = new Mock<IGameService>();
+        plugin.SetupGet(p => p.GameType).Returns(GameType.FourInARow);
+        plugin.Setup(p => p.HandleAction(It.IsAny<Room>(), It.IsAny<GameAction>(), "host1")).ReturnsAsync(true);
+        _gameServices.Add(plugin.Object);
         var room = _sut.CreateRoom("host1", "Host", true, GameType.FourInARow);
+        room.State = GameState.Playing;
 
         // Act: exercise the real snapshot path beyond capacity and through multiple wraps.
         for (var i = 0; i < 35; i++)
         {
             room.RoundNumber = i;
-            await _sut.SubmitAction(room.Code, "host1", "UNKNOWN", null);
+            await _sut.SubmitAction(room.Code, "host1", "MOVE", null);
         }
 
         // Assert
@@ -691,6 +698,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         await _sut.SubmitAction(room.Code, "conn1", "SUBMIT_STROKE", null);
 
@@ -711,15 +719,17 @@ public class RoomServiceTests
         _gameServices.Add(mockService.Object);
 
         // Act - Call StartGame twice simultaneously
-        // First call passes settings (resets game), second call passes null (increments round)
+        // Only the first start may leave Lobby; the second start must not overwrite the active round.
         var t1 = _sut.StartGame(room.Code, new GameSettings());
         var t2 = _sut.StartGame(room.Code, null);
 
         await Task.WhenAll(t1, t2);
 
         // Assert
-        room.RoundNumber.Should().Be(2); // Exactly 2 rounds incremented
-        mockService.Verify(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()), Times.Exactly(2));
+        room.RoundNumber.Should().Be(1);
+        (await t1).Should().BeSameAs(room);
+        (await t2).Should().BeNull();
+        mockService.Verify(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()), Times.Once);
     }
 
     [Fact]

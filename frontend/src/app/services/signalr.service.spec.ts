@@ -76,6 +76,18 @@ describe('SignalRService', () => {
     expect(mockHubConnection.on).toHaveBeenCalled(); // Should register listeners in constructor
   });
 
+  it('transports authoritative result phases, including explicit reset patches', async () => {
+    getCallback('RoomUpdated')({ code: 'TEST', players: [], state: 'Playing' });
+    getCallback('RoomStatePatch')({ state: 'Finished', resultPhase: 'RoundResults' });
+    expect(service.currentRoomSubject.value?.resultPhase).toBe('RoundResults');
+    getCallback('RoomStatePatch')({ resultPhase: 'GameOver' });
+    await service.playAgain();
+    expect(mockHubConnection.invoke).toHaveBeenCalledWith('PlayAgain', 'TEST');
+    expect(service.currentRoomSubject.value?.resultPhase).toBe('GameOver');
+    getCallback('RoomStatePatch')({ state: 'Playing', resultPhase: null });
+    expect(service.currentRoomSubject.value?.resultPhase).toBeNull();
+  });
+
   describe('UndoVoteFinished', () => {
     const outcomes: [string | undefined, string][] = [
       ['Passed', 'Undo vote passed. Game state has been restored.'],
