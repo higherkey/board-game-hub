@@ -1,14 +1,12 @@
 .auth-container {
-    min-height: calc(100vh - 160px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding-block: var(--space-xl);
 
     @media (max-width: 480px) {
-        padding: 1rem;
+        padding-block: var(--space-md);
         align-items: flex-start;
-        padding-top: 2rem;
     }
 }
 
