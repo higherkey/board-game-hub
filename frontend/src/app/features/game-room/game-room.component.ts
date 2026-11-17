@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { take } from 'rxjs';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
 import { GameSettings, Player } from '../../services/signalr.service';
+import { AuthService } from '../../services/auth.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
@@ -42,6 +43,7 @@ import { DeviceService } from '../../services/device.service';
 })
 export class GameRoomComponent implements OnInit, AfterViewInit {
   readonly deviceService = inject(DeviceService);
+  private readonly authService = inject(AuthService);
   roomCode = '';
   isCreating = false;
   promptPlayerName = '';
@@ -216,8 +218,14 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     this.gameDataService.refreshGames();
 
     const isMobile = this.deviceService.isMobileValue;
-    this.stateService.isScreen = !isMobile;
-    this.stateService.needsName = true;
+    const savedRole = typeof localStorage !== 'undefined' ? localStorage.getItem('bgh_preferred_role') : null;
+    this.stateService.isScreen = savedRole ? savedRole === 'table' : !isMobile;
+
+    const guestName = this.authService.getGuestName() || this.authService.currentUserValue?.displayName;
+    this.stateService.needsName = this.isCreating || !guestName;
+    if (!this.promptPlayerName && guestName) {
+      this.promptPlayerName = guestName;
+    }
   }
 
   async submitEntry(entryData: { name: string, joinType: 'player' | 'table', isPublic: boolean }) {
