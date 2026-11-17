@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import { OneAndOnlyBoardComponent } from '../one-and-only-board/one-and-only-board.component';
@@ -10,6 +10,7 @@ import { OneAndOnlyRulesComponent } from '../one-and-only-rules/one-and-only-rul
     standalone: true,
     imports: [CommonModule, OneAndOnlyBoardComponent, OneAndOnlyPlayerComponent, OneAndOnlyRulesComponent],
     templateUrl: './one-and-only-game.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./one-and-only-game.component.scss']
 })
 export class OneAndOnlyGameComponent implements OnInit {

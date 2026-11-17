@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -11,6 +11,7 @@ import { Observable } from 'rxjs';
   standalone: true,
   imports: [CommonModule, PageHeaderComponent, SocialPanelComponent, RouterModule],
   templateUrl: './social.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./social.component.scss']
 })
 export class SocialComponent {

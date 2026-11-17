@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService, Room } from '../../../../services/signalr.service';
@@ -9,6 +9,7 @@ import { Observable, map, timer } from 'rxjs';
     standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './scatterbrain-hand.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./scatterbrain-hand.component.scss']
 })
 export class ScatterbrainHandComponent implements OnInit, OnChanges {
@@ -94,14 +95,14 @@ export class ScatterbrainHandComponent implements OnInit, OnChanges {
     }
 
     pauseGame() {
-        this.signalRService.pauseGame();
+        this.signalRService.pauseGame().catch(error => console.error(error));
     }
 
     resumeGame() {
-        this.signalRService.resumeGame();
+        this.signalRService.resumeGame().catch(error => console.error(error));
     }
 
     endRound() {
-        this.signalRService.endRound();
+        this.signalRService.endRound().catch(error => console.error(error));
     }
 }

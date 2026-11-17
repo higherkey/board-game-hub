@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService, Room } from '../../../../services/signalr.service';
@@ -30,6 +30,7 @@ interface DeepfakeStroke {
   standalone: true,
   imports: [CommonModule, FormsModule, DeepfakeRulesComponent],
   templateUrl: './deepfake-game.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './deepfake-game.component.scss'
 })
 export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {

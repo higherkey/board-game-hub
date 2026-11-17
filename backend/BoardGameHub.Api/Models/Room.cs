@@ -44,6 +44,16 @@ public class Room
     public string? CreatorConnectionId { get; set; } // The original creator
     public bool IsHostOverride { get; set; } = false; // Host forced room readiness
 
+    /// <summary>
+    /// A new game may start only when every non-screen player is ready, or the host forced room readiness (#66).
+    /// </summary>
+    public bool CanStartNewGame()
+    {
+        if (IsHostOverride) return true;
+        var players = Players.Where(p => !p.IsScreen).ToList();
+        return players.Count > 0 && players.All(p => p.IsReady);
+    }
+
     // Generic Game State
     public object? GameData { get; set; }
     public int RoundNumber { get; set; } = 0;
@@ -65,9 +75,9 @@ public class Room
     public Dictionary<string, int> RoundScores { get; set; } = new();
 
     // Undo System
-    // Stack of JSON snapshots to revert to. Restrict to last 10?
+    // Ten latest JSON snapshots to revert to, newest first.
     [System.Text.Json.Serialization.JsonIgnore]
-    public Stack<string> StateHistory { get; set; } = new();
+    public UndoHistory StateHistory { get; } = new();
     public UndoSettings UndoSettings { get; set; } = new();
     
     public UndoVote? CurrentVote { get; set; }
@@ -95,6 +105,7 @@ public class UndoVote
 
 public class GameSettings
 {
+    public int TotalRounds { get; set; } = 5;
     public int TimerDurationSeconds { get; set; } = 180;
     public int BoardSize { get; set; } = 4;
     public ScatterbrainData.LetterMode LetterMode { get; set; } = ScatterbrainData.LetterMode.Normal;
@@ -133,5 +144,6 @@ public enum GameType
     Warships = 14,
     FourInARow = 15,
     CloverMinded = 16,
-    Farkle = 17
+    Farkle = 17,
+    Yacht = 18
 }

@@ -41,7 +41,7 @@
 
         <!-- DRAWING PHASE -->
         <ng-container *ngIf="state.phase === 'Drawing'">
-            <app-pictophone-drawing [prompt]="getPreviousPage(state)?.content" [timeLeft]="timeLeft$ | async"
+            <app-pictophone-drawing [prompt]="$safeNavigationMigration(getPreviousPage(state)?.content)" [timeLeft]="timeLeft$ | async"
                 (imageSubmitted)="onSubmit($event)" (draftChanged)="onDraftChanged($event)">
             </app-pictophone-drawing>
         </ng-container>

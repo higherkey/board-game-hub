@@ -183,7 +183,7 @@ public class BabbleGameService : BaseGameService<BabbleState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Babble CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Babble CalculateScores");
             throw;
         }
 

@@ -14,7 +14,7 @@ namespace BoardGameHub.Tests.Services
          [Fact]
          public async Task StartRound_ShouldInitBoard()
          {
-             var room = new Room();
+             var room = new Room { Players = [new Player { ConnectionId = "p1" }, new Player { ConnectionId = "p2" }] };
              await _service.StartRound(room, new GameSettings());
              Assert.NotNull(room.GameData);
          }

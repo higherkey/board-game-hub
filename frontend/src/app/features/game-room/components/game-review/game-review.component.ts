@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService, Room, Player } from '../../../../services/signalr.service';
 
@@ -19,6 +19,7 @@ interface AnswerReview {
     standalone: true,
     imports: [CommonModule],
     templateUrl: './game-review.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./game-review.component.scss']
 })
 export class GameReviewComponent implements OnInit, OnChanges {

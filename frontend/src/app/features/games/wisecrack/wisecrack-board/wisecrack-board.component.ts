@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 
@@ -7,6 +7,7 @@ import { Room, SignalRService } from '../../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './wisecrack-board.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./wisecrack-board.component.scss']
 })
 export class WisecrackBoardComponent {

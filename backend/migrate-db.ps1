@@ -10,8 +10,9 @@ if (!(Get-Command dotnet-ef -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# Apply migrations
-dotnet ef database update --project backend/BoardGameHub.Api
+$scriptDir = $PSScriptRoot
+$projectPath = Join-Path $scriptDir "BoardGameHub.Api"
+dotnet ef database update --project "$projectPath"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Database Migration Successful!" -ForegroundColor Green

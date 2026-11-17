@@ -12,8 +12,6 @@ public interface IBabbleService
 
 public class BabbleService : IBabbleService
 {
-    private readonly Random _random = new();
-
     // Classic 4x4 Dice
     private static readonly string[] Dice4x4 = {
         "AAEEGN", "ABBJOO", "ACHOPS", "AFFKPS",
@@ -54,13 +52,13 @@ public class BabbleService : IBabbleService
         }
         
         // Shuffle dice positions
-        var shuffledDice = availableDice.OrderBy(x => _random.Next()).Take(totalDice).ToList();
+        var shuffledDice = availableDice.OrderBy(x => Random.Shared.Next()).Take(totalDice).ToList();
 
         var grid = new List<char>();
         foreach (var die in shuffledDice)
         {
             // Roll the die
-            int side = _random.Next(0, 6);
+            int side = Random.Shared.Next(0, 6);
             grid.Add(die[side]);
         }
 

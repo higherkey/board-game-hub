@@ -1,0 +1,55 @@
+:host { display: block; height: 100%; min-height: 0; overflow-y: auto; padding-bottom: 100px; background: #f6f2e8; }
+.yacht { --sea: #123d4b; --ink: #16323d; --gold: #efbb59; max-width: 1180px; margin: 0 auto; padding: clamp(16px, 3vw, 40px); color: var(--ink); background: #f6f2e8; border: 1px solid #d6dcd6; }
+.yacht-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 24px; }
+h1 { font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 800; margin: 4px 0 0; }
+h2 { font-size: 1.4rem; font-weight: 750; margin: 0 0 8px; }
+p { margin: 0 0 12px; }
+.eyebrow { font-size: .7rem; letter-spacing: .16em; font-weight: 800; }
+.turn-badge { padding: 12px; border: 1px solid #bccdc9; white-space: nowrap; font-weight: 700; }
+.play-surface { color: #fff; background: var(--sea); padding: 24px 16px; text-align: center; border-bottom: 5px solid var(--gold); }
+.turn-status p { color: #d2e5e6; }
+.dice-tray { border: 0; padding: 0; display: flex; justify-content: center; gap: clamp(6px, 2vw, 18px); margin: 24px 0; }
+.die-slot { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.die { display: grid; place-items: center; min-width: 44px; width: clamp(44px, 10vw, 96px); height: clamp(52px, 11vw, 102px); padding: 0; border: 3px solid transparent; background: #fff9e9; color: var(--ink); font-size: clamp(40px, 8vw, 78px); line-height: 1; box-shadow: 0 5px 0 #0b2c37; transition: transform .15s, border-color .15s; }
+.die.held { border-color: var(--gold); transform: translateY(-6px); background: #ffe3a7; }
+.die:disabled { opacity: 1; cursor: default; }
+.die-caption { color: #d2e5e6; font-size: .65rem; letter-spacing: .12em; }
+button { min-height: 44px; border-radius: 0; font: inherit; cursor: pointer; }
+button:focus-visible, summary:focus-visible, .score-scroll:focus-visible { outline: 3px solid #0098b9; outline-offset: 4px; }
+.roll-button { border: 0; padding: 14px 24px; background: var(--gold); color: #162e38; font-weight: 800; }
+.roll-button span { margin-left: 18px; font-size: .8rem; }
+.roll-button:disabled { background: #c0c9c9; color: #405157; cursor: default; }
+.table-instruction { margin: 12px 0 0; color: #d2e5e6; }
+.last-move { margin: 16px 0; font-size: .9rem; min-height: 20px; }
+.scoring-layout { display: grid; gap: 28px; }
+.category-picker > p { font-size: .9rem; }
+.category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.category { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #c1cec9; padding: 12px; text-align: left; background: #fffdf7; color: var(--ink); }
+.category small { display: block; font-size: .7rem; margin-top: 3px; }
+.category b { font-size: 1.5rem; }
+.category.selected { border: 2px solid var(--sea); background: #e1eeea; }
+.category:disabled { opacity: .6; }
+.score-message { display: block; margin-bottom: 12px; }
+.score-confirm { margin-top: 16px; padding: 16px; background: #e1eeea; border-left: 4px solid var(--sea); }
+.cancel-button { border: 1px solid var(--sea); background: transparent; padding: 10px 16px; margin-left: 8px; color: var(--ink); }
+.score-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; background: #fffdf7; }
+caption { caption-side: top; font-size: .75rem; color: #526766; padding: 0 0 10px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid #dde2d8; white-space: nowrap; }
+th { text-align: left; }
+td { text-align: center; }
+thead { background: var(--sea); color: #fff; }
+thead .active-column { background: #2b6070; border-bottom: 4px solid var(--gold); }
+.bonus-row { background: #eaf0e7; }
+.bonus-row small { display: block; }
+tfoot { background: var(--sea); color: #fff; font-size: 1.2rem; font-weight: 800; }
+.rules { margin-top: 28px; border-top: 1px solid #c1cec9; padding-top: 16px; font-size: .9rem; }
+summary { min-height: 44px; font-weight: 700; cursor: pointer; }
+.victory { background: var(--sea); color: #fff; padding: 28px; border-bottom: 5px solid var(--gold); }
+.error { color: #9c2631; font-weight: 700; }
+.bonus-note { padding: 12px; background: #ffe3a7; }
+.table-view { max-width: 1400px; }
+.table-view table { font-size: clamp(.9rem, 1.4vw, 1.3rem); }
+@media (min-width: 900px) { .scoring-layout:has(.category-picker) { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 420px) { .category-grid { grid-template-columns: 1fr; } .eyebrow { font-size: .6rem; } th, td { padding: 8px; } }
+@media (prefers-reduced-motion: reduce) { .die { transition: none; } }

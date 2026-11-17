@@ -82,7 +82,7 @@ public class WisecrackGameService : BaseGameService<WisecrackState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Wisecrack CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Wisecrack CalculateScores");
         }
         return Task.CompletedTask;
     }
@@ -216,8 +216,7 @@ public class WisecrackGameService : BaseGameService<WisecrackState>
 
     private void AssignPrompts(List<Player> players, WisecrackState state, int roundNumber)
     {
-        var rnd = new Random();
-        var shuffledPrompts = _prompts.OrderBy(x => rnd.Next()).ToList();
+        var shuffledPrompts = _prompts.OrderBy(x => Random.Shared.Next()).ToList();
         
         int playerCount = players.Count;
         // Offset prompt index by round so we don't reuse prompts immediately
@@ -245,8 +244,7 @@ public class WisecrackGameService : BaseGameService<WisecrackState>
     private void AssignFinalCrack(List<Player> players, WisecrackState state)
     {
         // One common prompt for everyone
-        var rnd = new Random();
-        var prompt = _prompts[rnd.Next(_prompts.Count)]; 
+        var prompt = _prompts[Random.Shared.Next(_prompts.Count)]; 
 
         var assignment = new WisecrackPromptAssignment
         {
@@ -259,7 +257,6 @@ public class WisecrackGameService : BaseGameService<WisecrackState>
     private void GenerateBattles(WisecrackState state)
     {
         state.Battles.Clear();
-        var rnd = new Random();
 
         if (state.RoundNumber < 3)
         {
@@ -277,13 +274,13 @@ public class WisecrackGameService : BaseGameService<WisecrackState>
                 });
             }
             // Shuffle order
-            state.Battles = state.Battles.OrderBy(x => rnd.Next()).ToList();
+            state.Battles = state.Battles.OrderBy(x => Random.Shared.Next()).ToList();
         }
         else
         {
             // Final Crack Logic
             // We have 1 assignment, N answers.
-            var allAnswers = state.Answers.OrderBy(x => rnd.Next()).ToList();
+            var allAnswers = state.Answers.OrderBy(x => Random.Shared.Next()).ToList();
             var promptText = state.Assignments.FirstOrDefault()?.Text ?? "The Final Crack";
 
             // Pair them up

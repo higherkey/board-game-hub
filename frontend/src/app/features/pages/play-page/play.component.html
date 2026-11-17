@@ -25,9 +25,8 @@
                     <p class="text-secondary small mb-3 mb-md-4">Enter a 4-letter room code to join an active game.</p>
                     <div class="input-group">
                         <input [(ngModel)]="roomCode" (ngModelChange)="onCodeInput()" (keyup.enter)="joinWithCode()" placeholder="CODE" maxlength="4"
-                            class="form-control form-control-lg text-uppercase text-center fw-bold"
-                            [class.is-invalid]="!!codeError"
-                            style="letter-spacing: 0.15em;">
+                            class="form-control form-control-lg text-uppercase text-center fw-bold room-code-input"
+                            [class.is-invalid]="!!codeError">
                         <button type="button" class="btn btn-primary px-4 fw-bold"
                             (click)="joinWithCode()" [disabled]="!roomCode || roomCode.trim().length < 4 || isValidating">
                             <span *ngIf="!isValidating">JOIN <i class="bi bi-arrow-right ms-1"></i></span>

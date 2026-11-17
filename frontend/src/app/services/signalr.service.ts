@@ -113,7 +113,7 @@ export class SignalRService {
   ) {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(environment.hubUrl, {
-        accessTokenFactory: () => localStorage.getItem('auth_token') || ''
+        accessTokenFactory: () => this.authService.getToken() || ''
       })
       .withAutomaticReconnect()
       .build();
@@ -241,13 +241,20 @@ export class SignalRService {
       }
     });
 
-    this.hubConnection.on('UndoVoteFinished', () => {
-      // Just a signal, room update comes separately usually, 
-      // but we can clear vote here locally to be safe.
+    this.hubConnection.on('UndoVoteFinished', (result?: string) => {
+      // State restoration arrives separately through the room state stream.
       const current = this.currentRoomSubject.value;
       if (current) {
         current.currentVote = null;
         this.currentRoomSubject.next({ ...current });
+      }
+      if (result === 'Passed') {
+        this.toastService.showInfo('Undo vote passed. Game state has been restored.');
+      } else if (result === 'Failed') {
+        this.toastService.showInfo('Undo request was rejected.');
+      } else {
+        // Older servers only announce completion, without an outcome.
+        this.toastService.showInfo('Undo vote completed.');
       }
     });
 
@@ -315,7 +322,7 @@ export class SignalRService {
     this.hubConnection.onreconnected(connectionId => {
       console.info('SignalR Reconnected', connectionId);
       this.connectionId$.next(connectionId || this.hubConnection.connectionId);
-      this.validateActiveRooms();
+      void this.validateActiveRooms();
     });
 
     // Public Lobby Events
@@ -354,8 +361,13 @@ export class SignalRService {
     await this.hubConnection.invoke('StartGame', this.currentRoomSubject.value?.code, settings);
   }
 
+  /** Awaitable variant for controls that need pending/error feedback. */
+  public submitGameAction(actionType: string, payload: any): Promise<void> {
+    return this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value?.code, actionType, payload);
+  }
+
   public sendGameAction(actionType: string, payload: any) {
-    this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value?.code, actionType, payload)
+    this.submitGameAction(actionType, payload)
       .catch(err => console.error(err));
   }
 
@@ -445,7 +457,7 @@ export class SignalRService {
         console.info('SignalR Connection started', connectionId);
 
         // Proactively validate active rooms on startup to catch any that closed while offline
-        this.validateActiveRooms();
+        void this.validateActiveRooms();
       } catch (err) {
         console.error('Error while starting connection: ' + err);
         this.connectionStatus$.next('Error');
@@ -498,11 +510,11 @@ export class SignalRService {
     const currentRooms = this.getActiveRooms();
     if (currentRooms.length === 0) return;
 
-    if (this.hubConnection.state !== HubConnectionState.Connected) {
-      await this.startConnection();
-    }
-
     try {
+      if (this.hubConnection.state !== HubConnectionState.Connected) {
+        await this.startConnection();
+      }
+
       const codes = currentRooms.map(r => r.code);
       const validCodes: string[] = await this.hubConnection.invoke('ValidateRooms', codes);
 
@@ -568,7 +580,7 @@ export class SignalRService {
     }
     await this.hubConnection.invoke('JoinLobby');
     // Initial fetch to populate list
-    this.getPublicRooms();
+    await this.getPublicRooms();
   }
 
   public async leaveLobby(): Promise<void> {
@@ -593,6 +605,10 @@ export class SignalRService {
 
   private lastPlayerName: string | null = null;
   private lastIsScreen = false;
+
+  public get isScreenMode(): boolean {
+    return this.lastIsScreen;
+  }
 
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
     if (this.hubConnection.state !== HubConnectionState.Connected) {
@@ -651,8 +667,11 @@ export class SignalRService {
   public async cloverDragMove(cardId: string, x: number, y: number): Promise<void> {
     const roomCode = this.currentRoomSubject.value?.code;
     if (roomCode) {
-      this.hubConnection.invoke('CloverDragMove', roomCode, cardId, x, y)
-        .catch(err => console.error(err));
+      try {
+        await this.hubConnection.invoke('CloverDragMove', roomCode, cardId, x, y);
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
   // ... rest of file

@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -14,9 +15,11 @@ import { LoggerService } from '../../../core/services/logger.service';
     standalone: true,
     imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent],
     templateUrl: './play.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./play.component.scss']
 })
 export class PlayComponent implements OnInit, OnDestroy {
+    private readonly destroyRef = inject(DestroyRef);
     rooms: any[] = [];
     loading = false;
     playerName = '';
@@ -38,7 +41,7 @@ export class PlayComponent implements OnInit, OnDestroy {
         try {
             const isValid = await this.signalRService.validateRoomCode(cleanCode);
             if (isValid) {
-                this.router.navigate(['/game', cleanCode]);
+                await this.router.navigate(['/game', cleanCode]);
             } else {
                 this.codeError = `Room "${cleanCode}" not found. Check your code and try again.`;
                 this.toastService.showError(`Room "${cleanCode}" does not exist.`);
@@ -65,7 +68,7 @@ export class PlayComponent implements OnInit, OnDestroy {
     ) { }
 
     ngOnInit() {
-        this.authService.currentUser$.subscribe(user => {
+        this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(user => {
             if (user) {
                 this.playerName = user.displayName;
             } else {
@@ -73,7 +76,7 @@ export class PlayComponent implements OnInit, OnDestroy {
             }
         });
 
-        this.gameDataService.games$.subscribe(games => {
+        this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
             if (games) {
                 this.games = games;
             }
@@ -81,16 +84,16 @@ export class PlayComponent implements OnInit, OnDestroy {
         this.gameDataService.refreshGames();
 
         // Subscribe to real-time public rooms
-        this.signalRService.publicRooms$.subscribe(rooms => {
+        this.signalRService.publicRooms$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(rooms => {
             this.rooms = rooms;
             this.loading = false;
         });
 
-        this.initLobby();
+        void this.initLobby();
     }
 
     ngOnDestroy() {
-        this.signalRService.leaveLobby();
+        void this.signalRService.leaveLobby();
     }
 
     async initLobby() {

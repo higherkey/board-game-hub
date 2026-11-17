@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
     standalone: true,
     imports: [CommonModule],
     templateUrl: './pictophone-results.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./pictophone-results.component.scss']
 })
 export class PictophoneResultsComponent {

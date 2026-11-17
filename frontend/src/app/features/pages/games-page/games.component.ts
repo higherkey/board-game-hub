@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -10,9 +11,11 @@ import { GameDataService, GameDefinition } from '../../../services/game-data.ser
     standalone: true,
     imports: [CommonModule, FormsModule, RouterModule],
     templateUrl: './games.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./games.component.scss']
 })
 export class GamesComponent implements OnInit {
+    private readonly destroyRef = inject(DestroyRef);
     games: GameDefinition[] = [];
     filteredGames: GameDefinition[] = [];
 
@@ -37,7 +40,7 @@ export class GamesComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.gameDataService.games$.subscribe(games => {
+        this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
             if (games) {
                 this.games = games;
                 this.isLoading = false;

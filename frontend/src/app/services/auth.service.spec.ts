@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService, AuthResponse, User } from './auth.service';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { Router, provideRouter } from '@angular/router';
 
 describe('AuthService', () => {
@@ -20,7 +20,7 @@ describe('AuthService', () => {
             providers: [
                 AuthService,
                 provideRouter([]),
-                provideHttpClient(),
+                provideHttpClient(withXhr()),
                 provideHttpClientTesting()
             ]
         });
@@ -47,6 +47,7 @@ describe('AuthService', () => {
                 expect(localStorage.getItem('auth_token')).toBe('fake-jwt-token');
                 expect(service.getToken()).toBe('fake-jwt-token');
                 expect(service.isAuthenticated()).toBeTrue();
+                expect(service.isLoggedIn()).toBeTrue();
             });
 
             const req = httpMock.expectOne('/api/auth/login');

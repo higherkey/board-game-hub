@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import { SushiTrainRulesComponent } from '../sushi-train-rules/sushi-train-rules.component';
@@ -8,6 +8,7 @@ import { SushiTrainRulesComponent } from '../sushi-train-rules/sushi-train-rules
     standalone: true,
     imports: [CommonModule, SushiTrainRulesComponent],
     templateUrl: './sushi-train-board.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./sushi-train-board.component.scss']
 })
 export class SushiTrainBoardComponent {

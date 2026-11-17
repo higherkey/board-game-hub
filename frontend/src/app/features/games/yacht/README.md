@@ -1,6 +1,6 @@
 # Yacht (Based on: Yahtzee)
 
-**Status:** Backlog
+**Status:** Testing
 **Players:** 1-8
 **Time:** 30 Minutes
 **Genre:** Dice, Strategy, Chance
@@ -31,6 +31,30 @@ The classic dice-rolling game. Players roll five dice up to three times per turn
 *   `YachtComponent`:
     *   `DiceRollerComponent`: 3D dice physics?
     *   `ScoreCardComponent`: Interactive table grid. (Columns for Players, Rows for Cats).
+
+## Implementation
+
+Yacht is registered as `GameType.Yacht` (18) with `YachtGameService` and a role-aware standalone Angular `YachtComponent`.
+
+- Table devices display shared dice, turn status, and the complete score deck; Hand devices expose controls only for the active participant.
+- Support 1–8 Hand players, with Table devices excluded from the turn order. Players joining after the start watch until the next match.
+- Roll up to three times, keep/release dice between rolls, preview server-calculated legal scores, and confirm a category before ending the turn. Zero remains distinct from an unused slot.
+- Complete 13 categories per player within one untimed platform round. The server chooses winners (including ties), publishes cumulative scores, and sets the room to Finished. The existing host Finish Game control returns everyone to selection.
+- Upper subtotal at least 63 earns 35. A repeat Yacht earns 100 only when Yacht already contains 50. The matching upper category must be filled first; otherwise choose an unused lower category, with Joker values for full house/straights. Only when all lower categories are full may another upper category be scratched. A scratched Yacht disables both the bonus and Joker.
+- Persist scorecards, held dice, rolls, turn order, and winners through the existing room serializer. Reconnects rebind player references without changing seat order.
+- Actions: `ROLL {}`, `TOGGLE_DIE { index: 0..4 }`, `SCORE { category: "Ones" | ... | "Chance" }`. Scores and dice supplied by clients are ignored. Invalid payloads, Table actions, paused/finished actions, and out-of-turn requests are rejected.
+
+The catalog's Backlog → Testing change is delivered in the `EnableYacht` EF migration; no schema changes are required. Apply through the existing deployment migration bundle.
+
+## Verification
+
+Backend category/bonus/action/persistence tests live in `YachtGameServiceTests`; `YachtRoomIntegrationTests` covers room creation, a two-player match, automatic finish, and returning to the lobby. Frontend interaction specs live next to `YachtComponent`.
+
+```bash
+dotnet test backend/BoardGameHub.Tests/BoardGameHub.Tests.csproj
+npm --prefix frontend test -- --no-watch --browsers=ChromeHeadless --include=src/app/features/games/yacht/yacht.component.spec.ts
+npm --prefix frontend run build
+```
 
 ## 🏷️ 50 Alternative Names
 1.  Yacht

@@ -1,7 +1,7 @@
 # Board Game Hub - PROD (Docker) Startup Script
 # Runs the application as Docker containers (No Hot Reload)
 
-$ProjectRoot = "C:\Programming\board game hub"
+$ProjectRoot = $PSScriptRoot
 $BackendDir = "$ProjectRoot\backend"
 $FrontendDir = "$ProjectRoot\frontend"
 

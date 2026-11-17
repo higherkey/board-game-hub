@@ -73,7 +73,7 @@
 
             <!-- Hand Status (Hidden/Shown) -->
             <div class="status-bar bg-gray-100 p-2 text-center text-sm"
-                [ngClass]="{'bg-green-100 text-green-700': getPlayerState(p.connectionId)?.hasSelected}">
+                [ngClass]="{'bg-green-100 text-green-700': $safeNavigationMigration(getPlayerState(p.connectionId)?.hasSelected)}">
                 <span *ngIf="!gameState?.isRoundOver">
                     {{ getPlayerState(p.connectionId)?.hasSelected ? '✅ Ready!' : 'Thinking...' }}
                 </span>

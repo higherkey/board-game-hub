@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, inject } from '@angular/core';
+import { Component, HostListener, inject, ChangeDetectionStrategy, ElementRef, ViewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map, startWith } from 'rxjs/operators';
 import { ActiveGamesComponent } from '../../features/active-games/active-games.component';
@@ -14,6 +14,7 @@ import { environment } from '../../../environments/environment';
    standalone: true,
    imports: [CommonModule, RouterModule, LogoComponent, ActiveGamesComponent, UserProfileDropdownComponent],
    templateUrl: './layout.component.html',
+   changeDetection: ChangeDetectionStrategy.Eager,
    styleUrls: ['./layout.component.scss']
 })
 export class LayoutComponent {
@@ -34,8 +35,8 @@ export class LayoutComponent {
    );
 
    mobileMenuOpen = false;
+   @ViewChild('navToggle') navToggle?: ElementRef<HTMLButtonElement>;
    isScrolled = false;
-   isBackendPort = globalThis.location.port !== '4200';
 
    @HostListener('window:scroll', [])
    onWindowScroll() {
@@ -48,6 +49,14 @@ export class LayoutComponent {
 
    closeMobileMenu() {
       this.mobileMenuOpen = false;
+   }
+
+   @HostListener('document:keydown.escape', ['$event'])
+   closeMenuOnEscape(event: Event) {
+      if (!this.mobileMenuOpen) return;
+      this.closeMobileMenu();
+      this.navToggle?.nativeElement.focus();
+      event.preventDefault();
    }
 
    navigateToHome() {

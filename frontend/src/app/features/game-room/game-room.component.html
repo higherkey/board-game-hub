@@ -4,7 +4,7 @@
         [isBigScreen]="isBigScreen"
         [roomCode]="roomCode"
         [isLobby]="(stateService.currentRoom$ | async)?.gameType === 'None'"
-        [gameDisplayName]="getCurrentGameDisplayName((stateService.currentRoom$ | async)?.gameType)"
+        [gameDisplayName]="getCurrentGameDisplayName($safeNavigationMigration((stateService.currentRoom$ | async)?.gameType))"
         [videoChatReady]="videoChatReady"
         [isVideoActive]="isVideoActive"
         [gameStarted]="(stateService.gameStarted$ | async) ?? false"
@@ -18,7 +18,7 @@
     ></app-room-header>
 
     <!-- UNDO TOAST OVERLAY -->
-    <app-undo-toast *ngIf="(stateService.currentRoom$ | async)?.currentVote" [vote]="(stateService.currentRoom$ | async)?.currentVote"
+    <app-undo-toast *ngIf="(stateService.currentRoom$ | async)?.currentVote" [vote]="$safeNavigationMigration((stateService.currentRoom$ | async)?.currentVote)"
         [currentUserId]="(stateService.connectionId$ | async) || ''"
         [totalPlayers]="(stateService.currentRoom$ | async)?.players?.length || 0">
     </app-undo-toast>

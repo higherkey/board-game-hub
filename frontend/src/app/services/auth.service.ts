@@ -249,6 +249,12 @@ export class AuthService {
         return true;
     }
 
+    isLoggedIn(): boolean {
+        const token = this.getToken();
+        if (!token) return false;
+        return this.isAuthenticated();
+    }
+
     private decodeToken(token: string): any {
         try {
             const payload = token.split('.')[1];

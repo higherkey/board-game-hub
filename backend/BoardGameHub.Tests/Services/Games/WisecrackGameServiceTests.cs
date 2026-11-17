@@ -124,6 +124,58 @@ public class WisecrackGameServiceTests
     }
 
     [Fact]
+    public async Task SubmitVote_ShouldAwardPointsToAnswerB_WhenBHasMoreVotes()
+    {
+        var p1 = new Player { ConnectionId = "p1", Score = 0 };
+        var p2 = new Player { ConnectionId = "p2", Score = 0 };
+        var voter = new Player { ConnectionId = "voter", Score = 0 };
+        var room = new Room { Players = new List<Player> { p1, p2, voter } };
+        var state = new WisecrackState { Phase = WisecrackPhase.Battling, CurrentBattleIndex = 0 };
+        var battle = new WisecrackBattle
+        {
+            Id = Guid.NewGuid().ToString(),
+            AnswerA = new WisecrackAnswer { PlayerId = "p1", Text = "A" },
+            AnswerB = new WisecrackAnswer { PlayerId = "p2", Text = "B" }
+        };
+        state.Battles.Add(battle);
+        room.GameData = state;
+
+        await _sut.SubmitVote(room, "voter", 1); // Choice 1 is Answer B
+
+        battle.IsFinished.Should().BeTrue();
+        battle.WinnerPlayerId.Should().Be("p2");
+        p2.Score.Should().Be(125);
+        p1.Score.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SubmitVote_ShouldHandleTie()
+    {
+        var p1 = new Player { ConnectionId = "p1", Score = 0 };
+        var p2 = new Player { ConnectionId = "p2", Score = 0 };
+        var v1 = new Player { ConnectionId = "v1", Score = 0 };
+        var v2 = new Player { ConnectionId = "v2", Score = 0 };
+        var room = new Room { Players = new List<Player> { p1, p2, v1, v2 } };
+        var state = new WisecrackState { Phase = WisecrackPhase.Battling, CurrentBattleIndex = 0 };
+        var battle = new WisecrackBattle
+        {
+            Id = Guid.NewGuid().ToString(),
+            AnswerA = new WisecrackAnswer { PlayerId = "p1", Text = "A" },
+            AnswerB = new WisecrackAnswer { PlayerId = "p2", Text = "B" }
+        };
+        state.Battles.Add(battle);
+        room.GameData = state;
+
+        await _sut.SubmitVote(room, "v1", 0);
+        await _sut.SubmitVote(room, "v2", 1);
+
+        battle.IsFinished.Should().BeTrue();
+        battle.WinnerPlayerId.Should().Be("TIE");
+        p1.Score.Should().Be(50);
+        p2.Score.Should().Be(50);
+    }
+
+    [Fact]
     public async Task EndRound_ShouldSetStateToFinished()
     {
         var room = new Room { GameData = new WisecrackState() };
@@ -180,5 +232,45 @@ public class WisecrackGameServiceTests
         var result = await _sut.HandleAction(room, action, "any");
 
         result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task StartRound_Round3_AssignsFinalCrack_AndGeneratesBattlesWithMultiplier()
+    {
+        var p1 = new Player { ConnectionId = "p1", Name = "P1" };
+        var p2 = new Player { ConnectionId = "p2", Name = "P2" };
+        var p3 = new Player { ConnectionId = "p3", Name = "P3" };
+        var room = new Room
+        {
+            Players = new List<Player> { p1, p2, p3 },
+            RoundNumber = 3
+        };
+
+        await _sut.StartRound(room, new GameSettings());
+        var state = (WisecrackState)room.GameData!;
+
+        state.Assignments.Should().HaveCount(1);
+        state.Assignments[0].Text.Should().StartWith("THE FINAL CRACK:");
+        state.Assignments[0].AssignedPlayerIds.Should().Contain(new[] { "p1", "p2", "p3" });
+
+        var promptId = state.Assignments[0].PromptId;
+        await _sut.SubmitAnswer(room, "p1", promptId, "Ans1");
+        await _sut.SubmitAnswer(room, "p2", promptId, "Ans2");
+        await _sut.SubmitAnswer(room, "p3", promptId, "Ans3");
+
+        state.Phase.Should().Be(WisecrackPhase.Battling);
+        state.Battles.Should().NotBeEmpty();
+
+        // Submit vote on current battle
+        var currentBattle = state.CurrentBattle!;
+        await _sut.SubmitVote(room, "voter-audience", 0);
+
+        // Advance battles until results phase
+        while (state.Phase == WisecrackPhase.Battling)
+        {
+            await _sut.NextBattle(room);
+        }
+
+        state.Phase.Should().Be(WisecrackPhase.Result);
     }
 }

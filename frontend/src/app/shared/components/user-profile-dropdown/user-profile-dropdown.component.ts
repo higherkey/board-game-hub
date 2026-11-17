@@ -1,4 +1,4 @@
-import { Component, Input, inject, HostListener } from '@angular/core';
+import { Component, Input, inject, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
@@ -8,6 +8,7 @@ import { AuthService } from '../../../services/auth.service';
     standalone: true,
     imports: [CommonModule, RouterModule],
     templateUrl: './user-profile-dropdown.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./user-profile-dropdown.component.scss']
 })
 export class UserProfileDropdownComponent {

@@ -54,7 +54,7 @@
             <!-- RESULT SCREEN -->
             <div *ngIf="gameState?.phase === 'Result'" class="text-center animate-fade-in">
                 <h1 class="text-4xl font-bold mb-4">{{ gameState?.winner }} Wins!</h1>
-                <p class="text-gray-400 mb-8">{{ formatEndReason(gameState?.endReason) }}</p>
+                <p class="text-gray-400 mb-8">{{ formatEndReason($safeNavigationMigration(gameState?.endReason)) }}</p>
                 <div class="text-sm text-gray-500">
                     Word was: <span class="text-white">{{ gameState?.targetWord }}</span>
                 </div>

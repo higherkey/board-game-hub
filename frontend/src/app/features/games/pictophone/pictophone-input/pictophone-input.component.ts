@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService } from '../../../../services/signalr.service';
@@ -8,6 +8,7 @@ import { SignalRService } from '../../../../services/signalr.service';
     standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './pictophone-input.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./pictophone-input.component.scss']
 })
 export class PictophoneInputComponent implements OnChanges, OnInit {

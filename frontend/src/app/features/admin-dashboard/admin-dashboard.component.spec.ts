@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from
 import { AdminDashboardComponent } from './admin-dashboard.component';
 import { AdminService, RoomStats } from '../../services/admin.service';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
-import { of, BehaviorSubject } from 'rxjs';
+import { of, BehaviorSubject, throwError } from 'rxjs';
+import { ToastService } from '../../shared/services/toast.service';
 import { FormsModule } from '@angular/forms';
 
 describe('AdminDashboardComponent', () => {
@@ -10,10 +11,12 @@ describe('AdminDashboardComponent', () => {
     let fixture: ComponentFixture<AdminDashboardComponent>;
     let mockAdminService: jasmine.SpyObj<AdminService>;
     let mockGameDataService: jasmine.SpyObj<GameDataService>;
+    let mockToastService: jasmine.SpyObj<ToastService>;
     let statsSubject: BehaviorSubject<RoomStats | null>;
     let connectionStatusSubject: BehaviorSubject<string>;
 
     beforeEach(async () => {
+        mockToastService = jasmine.createSpyObj('ToastService', ['showError']);
         statsSubject = new BehaviorSubject<RoomStats | null>(null);
         connectionStatusSubject = new BehaviorSubject<string>('Disconnected');
 
@@ -40,7 +43,8 @@ describe('AdminDashboardComponent', () => {
             imports: [AdminDashboardComponent, FormsModule],
             providers: [
                 { provide: AdminService, useValue: mockAdminService },
-                { provide: GameDataService, useValue: mockGameDataService }
+                { provide: GameDataService, useValue: mockGameDataService },
+                { provide: ToastService, useValue: mockToastService }
             ]
         }).compileComponents();
 
@@ -99,4 +103,34 @@ describe('AdminDashboardComponent', () => {
         expect(component.showMessageModal).toBeFalse();
         expect(component.globalMessageContent).toBe('');
     });
+    const failingActions = [
+        { api: 'createRoom', invoke: (c: AdminDashboardComponent) => { c.showCreateModal = true; c.submitCreateRoom(); } },
+        { api: 'sendGlobalMessage', invoke: (c: AdminDashboardComponent) => { c.showMessageModal = true; c.globalMessageContent = 'Keep me'; c.submitGlobalMessage(); } },
+        { api: 'updateSettings', invoke: (c: AdminDashboardComponent) => { c.settingsRoomCode = 'ROOM'; c.submitSettings(); } },
+        { api: 'startGame', invoke: (c: AdminDashboardComponent) => c.startGame('ROOM') },
+        { api: 'terminateRoom', invoke: (c: AdminDashboardComponent) => c.terminateRoom('ROOM') },
+        { api: 'updateGame', invoke: (c: AdminDashboardComponent) => { c.selectedGame = { id: 'Game1' } as GameDefinition; c.submitEditGame(); } }
+    ] as const;
+
+    for (const action of failingActions) {
+        it(`should show a local error when ${action.api} fails`, () => {
+            spyOn(globalThis, 'confirm').and.returnValue(true);
+            mockAdminService[action.api].and.returnValue(throwError(() => new Error('Request failed')));
+            action.invoke(component);
+            expect(mockToastService.showError).toHaveBeenCalledOnceWith('Request failed');
+            expect(mockAdminService.refreshStats).not.toHaveBeenCalled();
+            if (action.api === 'createRoom') expect(component.showCreateModal).toBeTrue();
+            if (action.api === 'sendGlobalMessage') {
+                expect(component.showMessageModal).toBeTrue();
+                expect(component.globalMessageContent).toBe('Keep me');
+            }
+        });
+    }
+
+    it('should provide useful feedback for an error with no message', () => {
+        mockAdminService.createRoom.and.returnValue(throwError(() => null));
+        component.submitCreateRoom();
+        expect(mockToastService.showError).toHaveBeenCalledOnceWith('The action could not be completed. Please try again.');
+    });
+
 });

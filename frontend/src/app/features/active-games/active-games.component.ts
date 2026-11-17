@@ -1,18 +1,21 @@
-import { Component, HostListener, ElementRef, OnInit } from '@angular/core';
+import { Component, HostListener, ElementRef, OnInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../services/signalr.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { Observable } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 @Component({
     selector: 'app-active-games',
     standalone: true,
     imports: [CommonModule],
     templateUrl: './active-games.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./active-games.component.scss']
 })
 export class ActiveGamesComponent implements OnInit {
+    private readonly destroyRef = inject(DestroyRef);
     activeRooms$: Observable<any[]>;
     count$: Observable<number>;
     isOpen = false;
@@ -23,20 +26,19 @@ export class ActiveGamesComponent implements OnInit {
         private readonly elementRef: ElementRef
     ) {
         this.activeRooms$ = this.signalRService.activeRooms$;
-        this.count$ = new Observable(subscriber => {
-            this.activeRooms$.subscribe(rooms => subscriber.next(rooms.length));
-        });
+        this.count$ = this.activeRooms$.pipe(map(rooms => rooms.length));
 
         // specific trigger for navigation updates
         this.router.events.pipe(
-            filter(event => event instanceof NavigationEnd)
+            filter(event => event instanceof NavigationEnd),
+            takeUntilDestroyed(this.destroyRef)
         ).subscribe(() => {
-            this.signalRService.validateActiveRooms();
+            void this.signalRService.validateActiveRooms();
         });
     }
 
     ngOnInit() {
-        this.signalRService.validateActiveRooms();
+        void this.signalRService.validateActiveRooms();
     }
 
     @HostListener('document:click', ['$event'])
@@ -46,16 +48,23 @@ export class ActiveGamesComponent implements OnInit {
         }
     }
 
+    @HostListener('document:keydown.escape')
+    onEscape() {
+        if (this.isOpen) {
+            this.isOpen = false;
+        }
+    }
+
     toggle(event: Event) {
         event.stopPropagation();
         this.isOpen = !this.isOpen;
         if (this.isOpen) {
-            this.signalRService.validateActiveRooms();
+            void this.signalRService.validateActiveRooms();
         }
     }
 
     joinRoom(code: string) {
-        this.router.navigate(['/game', code]);
+        void this.router.navigate(['/game', code]);
         this.isOpen = false;
     }
 

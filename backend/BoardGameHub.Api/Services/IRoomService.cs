@@ -12,6 +12,7 @@ public interface IRoomService
     Room? RemovePlayer(string connectionId);
     Room? GetRoom(string code);
     List<Room> GetPublicRooms();
+    bool IsAuthorizedHost(Room room, string connectionId, string? userId = null);
     Room? SetHostPlayer(string code, string connectionId);
     Room? RemoveHostPlayer(string code, string requesterConnectionId, string targetConnectionId);
     Room? RenamePlayer(string connectionId, string newName);
@@ -22,9 +23,9 @@ public interface IRoomService
 
     // Game Flow
     Task<Room?> StartGame(string code, GameSettings? settings = null);
-    Room? PauseGame(string code);
-    Room? ResumeGame(string code);
-    Room? EndGame(string code);
+    Task<Room?> PauseGame(string code);
+    Task<Room?> ResumeGame(string code);
+    Task<Room?> EndGame(string code);
     Task<Room?> SubmitAction(string code, string connectionId, string actionType, System.Text.Json.JsonElement? payload);
     Task<Room?> CalculateRoundScores(string code);
     
@@ -36,7 +37,7 @@ public interface IRoomService
     
     // Undo System
     Task<Room?> RequestUndo(string code, string connectionId);
-    Task<Room?> SubmitUndoVote(string code, string connectionId, bool vote);
+    Task<UndoVoteSubmission?> SubmitUndoVote(string code, string connectionId, bool vote);
 
     // Stats & Helpers
     List<string> ValidateRooms(List<string> codes);

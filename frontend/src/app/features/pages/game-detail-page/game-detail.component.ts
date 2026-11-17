@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
@@ -10,6 +10,7 @@ import { Subscription } from 'rxjs';
     standalone: true,
     imports: [CommonModule, RouterModule],
     templateUrl: './game-detail.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./game-detail.component.scss']
 })
 export class GameDetailComponent implements OnInit, OnDestroy {

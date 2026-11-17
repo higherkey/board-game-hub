@@ -92,6 +92,15 @@ public class GameHub : Hub
 
     public async Task StartGame(string roomCode, GameSettings settings)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
+        if (existingRoom.State == GameState.Lobby && !existingRoom.CanStartNewGame())
+        {
+            throw new HubException("Cannot start yet: every player must be ready, or the host must force room ready.");
+        }
+
         var room = await _roomService.StartGame(roomCode, settings);
         if (room != null)
         {
@@ -111,29 +120,39 @@ public class GameHub : Hub
         }
     }
 
-    public Task PauseGame(string roomCode)
+    public async Task PauseGame(string roomCode)
     {
-        _roomService.PauseGame(roomCode);
-        return Task.CompletedTask;
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
+        await _roomService.PauseGame(roomCode);
     }
 
-    public Task ResumeGame(string roomCode)
+    public async Task ResumeGame(string roomCode)
     {
-        _roomService.ResumeGame(roomCode);
-        return Task.CompletedTask;
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
+        await _roomService.ResumeGame(roomCode);
     }
 
-    public Task EndGame(string roomCode)
+    public async Task EndGame(string roomCode)
     {
-        var room = _roomService.EndGame(roomCode);
-        if (room != null && room.IsPublic && room.State == GameState.Finished)
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
+        var room = await _roomService.EndGame(roomCode);
+        if (room == null || room.State != GameState.Lobby) return;
+
+        // Ending from the results screen returns everyone to game selection (#79).
+        await Clients.Group(roomCode.ToUpper()).SendAsync("GameTypeChanged", room.GameType.ToString());
+        if (room.IsPublic)
         {
-             // Finished rooms are not public? 
-             // GetPublicRooms filters r.State == GameState.Lobby.
-             // So if it was Playing (not public) and becomes Finished (not public), no change.
-             // If we ever support seeing Finished games, we'd need an update.
+            await Clients.Group("LobbyGroup").SendAsync("PublicRoomUpdated", room);
         }
-        return Task.CompletedTask;
     }
 
     public async Task SetGameType(string roomCode, string gameType)
@@ -141,6 +160,14 @@ public class GameHub : Hub
         _logger.LogInformation("[GameHub] SetGameType Request: Room={Room}, Type={GameType}", roomCode, gameType);
         if (Enum.TryParse<GameType>(gameType, true, out var type))
         {
+            var existingRoom = _roomService.GetRoom(roomCode);
+            if (existingRoom == null)
+            {
+                _logger.LogWarning("[GameHub] SetGameType Failed: Room {Room} not found in RoomService.", roomCode);
+                return;
+            }
+            EnsureHost(existingRoom);
+
             var room = _roomService.SetGameType(roomCode, type);
             if (room != null)
             {
@@ -173,6 +200,10 @@ public class GameHub : Hub
 
     public async Task SetHostPlayer(string roomCode, string targetConnectionId)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         var room = _roomService.SetHostPlayer(roomCode, targetConnectionId);
         if (room != null && room.IsPublic && room.State == GameState.Lobby)
         {
@@ -200,6 +231,10 @@ public class GameHub : Hub
     
     public async Task UpdateSettings(string roomCode, GameSettings settings)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         var room = _roomService.UpdateSettings(roomCode, settings);
         if (room != null)
         {
@@ -216,6 +251,10 @@ public class GameHub : Hub
 
     public Task UpdateUndoSettings(string roomCode, UndoSettings settings)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return Task.CompletedTask;
+        EnsureHost(existingRoom);
+
         _roomService.UpdateUndoSettings(roomCode, settings);
         return Task.CompletedTask;
     }
@@ -241,26 +280,17 @@ public class GameHub : Hub
 
     public async Task SubmitUndoVote(string roomCode, bool vote)
     {
-        var room = await _roomService.SubmitUndoVote(roomCode, Context.ConnectionId, vote);
-        if (room != null)
+        var submission = await _roomService.SubmitUndoVote(roomCode, Context.ConnectionId, vote);
+        if (submission == null) return;
+
+        if (submission.Result == UndoVoteResult.Pending)
         {
-            if (room.CurrentVote == null)
-            {
-                // Logic: room.CurrentVote null means either Passed (Restored) or Failed (Reset).
-                // We should check if state changed? 
-                // Actually, if Vote passes, PerformUndo returns the restored room.
-                // If Vote fails (majority no), SubmitUndoVote returns the room with CurrentVote=null.
-                // How to distinguish for the client?
-                // Client gets "RoomUpdated" or "GameRestored".
-                // Let's send "GameRestored" if it worked (checking history stack change? No.)
-                // Let's just send "RoomUpdated" and an explicit "UndoVoteFinished" message?
-                await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteFinished", "Vote Completed"); // Generic
-            }
-            else
-            {
-                 // Vote updated but still ongoing
-                 await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteUpdate", room.CurrentVote);
-            }
+            await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteUpdate", submission.Room.CurrentVote);
+        }
+        else
+        {
+            // Retain the event name and single string argument for older clients.
+            await Clients.Group(roomCode.ToUpper()).SendAsync("UndoVoteFinished", submission.Result.ToString());
         }
     }
 
@@ -446,6 +476,10 @@ public class GameHub : Hub
 
     public async Task NextWisecrackBattle(string roomCode)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "NEXT_BATTLE", null);
     }
 
@@ -468,6 +502,10 @@ public class GameHub : Hub
         {
             if (string.IsNullOrEmpty(roomCode)) return;
 
+            var existingRoom = _roomService.GetRoom(roomCode);
+            if (existingRoom == null) return;
+            EnsureHost(existingRoom);
+
             var room = await _roomService.CalculateRoundScores(roomCode.Trim().ToUpperInvariant());
 
             if (room != null)
@@ -482,21 +520,31 @@ public class GameHub : Hub
                 }
                 catch (Exception hex)
                 {
-                    Console.WriteLine($"Error recording game history for room {roomCode}: {hex.Message}");
+                    _logger.LogError(hex, "Error recording game history for room {RoomCode}", roomCode);
                 }
 
                 await Clients.Group(roomCode.ToUpper()).SendAsync("RoundEnded", room);
             }
         }
+        catch (HubException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in EndRound for room {roomCode}: {ex.Message}");
+            _logger.LogError(ex, "Error in EndRound for room {RoomCode}", roomCode);
             throw new HubException("An unexpected error occurred during score calculation.");
         }
     }
 
     public async Task NextRound(string roomCode)
     {
+        if (string.IsNullOrEmpty(roomCode)) return;
+
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         // Start next round with same settings, but new letter/list
         var room = await _roomService.StartGame(roomCode, null); 
         if (room != null)
@@ -577,6 +625,10 @@ public class GameHub : Hub
     
     public async Task UniversalTranslatorForcePhase(string roomCode, string phaseName)
     {
+        var existingRoom = _roomService.GetRoom(roomCode);
+        if (existingRoom == null) return;
+        EnsureHost(existingRoom);
+
         var payload = JsonSerializer.SerializeToElement(new { phase = phaseName });
         await _roomService.SubmitAction(roomCode, Context.ConnectionId, "FORCE_PHASE", payload);
     }
@@ -646,6 +698,15 @@ public class GameHub : Hub
         if (turnConfig != null && !string.IsNullOrEmpty(turnConfig.Url))
         {
             await Clients.Caller.SendAsync("ReceiveTurnCredentials", turnConfig);
+        }
+    }
+
+    private void EnsureHost(Room room)
+    {
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!_roomService.IsAuthorizedHost(room, Context.ConnectionId, userId))
+        {
+            throw new HubException("Unauthorized: Only an authorized host can perform this action.");
         }
     }
 }

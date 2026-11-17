@@ -1,4 +1,13 @@
-.four-in-a-row-container {
-    height: 100%;
-    background: #1a202c;
-}
+:host { display: block; height: 100%; overflow: auto; }
+.four-game { padding: 12px; background: #0f172a; color: #f8fafc; min-height: 100%; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 8px; max-width: 600px; margin: auto; }
+h2 { font-size: clamp(1.2rem, 4vw, 1.7rem); margin: 0; }
+button { min-width: 44px; min-height: 44px; border: 1px solid #94a3b8; background: #1e293b; color: #f8fafc; padding: 8px; border-radius: 6px; }
+button:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.status { text-align: center; font-size: 1.25rem; font-weight: 700; margin: 12px 0; }
+.players { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 12px; }
+.players span { padding: 6px 10px; border: 2px solid transparent; }
+.players .active { border-color: #cbd5e1; border-radius: 6px; }
+.players strong { display: block; }
+.end-hint { text-align: center; color: #cbd5e1; margin: 16px 0 0; }
+@media (max-width: 400px) { .four-game { padding: 8px; } }

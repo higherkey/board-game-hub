@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService, Room } from '../../../../services/signalr.service';
 import { Observable, timer } from 'rxjs';
@@ -13,6 +13,7 @@ import { PictophoneResultsComponent } from '../pictophone-results/pictophone-res
     standalone: true,
     imports: [CommonModule, PictophoneInputComponent, PictophoneDrawingComponent, PictophoneResultsComponent],
     templateUrl: './pictophone-hand.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./pictophone-hand.component.scss']
 })
 export class PictophoneHandComponent {
@@ -64,22 +65,22 @@ export class PictophoneHandComponent {
     }
 
     onRevealNext() {
-        if (this.room) this.signalR.revealPictophoneNext(this.room.code);
+        if (this.room) this.signalR.revealPictophoneNext(this.room.code).catch(error => console.error(error));
     }
 
     onStarPage(event: { bookIndex: number, pageIndex: number }) {
-        if (this.room) this.signalR.starPictophonePage(this.room.code, event.bookIndex, event.pageIndex);
+        if (this.room) this.signalR.starPictophonePage(this.room.code, event.bookIndex, event.pageIndex).catch(error => console.error(error));
     }
 
     pauseGame() {
-        this.signalR.pauseGame();
+        this.signalR.pauseGame().catch(error => console.error(error));
     }
 
     resumeGame() {
-        this.signalR.resumeGame();
+        this.signalR.resumeGame().catch(error => console.error(error));
     }
 
     forceNext() {
-        if (this.room) this.signalR.forcePictophoneNext(this.room.code);
+        if (this.room) this.signalR.forcePictophoneNext(this.room.code).catch(error => console.error(error));
     }
 }

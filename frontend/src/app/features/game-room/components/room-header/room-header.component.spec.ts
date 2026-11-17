@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RoomHeaderComponent } from './room-header.component';
 import { UserProfileDropdownComponent } from '../../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 
-@Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true })
+@Component({ selector: 'app-user-profile-dropdown', template: '', changeDetection: ChangeDetectionStrategy.Eager,
+ standalone: true })
 class UserProfileDropdownStub {
   @Input() session: any;
   @Input() compactMode: any;
@@ -89,6 +90,43 @@ describe('RoomHeaderComponent', () => {
     component.toggleSound();
     expect(component.soundService.toggleMute).toHaveBeenCalled();
     expect(component.soundService.playClick).toHaveBeenCalled();
+  });
+
+  it('should close nav menu on Escape key when open', () => {
+    component.isNavMenuOpen = true;
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    spyOn(event, 'preventDefault');
+    component.onDialogKeyDown(event);
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(component.isNavMenuOpen).toBeFalse();
+  });
+
+  it('should close menu and preventDefault in onContentKeyDown when Escape is pressed', () => {
+    component.isNavMenuOpen = true;
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    spyOn(event, 'preventDefault');
+    component.onContentKeyDown(event);
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(component.isNavMenuOpen).toBeFalse();
+  });
+
+  it('should stopPropagation in onContentKeyDown when key is not Escape', () => {
+    const event = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
+    spyOn(event, 'stopPropagation');
+    component.onContentKeyDown(event);
+    expect(event.stopPropagation).toHaveBeenCalled();
+  });
+
+  it('should restore focus to menu trigger on dialog close', () => {
+    const mockTrigger = document.createElement('button');
+    spyOn(mockTrigger, 'focus');
+    component.menuTrigger = { nativeElement: mockTrigger } as any;
+    component.isNavMenuOpen = true;
+
+    component.onDialogClose();
+
+    expect(component.isNavMenuOpen).toBeFalse();
+    expect(mockTrigger.focus).toHaveBeenCalled();
   });
 });
 

@@ -9,13 +9,20 @@ public class FarkleService : BaseGameService<FarkleState>
 {
     private readonly ILogger<FarkleService> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly Random _random;
 
     public override GameType GameType => GameType.Farkle;
 
     public FarkleService(ILogger<FarkleService> logger, IServiceProvider serviceProvider)
+        : this(logger, serviceProvider, Random.Shared)
+    {
+    }
+
+    internal FarkleService(ILogger<FarkleService> logger, IServiceProvider serviceProvider, Random random)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _random = random;
     }
 
     public override Task StartRound(Room room, GameSettings settings)
@@ -75,7 +82,7 @@ public class FarkleService : BaseGameService<FarkleState>
             case "ROLL":
                 return Task.FromResult(HandleRoll(state));
             case "BANK":
-                return Task.FromResult(HandleBank(state));
+                return Task.FromResult(HandleBank(room, state));
             case "TOGGLE_DIE":
                 return Task.FromResult(HandleToggleDie(state, action.Payload));
             default:
@@ -114,7 +121,7 @@ public class FarkleService : BaseGameService<FarkleState>
         return true;
     }
 
-    private bool HandleBank(FarkleState state)
+    private bool HandleBank(Room room, FarkleState state)
     {
         if (state.Phase != FarklePhase.Picking) return false;
 
@@ -147,7 +154,7 @@ public class FarkleService : BaseGameService<FarkleState>
             }
         }
 
-        AdvanceTurn(state);
+        AdvanceTurn(room, state);
         return true;
     }
 
@@ -171,7 +178,7 @@ public class FarkleService : BaseGameService<FarkleState>
         state.Phase = FarklePhase.Rolling;
         foreach (var die in state.Dice.Where(d => !d.IsHeld))
         {
-            die.Value = Random.Shared.Next(1, 7);
+            die.Value = _random.Next(1, 7);
             die.IsReserved = false;
             die.IsScoring = false;
         }
@@ -213,7 +220,7 @@ public class FarkleService : BaseGameService<FarkleState>
             // Re-verify phase under lock
             if (state.Phase == FarklePhase.Farkled)
             {
-                AdvanceTurn(state);
+                AdvanceTurn(room, state);
                 gameStateManager.MarkDirty(room.Code);
             }
         }
@@ -223,7 +230,7 @@ public class FarkleService : BaseGameService<FarkleState>
         }
     }
 
-    private void AdvanceTurn(FarkleState state)
+    private void AdvanceTurn(Room room, FarkleState state)
     {
         var playerIds = state.PlayerStates.Keys.ToList();
         int currentIndex = playerIds.IndexOf(state.ActivePlayerId);
@@ -236,6 +243,8 @@ public class FarkleService : BaseGameService<FarkleState>
         {
             state.Phase = FarklePhase.GameOver;
             state.WinningPlayerId = state.PlayerStates.Values.OrderByDescending(p => p.TotalScore).First().PlayerId;
+            room.State = GameState.Finished;
+            _ = CalculateScores(room);
         }
         else
         {

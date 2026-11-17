@@ -51,9 +51,8 @@ namespace BoardGameHub.Api.Services
         {
             state.PlayerHands.Clear();
             var deck = Enumerable.Range(1, 100).ToList();
-            var rng = new Random();
             // Shuffle
-            deck = deck.OrderBy(x => rng.Next()).ToList();
+            deck = deck.OrderBy(x => Random.Shared.Next()).ToList();
             
             int cardsPerPlayer = state.CurrentLevel;
             int cardIndex = 0;

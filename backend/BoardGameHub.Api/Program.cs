@@ -15,24 +15,30 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Render supplies PORT; otherwise honor launch profiles, ASPNETCORE_URLS and container defaults.
 var port = Environment.GetEnvironmentVariable("PORT");
-if (!string.IsNullOrEmpty(port))
+if (!string.IsNullOrWhiteSpace(port))
 {
-    builder.WebHost.UseUrls($"http://+:{port}");
+    // Render terminates public TLS at its edge; bind the internal listener explicitly.
+    builder.WebHost.ConfigureKestrel(options => options.Listen(System.Net.IPAddress.Any,
+        int.Parse(port, System.Globalization.CultureInfo.InvariantCulture)));
 }
 
-var logDir = Path.Combine(AppContext.BaseDirectory, "logs");
-try { Directory.CreateDirectory(logDir); } catch { logDir = Path.GetTempPath(); }
-
+// Ensure hosted services run concurrently and do not block Kestrel socket binding
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ServicesStartConcurrently = true;
+    options.ServicesStopConcurrently = true;
+});
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.File(Path.Combine(logDir, "backend.log"), rollingInterval: RollingInterval.Day)
+    .WriteTo.File("../logs/backend.log", rollingInterval: RollingInterval.Day)
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(evt => evt.Properties.ContainsKey("SourceContext") && evt.Properties["SourceContext"].ToString().Contains("ClientLogging"))
-        .WriteTo.File(Path.Combine(logDir, "frontend.log"), rollingInterval: RollingInterval.Day))
+        .WriteTo.File("../logs/frontend.log", rollingInterval: RollingInterval.Day))
 );
 
 // Add services to the container.
@@ -57,6 +63,9 @@ builder.Services.AddIdentity<User, IdentityRole>(options => {
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 6;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.AllowedForNewUsers = true;
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddRoles<IdentityRole>()
@@ -128,9 +137,30 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 20;
     });
+
+    // Per-client throttle for the anonymous client log endpoint (ClientLoggingController).
+    options.AddPolicy("ClientLoggingLimiter", httpContext =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-builder.Services.AddSingleton<IRoomService, RoomService>();
+builder.Services.AddSingleton<IRoomService>(sp => new RoomService(
+    sp.GetServices<IGameService>(),
+    sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.AdminHub>>(),
+    sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub>>(),
+    sp.GetRequiredService<GameStateManager>(),
+    sp.GetRequiredService<ILogger<RoomService>>(),
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    sp.GetRequiredService<IRoomPersistenceService>(),
+    sp.GetRequiredService<IRoomStateSerializer>()
+));
 builder.Services.AddSingleton<IBabbleService, BabbleService>();
 builder.Services.AddSingleton<BabbleService>(sp => (BabbleService)sp.GetRequiredService<IBabbleService>()); // Allow resolving concrete too if generic needed
 builder.Services.AddSingleton<IDictionaryService, DictionaryService>();
@@ -153,15 +183,32 @@ builder.Services.AddSingleton<IGameService, WarshipsGameService>();
 builder.Services.AddSingleton<IGameService, FourInARowGameService>();
 builder.Services.AddSingleton<IGameService, CloverMindedGameService>();
 builder.Services.AddSingleton<IGameService, FarkleService>();
+builder.Services.AddSingleton<IGameService, YachtGameService>();
 
 // Server Authority Services
 builder.Services.AddSingleton<StateDiffService>();
 builder.Services.AddSingleton<IRoomStateSerializer, RoomStateSerializer>();
-builder.Services.AddSingleton<GameStateManager>();
+builder.Services.AddSingleton<GameStateManager>(sp => new GameStateManager(
+    sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<BoardGameHub.Api.Hubs.GameHub>>(),
+    sp.GetRequiredService<StateDiffService>(),
+    sp.GetRequiredService<ILogger<GameStateManager>>(),
+    sp.GetRequiredService<IRoomPersistenceService>(),
+    sp.GetRequiredService<IRoomStateSerializer>()
+));
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GameStateManager>());
 
 // Room Persistence Engine
-builder.Services.AddSingleton<RoomPersistenceWorker>();
+// Dependency graph must stay acyclic: RoomService -> GameStateManager -> RoomPersistenceWorker.
+// The worker is built with its lean constructor and resolves IRoomService/GameStateManager lazily
+// (per scope) when it rehydrates or cleans up, so it never depends on them at construction time.
+// Do NOT switch this to AddSingleton<RoomPersistenceWorker>(): MS DI would pick the greedy constructor
+// and reintroduce the RoomService <-> RoomPersistenceWorker cycle that hung startup (#213, #214).
+builder.Services.AddSingleton(sp => new RoomPersistenceWorker(
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    sp.GetRequiredService<IRoomStateSerializer>(),
+    sp.GetServices<IGameService>(),
+    sp.GetRequiredService<ILogger<RoomPersistenceWorker>>()
+));
 builder.Services.AddSingleton<IRoomPersistenceService>(sp => sp.GetRequiredService<RoomPersistenceWorker>());
 if (!string.Equals(builder.Configuration["Testing:DisablePersistenceWorker"], "true", StringComparison.OrdinalIgnoreCase))
 {
@@ -201,29 +248,23 @@ if (app.Environment.IsDevelopment())
 }
 
 // Initialize database: Seed roles and admin user (Migrations are managed out-of-band)
-try
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
     {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        if (db.Database.ProviderName != null && db.Database.ProviderName.Contains("InMemory"))
-        {
-            db.Database.EnsureCreated();
-        }
-        
-        // Seed Roles and Admin User
-        await DbInitializer.SeedAsync(scope.ServiceProvider);
+        db.Database.EnsureCreated();
     }
+    
+    // Seed Roles and Admin User
+    await DbInitializer.SeedAsync(scope.ServiceProvider);
 }
-catch (Exception ex)
-{
-    Log.Error(ex, "An error occurred during database seeding on startup.");
-}
+
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-// Health check endpoint for Render / uptime monitoring
+// Health check endpoint for Render / uptime monitoring and the frontend cold-start warmup (#191).
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 // Redirect root to admin dashboard
@@ -247,7 +288,26 @@ app.MapHub<AdminHub>("/adminhub")
 
 app.MapFallbackToFile("index.html");
 
-app.Run();
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStarted.Register(() =>
+{
+    var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
+    var addresses = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses;
+    Log.Information("=== [HostLifetime] Kestrel successfully started! Bound addresses: {Addresses} ===", string.Join(", ", addresses ?? Array.Empty<string>()));
+});
+lifetime.ApplicationStopping.Register(() => Log.Warning("=== [HostLifetime] ApplicationStopping triggered! Stack trace: {StackTrace} ===", Environment.StackTrace));
+lifetime.ApplicationStopped.Register(() => Log.Warning("=== [HostLifetime] ApplicationStopped completed. ==="));
+
+try
+{
+    Log.Information("=== [HostLifetime] Starting application... ===");
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "=== [HostLifetime] Unhandled exception terminated server startup ===");
+    throw;
+}
 
 public partial class Program { }
 

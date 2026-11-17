@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import { CommonModule } from '@angular/common';
 import { WisecrackBoardComponent } from '../wisecrack-board/wisecrack-board.component';
@@ -10,6 +10,7 @@ import { WisecrackRulesComponent } from '../wisecrack-rules/wisecrack-rules.comp
   standalone: true,
   imports: [CommonModule, WisecrackBoardComponent, WisecrackPlayerComponent, WisecrackRulesComponent],
   templateUrl: './wisecrack-game.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./wisecrack-game.component.scss']
 })
 export class WisecrackGameComponent implements OnInit {

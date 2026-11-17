@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, RoomStats, RoomSummary } from '../../services/admin.service';
@@ -6,12 +6,14 @@ import { GameDataService, GameDefinition } from '../../services/game-data.servic
 import { interval, Observable, Subscription, tap } from 'rxjs';
 import { startWith } from 'rxjs/operators';
 import { GameSettings } from '../../services/signalr.service';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
     selector: 'app-admin-dashboard',
     standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './admin-dashboard.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./admin-dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
@@ -48,7 +50,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly adminService: AdminService,
-        private readonly gameDataService: GameDataService
+        private readonly gameDataService: GameDataService,
+        private readonly toastService: ToastService
     ) {
         this.stats$ = this.adminService.stats$;
         this.connectionStatus$ = this.adminService.connectionStatus$;
@@ -114,7 +117,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 this.showCreateModal = false;
                 this.refreshData();
             },
-            error: (err: any) => alert(err.message)
+            error: (err: any) => this.toastService.showError(err?.message || 'The action could not be completed. Please try again.')
         });
     }
 
@@ -125,7 +128,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 this.showMessageModal = false;
                 this.globalMessageContent = '';
             },
-            error: (err: any) => alert(err.message)
+            error: (err: any) => this.toastService.showError(err?.message || 'The action could not be completed. Please try again.')
         });
     }
 
@@ -136,7 +139,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 this.showSettingsModal = false;
                 this.refreshData();
             },
-            error: (err: any) => alert(err.message)
+            error: (err: any) => this.toastService.showError(err?.message || 'The action could not be completed. Please try again.')
         });
     }
 
@@ -144,7 +147,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         if (!confirm(`Start game for room ${code}?`)) return;
         this.adminService.startGame(code).subscribe({
             next: () => this.refreshData(),
-            error: (err: any) => alert(err.message)
+            error: (err: any) => this.toastService.showError(err?.message || 'The action could not be completed. Please try again.')
         });
     }
 
@@ -152,7 +155,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         if (!confirm(`Are you sure you want to terminate room ${code}?`)) return;
         this.adminService.terminateRoom(code).subscribe({
             next: () => this.refreshData(),
-            error: (err: any) => alert(err.message)
+            error: (err: any) => this.toastService.showError(err?.message || 'The action could not be completed. Please try again.')
         });
     }
 
@@ -193,7 +196,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 this.loadGames();
                 // Also refresh main games cache if needed, though redirecting or refreshing usually handles it
             },
-            error: (err: any) => alert(err.message)
+            error: (err: any) => this.toastService.showError(err?.message || 'The action could not be completed. Please try again.')
         });
     }
 }

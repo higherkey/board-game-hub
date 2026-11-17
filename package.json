@@ -1,0 +1,11 @@
+{
+  "name": "board-game-hub",
+  "private": true,
+  "scripts": {
+    "sync-ai": "ai-standards-sync",
+    "postinstall": "ai-standards-sync"
+  },
+  "devDependencies": {
+    "@higherkey/ai-standards": "github:higherkey/ai-standards#v0.3.0"
+  }
+}

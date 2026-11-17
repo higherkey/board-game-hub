@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './universal-translator-rules.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./universal-translator-rules.component.scss']
 })
 export class UniversalTranslatorRulesComponent {

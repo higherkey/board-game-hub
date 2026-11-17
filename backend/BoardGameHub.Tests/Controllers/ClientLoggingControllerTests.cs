@@ -43,4 +43,42 @@ public class ClientLoggingControllerTests
             It.IsAny<Func<It.IsAnyType, Exception?, string>>()), 
         Times.Once);
     }
+
+    [Fact]
+    public void PostLog_ShouldReplaceEveryLogControlCharacterWithoutRemovingMessageText()
+    {
+        var controlCharacters = string.Concat(Enumerable.Range(0, 32).Select(value => (char)value)) + '\x7F';
+        var expectedMessage = "before" + new string(' ', 33) + "after";
+
+        _sut.PostLog(new LogEntry { Message = "before" + controlCharacters + "after" });
+
+        _mockLogger.Verify(logger => logger.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((value, type) => value.ToString()!.Contains(expectedMessage)),
+            It.IsAny<Exception>(),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+    }
+
+    [Fact]
+    public void PostLog_ShouldTruncateLongMessageAndData_AndSanitizeControlChars()
+    {
+        // Arrange
+        var longMessage = new string('A', 1500) + "\r\nLine2";
+        var longDataObj = new { Text = new string('B', 2500) };
+        var entry = new LogEntry { Level = "INFO", Message = longMessage, Data = longDataObj };
+
+        // Act
+        var result = _sut.PostLog(entry) as OkResult;
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockLogger.Verify(logger => logger.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => !v.ToString()!.Contains("\r\n")),
+            It.IsAny<Exception>(),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+        Times.Once);
+    }
 }

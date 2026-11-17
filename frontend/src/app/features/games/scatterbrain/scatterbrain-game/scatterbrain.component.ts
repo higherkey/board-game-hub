@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService, Room } from '../../../../services/signalr.service';
@@ -9,6 +9,7 @@ import { Observable, map, timer } from 'rxjs';
     standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './scatterbrain.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./scatterbrain.component.scss']
 })
 export class ScatterbrainComponent implements OnInit, OnChanges {

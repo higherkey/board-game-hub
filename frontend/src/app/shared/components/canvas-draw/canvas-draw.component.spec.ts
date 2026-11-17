@@ -81,4 +81,13 @@ describe('CanvasDrawComponent', () => {
         component.undo();
         expect(component.undoStack.length).toBe(2);
     });
+
+    it('should clean up all registered event listeners and reset eventCleanups on destroy', () => {
+        fixture.detectChanges();
+        expect(component['eventCleanups'].length).toBeGreaterThan(0);
+
+        component.ngOnDestroy();
+        expect(component['eventCleanups'].length).toBe(0);
+    });
 });
+

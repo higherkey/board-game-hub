@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../../../services/signalr.service';
 
@@ -7,6 +7,7 @@ import { SignalRService } from '../../../../services/signalr.service';
     standalone: true,
     imports: [CommonModule],
     templateUrl: './sushi-train-player.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./sushi-train-player.component.scss']
 })
 export class SushiTrainPlayerComponent {

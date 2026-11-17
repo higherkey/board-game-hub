@@ -50,8 +50,6 @@ public class DeepfakeGameService : BaseGameService<DeepfakeState>
         _logger = logger;
     }
 
-    private readonly Random _random = new();
-
     // In a real app, database of prompts
     private readonly List<(string Category, string Prompt)> _prompts = new()
     {
@@ -93,7 +91,7 @@ public class DeepfakeGameService : BaseGameService<DeepfakeState>
         // Random player
         if (room.Players.Any())
         {
-            var fakerIndex = new Random().Next(room.Players.Count);
+            var fakerIndex = Random.Shared.Next(room.Players.Count);
             state.AiConnectionId = room.Players[fakerIndex].ConnectionId;
         }
 
@@ -142,7 +140,7 @@ public class DeepfakeGameService : BaseGameService<DeepfakeState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Deepfake CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Deepfake CalculateScores");
         }
         return Task.CompletedTask;
     }
@@ -161,7 +159,7 @@ public class DeepfakeGameService : BaseGameService<DeepfakeState>
 
     private string GetRandomPrompt()
     {
-        var promptData = _prompts[_random.Next(_prompts.Count)];
+        var promptData = _prompts[Random.Shared.Next(_prompts.Count)];
         return promptData.Prompt;
     }
 
