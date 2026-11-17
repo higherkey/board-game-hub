@@ -11,7 +11,8 @@ describe('SushiTrainBoardComponent', () => {
 
     beforeEach(async () => {
         mockSignalRService = {
-            nextRound: jasmine.createSpy('nextRound'),
+            sendGameAction: jasmine.createSpy('sendGameAction'),
+            playAgain: jasmine.createSpy('playAgain'),
             startGame: jasmine.createSpy('startGame')
         };
 
@@ -32,17 +33,19 @@ describe('SushiTrainBoardComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should call nextRound when Host clicks Next Round', () => {
+    it('leaves native internal rounds to automatic server progression', () => {
         component.isHost = true;
-        // Mock state to resemble round over situation (e.g., RoundOver phase in gameData)
-        // Since we don't have a specific phase enum in the component check, we just ensure button presence logic matches.
-        // Assuming the template shows button based on `isHost`. 
-        // If the real component only shows it when round is over, we'd need to mock that state.
-        // Looking at the component, nextRound() is just a method. We can call it directly or ensure button is there if template allows.
-        // For now, let's verify the method call maps to service.
+        component.room!.gameData = { isRoundOver: true, isGameOver: false };
+        fixture.detectChanges();
+        expect(fixture.nativeElement.textContent).not.toContain('Next Round');
+        expect(mockSignalRService.sendGameAction).not.toHaveBeenCalled();
+    });
 
-        component.nextRound();
-        expect(mockSignalRService.nextRound).toHaveBeenCalled();
+    it('uses explicit replay for an authoritative final result', () => {
+        component.room!.resultPhase = 'GameOver';
+        component.restartGame();
+        expect(mockSignalRService.playAgain).toHaveBeenCalled();
+        expect(mockSignalRService.startGame).not.toHaveBeenCalled();
     });
 
     it('should call startGame when Host clicks Play Again', () => {

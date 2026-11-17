@@ -21,6 +21,39 @@ public class SushiTrainGameServiceTests
     }
 
     [Fact]
+    public async Task NativeFinalRound_SyncsSharedTotalsAndScoresPuddingsOnce()
+    {
+        var room = new Room
+        {
+            GameType = GameType.SushiTrain, State = GameState.Playing,
+            Players = new() { new() { ConnectionId = "p1" }, new() { ConnectionId = "p2" } }
+        };
+        var state = new SushiTrainState { Round = 3 };
+        state.PlayerStates["p1"] = new SushiPlayerState
+        {
+            PlayerId = "p1", TotalScore = 10,
+            Hand = new() { new() { Id = "last1", Type = SushiType.NigiriEgg } },
+            Puddings = new() { new() { Type = SushiType.Pudding } }
+        };
+        state.PlayerStates["p2"] = new SushiPlayerState
+        {
+            PlayerId = "p2", TotalScore = 10,
+            Hand = new() { new() { Id = "last2", Type = SushiType.NigiriEgg } }
+        };
+        room.GameData = state;
+        Assert.True(_sut.SubmitSelection(room, "p1", "last1"));
+        Assert.True(_sut.SubmitSelection(room, "p2", "last2"));
+        RoomLifecyclePolicy.Normalize(room);
+        Assert.Equal(ResultPhase.GameOver, room.ResultPhase);
+        Assert.Equal(17, room.Players[0].Score);
+        Assert.Equal(11, room.Players[1].Score);
+        await _sut.CalculateScores(room);
+        await _sut.CalculateScores(room);
+        Assert.Equal(17, room.Players[0].Score);
+        Assert.Equal(11, room.Players[1].Score);
+    }
+
+    [Fact]
     public async Task StartRound_ShouldDealHandAndInitState()
     {
         var room = new Room

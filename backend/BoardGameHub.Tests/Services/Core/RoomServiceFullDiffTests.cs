@@ -48,6 +48,7 @@ public class RoomServiceFullDiffTests
     {
         var (sut, manager, proxy) = Create();
         var room = sut.CreateRoom("host", "Host", false, GameType.Scatterbrain);
+        room.State = GameState.Playing;
         await manager.ProcessRoomUpdateAsync(room.Code); // baseline
         proxy.Invocations.Clear();
 
@@ -77,6 +78,7 @@ public class RoomServiceFullDiffTests
         {
             var room = sut.CreateRoom("host", "Host", false, GameType.Pictophone);
             sut.JoinRoom(room.Code, "guest", "Guest");
+            room.State = GameState.Playing;
             await game.StartRound(room, room.Settings);
             room.RoundEndTime = new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             await manager.ProcessRoomUpdateAsync(room.Code);
@@ -110,6 +112,7 @@ public class RoomServiceFullDiffTests
         {
             var room = sut.CreateRoom("host", "Host", false, GameType.UniversalTranslator);
             sut.JoinRoom(room.Code, "guest", "Guest");
+            room.State = GameState.Playing;
             await game.StartRound(room, room.Settings);
             await manager.ProcessRoomUpdateAsync(room.Code);
             proxy.Invocations.Clear();

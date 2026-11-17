@@ -25,6 +25,8 @@ public interface IRoomService
 
     // Game Flow
     Task<Room?> StartGame(string code, GameSettings? settings = null);
+    Task<Room?> NextRound(string code);
+    Task<Room?> PlayAgain(string code);
     Task<Room?> PauseGame(string code);
     Task<Room?> ResumeGame(string code);
     Task<Room?> EndGame(string code);

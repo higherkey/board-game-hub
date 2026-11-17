@@ -8,6 +8,7 @@ import { AuthService } from '../../../services/auth.service';
 import { GameDataService } from '../../../services/game-data.service';
 import { SignalRService, Room, Player } from '../../../services/signalr.service';
 import { ToastService } from '../../../shared/services/toast.service';
+import { SoundService } from '../../../core/services/sound.service';
 import { LoggerService } from '../../../core/services/logger.service';
 
 describe('GameRoomStateService', () => {
@@ -53,6 +54,7 @@ describe('GameRoomStateService', () => {
       toggleReady: jasmine.createSpy('toggleReady').and.returnValue(Promise.resolve()),
       setGameType: jasmine.createSpy('setGameType'),
       startGame: jasmine.createSpy('startGame'),
+      playAgain: jasmine.createSpy('playAgain').and.resolveTo(),
       updateSettings: jasmine.createSpy('updateSettings').and.returnValue(Promise.resolve()),
       nextRound: jasmine.createSpy('nextRound').and.returnValue(Promise.resolve()),
       endGame: jasmine.createSpy('endGame').and.returnValue(Promise.resolve()),
@@ -90,6 +92,7 @@ describe('GameRoomStateService', () => {
     TestBed.configureTestingModule({
       providers: [
         GameRoomStateService,
+        { provide: SoundService, useValue: { playVictory: jasmine.createSpy('playVictory') } },
         { provide: SignalRService, useValue: signalRMock },
         { provide: AuthService, useValue: authMock },
         { provide: Router, useValue: routerMock },
@@ -233,6 +236,69 @@ describe('GameRoomStateService', () => {
       await service.changeRole(true);
       expect(signalRMock.changeRole).toHaveBeenCalledWith(true);
     });
+  });
+
+  describe('result lifecycle', () => {
+    for (const resultPhase of ['RoundResults', 'GameOver'] as const) {
+      it('keeps the active game mounted for Finished ' + resultPhase, () => {
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Finished', resultPhase });
+        service.gameStarted$.pipe(take(1)).subscribe(started => expect(started).toBeTrue());
+        service.isIntermission$.pipe(take(1)).subscribe(intermission => expect(intermission).toBeTrue());
+        service.gameComponent$.pipe(take(1)).subscribe(component => expect(component).toBeTruthy());
+      });
+    }
+
+    it('updates replay settings then requests a fresh game', async () => {
+      await service.playAgain(mockRoom.settings);
+      expect(signalRMock.updateSettings).toHaveBeenCalledWith(mockRoom.settings);
+      expect(signalRMock.playAgain).toHaveBeenCalled();
+      expect(signalRMock.nextRound).not.toHaveBeenCalled();
+    });
+
+    it('reports replay failures without attempting to start a new round', async () => {
+      signalRMock.playAgain.and.rejectWith('offline');
+      await service.playAgain(mockRoom.settings);
+      expect(toastMock.showError).toHaveBeenCalledWith('Failed to play again.');
+      expect(signalRMock.nextRound).not.toHaveBeenCalled();
+    });
+
+    it('plays final victory on a Hand when no Table is present, once per fresh game', () => {
+      for (let game = 0; game < 2; game++) {
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Playing', resultPhase: null });
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Finished', resultPhase: 'GameOver' });
+      }
+      expect(TestBed.inject(SoundService).playVictory).toHaveBeenCalledTimes(2);
+    });
+
+    for (const isScreen of [false, true]) {
+      it('prioritizes the Table for final-only victory audio with isScreen=' + isScreen, () => {
+        signalRMock.checkIsHost.and.returnValue(!isScreen);
+        const room: Room = { ...mockRoom, players: [
+          { ...mockRoom.players[0], isScreen, isHost: !isScreen },
+          { ...mockRoom.players[0], connectionId: 'other', isScreen: !isScreen }
+        ] };
+        const sound = TestBed.inject(SoundService).playVictory;
+        signalRMock.currentRoom$.next({ ...room, state: 'Playing', resultPhase: null });
+        signalRMock.currentRoom$.next({ ...room, state: 'Finished', resultPhase: 'RoundResults' });
+        expect(sound).not.toHaveBeenCalled();
+        service.gameInputs$.pipe(take(1)).subscribe(inputs => {
+          expect(inputs['isHost']).toBe(!isScreen);
+          expect(inputs['isTable']).toBe(isScreen);
+          expect(inputs['isHand']).toBe(!isScreen);
+        });
+        signalRMock.currentRoom$.next({ ...room, state: 'Finished', resultPhase: 'GameOver' });
+        signalRMock.currentRoom$.next({ ...room, state: 'Finished', resultPhase: 'GameOver' });
+        expect(sound).toHaveBeenCalledTimes(isScreen ? 1 : 0);
+      });
+    }
+
+    for (const resultPhase of [undefined, null]) {
+      it('keeps legacy finished audio when phase is ' + resultPhase, () => {
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Playing', resultPhase });
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Finished', resultPhase });
+        expect(TestBed.inject(SoundService).playVictory).toHaveBeenCalledTimes(1);
+      });
+    }
   });
 
   describe('State Syncing', () => {

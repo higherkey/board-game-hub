@@ -31,6 +31,7 @@ public class Room
     public readonly SemaphoreSlim StateLock = new(1, 1);
     public List<Player> Players { get; set; } = new();
     public GameState State { get; set; } = GameState.Lobby;
+    public ResultPhase? ResultPhase { get; set; }
     public GameSettings Settings { get; set; } = new();
 
     public GameType GameType { get; set; } = GameType.None; 
@@ -158,6 +159,12 @@ public enum GameState
     Lobby,
     Playing,
     Finished
+}
+
+public enum ResultPhase
+{
+    RoundResults,
+    GameOver
 }
 
 public enum GameType
