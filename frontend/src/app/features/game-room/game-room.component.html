@@ -172,9 +172,9 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- 3. MOBILE TAB BAR (Small Screens Only) -->
-<app-mobile-tab-bar *ngIf="!stateService.needsName" [activeTab]="mobileView" [isHost]="(stateService.isHost$ | async) || false"
-    (tabChange)="setMobileView($event)">
-</app-mobile-tab-bar>
+    <!-- 3. MOBILE TAB BAR (Small Screens Only) -->
+    <app-mobile-tab-bar *ngIf="!stateService.needsName" [activeTab]="mobileView" [isHost]="(stateService.isHost$ | async) || false"
+        (tabChange)="setMobileView($event)">
+    </app-mobile-tab-bar>
+</div>

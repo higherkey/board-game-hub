@@ -2,8 +2,11 @@
 
 :host {
     display: block;
-    height: 100vh;
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
     overflow: hidden;
+    position: relative;
     --side-padding: 0.75rem;
 
     @media (min-width: 992px) {
@@ -82,9 +85,9 @@
 
     .main-stage {
         overflow: hidden;
-        border-radius: var(--radius-lg, 12px);
-        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
-        box-shadow: var(--shadow-sm, 2px 2px 0px rgba(0, 0, 0, 0.2));
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
         min-height: 0;
 
         // The lobby div inside needs to scroll on desktop
@@ -206,6 +209,7 @@
         -webkit-overflow-scrolling: touch;
         height: 100%;
         min-height: 0;
+        gap: 0;
     }
 }
 
