@@ -166,8 +166,25 @@ describe('GameRoomStateService', () => {
         expect(toastMock.showError).toHaveBeenCalled();
         expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to games', 'route failure');
         expect(signalRMock.removeActiveRoom).toHaveBeenCalledTimes(rejectedJoin ? 0 : 1);
+        expect(service.needsName).toBeTrue();
       }));
     }
+
+    it('auto-joins and clears needsName when guest has a stored name', fakeAsync(() => {
+      signalRMock.joinRoom.and.returnValue(Promise.resolve(true));
+      void service.initializeRoom('ABCD', false);
+      tick();
+      expect(signalRMock.joinRoom).toHaveBeenCalledWith('ABCD', 'Tester', jasmine.any(Boolean));
+      expect(service.needsName).toBeFalse();
+    }));
+
+    it('sets needsName to true when no stored name exists', async () => {
+      authMock.getGuestName.and.returnValue(null);
+      authMock.currentUserValue = null;
+      await service.initializeRoom('ABCD', false);
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      expect(service.needsName).toBeTrue();
+    });
 
     it('should create room and navigate on submitEntry (isCreating=true)', async () => {
       const entry = { name: 'NewRoom', joinType: 'player' as const, isPublic: true };
@@ -338,10 +355,28 @@ describe('GameRoomStateService', () => {
       signalRMock.currentRoom$.next(roomWithHandGame);
     });
 
+    it('should select BabbleHandComponent for Babble when isScreen is false', (done) => {
+      const roomWithBabbleHand: Room = {
+        ...mockRoom,
+        gameType: 'Babble',
+        players: [{ connectionId: 'my-id', name: 'Tester', isHost: true, isReady: false, isScreen: false, score: 0 }]
+      };
+
+      service.gameComponent$.pipe(
+        filter((c: any) => !!c),
+        take(1)
+      ).subscribe(comp => {
+        expect(comp).toBeTruthy();
+        expect(comp.name).toContain('BabbleHand');
+        done();
+      });
+      signalRMock.currentRoom$.next(roomWithBabbleHand);
+    });
+
     it('should fallback to tableComponent when isScreen is false and handComponent is undefined', (done) => {
       const roomWithSingleComp: Room = {
         ...mockRoom,
-        gameType: 'Babble',
+        gameType: 'OneAndOnly',
         players: [{ connectionId: 'my-id', name: 'Tester', isHost: true, isReady: false, isScreen: false, score: 0 }]
       };
 
