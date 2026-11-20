@@ -32,6 +32,21 @@ describe('GameBoxComponent', () => {
         }
     });
 
+    it('draws letters, outlined rings and turned tangrams', () => {
+        const render = (id: string) => {
+            fixture.componentRef.setInput('game', { id, name: id, minPlayers: 2, maxPlayers: 4 });
+            fixture.detectChanges();
+            return fixture.nativeElement as HTMLElement;
+        };
+        expect([...render('Babble').querySelectorAll('.gb-letter')].map(t => t.textContent).join('')).toBe('BABLESORTWINGAME');
+        expect(render('Warships').querySelector('circle.s-c')).not.toBeNull();
+
+        const turned = ['SushiTrain', 'Wisecrack', 'Spectrum', 'Terminal', 'Deepfake', 'Poppycock']
+            .find(id => gameBoxArt(id).turn);
+        expect(turned).toBeDefined();
+        expect(render(turned!).querySelector('.gb-cover g')?.getAttribute('transform')).toMatch(/^rotate\(\d+ 50 50\)$/);
+    });
+
     it('reads the player range plainly', () => {
         expect(playerRange({ minPlayers: 2, maxPlayers: 2 })).toBe('2 players');
         expect(playerRange({ minPlayers: 3, maxPlayers: 6 })).toBe('3 to 6 players');

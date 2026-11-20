@@ -89,6 +89,55 @@ describe('GamesComponent', () => {
     expect(el.querySelector('#shelf-lists')).not.toBeNull();
   });
 
+  it('filters by length, names each filter in a chip and removes them one at a time', () => {
+    click('.shelf-option', 'Under 15 min');
+    expect(names()).toEqual(['Babble']);
+    click('.shelf-option', '15 to 30 min');
+    expect(names()).toEqual(['Yacht', 'Warships']);
+    click('.shelf-option', 'Longer');
+    expect(names()).toEqual([]);
+    expect(el.querySelector('.shelf-empty')).not.toBeNull();
+
+    click('.shelf-option--count', '1');
+    const chips = [...el.querySelectorAll('.shelf-chip')].map(c => c.textContent?.trim());
+    expect(chips).toEqual(['1 player', 'Longer']);
+    click('.shelf-option', 'Longer');
+    click('.shelf-option--count', '1');
+    expect(el.querySelector('#shelf-all')).not.toBeNull();
+  });
+
+  it('sorts A to Z or shortest first', () => {
+    const select = el.querySelector<HTMLSelectElement>('#shelf-all ~ .shelf-sort select, .shelf-select')!;
+    select.value = 'name';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(names()).toEqual(['Babble', 'Warships', 'Yacht']);
+
+    select.value = 'time';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(names()).toEqual(['Babble', 'Warships', 'Yacht']);
+    click('.shelf-option--count', '2');
+    expect(names()).toEqual(['Babble', 'Warships', 'Yacht']);
+  });
+
+  it('jumps to search on "/" unless the visitor is already typing', () => {
+    const input = el.querySelector<HTMLInputElement>('input[type=search]')!;
+    const slash = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+    document.body.dispatchEvent(slash);
+    expect(document.activeElement).toBe(input);
+    expect(slash.defaultPrevented).toBeTrue();
+
+    const typed = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+    input.dispatchEvent(typed);
+    expect(typed.defaultPrevented).toBeFalse();
+
+    const withCtrl = new KeyboardEvent('keydown', { key: '/', ctrlKey: true, bubbles: true, cancelable: true });
+    input.blur();
+    document.body.dispatchEvent(withCtrl);
+    expect(withCtrl.defaultPrevented).toBeFalse();
+  });
+
   it('offers to host playable games and to try coming-soon games early', () => {
     click('.shelf-option--count', '2');
     const actions = [...el.querySelectorAll('.shelf-host')].map(a => a.textContent?.trim());
