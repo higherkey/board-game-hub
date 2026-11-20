@@ -4,8 +4,7 @@
         top: 60px;
         width: 300px;
         height: calc(100vh - 60px);
-        background: rgba(26, 26, 46, 0.95);
-        backdrop-filter: blur(10px);
+        background: rgb(26, 26, 46);
         border-left: 2px solid #e91e63;
         transition: transform 0.3s ease;
         z-index: 1000;

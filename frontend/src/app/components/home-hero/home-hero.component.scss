@@ -25,29 +25,50 @@
     }
 }
 
+/* Headline left, one sentence and the actions right: the hero says just enough, About says the rest. */
 .dc-head {
-    text-align: center;
-    margin-block-end: var(--space-lg);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+    gap: var(--space-xl) 3rem;
+    align-items: end;
+    margin-block-end: 2.5rem;
+    container-type: inline-size;
+
+    @media (max-width: 992px) {
+        grid-template-columns: minmax(0, 1fr);
+        margin-block-end: var(--space-xl);
+    }
 }
 
 .dc-title {
     font-family: 'Outfit', sans-serif;
-    font-size: clamp(2.25rem, 6vw, 4.5rem);
-    font-weight: 800;
-    line-height: 1;
+    font-size: clamp(3rem, 8.5vw, 7rem);
+    font-weight: 700;
+    line-height: 0.9;
     letter-spacing: -0.03em;
     text-transform: uppercase;
     text-wrap: balance;
     color: var(--primary);
-    margin-block-end: var(--space-md);
+    margin: 0;
+
+    /* Two columns: size to the headline's own track (row width minus the 30rem intro and 3rem gap) so "CONNECTED." never runs under the intro. */
+    @media (min-width: 993px) {
+        font-size: min(7rem, calc((100cqi - 33rem) / 6.6));
+    }
 }
 
-.dc-accent {
-    color: var(--accent-dark);
+.dc-intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding-block-end: 0.375rem;
 }
 
 .dc-sub {
-    font-size: clamp(1rem, 2vw, 1.25rem);
+    max-inline-size: 42ch;
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    font-weight: 600;
+    line-height: 1.4;
     color: var(--text-secondary);
     margin: 0;
 }
@@ -64,7 +85,7 @@
     /* Narrow screens: compact rows (scene | caption) so all three stages stay in view together. */
     @media (max-width: 992px) {
         grid-template-columns: minmax(0, 1fr);
-        gap: var(--space-sm);
+        gap: var(--space-lg);
         max-inline-size: 720px;
         margin-inline: auto;
     }
@@ -84,8 +105,14 @@
     container-type: inline-size;
     position: relative;
     aspect-ratio: 4 / 3;
-    background: var(--bg-surface-2);
-    border-radius: var(--radius-lg);
+    /* Tangram wash: two flat triangles in opposite corners over the tan table. */
+    background:
+        linear-gradient(135deg, color-mix(in oklch, var(--accent) 16%, transparent) 0 24%, transparent 24%),
+        linear-gradient(315deg, color-mix(in oklch, var(--primary) 9%, transparent) 0 32%, transparent 32%),
+        var(--bg-surface-2);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    box-shadow: 6px 6px 0 var(--primary);
     overflow: hidden;
     display: flex;
     justify-content: center;
@@ -94,11 +121,12 @@
     transition: transform 0.35s ease, box-shadow 0.35s ease;
 
     .is-active & {
-        box-shadow: var(--shadow-lg);
+        transform: translateY(-4px);
+        box-shadow: 6px 10px 0 var(--contrast-pink);
     }
 
     .dc-static .is-active & {
-        box-shadow: none;
+        box-shadow: 6px 6px 0 var(--primary);
         transform: none;
     }
 }
@@ -122,16 +150,17 @@
     aspect-ratio: 16 / 10;
     background: var(--dc-screen);
     border: 1.4cqi solid var(--dc-bezel);
-    border-radius: 2.4cqi;
+    border-radius: 1cqi;
+    box-shadow: 1.6cqi 1.6cqi 0 color-mix(in oklch, var(--primary) 28%, transparent);
     overflow: hidden;
 }
 
 .dc-tv-stand {
-    inline-size: 28%;
-    block-size: 1.6cqi;
-    margin-block-start: 0.8cqi;
+    inline-size: 32%;
+    block-size: 2cqi;
+    margin-block-start: 1.2cqi;
     background: var(--dc-bezel);
-    border-radius: 0 0 1cqi 1cqi;
+    border-radius: 0.4cqi;
 }
 
 /* ---------- Stage 1: Host ---------- */
@@ -149,7 +178,9 @@
     display: grid;
     place-items: center;
     background: var(--primary-light);
-    border-radius: 2cqi;
+    border: 0.5cqi solid color-mix(in oklch, var(--bg-surface) 22%, transparent);
+    border-radius: 1cqi;
+    color: var(--bg-surface);
     font-size: 9cqi;
     line-height: 1;
 }
@@ -200,7 +231,7 @@
     align-items: center;
     gap: 2cqi;
     border: 0.6cqi solid var(--primary-light);
-    border-radius: 3cqi;
+    border-radius: 1cqi;
     background: var(--primary);
     padding: 3cqi;
 }
@@ -229,7 +260,7 @@
     aspect-ratio: 1;
     padding: 1.4cqi;
     background: var(--bg-surface);
-    border-radius: 1.6cqi;
+    border-radius: 0.6cqi;
 
     &--mini {
         inline-size: 70%;
@@ -261,7 +292,7 @@
     aspect-ratio: 9 / 16;
     padding: 1cqi;
     background: var(--dc-bezel);
-    border-radius: 3.2cqi;
+    border-radius: 2cqi;
     box-shadow: var(--shadow-md);
 
     &--a {
@@ -281,7 +312,7 @@
     position: relative;
     block-size: 100%;
     background: var(--bg-surface);
-    border-radius: 2.4cqi;
+    border-radius: 1.2cqi;
     border-block-start: 1.6cqi solid var(--dc-player);
     overflow: hidden;
     display: flex;
@@ -348,7 +379,7 @@
     aspect-ratio: 2 / 1;
     background: var(--dc-player);
     color: var(--bg-surface);
-    border-radius: var(--radius-pill);
+    border-radius: 1cqi;
     font-size: 5cqi;
 }
 
@@ -381,7 +412,7 @@
     inline-size: 32%;
     aspect-ratio: 1;
     background: var(--primary);
-    border-radius: 50%;
+    border-radius: 1cqi;
 
     &--a {
         --dc-player: var(--dc-player-a);
@@ -399,7 +430,7 @@
     block-size: 100%;
     background: var(--dc-player);
     color: var(--bg-surface);
-    border-radius: 50%;
+    border-radius: 1cqi;
     font-size: 8cqi;
     opacity: 0;
     transform: scale(0.4);
@@ -430,7 +461,7 @@
     justify-self: center;
     block-size: 100%;
     background: var(--primary);
-    border-radius: 1.6cqi;
+    border-radius: 0.6cqi;
 
     &--a {
         --dc-player: var(--dc-player-a);
@@ -507,21 +538,19 @@
     inline-size: 30%;
     aspect-ratio: 2 / 3;
     margin-inline: -3%;
-    box-shadow: 0 0.3cqi 0.6cqi oklch(0% 0 0 / 0.25);
+    border: 0.5cqi solid var(--bg-surface);
+    box-shadow: 0.6cqi 0.6cqi 0 var(--primary);
 
-    &--0 {
-        transform: rotate(-12deg) translateY(6%);
-        filter: saturate(0.5);
+    /* A square fan: side cards sit lower and muted, never tilted. */
+    &--0,
+    &--2 {
+        transform: translateY(14%);
+        filter: saturate(0.45);
     }
 
     &--1 {
         position: relative;
         z-index: 1;
-    }
-
-    &--2 {
-        transform: rotate(12deg) translateY(6%);
-        filter: saturate(0.5);
     }
 }
 
@@ -550,16 +579,28 @@
     }
 }
 
+/* Number tile: a small die face that lights pink on the stage being shown. */
 .dc-num {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 3rem;
+    box-sizing: border-box;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    box-shadow: 3px 3px 0 var(--primary);
     font-family: 'Outfit', sans-serif;
-    font-weight: 800;
+    font-weight: 700;
     font-size: 1.5rem;
     line-height: 1;
-    color: var(--text-secondary);
-    transition: color 0.35s ease;
+    color: var(--primary);
+    transition: color 0.35s ease, background-color 0.35s ease;
 
     .is-active & {
-        color: var(--accent-dark);
+        background: var(--contrast-pink);
+        color: var(--bg-surface);
     }
 }
 
@@ -585,17 +626,19 @@
 
 .dc-progress {
     display: block;
-    block-size: 3px;
+    block-size: 8px;
+    box-sizing: border-box;
     margin-inline: var(--space-xs);
-    background: var(--bg-surface-2);
-    border-radius: var(--radius-pill);
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    border-radius: 2px;
     overflow: hidden;
 }
 
 .dc-progress-fill {
     display: block;
     block-size: 100%;
-    background: var(--accent);
+    background: var(--contrast-pink);
     transform: scaleX(0);
     transform-origin: left center;
 }
@@ -604,10 +647,8 @@
 .dc-actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     align-items: center;
     gap: var(--space-md);
-    margin-block-start: var(--space-xl);
 }
 
 .dc-playback {
@@ -619,6 +660,7 @@
     color: var(--text-secondary);
     min-block-size: 48px;
     min-inline-size: 48px;
+    box-shadow: none; /* text link: drop the global .btn offset shadow */
 
     &:focus-visible {
         outline: 3px solid var(--accent-dark);
@@ -635,11 +677,11 @@
 
     .dc-scene {
         flex: 0 0 56%;
-        border-radius: var(--radius-md);
+        box-shadow: 4px 4px 0 var(--primary);
 
         .is-active & {
             transform: none;
-            box-shadow: var(--shadow-md);
+            box-shadow: 4px 4px 0 var(--contrast-pink);
         }
     }
 
@@ -647,20 +689,24 @@
         flex-direction: column;
         justify-content: center;
         gap: var(--space-xs);
-        padding: var(--space-xs) 0 var(--space-xs) var(--space-sm);
+        /* Leaves room for the absolutely placed progress rail below the text. */
+        padding: var(--space-xs) 0 calc(var(--space-xs) + 16px) var(--space-md);
     }
 
     .dc-num {
-        font-size: 1.1rem;
+        inline-size: 2.25rem;
+        block-size: 2.5rem;
+        font-size: 1.15rem;
     }
 
     .dc-caption-desc {
-        font-size: 0.85rem;
+        font-size: 0.9375rem;
+        line-height: 1.4;
     }
 
     .dc-progress {
         position: absolute;
-        inset-inline: calc(56% + var(--space-sm)) 0;
+        inset-inline: calc(56% + var(--space-md)) 0;
         inset-block-end: var(--space-xs);
         margin-inline: 0;
     }

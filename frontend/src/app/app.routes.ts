@@ -22,7 +22,7 @@ export const routes: Routes = [
         children: [
             { path: '', component: LandingPageComponent, title: 'Home' },
             { path: 'play', component: PlayComponent, title: 'Play & Connect' },
-            { path: 'games', component: GamesComponent, title: 'Games Library' },
+            { path: 'games', component: GamesComponent, title: 'The shelf' },
             { path: 'games/:gameId', loadComponent: () => import('./features/pages/game-detail-page/game-detail.component').then(m => m.GameDetailComponent), title: 'Game Details' },
             { path: 'social', component: SocialComponent, canActivate: [authGuard], title: 'Social' },
             { path: 'social/:gameId', loadComponent: () => import('./features/pages/game-social/game-social.component').then(m => m.GameSocialComponent), canActivate: [authGuard], title: 'Game Social Hub' },

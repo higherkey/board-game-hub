@@ -254,8 +254,7 @@
     margin-top: auto;
 
     &::backdrop {
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.55);
     }
 
     .modal-content-wrapper {
