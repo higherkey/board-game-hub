@@ -1,0 +1,33 @@
+<div class="gb gb--t{{ art().theme }}">
+    <span class="gb-title">{{ game().name }}</span>
+    <div class="gb-art">
+        <svg class="gb-wash" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <polygon points="0,0 46,0 0,46" />
+            <polygon points="100,100 100,52 52,100" />
+        </svg>
+        <svg class="gb-cover" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+            <g [attr.transform]="turn()">
+                @for (s of art().shapes; track $index) {
+                    @switch (s.kind) {
+                        @case ('poly') {
+                            <polygon [attr.points]="s.pts" [class]="'f-' + s.f" />
+                        }
+                        @case ('circle') {
+                            <circle [attr.cx]="s.cx" [attr.cy]="s.cy" [attr.r]="s.r" [class]="'f-' + s.f + (s.stroke ? ' s-' + s.stroke : '')" />
+                        }
+                        @case ('text') {
+                            <text [attr.x]="s.x" [attr.y]="s.y" [class]="'gb-letter f-' + s.f">{{ s.t }}</text>
+                        }
+                    }
+                }
+            </g>
+        </svg>
+    </div>
+    <span class="gb-meta">
+        {{ players() }}
+        <svg class="gb-mark" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <polygon class="f-p" points="0,0 20,0 0,20" />
+            <polygon class="f-n" points="20,4 20,20 4,20" />
+        </svg>
+    </span>
+</div>

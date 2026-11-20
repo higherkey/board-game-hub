@@ -1,0 +1,114 @@
+@use '../../../../styles/game-themes' as gt;
+
+/* A game's box. Sizes to its host's width; type scales with the box (container units). */
+:host {
+    display: block;
+    container-type: inline-size;
+}
+
+/* The band and edge carry the game's colour so neighbouring boxes stay easy to tell apart. */
+@include gt.theme-classes('gb--t');
+
+.gb {
+    --gb-lift-shadow: color-mix(in oklch, var(--primary) 22%, transparent);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: 188 / 240;
+    overflow: hidden;
+    border: 2px solid var(--gb-edge);
+    background: var(--gb-tint);
+    font-family: 'Outfit', sans-serif;
+    box-shadow:
+        1px 1px 0 var(--gb-edge), 2px 2px 0 var(--gb-edge), 3px 3px 0 var(--gb-edge),
+        4px 4px 0 var(--gb-edge), 5px 5px 0 var(--gb-edge),
+        9px 11px 0 var(--gb-lift-shadow);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Lifts when the link around it is hovered or focused. */
+:host-context(a:hover) .gb,
+:host-context(a:focus-visible) .gb {
+    transform: translateY(-6px);
+    --gb-lift-shadow: var(--contrast-pink);
+}
+
+.gb-title {
+    flex: none;
+    padding: 4.5cqi 7cqi;
+    background: var(--gb-color);
+    border-block-end: 2px solid var(--gb-edge);
+    color: var(--bg-surface);
+    font-weight: 700;
+    font-size: max(0.75rem, 11cqi);
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+}
+
+.gb-art {
+    position: relative;
+    flex: 1;
+    min-block-size: 0;
+}
+
+.gb-wash {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    fill: color-mix(in oklch, var(--primary) 5%, transparent);
+}
+
+.gb-cover {
+    position: absolute;
+    inset: 10cqi;
+    inline-size: calc(100% - 20cqi);
+    block-size: calc(100% - 20cqi);
+}
+
+.gb-letter {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+.f-d { fill: var(--gb-color); }
+.f-b { fill: var(--gb-b); }
+.f-c { fill: var(--gb-c); }
+.f-w { fill: var(--bg-surface); }
+.f-n { fill: var(--primary); }
+.f-p { fill: var(--contrast-pink); }
+.f-none { fill: none; }
+.s-c { stroke: var(--gb-c); stroke-width: 3; }
+
+.gb-meta {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-block-size: max(1.75rem, 15cqi);
+    padding-inline: 7cqi;
+    background: var(--bg-surface);
+    border-block-start: 2px solid var(--gb-edge);
+    color: var(--primary);
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    font-size: max(0.75rem, 6.5cqi);
+}
+
+.gb-mark {
+    inline-size: 7.5cqi;
+    block-size: 7.5cqi;
+    margin-inline-start: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gb { transition: none; }
+
+    :host-context(a:hover) .gb,
+    :host-context(a:focus-visible) .gb { transform: none; }
+}

@@ -1,52 +1,97 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { GamesComponent } from './games.component';
 import { GameDataService } from '../../../services/game-data.service';
-import { of } from 'rxjs';
-import { RouterModule } from '@angular/router';
+
+const game = (id: string, status: string, min: number, max: number, minutes: number, tags: string, description = '') =>
+  ({ id, name: id, status, minPlayers: min, maxPlayers: max, averagePlayTime: minutes, tags, description });
 
 describe('GamesComponent', () => {
-  let component: GamesComponent;
   let fixture: ComponentFixture<GamesComponent>;
+  let el: HTMLElement;
   let mockGameDataService: any;
 
   beforeEach(async () => {
     mockGameDataService = {
       games$: of([
-        { id: 'Scatterbrain', name: 'Scatterbrain', status: 'Deployed' },
-        { id: 'Warships', name: 'Warships', status: 'Backlog' }
+        game('Yacht', 'Testing', 1, 8, 30, 'Dice,Strategy'),
+        game('Babble', 'Testing', 1, 8, 10, 'Word,Puzzle', 'Find words on a grid'),
+        game('Warships', 'InDevelopment', 2, 2, 15, 'Strategy'),
+        game('Terminal', 'Backlog', 2, 5, 20, 'Cooperative')
       ]),
       refreshGames: jasmine.createSpy('refreshGames')
     };
 
     await TestBed.configureTestingModule({
-      imports: [GamesComponent, RouterModule.forRoot([])], // Use forRoot or testing module
-      providers: [
-        { provide: GameDataService, useValue: mockGameDataService }
-      ]
+      imports: [GamesComponent],
+      providers: [provideRouter([]), { provide: GameDataService, useValue: mockGameDataService }]
     }).compileComponents();
 
     fixture = TestBed.createComponent(GamesComponent);
-    component = fixture.componentInstance;
+    el = fixture.nativeElement;
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+  const click = (selector: string, text?: string) => {
+    const target = [...el.querySelectorAll<HTMLElement>(selector)].find(b => !text || b.textContent?.trim().startsWith(text));
+    target!.click();
+    fixture.detectChanges();
+  };
+  const names = () => [...el.querySelectorAll('.game-card .gb-title')].map(t => t.textContent?.trim());
 
-  it('exposes the filter disclosure state and controls one top-level content landmark', () => {
-    const button = fixture.nativeElement.querySelector('.filter-header');
-    expect(button.getAttribute('aria-expanded')).toBe('false');
-    button.click(); fixture.detectChanges();
-    expect(button.getAttribute('aria-expanded')).toBe('true');
-    expect(fixture.nativeElement.querySelector('main')).toBeNull();
-  });
-
-  it('should load and sort games', () => {
+  it('shows every game on the shelf, playable first, and leaves backlog games off', () => {
     expect(mockGameDataService.refreshGames).toHaveBeenCalled();
-    expect(component.games.length).toBe(2);
-    // Deployed first
-    expect(component.games[0].id).toBe('Scatterbrain');
-    expect(component.games[1].id).toBe('Warships');
+    expect(el.querySelector('h1')?.textContent).toBe('The shelf');
+    expect(names()).toEqual(['Babble', 'Yacht', 'Warships']);
+    expect(el.querySelector('main')).toBeNull();
+  });
+
+  it('builds playlists only from games that fit them', () => {
+    const lists = [...el.querySelectorAll('.shelf-playlist-title')].map(t => t.textContent?.trim());
+    expect(lists).toContain('Good with 2');
+    expect(lists).toContain('Dice games');
+    expect(lists).not.toContain('Drawing games');
+  });
+
+  it('searches names, descriptions and tags', () => {
+    const input = el.querySelector<HTMLInputElement>('input[type=search]')!;
+    input.value = 'grid';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(names()).toEqual(['Babble']);
+    expect(el.querySelector('#shelf-results')?.textContent).toContain('1 game match');
+
+    input.value = 'strategy';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(names()).toEqual(['Yacht', 'Warships']);
+  });
+
+  it('filters by player count with a pressed state and a removable chip', () => {
+    click('.shelf-option--count', '2');
+    expect(el.querySelector('.shelf-option--count[aria-pressed=true]')?.textContent?.trim()).toBe('2');
+    expect(names()).toEqual(['Babble', 'Yacht', 'Warships']);
+
+    click('.shelf-option--count', '8+');
+    expect(names()).toEqual(['Babble', 'Yacht']);
+
+    click('.shelf-chip');
+    expect(el.querySelector('#shelf-all')).not.toBeNull();
+  });
+
+  it('opens a playlist as results and clears back to browsing', () => {
+    click('.shelf-playlist', 'Dice games');
+    expect(names()).toEqual(['Yacht']);
+    expect(el.querySelector('.shelf-chip')?.textContent).toContain('Dice games');
+
+    click('.shelf-clear');
+    expect(el.querySelector('#shelf-lists')).not.toBeNull();
+  });
+
+  it('offers to host playable games and to try coming-soon games early', () => {
+    click('.shelf-option--count', '2');
+    const actions = [...el.querySelectorAll('.shelf-host')].map(a => a.textContent?.trim());
+    expect(actions).toEqual(['Host', 'Host', 'Try it early']);
   });
 });

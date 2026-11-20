@@ -1,0 +1,27 @@
+@use 'sass:list';
+
+// Game colours shared by game boxes and anything that previews them (Shelf playlists, spines).
+// Each theme: (colour, edge, tint, accent b, accent c). Theme numbers come from gameBoxTheme() in game-box.component.ts.
+$game-themes: (
+    0: (#00285c, #000f37, #e2eaf5, #00b3ab, #e8179b),
+    1: (#00726d, #00403d, #dcf3f0, #00b3ab, #00285c),
+    2: (#b8107a, #6e0849, #fbe4f2, #fdf5e6, #00285c),
+    3: (#2f7d4f, #17482b, #e1f2e6, #6cbf8a, #00285c),
+    4: (#004383, #00244a, #e0ebf7, #e8179b, #00b3ab),
+    5: (#33475f, #1b2738, #e5eaf0, #00b3ab, #e8179b),
+    6: (#b4531c, #6b300f, #fae8dc, #fdf5e6, #00285c),
+    7: (#4b2a7b, #2a1647, #ece5f6, #e8179b, #00b3ab)
+);
+
+// Emits .<prefix><n> classes that set --gb-color, --gb-edge, --gb-tint, --gb-b and --gb-c.
+@mixin theme-classes($prefix) {
+    @each $i, $t in $game-themes {
+        .#{$prefix}#{$i} {
+            --gb-color: #{list.nth($t, 1)};
+            --gb-edge: #{list.nth($t, 2)};
+            --gb-tint: #{list.nth($t, 3)};
+            --gb-b: #{list.nth($t, 4)};
+            --gb-c: #{list.nth($t, 5)};
+        }
+    }
+}
