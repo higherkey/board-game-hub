@@ -1,7 +1,12 @@
 <section #hero class="dc-hero" [class.dc-static]="isStatic()" aria-labelledby="dc-title">
     <header class="dc-head">
-        <h1 id="dc-title" class="dc-title">Game night, <span class="dc-accent">together</span></h1>
-        <p class="dc-sub">One screen for the table. A phone for every hand.</p>
+        <h1 id="dc-title" class="dc-title">Play Connected.</h1>
+        <div class="dc-intro">
+            <p class="dc-sub">Board games where a big screen is the table and every phone is a hand. In the same room or miles apart.</p>
+            <div class="dc-actions">
+                <ng-content></ng-content>
+            </div>
+        </div>
     </header>
 
     <ol class="dc-stages">
@@ -132,9 +137,6 @@
         }
     </ol>
 
-    <div class="dc-actions">
-        <ng-content></ng-content>
-    </div>
     @if (!isStatic()) {
         <div class="dc-playback">
             <button type="button" class="btn btn-link dc-pause" (click)="togglePause()"

@@ -1,9 +1,9 @@
 <app-home-hero>
     <div class="hero-content">
-        <!-- Primary Action CTAs underneath the 3 steps (Matching /about page styling) -->
-        <div class="hero-ctas mt-4">
+        <!-- Host and Join sit beside the headline, above the three steps -->
+        <div class="hero-ctas">
             <button routerLink="/games" class="btn btn-primary btn-lg px-4 hero-create-btn shadow-sm">
-                <i class="bi bi-controller me-2" aria-hidden="true"></i>Choose a Game
+                <i class="bi bi-controller me-2" aria-hidden="true"></i>Host a game
             </button>
 
             <div class="hero-join-pill shadow-sm" [class.is-expanded]="isCodeInputFocused || (roomCode && roomCode.length > 0)" [class.has-error]="!!codeError">

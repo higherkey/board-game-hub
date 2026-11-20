@@ -38,9 +38,9 @@ export class HomeHeroComponent implements AfterViewInit, OnDestroy {
   @ViewChild('hero', { static: true }) heroRef!: ElementRef<HTMLElement>;
 
   readonly stages: StageMeta[] = [
-    { id: 'host', num: '01', title: 'Host', caption: 'Pick a game on any big screen.' },
-    { id: 'join', num: '02', title: 'Join', caption: 'Scan or type the code on your phone.' },
-    { id: 'play', num: '03', title: 'Play', caption: 'Your phone is your hand. The TV is the table.' }
+    { id: 'host', num: '1', title: 'Host', caption: 'Put a game on any big screen. It becomes the table.' },
+    { id: 'join', num: '2', title: 'Join', caption: 'Everyone scans or types the code on their phone.' },
+    { id: 'play', num: '3', title: 'Play', caption: 'Your phone is your hand. The screen is the table.' }
   ];
 
   readonly pickerGames = [

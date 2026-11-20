@@ -98,7 +98,7 @@ describe('LandingPageComponent', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('app-home-hero').length).toBe(1);
     expect(el.querySelectorAll('h1').length).toBe(1);
-    expect(el.querySelector('h1')?.textContent).toContain('Game night,');
+    expect(el.querySelector('h1')?.textContent).toContain('Play Connected.');
     expect(el.querySelector('.dc-concept-flag')).toBeNull();
     expect(el.querySelector('.showcase-tv, .showcase-phone, .hero-steps-grid')).toBeNull();
   });
