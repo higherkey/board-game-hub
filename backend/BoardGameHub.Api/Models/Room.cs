@@ -67,6 +67,8 @@ public class Room
     public Dictionary<string, GameType> NextGameVotes { get; set; } = new();
 
     // Timer State
+    /// <summary>When play starts this round (UTC). Later than the round's creation when the game has a lead-in countdown.</summary>
+    public DateTime? RoundStartTime { get; set; }
     public DateTime? RoundEndTime { get; set; }
     public bool IsPaused { get; set; }
     public TimeSpan? TimeRemainingWhenPaused { get; set; }

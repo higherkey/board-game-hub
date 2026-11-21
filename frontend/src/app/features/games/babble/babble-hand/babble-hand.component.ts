@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, SimpleChanges, OnDestroy, OnInit, inject, 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Room, SignalRService } from '../../../../services/signalr.service';
+import { secondsUntilPlay } from '../../../../shared/round-timing';
 
 @Component({
   selector: 'app-babble-hand',
@@ -35,11 +36,9 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
   selectedWord: any = null;
   showOnlyMyWords = true;
 
-  // Countdown & blur state
+  // Countdown & blur state, from the server's round start time
   isBlurred = true;
   countdownSeconds = 0;
-  private countdownInterval: any;
-  private lastHandledRound = 0;
 
   // Timer state
   timerText = '--:--';
@@ -90,7 +89,6 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy() {
     this.stopTimer();
-    this.stopCountdown();
   }
 
   private updateStateFromRoom() {
@@ -110,20 +108,13 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
 
     this.isPlaying ? this.startTimer() : this.stopTimer();
 
-    // Blur & countdown handling
-    if (this.isFinished) {
-      this.isBlurred = false;
-      this.stopCountdown();
-    } else if (this.isPaused) {
-      this.isBlurred = true;
-    } else if (this.isPlaying && this.isBlurred && this.room?.roundNumber === this.lastHandledRound) {
-      if (this.countdownSeconds <= 0 && !this.isPaused) {
-        this.isBlurred = false;
-      }
-    } else if (this.isPlaying && this.room?.roundNumber !== this.lastHandledRound) {
-      this.lastHandledRound = this.room?.roundNumber || 0;
-      this.startCountdown();
-    }
+    this.syncLeadIn();
+  }
+
+  /** The board stays hidden while paused or during the server's lead-in countdown. */
+  private syncLeadIn() {
+    this.countdownSeconds = secondsUntilPlay(this.room);
+    this.isBlurred = !this.isFinished && (this.isPaused || this.countdownSeconds > 0);
   }
 
   private processGridUpdate(grid: any) {
@@ -136,32 +127,11 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private startCountdown() {
-    this.stopCountdown();
-    this.isBlurred = true;
-    this.countdownSeconds = 3;
-    this.countdownInterval = setInterval(() => {
-      this.countdownSeconds--;
-      if (this.countdownSeconds <= 0) {
-        if (!this.isPaused) {
-          this.isBlurred = false;
-        }
-        this.stopCountdown();
-      }
-    }, 1000);
-  }
-
-  private stopCountdown() {
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-      this.countdownInterval = null;
-    }
-  }
-
   private startTimer() {
     if (this.timerInterval) return;
 
     this.timerInterval = setInterval(() => {
+      this.syncLeadIn();
       if (!this.room?.roundEndTime) {
         this.timerText = '--:--';
         return;

@@ -67,11 +67,11 @@ describe('BabbleComponent', () => {
         expect(component.isBlurred).toBeTrue();
     });
 
-    it('should NOT show timer text during countdown', fakeAsync(() => {
-        component.countdownSeconds = 3;
+    it('should NOT show timer text during the server lead-in countdown', fakeAsync(() => {
         component.room = createMockRoom({
             gameType: 'Babble',
             state: 'Playing',
+            roundStartTime: new Date(Date.now() + 700).toISOString(),
             roundEndTime: new Date(Date.now() + 10000).toISOString()
         });
 
@@ -85,10 +85,12 @@ describe('BabbleComponent', () => {
         });
 
         tick(500);
+        expect(component.countdownSeconds).toBe(1);
         expect(component.timerText).toBe('--:--');
 
-        component.countdownSeconds = 0;
-        tick(500);
+        tick(500); // the server start time has now passed
+        expect(component.countdownSeconds).toBe(0);
+        expect(component.isBlurred).toBeFalse();
         expect(component.timerText).not.toBe('--:--');
 
         discardPeriodicTasks();

@@ -5,6 +5,8 @@ namespace BoardGameHub.Api.Services;
 public interface IGameService
 {
     GameType GameType { get; }
+    /// <summary>Seconds of "get ready" before play starts each round. The server owns it so a refresh never replays it.</summary>
+    int RoundLeadInSeconds => 0;
     Task StartRound(Room room, GameSettings settings);
     Task CalculateScores(Room room);
     Task EndRound(Room room);

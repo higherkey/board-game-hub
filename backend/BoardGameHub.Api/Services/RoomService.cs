@@ -775,9 +775,11 @@ public class RoomService : IRoomService, IDisposable
             }
 
             RoomLifecyclePolicy.Normalize(room);
-            // Set Timer
+            // Set Timer: play starts after the game's lead-in, and the lead-in does not use up play time.
+            var playStarts = DateTime.UtcNow.AddSeconds(room.State == GameState.Playing ? service?.RoundLeadInSeconds ?? 0 : 0);
+            room.RoundStartTime = room.State == GameState.Playing ? playStarts : null;
             room.RoundEndTime = room.State == GameState.Playing && room.Settings.TimerDurationSeconds > 0
-                ? DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds)
+                ? playStarts.AddSeconds(room.Settings.TimerDurationSeconds)
                 : null;
         }
         finally
@@ -832,7 +834,14 @@ public class RoomService : IRoomService, IDisposable
             if (room.IsPaused && room.TimeRemainingWhenPaused.HasValue)
             {
                 room.IsPaused = false;
-                room.RoundEndTime = DateTime.UtcNow.Add(room.TimeRemainingWhenPaused.Value);
+                var newEnd = DateTime.UtcNow.Add(room.TimeRemainingWhenPaused.Value);
+                // Paused during the lead-in: the start moves by the same amount so the countdown resumes where it stopped.
+                if (room.RoundEndTime.HasValue && room.RoundStartTime.HasValue
+                    && room.RoundStartTime.Value > room.RoundEndTime.Value - room.TimeRemainingWhenPaused.Value)
+                {
+                    room.RoundStartTime = room.RoundStartTime.Value + (newEnd - room.RoundEndTime.Value);
+                }
+                room.RoundEndTime = newEnd;
                 room.TimeRemainingWhenPaused = null;
             }
             else
@@ -872,6 +881,7 @@ public class RoomService : IRoomService, IDisposable
                     room.ResultPhase = ResultPhase.GameOver;
                     room.IsPaused = false;
                     room.TimeRemainingWhenPaused = null;
+                    room.RoundStartTime = null;
                     room.RoundEndTime = null; // Clear timer
                     break;
                 case GameState.Finished:
@@ -902,6 +912,7 @@ public class RoomService : IRoomService, IDisposable
         room.ResultPhase = null;
         room.GameData = null;
         room.RoundNumber = 0;
+        room.RoundStartTime = null;
         room.RoundEndTime = null;
         room.IsPaused = false;
         room.TimeRemainingWhenPaused = null;

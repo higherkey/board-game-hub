@@ -214,6 +214,52 @@ public class RoomServiceTests
         mockService.Verify(s => s.StartRound(room, It.IsAny<GameSettings>()), Times.Once);
     }
 
+    [Theory]
+    [InlineData(3)]
+    [InlineData(0)]
+    public async Task StartGame_StartsPlayAfterTheLeadIn_WithoutShorteningTheRound(int leadIn)
+    {
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.Scatterbrain);
+        room.IsHostOverride = true;
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
+        mockService.Setup(s => s.RoundLeadInSeconds).Returns(leadIn);
+        _gameServices.Add(mockService.Object);
+
+        var before = DateTime.UtcNow;
+        await _sut.StartGame(room.Code, new GameSettings { TimerDurationSeconds = 60 });
+
+        room.RoundStartTime.Should().BeCloseTo(before.AddSeconds(leadIn), TimeSpan.FromSeconds(1));
+        (room.RoundEndTime!.Value - room.RoundStartTime!.Value).Should().Be(TimeSpan.FromSeconds(60));
+    }
+
+    [Theory]
+    [InlineData(-8, 2)]   // paused 10s ago, during the lead-in: the start moves forward with the clock
+    [InlineData(-20, -20)] // paused after play began: the start stays where it was
+    public async Task ResumeGame_MovesTheStartOnlyWhenPausedDuringTheLeadIn(int startOffset, int expectedStartOffset)
+    {
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.Babble);
+        var now = DateTime.UtcNow;
+        room.State = GameState.Playing;
+        room.IsPaused = true;
+        room.TimeRemainingWhenPaused = TimeSpan.FromSeconds(62);
+        room.RoundEndTime = now.AddSeconds(52); // so the pause happened 10 seconds ago
+        room.RoundStartTime = now.AddSeconds(startOffset);
+
+        await _sut.ResumeGame(room.Code);
+
+        room.IsPaused.Should().BeFalse();
+        room.RoundEndTime.Should().BeCloseTo(now.AddSeconds(62), TimeSpan.FromSeconds(1));
+        room.RoundStartTime.Should().BeCloseTo(now.AddSeconds(expectedStartOffset), TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void Babble_HasAThreeSecondLeadIn()
+    {
+        new BabbleGameService(new Mock<IBabbleService>().Object, new Mock<IDictionaryService>().Object, new Mock<ILogger<BabbleGameService>>().Object)
+            .RoundLeadInSeconds.Should().Be(3);
+    }
+
     [Fact]
     public void RemovePlayer_ShouldMarkPlayerDisconnected()
     {

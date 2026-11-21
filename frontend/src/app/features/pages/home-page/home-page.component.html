@@ -2,7 +2,7 @@
     <div class="hero-content">
         <!-- Host and Join sit beside the headline, above the three steps -->
         <div class="hero-ctas">
-            <button routerLink="/games" class="btn btn-primary btn-lg px-4 hero-create-btn shadow-sm">
+            <button routerLink="/shelf" class="btn btn-primary btn-lg px-4 hero-create-btn shadow-sm">
                 <i class="bi bi-controller me-2" aria-hidden="true"></i>Host a game
             </button>
 
@@ -59,13 +59,13 @@
 <section class="home-shelf" aria-labelledby="shelf-heading">
     <div class="home-shelf-head">
         <h2 class="home-section-title" id="shelf-heading">Take a game off the shelf</h2>
-        <a routerLink="/games" class="home-shelf-all">See the whole shelf</a>
+        <a routerLink="/shelf" class="home-shelf-all">See the whole shelf</a>
     </div>
     <div class="home-shelf-unit">
         <ul class="home-shelf-row">
             @for (game of featuredGames; track game.id) {
                 <li class="home-shelf-item">
-                    <a [routerLink]="['/games', game.id]" class="home-shelf-link" [attr.aria-label]="game.name + ', game details'">
+                    <a [routerLink]="['/shelf', slug(game.id)]" class="home-shelf-link" [attr.aria-label]="game.name + ', game details'">
                         <app-game-box [game]="game"></app-game-box>
                     </a>
                 </li>

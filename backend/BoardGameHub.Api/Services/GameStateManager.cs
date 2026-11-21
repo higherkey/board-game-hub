@@ -62,6 +62,7 @@ public class GameStateManager : IHostedService, IDisposable
             [nameof(Room.GameData)] = ("gameData", r => r.GameData),
             [nameof(Room.RoundNumber)] = ("roundNumber", r => r.RoundNumber),
             [nameof(Room.NextGameVotes)] = ("nextGameVotes", r => r.NextGameVotes),
+            [nameof(Room.RoundStartTime)] = ("roundStartTime", r => r.RoundStartTime),
             [nameof(Room.RoundEndTime)] = ("roundEndTime", r => r.RoundEndTime),
             [nameof(Room.IsPaused)] = ("isPaused", r => r.IsPaused),
             [nameof(Room.TimeRemainingWhenPaused)] = ("timeRemainingWhenPaused", r => r.TimeRemainingWhenPaused),

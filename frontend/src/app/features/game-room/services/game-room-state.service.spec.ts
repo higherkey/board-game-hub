@@ -164,7 +164,7 @@ describe('GameRoomStateService', () => {
         void service.initializeRoom('ABCD', false);
         tick();
         expect(toastMock.showError).toHaveBeenCalled();
-        expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to games', 'route failure');
+        expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to the shelf', 'route failure');
         expect(signalRMock.removeActiveRoom).toHaveBeenCalledTimes(rejectedJoin ? 0 : 1);
         expect(service.needsName).toBeTrue();
       }));
@@ -239,14 +239,14 @@ describe('GameRoomStateService', () => {
     it('should navigate on leaveRoom', async () => {
       await service.leaveRoom('ABCD');
       expect(signalRMock.leaveRoom).toHaveBeenCalledWith('ABCD');
-      expect(routerMock.navigate).toHaveBeenCalledWith(['/games']);
+      expect(routerMock.navigate).toHaveBeenCalledWith(['/shelf']);
     });
 
     it('reports failed navigation after leaving without an unhandled rejection', fakeAsync(() => {
       routerMock.navigate.and.rejectWith('route failure');
       void service.leaveRoom('ABCD');
       tick();
-      expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to games', 'route failure');
+      expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to the shelf', 'route failure');
     }));
 
     it('should call changeRole', async () => {

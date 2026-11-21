@@ -103,7 +103,7 @@ test('the concept route reuses the hero and keeps its navigation links', async (
   await expect(hero).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.locator('.dc-concept-flag')).toBeVisible();
-  await expect(hero.getByRole('link', { name: 'Choose a Game' })).toHaveAttribute('href', '/games');
+  await expect(hero.getByRole('link', { name: 'Choose a Game' })).toHaveAttribute('href', '/shelf');
   await expect(hero.getByRole('link', { name: 'Join a Room' })).toHaveAttribute('href', '/play');
   await page.goto('/design-consent');
   await expect(page).toHaveURL(/\/design-concept$/);

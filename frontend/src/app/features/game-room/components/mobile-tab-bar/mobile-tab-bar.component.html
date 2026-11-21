@@ -1,15 +1,15 @@
 <div class="mobile-tab-bar d-md-none d-flex justify-content-around align-items-center">
     <!-- Game Tab -->
-    <button type="button" class="nav-btn d-flex align-items-center justify-content-center gap-2" [class.active]="activeTab === 'game'"
+    <button type="button" class="nav-btn d-flex align-items-center justify-content-center gap-2" [class.active]="activeTab === 'game'" [attr.aria-current]="activeTab === 'game' ? 'page' : null"
         (click)="selectTab('game')">
-        <i class="bi bi-controller fs-4"></i>
-        <span class="fw-bold">GAME</span>
+        <i class="bi bi-controller" aria-hidden="true"></i>
+        <span class="fw-bold">Game</span>
     </button>
 
     <!-- Players Tab -->
-    <button type="button" class="nav-btn d-flex align-items-center justify-content-center gap-2" [class.active]="activeTab === 'players'"
+    <button type="button" class="nav-btn d-flex align-items-center justify-content-center gap-2" [class.active]="activeTab === 'players'" [attr.aria-current]="activeTab === 'players' ? 'page' : null"
         (click)="selectTab('players')">
-        <i class="bi bi-people-fill fs-4"></i>
-        <span class="fw-bold">PLAYERS</span>
+        <i class="bi bi-people-fill" aria-hidden="true"></i>
+        <span class="fw-bold">Players</span>
     </button>
 </div>
