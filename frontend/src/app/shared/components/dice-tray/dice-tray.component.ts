@@ -10,8 +10,9 @@ import type { DiceScene, DieHotspot } from './dice-scene';
  * A tray of six-sided dice, for any game.
  *
  * The server decides every value; the tray only shows them. When `rollId` changes, every die that is not
- * held is thrown and lands on its value. The throw is seeded from `rollId`, so the table and every phone
- * show the same tumble. A tray that first appears mid-game (a refresh, a late join) shows the dice at rest:
+ * held is thrown and lands on its value, so every screen shows the same result. The throw is seeded from
+ * `rollId`, so trays of the same size starting from the same places also share the same tumble (a phone's
+ * smaller tray tumbles differently from the table's). A tray that first appears mid-game (a refresh, a late join) shows the dice at rest:
  * it never replays an old throw.
  *
  * The 3D tray (three.js and cannon-es) loads only when a tray is on screen. With reduced motion, without
@@ -70,17 +71,27 @@ export class DiceTrayComponent implements AfterViewInit, OnChanges, OnDestroy {
     private scene: DiceScene | null = null;
     private lastRollId: string | number | null | undefined = undefined;
     private destroyed = false;
+    private viewReady = false;
 
     ngAfterViewInit(): void {
         // The first roll id is history: show it at rest.
         this.lastRollId = this.rollId();
+        this.viewReady = true;
         if (this.motion() !== 'none' && !prefersReducedMotion() && canUseWebGl()) {
             void this.loadScene();
         }
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!this.scene) return;
+        if (!this.scene) {
+            // Still dice (or the 3D tray still loading): a new roll has nothing to animate, so it has landed already.
+            const rollId = this.rollId();
+            if (this.viewReady && rollId !== this.lastRollId && rollId !== null) {
+                this.lastRollId = rollId;
+                this.settled.emit(this.dice().map(d => d.value));
+            }
+            return;
+        }
         if (changes['dieColor'] || changes['pipColor'] || changes['onePipColor'] || changes['faces']) {
             this.scene.setLook(this.look());
         }

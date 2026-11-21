@@ -42,6 +42,18 @@ describe('DiceTrayComponent', () => {
         expect(el.querySelector('span.dt-die')).not.toBeNull(); // not selectable: no button
     });
 
+    it('with still dice, reports a new roll as landed straight away', async () => {
+        await create({ dice, motion: 'none', rollId: 1 });
+        const landed: number[][] = [];
+        fixture.componentInstance.settled.subscribe(v => landed.push(v));
+        fixture.componentRef.setInput('dice', [{ value: 6 }, { value: 6 }]);
+        fixture.detectChanges();
+        expect(landed).toEqual([]); // same roll id: nothing new landed
+        fixture.componentRef.setInput('rollId', 2);
+        fixture.detectChanges();
+        expect(landed).toEqual([[6, 6]]);
+    });
+
     it('throws only when the roll id changes, never for the id it started with', async () => {
         await create({ dice, motion: 'none', rollId: 4 });
         const scene = jasmine.createSpyObj('DiceScene', ['show', 'throw', 'hotspots', 'setLook', 'dispose'], { isRolling: false });

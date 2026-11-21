@@ -60,7 +60,7 @@ export function seedFrom(key: string | number): number {
 
 /**
  * Small seeded random source (mulberry32). The same roll id gives the same throw on every screen,
- * so the table and every phone show one tumble, not several.
+ * so trays of the same size, starting from the same places, show the same tumble.
  */
 export function seededRandom(seed: number): () => number {
     let a = seed >>> 0;

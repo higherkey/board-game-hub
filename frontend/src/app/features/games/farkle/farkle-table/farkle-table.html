@@ -32,10 +32,10 @@
 
     <!-- The server rolls; the tray throws only when the roll id changes, so a refresh never replays a throw. -->
     <app-dice-tray class="farkle-table-tray" [dice]="trayDice(state.dice)" [rollId]="state.rollId ?? null"
-      motion="full" label="Dice on the table"></app-dice-tray>
+      motion="full" label="Dice on the table" (settled)="landing.land(state.rollId)"></app-dice-tray>
 
     <!-- Overlay Announcements -->
-    <div class="announcement-overlay" *ngIf="state.phase === 'Farkled'"
+    <div class="announcement-overlay" *ngIf="landing.phase(state) === 'Farkled'"
          role="alert" aria-live="assertive">
       <div class="farkle-burst">FARKLE!</div>
     </div>

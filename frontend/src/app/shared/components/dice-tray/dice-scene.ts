@@ -172,6 +172,13 @@ export class DiceScene {
      * Same seed, same throw. Calls `done` when the dice settle.
      */
     throw(dice: readonly TrayDie[], seed: number, motion: Exclude<DiceMotion, 'none'>, done: () => void): void {
+        // A new roll while the last one is still moving: land the old one where it would have stopped,
+        // and drop its slide and its finish step, so held dice never start mid-air and nothing finishes early.
+        if (this.playback) {
+            this.playback.frames[this.playback.frames.length - 1].forEach((p, i) => { this.slots[i].pose = p; });
+            this.playback = null;
+        }
+        this.gathering = null;
         this.ensureSlots(dice);
         this.show(dice.map(d => ({ ...d })));
         const result = simulateThrow({
@@ -243,6 +250,9 @@ export class DiceScene {
     hotspots(count: number): DieHotspot[] {
         const w = this.host.clientWidth || 1;
         const h = this.host.clientHeight || 1;
+        // The camera's matrices normally update on draw; measuring may come first.
+        this.camera.updateMatrixWorld();
+        this.slots.forEach(s => s.holder.updateMatrixWorld());
         return this.slots.slice(0, count).map(slot => {
             const centre = slot.holder.position.clone().project(this.camera);
             // 0.6 die widths either side: a target a little bigger than the die but narrower than the gap to the next.

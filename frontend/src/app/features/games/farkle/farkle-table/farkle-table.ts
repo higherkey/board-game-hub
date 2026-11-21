@@ -1,7 +1,7 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DiceTrayComponent } from '../../../../shared/components/dice-tray/dice-tray.component';
-import { farkleTrayDice } from '../farkle-dice';
+import { FarkleLanding, farkleTrayDice } from '../farkle-dice';
 import { Room } from '../../../../services/signalr.service';
 
 @Component({
@@ -14,6 +14,7 @@ import { Room } from '../../../../services/signalr.service';
 })
 export class FarkleTableComponent {
   protected readonly trayDice = farkleTrayDice();
+  protected readonly landing = new FarkleLanding();
   /** Platform-standard inputs — passed in via GameRoomComponent's gameInputs. */
   @Input() room!: Room;
   @Input() myConnectionId: string = '';

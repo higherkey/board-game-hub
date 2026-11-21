@@ -4,7 +4,7 @@ Add a reusable physics dice tray (`<app-dice-tray>`) and use it for Farkle (tabl
 
 ## 1. Discoveries & Deviations
 - The server already decided every roll; what was missing was the throw. Farkle and Yacht now send `RollId`, which goes up on every server roll. The tray throws only when it changes, so a refresh or late join shows the dice at rest and never replays a throw.
-- The throw is simulated off-screen with cannon-es, seeded from the roll id (same tumble on every screen), then each die's faces are turned inside its body so the server's value lands on top. Held dice are fixed bodies that thrown dice bounce off.
+- The throw is simulated off-screen with cannon-es, seeded from the roll id (same-sized trays share the same tumble; every screen lands on the same values), then each die's faces are turned inside its body so the server's value lands on top. Held dice are fixed bodies that thrown dice bounce off.
 - Reusable inputs: any number of dice; `held` (out of the throw), `selected` (player's pick), `locked` (cannot tap); `motion` full / short / none; text faces instead of pips; tray and per-die colours; tray aspect; `gather` (slide into a row after a throw, on by default when dice are tappable). Outputs: `dieToggle`, `settled`.
 - Phones get a table sized to the dice (about 40px dice on a 360px screen) and a gentler toss; the shared table keeps the full 16-die-wide tray.
 - Tapping uses real buttons laid over each landed die (44px minimum), so touch, mouse and keyboard all work. Reduced motion, `motion="none"` or no WebGL show flat dice instead, with the same buttons.
