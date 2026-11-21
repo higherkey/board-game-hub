@@ -57,6 +57,7 @@ public class YachtGameService : BaseGameService<YachtState>
         for (var i = 0; i < 5; i++)
             if (!state.Held[i]) state.Dice[i] = Random.Shared.Next(1, 7);
         state.RollsUsed++;
+        state.RollId++;
         UpdateAvailableScores(state);
         return true;
     }

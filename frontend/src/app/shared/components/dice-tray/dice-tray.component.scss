@@ -1,0 +1,86 @@
+/* Dice tray: the 3D canvas, the tap targets laid over each die, and the flat fallback. */
+:host { display: block; }
+
+.dt { position: relative; }
+
+.dt-stage {
+    position: relative;
+    inline-size: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+
+    ::ng-deep canvas {
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+    }
+}
+
+/* Still mode keeps no empty stage: the flat dice take its place. */
+.dt.is-still .dt-stage { display: none; }
+
+/* Real buttons over each die, so tapping, clicking and the keyboard all work the same. */
+.dt-hotspot {
+    position: absolute;
+    aspect-ratio: 1;
+    min-block-size: 44px;
+    translate: -50% -50%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
+    &:disabled { cursor: default; }
+}
+
+.dt-flat {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: var(--space-md);
+    list-style: none;
+    background: var(--bg-surface-2);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+}
+
+.dt-die {
+    display: block;
+    inline-size: clamp(44px, 12vw, 64px);
+    aspect-ratio: 1;
+    padding: 0;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    box-shadow: 3px 3px 0 var(--primary);
+
+    &.is-held:not(.is-selected) { opacity: 0.6; }
+
+    &.is-selected {
+        border-color: var(--contrast-pink);
+        box-shadow: 3px 3px 0 var(--contrast-pink);
+    }
+
+    &:disabled { cursor: default; }
+
+    &:is(button) { cursor: pointer; }
+    &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
+}
+
+.dt-face {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+}
+
+.dt-label {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 48px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}

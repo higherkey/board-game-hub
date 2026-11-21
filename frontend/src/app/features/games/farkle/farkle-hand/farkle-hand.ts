@@ -1,5 +1,7 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DiceTrayComponent } from '../../../../shared/components/dice-tray/dice-tray.component';
+import { FarkleLanding, farkleTrayDice } from '../farkle-dice';
 import { SignalRService, Room } from '../../../../services/signalr.service';
 
 export enum FarklePhase {
@@ -26,6 +28,8 @@ interface FarklePlayerState {
 }
 
 interface FarkleState {
+  /** Goes up on every server roll; the dice tray throws only when it changes. */
+  rollId?: number;
   activePlayerId: string;
   currentTurnScore: number;
   dice: FarkleDie[];
@@ -37,12 +41,14 @@ interface FarkleState {
 @Component({
   selector: 'app-farkle-hand',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DiceTrayComponent],
   templateUrl: './farkle-hand.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './farkle-hand.scss'
 })
 export class FarkleHandComponent {
+  protected readonly trayDice = farkleTrayDice();
+  protected readonly landing = new FarkleLanding();
   /** Platform-standard inputs — passed in via GameRoomComponent's gameInputs. */
   @Input() room!: Room;
   @Input() myConnectionId: string = '';
@@ -90,7 +96,4 @@ export class FarkleHandComponent {
     return this.state.dice.filter(d => !d.isHeld && !d.isReserved).length;
   }
 
-  getPips(value: number): number[] {
-    return Array(value).fill(0);
-  }
 }

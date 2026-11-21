@@ -176,6 +176,7 @@ public class FarkleService : BaseGameService<FarkleState>
     private void RollDice(FarkleState state)
     {
         state.Phase = FarklePhase.Rolling;
+        state.RollId++;
         foreach (var die in state.Dice.Where(d => !d.IsHeld))
         {
             die.Value = _random.Next(1, 7);
