@@ -2,11 +2,13 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input, O
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../services/signalr.service';
 import { YACHT_CATEGORIES, YachtState } from './yacht.models';
+import { DiceTrayComponent } from '../../../shared/components/dice-tray/dice-tray.component';
+import { TrayDie } from '../../../shared/components/dice-tray/dice-math';
 
 @Component({
   selector: 'app-yacht',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DiceTrayComponent],
   templateUrl: './yacht.component.html',
   styleUrl: './yacht.component.scss',
   changeDetection: ChangeDetectionStrategy.Eager
@@ -20,7 +22,15 @@ export class YachtComponent implements OnChanges {
   @Input() isHand = true;
 
   readonly categories = YACHT_CATEGORIES;
-  readonly faces = ['·', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  /** Kept dice stay out of the throw and show as the player's pick. Remembered so the tray only sees real changes. */
+  protected trayDice(game: YachtState): readonly TrayDie[] {
+    if (game.dice !== this.trayCache.dice || game.held !== this.trayCache.held) {
+      this.trayCache = { dice: game.dice, held: game.held, out: game.dice.map((value, i) => ({ value, held: game.held[i], selected: game.held[i] })) };
+    }
+    return this.trayCache.out;
+  }
+  private trayCache: { dice?: number[]; held?: boolean[]; out: readonly TrayDie[] } = { out: [] };
+
   readonly identity = (value: boolean): boolean => value;
   readonly sameAsFirst = (value: number): boolean => value === this.state?.dice[0];
   pendingCategory: string | null = null;

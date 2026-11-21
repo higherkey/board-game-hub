@@ -1,0 +1,48 @@
+<div class="dt" role="group" [attr.aria-label]="label()" [class.is-still]="still()" [attr.aria-busy]="rolling()">
+    <!-- The 3D tray draws here once loaded. Positions below are computed, so they are bound, not styled in CSS. -->
+    <div #stage class="dt-stage" [style.aspect-ratio]="aspect()">
+        @if (!still() && selectable()) {
+            @for (spot of hotspots(); track $index; let i = $index) {
+                <button type="button" class="dt-hotspot"
+                    [style.left.%]="spot.x * 100" [style.top.%]="spot.y * 100" [style.height.%]="spot.size * 100"
+                    [attr.aria-pressed]="!!dice()[i]?.selected" [attr.aria-label]="dieLabel(dice()[i], i)"
+                    [disabled]="rolling() || dice()[i]?.locked" (click)="toggle(i)"></button>
+            }
+        }
+    </div>
+
+    @if (still()) {
+        <ul class="dt-flat">
+            @for (die of dice(); track $index; let i = $index) {
+                <li>
+                    @if (selectable()) {
+                        <button type="button" class="dt-die" [class.is-held]="die.held" [class.is-selected]="die.selected" [attr.aria-pressed]="!!die.selected"
+                            [attr.aria-label]="dieLabel(die, i)" [disabled]="die.locked" (click)="toggle(i)">
+                            <ng-container *ngTemplateOutlet="face; context: { $implicit: die }"></ng-container>
+                        </button>
+                    } @else {
+                        <span class="dt-die" [class.is-held]="die.held" [class.is-selected]="die.selected" role="img" [attr.aria-label]="dieLabel(die, i)">
+                            <ng-container *ngTemplateOutlet="face; context: { $implicit: die }"></ng-container>
+                        </span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+
+    <p class="visually-hidden" aria-live="polite">{{ rolling() ? 'Rolling' : summary() }}</p>
+</div>
+
+<ng-template #face let-die>
+    <svg class="dt-face" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <rect x="3" y="3" width="94" height="94" rx="14" [attr.fill]="die.color ?? dieColor()" />
+        @if (faces()?.[die.value - 1]; as text) {
+            <text x="50" y="54" class="dt-label" [attr.fill]="pipColor()">{{ text }}</text>
+        } @else {
+            @for (p of pips[die.value]; track $index) {
+                <circle [attr.cx]="p[0] * 100" [attr.cy]="p[1] * 100" [attr.r]="pipRadius(die.value)"
+                    [attr.fill]="die.value === 1 ? onePipColor() : pipColor()" />
+            }
+        }
+    </svg>
+</ng-template>

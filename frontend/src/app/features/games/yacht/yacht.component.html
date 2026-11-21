@@ -16,16 +16,12 @@
       <p *ngIf="room.isPaused">Game paused</p>
       <p *ngIf="!room.isPaused">{{ game.rollsUsed === 0 ? 'Roll five dice to get started.' : (3 - game.rollsUsed) + ' rolls left · choose dice to keep, or score now.' }}</p>
     </div>
-    <fieldset class="dice-tray">
-      <legend class="visually-hidden">Five dice</legend>
-      <div class="die-slot" *ngFor="let die of game.dice; let i = index">
-        <button type="button" class="die" [class.held]="game.held[i]" [attr.aria-pressed]="game.held[i]"
-          [attr.aria-label]="'Die ' + (i + 1) + ': ' + (die || 'not rolled') + (game.held[i] ? ', kept' : ', reroll')"
-          [disabled]="!canAct || busy || game.rollsUsed === 0 || game.rollsUsed >= 3"
-          (click)="toggleDie(i)"><span aria-hidden="true">{{ faces[die] }}</span></button>
-        <span class="die-caption">{{ game.held[i] ? 'KEEP' : (die ? 'ROLL' : 'READY') }}</span>
-      </div>
-    </fieldset>
+    <!-- Server-rolled dice; the tray throws only when the roll id changes, so a refresh never replays a throw. -->
+    <app-dice-tray *ngIf="game.dice[0]; else notRolled" class="yacht-tray" [dice]="trayDice(game)" [rollId]="game.rollId ?? null"
+      [motion]="isTable || isScreen ? 'full' : 'short'" [aspect]="isTable || isScreen ? 16 / 9 : 4 / 3"
+      [selectable]="canAct && !busy && game.rollsUsed > 0 && game.rollsUsed < 3" (dieToggle)="toggleDie($event)"
+      label="Five dice. Tap a die to keep it."></app-dice-tray>
+    <ng-template #notRolled><p class="yacht-not-rolled">The dice are waiting for the first roll.</p></ng-template>
     <button type="button" class="roll-button" *ngIf="!isScreen && !isTable" [disabled]="!canRoll" (click)="roll()">
       {{ game.rollsUsed === 0 ? 'Roll dice' : 'Roll again' }} <span>{{ game.rollsUsed }} / 3</span>
     </button>

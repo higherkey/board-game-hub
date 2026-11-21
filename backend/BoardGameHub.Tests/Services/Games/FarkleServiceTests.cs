@@ -172,6 +172,16 @@ public class FarkleServiceTests
     }
 
     [Fact]
+    public async Task StartRound_RollsWithANewRollId()
+    {
+        var room = new Room { Code = "FARK", State = GameState.Playing };
+        room.Players.Add(new Player { ConnectionId = "p1", Name = "One" });
+        room.Players.Add(new Player { ConnectionId = "p2", Name = "Two" });
+        await _service.StartRound(room, room.Settings);
+        ((FarkleState)room.GameData!).RollId.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
     public async Task EndRound_SetsRoomStateFinished()
     {
         var room = new Room { Code = "FARK", State = GameState.Playing };

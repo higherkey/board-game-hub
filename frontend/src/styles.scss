@@ -6,7 +6,6 @@
 
 @use "sass:meta";
 @use "bootstrap/scss/bootstrap";
-@use "styles/dice-animations";
 
 // Share dice geometry once; keep it confined to the Farkle Table and Hand.
 :where(app-farkle-hand, app-farkle-table) {

@@ -67,8 +67,8 @@ describe('FarkleTableComponent', () => {
     expect(sorted[1].playerName).toBe('Alice');
   });
 
-  it('should generate correct number of pips', () => {
-    const pips = component.getPips(5);
-    expect(pips.length).toBe(5);
+  it('hands the dice to the tray, keeping banked dice out of throws', () => {
+    const dice = (component as any).trayDice([{ value: 3, isHeld: true, isReserved: false }, { value: 5, isHeld: false, isReserved: true }]);
+    expect(dice).toEqual([{ value: 3, held: true, locked: true, selected: false }, { value: 5, held: false, locked: false, selected: true }]);
   });
 });
