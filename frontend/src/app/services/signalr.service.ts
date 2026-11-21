@@ -60,6 +60,8 @@ export interface Room {
   // Voting
   nextGameVotes: { [key: string]: number }; // Vote is GameType enum int or string
 
+  /** When play starts this round (UTC); later than now during a game's lead-in countdown. */
+  roundStartTime?: string;
   roundEndTime?: string;
   isPaused: boolean;
   timeRemainingWhenPaused?: string;

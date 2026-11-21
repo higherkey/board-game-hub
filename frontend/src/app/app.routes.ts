@@ -8,9 +8,10 @@ import { PlayComponent } from './features/pages/play-page/play.component';
 import { SocialComponent } from './features/pages/social-page/social.component';
 import { NotFoundComponent } from './features/pages/not-found-page/not-found.component';
 import { adminGuard } from './core/guards/admin.guard';
+import { gameTitleResolver } from './features/pages/game-detail-page/game-title.resolver';
+import { gameSlug } from './shared/game-slug';
 
-export const routes: Routes = [
-    {
+export const routes: Routes = [    {
         path: 'admin',
         loadComponent: () => import('./features/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
         canActivate: [adminGuard],
@@ -22,8 +23,11 @@ export const routes: Routes = [
         children: [
             { path: '', component: LandingPageComponent, title: 'Home' },
             { path: 'play', component: PlayComponent, title: 'Play & Connect' },
-            { path: 'games', component: GamesComponent, title: 'The shelf' },
-            { path: 'games/:gameId', loadComponent: () => import('./features/pages/game-detail-page/game-detail.component').then(m => m.GameDetailComponent), title: 'Game Details' },
+            { path: 'shelf', component: GamesComponent, title: 'The shelf' },
+            { path: 'shelf/:slug', loadComponent: () => import('./features/pages/game-detail-page/game-detail.component').then(m => m.GameDetailComponent), title: gameTitleResolver },
+            // Old addresses keep working: /games and /games/CloverMinded move to /shelf and /shelf/clover-minded.
+            { path: 'games', redirectTo: 'shelf', pathMatch: 'full' },
+            { path: 'games/:gameId', redirectTo: ({ params }) => `/shelf/${gameSlug(params['gameId'])}` },
             { path: 'social', component: SocialComponent, canActivate: [authGuard], title: 'Social' },
             { path: 'social/:gameId', loadComponent: () => import('./features/pages/game-social/game-social.component').then(m => m.GameSocialComponent), canActivate: [authGuard], title: 'Game Social Hub' },
             { path: 'history', loadComponent: () => import('./features/game-history/game-history.component').then(m => m.GameHistoryComponent), canActivate: [authGuard], title: 'Game History' },

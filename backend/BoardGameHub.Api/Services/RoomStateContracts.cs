@@ -26,6 +26,7 @@ public class RoomStateEnvelope
     public bool IsHostOverride { get; set; }
     public int RoundNumber { get; set; }
     public Dictionary<string, GameType> NextGameVotes { get; set; } = new();
+    public DateTime? RoundStartTime { get; set; }
     public DateTime? RoundEndTime { get; set; }
     public bool IsPaused { get; set; }
     public TimeSpan? TimeRemainingWhenPaused { get; set; }

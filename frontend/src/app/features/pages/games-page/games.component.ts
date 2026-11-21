@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
 import { GameBoxComponent, gameBoxTheme, playerRange } from '../../../shared/components/game-box/game-box.component';
+import { gameSlug } from '../../../shared/game-slug';
 
 type Length = 'short' | 'mid' | 'long';
 type Sort = 'status' | 'name' | 'time';
@@ -51,6 +52,7 @@ export class GamesComponent implements OnInit {
 
     @ViewChild('searchInput') private readonly searchInput?: ElementRef<HTMLInputElement>;
 
+    protected readonly slug = gameSlug;
     protected readonly counts = [1, 2, 3, 4, 5, 6, 7, 8];
     protected readonly lengths = LENGTHS;
 
@@ -60,6 +62,9 @@ export class GamesComponent implements OnInit {
     protected readonly length = signal<Length | null>(null);
     protected readonly playlistId = signal<string | null>(null);
     protected readonly sortBy = signal<Sort>('status');
+    /** Phones only: the filters panel is folded until asked for. */
+    protected readonly filtersOpen = signal(false);
+    protected readonly filterCount = computed(() => Number(this.players() !== null) + Number(this.length() !== null));
 
     /** Everything on the shelf: playable games and the ones coming soon. */
     protected readonly shelf = computed(() => this.games().filter(g => SHELF_STATUSES.has(g.status)));

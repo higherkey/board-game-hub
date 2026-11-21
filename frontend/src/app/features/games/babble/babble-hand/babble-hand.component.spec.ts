@@ -126,21 +126,17 @@ describe('BabbleHandComponent', () => {
   });
 
   describe('Countdown and Timer', () => {
-    it('should blur board and start countdown on new round', fakeAsync(() => {
-      component.room = createMockRoom({
-        gameType: 'Babble',
-        state: 'Playing',
-        roundNumber: 2,
-        gameData: { grid: 'ABCDEFGHIJKLMNOP' }
-      });
+    const setRoom = (overrides: any) => {
+      // Setup started a real timer; restart it inside the fake clock.
+      (component as any).stopTimer();
+      component.room = createMockRoom({ gameType: 'Babble', state: 'Playing', roundNumber: 2, gameData: { grid: 'ABCDEFGHIJKLMNOP' }, ...overrides });
       component.ngOnChanges({
-        room: {
-          previousValue: null,
-          currentValue: component.room,
-          firstChange: false,
-          isFirstChange: () => false
-        }
+        room: { previousValue: null, currentValue: component.room, firstChange: false, isFirstChange: () => false }
       });
+    };
+
+    it('counts down to the server start time, then shows the board', fakeAsync(() => {
+      setRoom({ roundStartTime: new Date(Date.now() + 3000).toISOString(), roundEndTime: new Date(Date.now() + 63000).toISOString() });
 
       expect(component.isBlurred).toBeTrue();
       expect(component.countdownSeconds).toBe(3);
@@ -151,8 +147,23 @@ describe('BabbleHandComponent', () => {
       discardPeriodicTasks();
     }));
 
+    it('does not replay the countdown after a refresh once play has started', fakeAsync(() => {
+      setRoom({ roundStartTime: new Date(Date.now() - 20000).toISOString(), roundEndTime: new Date(Date.now() + 40000).toISOString() });
+
+      expect(component.countdownSeconds).toBe(0);
+      expect(component.isBlurred).toBeFalse();
+      discardPeriodicTasks();
+    }));
+
+    it('hides the board while paused, without a countdown', fakeAsync(() => {
+      setRoom({ isPaused: true, roundStartTime: new Date(Date.now() + 2000).toISOString() });
+
+      expect(component.countdownSeconds).toBe(0);
+      expect(component.isBlurred).toBeTrue();
+      discardPeriodicTasks();
+    }));
+
     it('should format timer as MM:SS and indicate urgency when < 10s', fakeAsync(() => {
-      (component as any).stopCountdown();
       (component as any).stopTimer();
       component.countdownSeconds = 0;
       component.isBlurred = false;
@@ -172,7 +183,6 @@ describe('BabbleHandComponent', () => {
     }));
 
     it('should show PAUSED on timer when room is paused', fakeAsync(() => {
-      (component as any).stopCountdown();
       (component as any).stopTimer();
       component.countdownSeconds = 0;
       component.isBlurred = false;

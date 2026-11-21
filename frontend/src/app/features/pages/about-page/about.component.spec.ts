@@ -41,6 +41,6 @@ describe('AboutComponent', () => {
     expect(headings).toEqual(jasmine.arrayContaining(['Two screens, one game', 'The table', 'Your hand',
       'How a game night works', 'Host', 'Join', 'Play', 'Where you can play', 'In the same room', 'Miles apart']));
     expect(compiled.querySelector('#how-it-works')).not.toBeNull();
-    expect(compiled.querySelector('a[href="/games"]')?.textContent).toContain('Host a game');
+    expect(compiled.querySelector('a[href="/shelf"]')?.textContent).toContain('Host a game');
   });
 });

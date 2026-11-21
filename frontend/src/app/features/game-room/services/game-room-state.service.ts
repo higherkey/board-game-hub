@@ -180,14 +180,14 @@ export class GameRoomStateService {
             this.needsName = true;
             this.toastService.showError(`Room ${roomCode} not found or no longer active.`);
             this.signalRService.removeActiveRoom(roomCode);
-            this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
+            this.router.navigate(['/shelf']).catch(err => this.logger.error('Failed to navigate to the shelf', err));
           }
         })
         .catch(err => {
           this.needsName = true;
           this.logger.error(`[GameRoomStateService] Auto-join failed for ${roomCode}`, err);
           this.toastService.showError('Failed to join room automatically.');
-          this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
+          this.router.navigate(['/shelf']).catch(err => this.logger.error('Failed to navigate to the shelf', err));
         });
     } else {
       this.needsName = false;
@@ -314,7 +314,7 @@ export class GameRoomStateService {
     } catch (err) {
       this.logger.error('Failed to leave room', err);
     } finally {
-      this.router.navigate(['/games']).catch(err => this.logger.error('Failed to navigate to games', err));
+      this.router.navigate(['/shelf']).catch(err => this.logger.error('Failed to navigate to the shelf', err));
     }
   }
 

@@ -1,24 +1,21 @@
 <div class="babble-hand-container">
   <!-- Host Toolbar (Only when Hand player is Host and game is active) -->
   <aside *ngIf="isHost && isPlaying" class="host-toolbar" aria-label="Host Actions">
-    <div class="host-label">
-      <i class="bi bi-shield-lock-fill"></i>
-      <span>Host</span>
-    </div>
+    <span class="host-label">Hosting</span>
     <div class="host-actions">
-      <button type="button" class="btn btn-sm btn-outline-warning" *ngIf="!isPaused" (click)="handlePause()" aria-label="Pause round">
-        <i class="bi bi-pause-fill"></i>
+      <button type="button" class="hand-btn" *ngIf="!isPaused" (click)="handlePause()" aria-label="Pause round">
+        <i class="bi bi-pause-fill" aria-hidden="true"></i>
         <span>Pause</span>
       </button>
-      <button type="button" class="btn btn-sm btn-warning" *ngIf="isPaused" (click)="handleResume()" aria-label="Resume round">
-        <i class="bi bi-play-fill"></i>
+      <button type="button" class="hand-btn hand-btn--on" *ngIf="isPaused" (click)="handleResume()" aria-label="Resume round">
+        <i class="bi bi-play-fill" aria-hidden="true"></i>
         <span>Resume</span>
       </button>
-      <button type="button" class="btn btn-sm btn-outline-danger" (click)="handleEndRound()" [disabled]="isEnding" aria-label="End round early">
-        <i class="bi bi-stop-fill"></i>
-        <span>Skip</span>
+      <button type="button" class="hand-btn hand-btn--danger" (click)="handleEndRound()" [disabled]="isEnding" aria-label="End round early">
+        <i class="bi bi-skip-end-fill" aria-hidden="true"></i>
+        <span>End round</span>
       </button>
-      <span *ngIf="isEnding" class="spinner-border spinner-border-sm text-danger ms-1" role="status" aria-label="Ending round"></span>
+      <span *ngIf="isEnding" class="spinner-border spinner-border-sm" role="status" aria-label="Ending round"></span>
     </div>
   </aside>
 
@@ -30,8 +27,7 @@
         <h2 class="game-name">Babble</h2>
         <span class="round-pill">Round {{ room?.roundNumber || 1 }}</span>
       </div>
-      <div class="timer-card" [class.urgent]="isUrgent">
-        <i class="bi bi-stopwatch-fill"></i>
+      <div class="timer-card" [class.urgent]="isUrgent" role="timer" aria-label="Time left">
         <span class="timer-digits">{{ timerText }}</span>
       </div>
     </header>
@@ -76,19 +72,18 @@
         />
         <button
           type="button"
-          class="btn btn-action-backspace"
+          class="btn-action-backspace"
           (click)="backspace()"
           [disabled]="!currentWord || isPaused || isBlurred"
           aria-label="Delete last letter">
-          <i class="bi bi-backspace-fill"></i>
+          <i class="bi bi-backspace" aria-hidden="true"></i>
         </button>
         <button
           type="submit"
-          class="btn btn-primary btn-submit-word"
+          class="btn-submit-word"
           [disabled]="currentWord.trim().length < 3 || isPaused || isBlurred"
           aria-label="Submit word">
-          <i class="bi bi-plus-lg"></i>
-          <span>ADD</span>
+          Add
         </button>
       </form>
 
@@ -96,7 +91,7 @@
       <div class="found-words-box">
         <div class="found-words-heading">
           <span class="heading-title">Found Words</span>
-          <span class="badge bg-primary text-white count-badge">{{ foundWords.length }}</span>
+          <span class="count-badge">{{ foundWords.length }}</span>
         </div>
         <div class="chips-scroll" *ngIf="foundWords.length > 0">
           <span class="word-chip" *ngFor="let word of foundWords">{{ word }}</span>
@@ -140,13 +135,13 @@
     <!-- Word Results List -->
     <div class="results-list" role="list">
       <div class="result-item" *ngFor="let res of displayResults">
-        <button
-          type="button"
-          class="result-card-btn"
-          (click)="showDefinition(res)"
-          [class.is-mine]="isMyWord(res)"
-          [attr.aria-label]="'View definition for ' + res.word">
-          <div class="word-col">
+        <div class="result-card-btn" [class.is-mine]="isMyWord(res)">
+          <button
+            type="button"
+            class="word-col"
+            (click)="showDefinition(res)"
+            [attr.aria-expanded]="selectedWord === res"
+            [attr.aria-label]="'Definition of ' + res.word">
             <span
               class="word-text"
               [class.strike]="!res.isOnGrid || res.isDuplicate || res.isHostRejected"
@@ -161,7 +156,7 @@
               <span class="badge-tag bg-danger" *ngIf="res.isHostRejected">Host Rejected</span>
               <span class="badge-tag bg-secondary" *ngIf="res.isDuplicate && !res.isHostRejected && !res.isHostValidated">Duplicate</span>
             </div>
-          </div>
+          </button>
 
           <div class="meta-col">
             <div class="d-flex align-items-center gap-2">
@@ -218,7 +213,7 @@
               </span>
             </div>
           </div>
-        </button>
+        </div>
 
         <!-- Definition Drawer -->
         <div class="definition-drawer" *ngIf="selectedWord === res">
@@ -245,8 +240,8 @@
 
     <!-- Guest Waiting Indicator -->
     <footer *ngIf="!isHost" class="results-waiting-footer">
-      <span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span>
-      <span class="text-white-50">Waiting for host to start next round...</span>
+      <span class="spinner-border spinner-border-sm me-2" role="status" aria-label="Waiting"></span>
+      <span>Waiting for the host to start the next round</span>
     </footer>
   </div>
 </div>

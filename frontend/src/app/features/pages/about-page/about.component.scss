@@ -2,10 +2,12 @@
 .about {
     display: flex;
     flex-direction: column;
-    gap: 4rem;
+    gap: 3rem;
     max-inline-size: 1200px;
     margin-inline: auto;
-    padding: var(--space-xl) var(--space-md) 4rem;
+    padding: var(--space-lg) var(--space-md) 3rem;
+
+    @media (max-width: 768px) { gap: 2rem; padding-block: var(--space-md) 2rem; }
 
     p { margin: 0; }
 }

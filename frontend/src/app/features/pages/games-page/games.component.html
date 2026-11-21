@@ -12,11 +12,21 @@
                 <path d="M15.5 15.5 L21 21" />
             </svg>
             <input #searchInput type="search" class="shelf-input" [value]="query()" (input)="setQuery($event)"
-                placeholder="Search by name, or try dice, drawing, team" autocomplete="off">
+                placeholder="Search by name or kind" autocomplete="off">
             <kbd class="shelf-kbd" aria-hidden="true">/</kbd>
         </label>
 
-        <div class="shelf-filters">
+        <!-- Phones: filters fold away behind this button so the games stay on screen. -->
+        <button type="button" class="shelf-filter-toggle" [attr.aria-expanded]="filtersOpen()" aria-controls="shelf-filters"
+            (click)="filtersOpen.set(!filtersOpen())">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 7h10M18 7h3M3 17h4M12 17h9" /><circle cx="15.5" cy="7" r="2.5" /><circle cx="9.5" cy="17" r="2.5" /></svg>
+            Filters
+            @if (filterCount()) {
+                <span class="shelf-filter-count">{{ filterCount() }}</span>
+            }
+        </button>
+
+        <div class="shelf-filters" id="shelf-filters" [class.is-open]="filtersOpen()">
             <div class="shelf-filter" role="group" aria-labelledby="shelf-players-label">
                 <span class="shelf-filter-label" id="shelf-players-label">How many are playing?</span>
                 <div class="shelf-options">
@@ -79,7 +89,7 @@
             <ul class="shelf-grid">
                 @for (game of allGames(); track game.id) {
                     <li class="game-card">
-                        <a [routerLink]="['/games', game.id]" class="shelf-box-link" [attr.aria-label]="game.name + ', game details'">
+                        <a [routerLink]="['/shelf', slug(game.id)]" class="shelf-box-link" [attr.aria-label]="game.name + ', game details'">
                             <app-game-box [game]="game"></app-game-box>
                         </a>
                         <span class="shelf-fit">{{ fit(game) }}</span>
@@ -111,7 +121,7 @@
             <ul class="shelf-results">
                 @for (game of results(); track game.id) {
                     <li class="game-card shelf-result">
-                        <a [routerLink]="['/games', game.id]" class="shelf-box-link" [attr.aria-label]="game.name + ', game details'">
+                        <a [routerLink]="['/shelf', slug(game.id)]" class="shelf-box-link" [attr.aria-label]="game.name + ', game details'">
                             <app-game-box [game]="game"></app-game-box>
                         </a>
                         <div class="shelf-result-text">
@@ -121,7 +131,7 @@
                                 <a class="btn btn-primary shelf-host" [routerLink]="['/game/create']" [queryParams]="{ gameType: game.id }">
                                     {{ isPlayable(game) ? 'Host' : 'Try it early' }}
                                 </a>
-                                <a class="shelf-rules" [routerLink]="['/games', game.id]">Rules</a>
+                                <a class="shelf-rules" [routerLink]="['/shelf', slug(game.id)]">Rules</a>
                             </div>
                         </div>
                     </li>

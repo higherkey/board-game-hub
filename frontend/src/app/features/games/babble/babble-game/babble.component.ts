@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, SimpleChanges, OnDestroy, ViewChild, Templ
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Room, SignalRService, getRoomResultPhase } from '../../../../services/signalr.service';
+import { secondsUntilPlay } from '../../../../shared/round-timing';
 import { EndRoundButtonComponent } from '../../shared/components/end-round-button/end-round-button.component';
 
 @Component({
@@ -90,38 +91,13 @@ export class BabbleComponent implements OnChanges, OnDestroy {
 
     this.isPlaying ? this.startTimer() : this.stopTimer();
 
-    // Blur Logic
-    if (this.isFinished) {
-      this.isBlurred = false;
-    } else if (this.isPaused) {
-      this.isBlurred = true;
-    } else if (this.isPlaying && this.isBlurred && this.room?.roundNumber === this.lastHandledRound) {
-      // If we are playing, blurred, and it's not a new round:
-      // Check if we should un-blur (e.g. came back from pause or countdown finished)
-      if (this.countdownSeconds <= 0 && !this.isPaused) {
-        this.isBlurred = false;
-      }
-    } else if (this.isPlaying && this.room?.roundNumber !== this.lastHandledRound) {
-      // New Round Started
-      this.lastHandledRound = this.room?.roundNumber || 0;
-      this.startCountdown();
-    }
+    this.syncLeadIn();
   }
 
-  private lastHandledRound = 0;
-
-  private startCountdown() {
-    this.isBlurred = true;
-    this.countdownSeconds = 3;
-    const interval = setInterval(() => {
-      this.countdownSeconds--;
-      if (this.countdownSeconds <= 0) {
-        if (!this.isPaused) {
-          this.isBlurred = false;
-        }
-        clearInterval(interval);
-      }
-    }, 1000);
+  /** The board stays hidden while paused or during the server's lead-in countdown. */
+  private syncLeadIn() {
+    this.countdownSeconds = secondsUntilPlay(this.room);
+    this.isBlurred = !this.isFinished && (this.isPaused || this.countdownSeconds > 0);
   }
 
   private processGridUpdate(grid: any) {
@@ -146,6 +122,7 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     if (this.timerInterval) return;
 
     this.timerInterval = setInterval(() => {
+      this.syncLeadIn();
       if (!this.room?.roundEndTime) {
         this.timerText = '--:--';
         return;

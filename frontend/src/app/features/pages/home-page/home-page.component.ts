@@ -5,6 +5,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HomeHeroComponent } from '../../../components/home-hero/home-hero.component';
 import { GameBoxComponent } from '../../../shared/components/game-box/game-box.component';
+import { gameSlug } from '../../../shared/game-slug';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
 import { SignalRService } from '../../../services/signalr.service';
 
@@ -18,6 +19,7 @@ import { SignalRService } from '../../../services/signalr.service';
 })
 export class LandingPageComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly slug = gameSlug;
   featuredGames: GameDefinition[] = [];
   roomCode: string = '';
   isCodeInputFocused: boolean = false;

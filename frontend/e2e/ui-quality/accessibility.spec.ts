@@ -6,6 +6,9 @@ test('mobile navigation, filters and selected tags expose keyboard state', async
   await page.route('**/health', r => r.fulfill({ json: { status: 'healthy' } }));
   await page.goto('/games');
   await expect(page.getByRole('search', { name: 'Search the shelf' })).toBeVisible();
+  const filters = page.getByRole('button', { name: 'Filters' });
+  await filters.click();
+  await expect(filters).toHaveAttribute('aria-expanded', 'true');
   const tag = page.getByRole('button', { name: '4 players', exact: true });
   await tag.focus(); await page.keyboard.press('Enter');
   await expect(tag).toHaveAttribute('aria-pressed', 'true');
