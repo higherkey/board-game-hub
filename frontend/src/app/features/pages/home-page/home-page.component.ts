@@ -4,19 +4,22 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HomeHeroComponent } from '../../../components/home-hero/home-hero.component';
+import { GameBoxComponent } from '../../../shared/components/game-box/game-box.component';
+import { gameSlug } from '../../../shared/game-slug';
 import { GameDataService, GameDefinition } from '../../../services/game-data.service';
 import { SignalRService } from '../../../services/signalr.service';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HomeHeroComponent],
+  imports: [CommonModule, RouterModule, FormsModule, HomeHeroComponent, GameBoxComponent],
   templateUrl: './home-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './home-page.component.scss'
 })
 export class LandingPageComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly slug = gameSlug;
   featuredGames: GameDefinition[] = [];
   roomCode: string = '';
   isCodeInputFocused: boolean = false;
@@ -114,7 +117,7 @@ export class LandingPageComponent implements OnInit, OnDestroy {
         const visibleStatuses = new Set(['Deployed', 'Testing']);
         this.featuredGames = games
           .filter(g => visibleStatuses.has(g.status))
-          .slice(0, 3);
+          .slice(0, 6);
       }
     });
 

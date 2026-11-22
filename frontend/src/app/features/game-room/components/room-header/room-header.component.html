@@ -1,9 +1,9 @@
 <header *ngIf="!isBigScreen"
-    class="game-room-header px-4 py-2 shadow-lg flex-shrink-0 d-flex align-items-center justify-content-between border-bottom border-secondary position-relative">
+    class="game-room-header flex-shrink-0 d-flex align-items-center justify-content-between position-relative">
     
     <!-- Mobile Left: Hamburger Menu -->
     <div class="d-md-none header-section-left">
-        <button #menuTrigger type="button" class="btn btn-link text-white p-0" (click)="toggleNavMenu()" title="Room Menu"
+        <button #menuTrigger type="button" class="header-icon-btn" (click)="toggleNavMenu()" title="Room Menu"
             aria-label="Open Room Menu" [attr.aria-expanded]="isNavMenuOpen" aria-controls="room-nav-menu">
             <i class="bi bi-list fs-3"></i>
         </button>
@@ -21,14 +21,14 @@
         </button>
         
         <!-- Sound Mute Toggle (Desktop) -->
-        <button type="button" class="btn btn-outline-light btn-sm" (click)="toggleSound()"
+        <button type="button" class="header-icon-btn" (click)="toggleSound()"
             [title]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'"
             [attr.aria-label]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'">
             <i class="bi" [class.bi-volume-mute-fill]="soundService.isMuted$ | async" [class.bi-volume-up-fill]="!(soundService.isMuted$ | async)"></i>
         </button>
 
         <!-- Video Chat Toggle (Desktop) -->
-        <button type="button" class="btn btn-outline-light btn-sm" (click)="startVideoChat.emit()"
+        <button type="button" class="header-icon-btn" (click)="startVideoChat.emit()"
             *ngIf="videoChatReady && !isVideoActive" title="Start Video" aria-label="Start Video">
             <i class="bi bi-camera-video"></i>
         </button>
@@ -48,7 +48,7 @@
                 <span class="small fw-bold me-2 text-uppercase d-none d-lg-inline room-info-label">ROOM</span>
                 <span class="font-monospace room-code-display">{{ roomCode }}</span>
             </div>
-            <div class="text-white game-title-badge fw-bold text-uppercase"
+            <div class="game-title-badge fw-bold text-uppercase"
                 [class.is-lobby]="isLobby">
                 {{ gameDisplayName }}
             </div>
@@ -58,21 +58,21 @@
     <!-- Right: Mobile Video & Desktop Profile -->
     <div class="header-section-right gap-2 gap-md-3">
         <!-- Sound Mute Toggle (Mobile) -->
-        <button class="btn btn-outline-light btn-sm d-md-none" (click)="toggleSound()"
+        <button class="header-icon-btn d-md-none" (click)="toggleSound()"
             [title]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'"
             [attr.aria-label]="(soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound'">
             <i class="bi" [class.bi-volume-mute-fill]="soundService.isMuted$ | async" [class.bi-volume-up-fill]="!(soundService.isMuted$ | async)"></i>
         </button>
 
         <!-- Video Chat Toggle (Mobile) -->
-        <button class="btn btn-outline-light btn-sm d-md-none" (click)="startVideoChat.emit()"
+        <button class="header-icon-btn d-md-none" (click)="startVideoChat.emit()"
             *ngIf="videoChatReady && !isVideoActive" title="Start Video" aria-label="Start Video">
             <i class="bi bi-camera-video"></i>
         </button>
 
         <!-- Round Indicator (Middle) -->
         <div *ngIf="gameStarted"
-            class="badge bg-dark border border-secondary text-light ms-3 px-3 py-2 d-none d-md-block">
+            class="header-round-badge ms-3 d-none d-md-block">
             ROUND {{ currentRound }} / {{ totalRounds }}
         </div>
 
@@ -89,17 +89,17 @@
         <div class="nav-menu-content p-3 d-flex flex-column gap-3"
             (click)="$event.stopPropagation()" (keydown)="onContentKeyDown($event)">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h4 class="mb-0 text-white fw-bold">Room Menu</h4>
-                <button type="button" class="btn-close btn-close-white" (click)="toggleNavMenu()" aria-label="Close Room Menu"></button>
+                <h4 class="mb-0 text-primary fw-bold">Room Menu</h4>
+                <button type="button" class="btn-close" (click)="toggleNavMenu()" aria-label="Close Room Menu"></button>
             </div>
 
             <div class="menu-actions d-flex flex-column gap-3">
-                <button type="button" class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleSound()">
+                <button type="button" class="btn btn-lg menu-btn w-100 d-flex align-items-center gap-3 py-3" (click)="toggleSound()">
                     <i class="bi fs-4" [class.bi-volume-mute-fill]="soundService.isMuted$ | async" [class.bi-volume-up-fill]="!(soundService.isMuted$ | async)"></i>
                     <span class="fw-bold">{{ (soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound' }}</span>
                 </button>
 
-                <a routerLink="/" class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleNavMenu()">
+                <a routerLink="/" class="btn btn-lg menu-btn w-100 d-flex align-items-center gap-3 py-3" (click)="toggleNavMenu()">
                     <i class="bi bi-house-door-fill fs-4"></i>
                     <span class="fw-bold">Go Home</span>
                 </a>
@@ -111,7 +111,7 @@
                 </button>
 
                 <div class="mt-4 pt-4 border-top border-secondary">
-                    <div class="small text-uppercase text-white-50 mb-3 fw-bold ls-wide">Profile</div>
+                    <div class="small text-uppercase text-secondary mb-3 fw-bold ls-wide">Profile</div>
                     <app-user-profile-dropdown [session]="session" [compactMode]="false" menuAlign="start"></app-user-profile-dropdown>
                 </div>
             </div>

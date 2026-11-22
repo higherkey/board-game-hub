@@ -18,7 +18,7 @@
 
         <!-- Mobile Header (Visible on small screens) -->
         <div class="babble-mobile-header d-flex d-md-none justify-content-between align-items-center mb-2">
-            <h3 class="m-0 fs-4 fw-bold text-white">Babble</h3>
+            <h3 class="m-0 fs-4 fw-bold text-primary">Babble</h3>
             <div class="d-flex align-items-center gap-2">
                 <div class="timer-card py-1 px-2" *ngIf="isPlaying" [class.urgent]="isUrgent">
                     <i class="bi bi-stopwatch-fill fs-6"></i>
@@ -182,7 +182,7 @@
 
             <div class="results-footer d-flex justify-content-center pt-3" *ngIf="isHost">
                 <button class="btn btn-primary fw-bold shadow-sm px-4 py-2" (click)="handleNextRound()">
-                    Next Round <i class="bi bi-arrow-right-circle ms-2"></i>
+                    {{ isGameOver ? 'Play Again' : 'Next Round' }} <i class="bi bi-arrow-right-circle ms-2"></i>
                 </button>
             </div>
         </div>

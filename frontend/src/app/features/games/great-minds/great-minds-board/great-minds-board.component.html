@@ -11,20 +11,20 @@
         <div class="stat lives">
             <span class="label">LIVES</span>
             <div class="hearts">
-                <span *ngFor="let l of [].constructor(gameState?.lives || 0)" class="heart">❤️</span>
+                <i *ngFor="let l of [].constructor(gameState?.lives || 0)" class="bi bi-heart-fill heart"></i>
             </div>
         </div>
         <div class="stat syncs">
             <span class="label">SYNCS</span>
             <div class="stars">
-                <span *ngFor="let s of [].constructor(gameState?.syncTokens || 0)" class="star">✨</span>
+                <i *ngFor="let s of [].constructor(gameState?.syncTokens || 0)" class="bi bi-star-fill star"></i>
             </div>
         </div>
     </div>
 
     <!-- THE STACK -->
     <div class="stack-area">
-        <div class="card-display" [style.background]="getGradient(gameState?.topCard || 0)" [class.pulse]="justPlayed"
+        <div class="card-display" [class.empty]="!gameState?.topCard" [style.background]="getGradient(gameState?.topCard || 0)" [class.pulse]="justPlayed"
             [class.success-pop]="isSuccess">
             <span class="card-number">{{ gameState?.topCard || 0 }}</span>
             <div class="ripple" *ngIf="justPlayed"></div>
@@ -37,7 +37,7 @@
 
     <!-- REWARD OVERLAY -->
     <div class="reward-overlay" *ngIf="showReward">
-        <div class="reward-flash">✨ REWARD GRANTED ✨</div>
+        <div class="reward-flash"><i class="bi bi-star-fill"></i> REWARD GRANTED <i class="bi bi-star-fill"></i></div>
         <div class="reward-detail">+1 LIFE & +1 SYNC</div>
     </div>
 

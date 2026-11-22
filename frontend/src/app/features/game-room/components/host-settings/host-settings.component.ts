@@ -1,11 +1,11 @@
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ChangeDetectionStrategy, DestroyRef, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GameSettings, SignalRService, Player } from '../../../../services/signalr.service';
+import { GameSettings, SignalRService, Player, RoomResultPhase, getRoomResultPhase } from '../../../../services/signalr.service';
 import { GameDataService, GameDefinition } from '../../../../services/game-data.service';
 import { GameComboboxComponent } from '../game-combobox/game-combobox.component';
 
@@ -24,6 +24,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() currentGameType: string | undefined = 'None';
   @Input() compactMode = false;
   @Input() isIntermission = false;
+  @Input() resultPhase?: RoomResultPhase | null;
   @Input() currentRound = 1;
   @Input() totalRounds = 5;
   @Input() players: Player[] = [];
@@ -33,9 +34,12 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() isHostOverride = false;
   @Output() gameStart = new EventEmitter<any>();
   @Output() nextRound = new EventEmitter<GameSettings>();
+  @Output() playAgain = new EventEmitter<GameSettings>();
   @Output() endGame = new EventEmitter<MouseEvent>();
   @Output() exitGame = new EventEmitter<MouseEvent>();
   @Output() toggleReady = new EventEmitter<boolean>();
+
+  @ViewChild(GameComboboxComponent) private readonly gameCombobox?: GameComboboxComponent;
 
   selectedGameType = 'None';
   availableGames: GameDefinition[] = [];
@@ -182,7 +186,23 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     }
 
     if (this.roomCode) {
-      if (this.isIntermission) return;
+      // Compact controls only show inside a game, so switching there ends that game: confirm first.
+      if (this.compactMode) {
+        const previous = this.currentGameType || 'None';
+        const next = this.availableGames.find(g => g.id === this.selectedGameType);
+        const confirmed = this.selectedGameType !== previous && this.selectedGameType !== 'None' && await this.confirmService.confirm({
+          title: `Switch to ${next?.name ?? 'another game'}?`,
+          message: 'This ends the current game. Everyone goes back to the lobby with the new game picked.',
+          confirmLabel: 'SWITCH GAME',
+          cancelLabel: 'KEEP PLAYING'
+        });
+        if (!confirmed) {
+          this.selectedGameType = previous;
+          // ngModel never saw the cancelled pick as an input, so it would not repaint; reset the box directly.
+          this.gameCombobox?.writeValue(previous);
+          return;
+        }
+      }
 
       this.gameSearchQuery = this.availableGames.find(g => g.id === this.selectedGameType)?.name || '';
       console.info(`[HostSettings] Requesting Game Change to: ${this.selectedGameType}`);
@@ -231,6 +251,18 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     return playersOnly.length > 0 && playersOnly.every(p => p.isReady);
   }
 
+  get isGameOver(): boolean {
+    return getRoomResultPhase(this) === 'GameOver';
+  }
+
+  get legacyFinish(): boolean {
+    return this.resultPhase == null && this.isIntermission && this.currentRound >= (this.settings.totalRounds || 5);
+  }
+
+  get startLabel(): string {
+    return this.isGameOver ? 'PLAY AGAIN' : this.legacyFinish ? 'FINISH GAME' : this.isIntermission ? 'NEXT ROUND' : 'START GAME';
+  }
+
   startGame(event?: MouseEvent) {
     const playersOnly = this.players.filter(p => !p.isScreen);
 
@@ -250,9 +282,10 @@ export class HostSettingsComponent implements OnChanges, OnInit {
 
   confirmStart(event?: MouseEvent) {
     this.logger.info(`[HostSettings] Host confirms start of ${this.isIntermission ? 'next round' : 'game'}`);
-    if (this.isIntermission) {
-      // Check for Game Over condition (Soft Stop)
-      if (this.currentRound >= (this.settings.totalRounds || 5)) {
+    if (this.isGameOver) {
+      this.playAgain.emit(this.settings);
+    } else if (this.isIntermission) {
+      if (this.legacyFinish) {
         this.endGame.emit(event);
       } else {
         this.nextRound.emit(this.settings);
@@ -264,6 +297,15 @@ export class HostSettingsComponent implements OnChanges, OnInit {
 
   emitExitGame(event?: MouseEvent) {
     this.exitGame.emit(event);
+  }
+
+  /** Mid-round, end the game and show final scores; between rounds or after the game, go back to the lobby. */
+  emitEndGame(event?: MouseEvent) {
+    if (this.isIntermission) {
+      this.exitGame.emit(event);
+    } else {
+      this.endGame.emit(event);
+    }
   }
 
   getQrCodeUrl(): string {

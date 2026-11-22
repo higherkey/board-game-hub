@@ -64,7 +64,6 @@ public class ScatterbrainGameService : BaseGameService<ScatterbrainState>
 
         room.State = GameState.Playing;
         room.RoundEndTime = DateTime.UtcNow.AddSeconds(room.Settings.TimerDurationSeconds);
-        room.RoundNumber++;
         return Task.CompletedTask;
     }
 

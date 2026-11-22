@@ -7,7 +7,7 @@
         <!-- Previous Content -->
         <div *ngIf="previousPage" class="mb-4 w-100" style="max-width: 500px;">
             <div *ngIf="previousPage.type === 'Drawing' || previousPage.type === 1"
-                class="border rounded p-2 bg-light shadow-sm">
+                class="border border-2 border-primary rounded p-2 bg-light shadow-sm">
                 <img [src]="previousPage.content" class="img-fluid rounded" alt="Drawing to guess">
             </div>
             <div *ngIf="previousPage.type === 'Text' || previousPage.type === 0"
@@ -20,7 +20,7 @@
         <div *ngIf="phase === 'Prompting' && !isSubmitted" class="mb-4">
             <p class="text-muted small mb-2">Need an idea?</p>
             <div class="d-flex flex-wrap justify-content-center gap-2">
-                <button *ngFor="let sug of suggestions" class="btn btn-sm btn-outline-info rounded-pill"
+                <button *ngFor="let sug of suggestions" class="btn btn-sm btn-outline-info"
                     (click)="useSuggestion(sug)">
                     {{ sug }}
                 </button>

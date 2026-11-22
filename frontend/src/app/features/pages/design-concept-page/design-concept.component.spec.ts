@@ -25,7 +25,7 @@ describe('DesignConceptComponent', () => {
 
   it('projects game and room navigation into the shared hero', () => {
     const hero: HTMLElement = fixture.nativeElement.querySelector('app-home-hero');
-    expect(hero.querySelector('a[href="/games"]')?.textContent).toContain('Choose a Game');
+    expect(hero.querySelector('a[href="/shelf"]')?.textContent).toContain('Choose a Game');
     expect(hero.querySelector('a[href="/play"]')?.textContent).toContain('Join a Room');
   });
 });

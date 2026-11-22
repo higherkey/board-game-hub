@@ -59,6 +59,30 @@ public class GameHubTests
         _sut.Context = _mockContext.Object;
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ReplayAndNextRound_NormalizeCodeAndUseExplicitService(bool replay)
+    {
+        var room = new Room { Code = "TEST", State = GameState.Finished };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+        _mockRoomService.Setup(r => r.PlayAgain("TEST")).ReturnsAsync(room);
+        _mockRoomService.Setup(r => r.NextRound("TEST")).ReturnsAsync(room);
+        if (replay)
+        {
+            await _sut.PlayAgain(" test ");
+            _mockRoomService.Verify(r => r.PlayAgain("TEST"), Times.Once);
+        }
+        else
+        {
+            await _sut.NextRound(" test ");
+            _mockRoomService.Verify(r => r.NextRound("TEST"), Times.Once);
+        }
+        _mockRoomService.Verify(r => r.StartGame(It.IsAny<string>(), It.IsAny<GameSettings?>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("GameStarted", It.IsAny<object[]>(), default), Times.Once);
+    }
+
     [Fact]
     public async Task CreateRoom_ShouldCreateAndJoinGroupAndBroadcast()
     {
@@ -399,6 +423,11 @@ public class GameHubTests
         await actNextRound.Should().ThrowAsync<HubException>()
             .WithMessage("*Only an authorized host*");
 
+        await Assert.ThrowsAsync<HubException>(() => _sut.PlayAgain("TEST"));
+        await Assert.ThrowsAsync<HubException>(() => _sut.EndGame("TEST"));
+        _mockRoomService.Verify(r => r.PlayAgain(It.IsAny<string>()), Times.Never);
+        _mockRoomService.Verify(r => r.EndGame(It.IsAny<string>()), Times.Never);
+
         // Act & Assert - NextWisecrackBattle
         var actNextBattle = () => _sut.NextWisecrackBattle("TEST");
         await actNextBattle.Should().ThrowAsync<HubException>()
@@ -426,7 +455,7 @@ public class GameHubTests
 
         // Act & Assert - NextRound
         await _sut.NextRound("TEST");
-        _mockRoomService.Verify(r => r.StartGame("TEST", null), Times.Once);
+        _mockRoomService.Verify(r => r.NextRound("TEST"), Times.Once);
 
         // Act & Assert - SetGameType
         _mockRoomService.Setup(r => r.SetGameType("TEST", GameType.Scatterbrain)).Returns(room);

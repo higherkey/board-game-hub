@@ -21,7 +21,7 @@
                 <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item"
                     (click)="closeMobileMenu()">Home</a>
                 <a routerLink="/play" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Play</a>
-                <a routerLink="/games" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Games</a>
+                <a routerLink="/shelf" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">Shelf</a>
                 <a routerLink="/about" routerLinkActive="active" class="nav-item" (click)="closeMobileMenu()">About</a>
                 <a routerLink="/social" routerLinkActive="active" class="nav-item"
                     (click)="closeMobileMenu()">Social</a>
@@ -51,6 +51,7 @@
     <!-- CONTENT -->
     <main class="main-content" [class.game-room-content]="isGameRoom$ | async" role="main">
         <router-outlet></router-outlet>
+        <app-confirm></app-confirm>
     </main>
 
     <!-- FOOTER -->
@@ -70,7 +71,7 @@
                 <nav class="footer-nav" aria-label="Platform">
                     <a routerLink="/">Home</a>
                     <a routerLink="/play">Play</a>
-                    <a routerLink="/games">Games</a>
+                    <a routerLink="/shelf">Shelf</a>
                     <a routerLink="/social">Social</a>
                 </nav>
             </div>

@@ -1,10 +1,8 @@
 .table-root {
-    height: 100%;
-    width: 100%;
-    background: radial-gradient(circle at 15% 0%, rgba(16, 185, 129, 0.22), transparent 35%),
-        radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.16), transparent 40%),
-        rgba(2, 6, 23, 0.35);
-    color: white;
+    block-size: 100%;
+    inline-size: 100%;
+    background: var(--bg-base);
+    color: var(--text-primary);
     padding: 14px;
     overflow: hidden;
 }
@@ -14,15 +12,16 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-block-end: 12px;
 }
 
 .title {
     display: flex;
     align-items: baseline;
     gap: 10px;
-    font-weight: 900;
-    letter-spacing: 0.02em;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: var(--primary);
 }
 
 .emoji {
@@ -31,14 +30,16 @@
 
 .status .pill {
     padding: 7px 12px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    color: var(--primary);
+    font-weight: 700;
     font-size: 0.85rem;
 }
 
 .table-body {
-    height: calc(100% - 48px);
+    block-size: calc(100% - 48px);
     display: flex;
     flex-direction: column;
 }
@@ -48,44 +49,48 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 10px;
+    margin-block-end: 10px;
 }
 
 .spectator-box,
 .clue-progress {
     flex: 0 0 auto;
     padding: 10px 12px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    box-shadow: 3px 3px 0 var(--primary);
 }
 
 .label {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    opacity: 0.75;
+    color: var(--text-secondary);
 }
 
 .value {
+    font-family: 'Outfit', sans-serif;
     font-size: 1.1rem;
-    font-weight: 900;
-    margin-top: 4px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-block-start: 4px;
 }
 
 .sub {
     font-size: 0.8rem;
-    opacity: 0.75;
-    margin-top: 2px;
+    color: var(--text-secondary);
+    margin-block-start: 2px;
 }
 
 .message {
-    margin-left: auto;
+    margin-inline-start: auto;
     padding: 10px 12px;
-    border-radius: 14px;
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.22);
-    opacity: 0.95;
+    border: 2px solid var(--accent-dark);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--accent-dark);
+    font-weight: 700;
 }
 
 .grid {
@@ -93,19 +98,19 @@
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 12px;
-    min-height: 0;
+    min-block-size: 0;
 }
 
 .board-wrap {
     position: relative;
-    min-height: 0;
+    min-block-size: 0;
     overflow: hidden;
 }
 
 .clover-board-container {
     position: relative;
-    width: 380px;
-    height: 380px;
+    inline-size: 380px;
+    block-size: 380px;
     margin: 25px auto;
     display: flex;
     align-items: center;
@@ -118,19 +123,19 @@
     grid-template-rows: repeat(2, 120px);
     gap: 8px;
     padding: 12px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.25), rgba(15, 23, 42, 0.8));
-    border: 3px solid rgba(16, 185, 129, 0.5);
-    border-radius: 24px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    box-shadow: 4px 4px 0 var(--primary);
 }
 
 .grid-slot {
     position: relative;
-    width: 120px;
-    height: 120px;
-    background: rgba(15, 23, 42, 0.7);
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+    inline-size: 120px;
+    block-size: 120px;
+    background: var(--bg-surface-2);
+    border: 2px dashed var(--primary);
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -138,8 +143,8 @@
     .slot-badge {
         position: absolute;
         font-size: 0.65rem;
-        font-weight: 800;
-        color: rgba(255, 255, 255, 0.4);
+        font-weight: 700;
+        color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 0.05em;
         pointer-events: none;
@@ -152,50 +157,51 @@
 
 .outer-clue-badge {
     position: absolute;
-    background: rgba(15, 23, 42, 0.95);
-    border: 2px solid #10b981;
-    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
     padding: 4px 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    box-shadow: 2px 2px 0 var(--accent);
     z-index: 5;
 
     .clue-label {
         font-size: 0.6rem;
-        font-weight: 900;
-        color: #10b981;
+        font-weight: 700;
+        color: var(--accent-dark);
         letter-spacing: 0.1em;
     }
 
     .clue-value {
+        font-family: 'Outfit', sans-serif;
         font-size: 1rem;
-        font-weight: 800;
-        color: #ffffff;
+        font-weight: 700;
+        color: var(--primary);
     }
 
     &.clue-top {
-        top: -30px;
-        left: 50%;
+        inset-block-start: -30px;
+        inset-inline-start: 50%;
         transform: translateX(-50%);
     }
 
     &.clue-right {
-        right: -35px;
-        top: 50%;
+        inset-inline-end: -35px;
+        inset-block-start: 50%;
         transform: translateY(-50%);
     }
 
     &.clue-bottom {
-        bottom: -30px;
-        left: 50%;
+        inset-block-end: -30px;
+        inset-inline-start: 50%;
         transform: translateX(-50%);
     }
 
     &.clue-left {
-        left: -35px;
-        top: 50%;
+        inset-inline-start: -35px;
+        inset-block-start: 50%;
         transform: translateY(-50%);
     }
 }
@@ -216,7 +222,7 @@
     left: 50%;
     top: 42%;
     transform: translate(-50%, -50%);
-    width: 92%;
+    inline-size: 92%;
     text-align: center;
     pointer-events: none;
 }
@@ -224,44 +230,47 @@
 .clue-title {
     font-size: 0.7rem;
     letter-spacing: 0.16em;
-    opacity: 0.7;
+    color: var(--text-secondary);
     text-transform: uppercase;
 }
 
 .clue-word {
-    margin-top: 6px;
+    margin-block-start: 6px;
+    font-family: 'Outfit', sans-serif;
     font-size: 1.1rem;
-    font-weight: 900;
+    font-weight: 700;
+    color: var(--primary);
     padding: 8px 10px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    min-height: 40px;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    min-block-size: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .pair {
-    margin-top: 6px;
+    margin-block-start: 6px;
     font-size: 0.85rem;
-    opacity: 0.85;
+    color: var(--text-secondary);
 }
 
 .pool-wrap {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 16px;
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
     padding: 12px;
-    min-height: 0;
+    min-block-size: 0;
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
 .pool-title {
-    font-weight: 900;
-    opacity: 0.9;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: var(--primary);
 }
 
 .pool-cards {
@@ -275,14 +284,14 @@
     justify-content: center;
     align-items: center;
     padding: 6px;
-    border-radius: 14px;
-    background: rgba(0, 0, 0, 0.12);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface-2);
 }
 
 .pool-hint {
-    margin-top: auto;
+    margin-block-start: auto;
     font-size: 0.85rem;
-    opacity: 0.8;
+    color: var(--text-secondary);
     line-height: 1.25;
 }
 
@@ -296,7 +305,6 @@
 .ghost-card {
     position: absolute;
     will-change: transform;
-    filter: drop-shadow(0 15px 30px rgba(0,0,0,0.5));
 }
 
 .tether-layer {
@@ -307,38 +315,38 @@
 
     path {
         fill: none;
-        stroke: white;
+        stroke: var(--primary);
         stroke-width: 2;
         stroke-dasharray: 4 4;
-        opacity: 0.4;
+        opacity: 0.5;
     }
 }
 
 .owner-symbol {
     position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 24px;
-    height: 24px;
-    background: white;
-    color: black;
+    inset-block-start: -10px;
+    inset-inline-end: -10px;
+    inline-size: 24px;
+    block-size: 24px;
+    background: var(--bg-surface);
+    color: var(--primary);
+    border: 2px solid var(--primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
     font-weight: bold;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     z-index: 10;
 }
 
 .empty-state {
-    height: 100%;
+    block-size: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.75;
-    font-weight: 800;
+    color: var(--text-secondary);
+    font-weight: 700;
     text-align: center;
 }
 
@@ -348,11 +356,42 @@
     }
 
     .pool-wrap {
-        height: auto;
+        block-size: auto;
     }
 
     .clover-board {
-        min-height: 360px;
+        min-block-size: 360px;
     }
 }
 
+.player-buckets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-start: 1rem;
+}
+
+.player-bucket {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    box-shadow: 2px 2px 0 var(--primary);
+    font-weight: 700;
+    color: var(--primary);
+
+    .avatar {
+        inline-size: 2rem;
+        block-size: 2rem;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--primary);
+        color: var(--bg-surface);
+        font-family: 'Outfit', sans-serif;
+        text-transform: uppercase;
+    }
+}

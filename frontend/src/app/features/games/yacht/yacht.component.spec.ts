@@ -35,7 +35,9 @@ describe('YachtComponent', () => {
     fixture.componentRef.setInput('isTable', true);
     fixture.componentRef.setInput('isScreen', true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('.die').length).toBe(5);
+    const tray = fixture.nativeElement.querySelector('app-dice-tray');
+    expect(tray).not.toBeNull();
+    expect(tray.textContent).toContain('Die 5,');
     expect(fixture.nativeElement.textContent).toContain('Isaac');
     expect(fixture.nativeElement.querySelector('.category-picker')).toBeNull();
     expect(fixture.nativeElement.querySelector('.roll-button')).toBeNull();

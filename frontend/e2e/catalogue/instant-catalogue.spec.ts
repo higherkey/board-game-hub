@@ -35,7 +35,7 @@ test('offline first visit retains the bundled catalogue', async ({ page }) => {
   await expect(page.getByText('Loading games...', { exact: true })).toHaveCount(0);
 });
 
-test('Home shows featured games before the API responds', async ({ page }) => {
+test('Home shows the shelf before the API responds', async ({ page }) => {
   let release!: () => void;
   const gate = new Promise<void>(resolve => release = resolve);
   await page.route('**/api/games', async route => {
@@ -44,8 +44,8 @@ test('Home shows featured games before the API responds', async ({ page }) => {
   });
   try {
     await page.goto('/');
-    await expect(page.locator('.preview-card')).toHaveCount(3);
-    await expect(page.locator('.preview-name').first()).not.toBeEmpty();
+    await expect(page.locator('.home-shelf-item')).toHaveCount(5);
+    await expect(page.locator('.home-shelf-item .gb-title').first()).not.toBeEmpty();
   } finally { release(); }
 });
 

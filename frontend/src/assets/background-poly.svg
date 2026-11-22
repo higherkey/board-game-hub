@@ -1,23 +1,28 @@
 <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <pattern id="poly-pattern" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
-      <path d="M0 0 L100 0 L50 86.6 Z" fill="rgba(0, 51, 102, 0.03)" />
-      <path d="M100 0 L200 0 L150 86.6 Z" fill="rgba(0, 51, 102, 0.02)" />
-      <path d="M50 86.6 L150 86.6 L100 173.2 Z" fill="rgba(56, 178, 172, 0.03)" />
-      <path d="M0 173.2 L100 173.2 L50 86.6 Z" fill="rgba(0, 51, 102, 0.02)" />
-      <path d="M100 173.2 L200 173.2 L150 86.6 Z" fill="rgba(0, 51, 102, 0.03)" />
+    <!-- Hard-edged tangram tile in brand navy, teal and pink. -->
+    <pattern id="tangram" x="0" y="0" width="160" height="160" patternUnits="userSpaceOnUse">
+      <path d="M0 0 L80 0 L0 80 Z" fill="rgba(0, 179, 171, 0.07)" />
+      <path d="M80 0 L160 0 L160 80 Z" fill="rgba(0, 40, 92, 0.04)" />
+      <path d="M0 80 L80 80 L40 120 Z" fill="rgba(0, 40, 92, 0.05)" />
+      <path d="M120 80 L160 80 L160 120 Z" fill="rgba(226, 18, 122, 0.07)" />
+      <path d="M80 80 L160 160 L80 160 Z" fill="rgba(0, 179, 171, 0.07)" />
     </pattern>
     <filter id="noise">
       <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
       <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0"/>
     </filter>
   </defs>
-  
-  <!-- Parchment Base with Noise -->
+
+  <!-- Parchment base with grain -->
   <rect width="100%" height="100%" fill="#fdf5e6"/>
   <rect width="100%" height="100%" filter="url(#noise)" opacity="0.15"/>
-  
-  <!-- Side Geometric Accents -->
-  <rect width="20%" height="100%" fill="url(#poly-pattern)" opacity="0.6"/>
-  <rect x="80%" width="20%" height="100%" fill="url(#poly-pattern)" opacity="0.6"/>
+
+  <!-- Side bands: the pattern steps down in hard bands toward the centre -->
+  <rect width="8%" height="100%" fill="url(#tangram)"/>
+  <rect x="8%" width="6%" height="100%" fill="url(#tangram)" opacity="0.55"/>
+  <rect x="14%" width="6%" height="100%" fill="url(#tangram)" opacity="0.25"/>
+  <rect x="80%" width="6%" height="100%" fill="url(#tangram)" opacity="0.25"/>
+  <rect x="86%" width="6%" height="100%" fill="url(#tangram)" opacity="0.55"/>
+  <rect x="92%" width="8%" height="100%" fill="url(#tangram)"/>
 </svg>

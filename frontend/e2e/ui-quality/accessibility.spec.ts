@@ -5,12 +5,13 @@ test('mobile navigation, filters and selected tags expose keyboard state', async
   await page.route('**/api/games', r => r.abort());
   await page.route('**/health', r => r.fulfill({ json: { status: 'healthy' } }));
   await page.goto('/games');
-  const filters = page.getByRole('button', { name: 'Refine Search' });
-  await filters.focus(); await page.keyboard.press('Enter');
+  await expect(page.getByRole('search', { name: 'Search the shelf' })).toBeVisible();
+  const filters = page.getByRole('button', { name: 'Filters' });
+  await filters.click();
   await expect(filters).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator('#game-filters')).toBeVisible();
-  const tag = page.locator('.btn-tag').first();
-  await tag.click(); await expect(tag).toHaveAttribute('aria-pressed', 'true');
+  const tag = page.getByRole('button', { name: '4 players', exact: true });
+  await tag.focus(); await page.keyboard.press('Enter');
+  await expect(tag).toHaveAttribute('aria-pressed', 'true');
   const nav = page.getByRole('button', { name: 'Toggle Navigation' });
   await nav.click(); await expect(nav).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');

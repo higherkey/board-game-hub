@@ -19,7 +19,7 @@
   display: flex;
   width: 100%;
   border: 2px solid var(--surface-2, #f1f3f5);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--surface-2, #f1f3f5);
   transition: all 0.2s ease;
   overflow: hidden;
@@ -108,13 +108,13 @@ ul[role="listbox"] {
   padding: 5px;
   list-style: none;
   background-color: white;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   display: none;
   max-height: 250px;
   overflow-y: auto;
   z-index: 1000;
-  border: 1px solid #eee;
+  border: 2px solid var(--primary);
 
   &.show {
     display: block;
@@ -125,7 +125,7 @@ ul[role="listbox"] {
 li[role="option"] {
   padding: 8px 12px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   gap: 10px;

@@ -15,8 +15,11 @@ public class Player
     public bool IsReady { get; set; } = false;
     public bool IsScreen { get; set; } = false;
     
-    // Optional Auth Info
+    // Optional Auth Info. Kept server-side only; clients receive IsRegistered instead.
+    [System.Text.Json.Serialization.JsonIgnore]
     public string? UserId { get; set; }
+
+    public bool IsRegistered => !string.IsNullOrEmpty(UserId) && !UserId.StartsWith("guest:", StringComparison.Ordinal);
     public string? AvatarUrl { get; set; }
 }
 
@@ -28,6 +31,7 @@ public class Room
     public readonly SemaphoreSlim StateLock = new(1, 1);
     public List<Player> Players { get; set; } = new();
     public GameState State { get; set; } = GameState.Lobby;
+    public ResultPhase? ResultPhase { get; set; }
     public GameSettings Settings { get; set; } = new();
 
     public GameType GameType { get; set; } = GameType.None; 
@@ -63,6 +67,8 @@ public class Room
     public Dictionary<string, GameType> NextGameVotes { get; set; } = new();
 
     // Timer State
+    /// <summary>When play starts this round (UTC). Later than the round's creation when the game has a lead-in countdown.</summary>
+    public DateTime? RoundStartTime { get; set; }
     public DateTime? RoundEndTime { get; set; }
     public bool IsPaused { get; set; }
     public TimeSpan? TimeRemainingWhenPaused { get; set; }
@@ -116,6 +122,38 @@ public class GameSettings
 
     /// <summary>Clover-Minded: each Hand may rotate exactly one placed card per resolution round (default true).</summary>
     public bool CloverAllowPerPlayerSingleCardRotation { get; set; } = true;
+
+    public const int MinTotalRounds = 1;
+    public const int MaxTotalRounds = 20;
+    public const int MinTimerDurationSeconds = 0;
+    public const int MaxTimerDurationSeconds = 3600;
+    public const int MinBoardSize = 4;
+    public const int MaxBoardSize = 6;
+    public const int MaxCustomCategories = 20;
+    public const int MaxCategoryLength = 100;
+    public const int MaxSeedLength = 100;
+
+    /// <summary>Bounds host-supplied values in place so they are safe to store and act on.</summary>
+    public void Clamp()
+    {
+        TotalRounds = Math.Clamp(TotalRounds, MinTotalRounds, MaxTotalRounds);
+        TimerDurationSeconds = Math.Clamp(TimerDurationSeconds, MinTimerDurationSeconds, MaxTimerDurationSeconds);
+        BoardSize = Math.Clamp(BoardSize, MinBoardSize, MaxBoardSize);
+
+        CustomCategories = (CustomCategories ?? new List<string>())
+            .Where(c => c != null)
+            .Take(MaxCustomCategories)
+            .Select(c => c.Trim())
+            .Select(c => c.Length > MaxCategoryLength ? c[..MaxCategoryLength] : c)
+            .Where(c => c.Length > 0)
+            .ToList();
+
+        var seed = GenerativeSeed ?? string.Empty;
+        GenerativeSeed = seed.Length > MaxSeedLength ? seed[..MaxSeedLength] : seed;
+
+        if (!Enum.IsDefined(LetterMode))
+            LetterMode = ScatterbrainData.LetterMode.Normal;
+    }
 }
 
 public enum GameState
@@ -123,6 +161,12 @@ public enum GameState
     Lobby,
     Playing,
     Finished
+}
+
+public enum ResultPhase
+{
+    RoundResults,
+    GameOver
 }
 
 public enum GameType

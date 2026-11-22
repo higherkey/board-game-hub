@@ -57,6 +57,18 @@ public class YachtGameServiceTests
         Assert.Equal(expected, YachtGameService.CalculateCategoryScore(category, [4, 4, 4, 4, 4], true));
 
     [Fact]
+    public async Task EachRollGetsANewRollId()
+    {
+        var room = await Start();
+        var state = (YachtState)room.GameData!;
+        var before = state.RollId;
+        Assert.True(await Act(room, "ROLL"));
+        Assert.Equal(before + 1, state.RollId);
+        Assert.True(await Act(room, "ROLL"));
+        Assert.Equal(before + 2, state.RollId);
+    }
+
+    [Fact]
     public async Task InitializesOnlyHandsAndResetsScores()
     {
         var room = await Start();

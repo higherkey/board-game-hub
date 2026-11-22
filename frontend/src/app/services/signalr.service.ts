@@ -28,15 +28,22 @@ export interface Player {
   isReady: boolean;
   isScreen: boolean;
   avatarUrl?: string;
-  userId?: string;
+  isRegistered?: boolean;
 }
 
 export type RoomState = 'Lobby' | 'Playing' | 'Finished';
+export type RoomResultPhase = 'RoundResults' | 'GameOver';
+
+/** Null or absent phases preserve each caller's legacy continuation. */
+export function getRoomResultPhase(room: Pick<Room, 'resultPhase'> | null | undefined, legacyPhase: RoomResultPhase | null = null): RoomResultPhase | null {
+  return room?.resultPhase ?? legacyPhase;
+}
 
 export interface Room {
   code: string;
   players: Player[];
   state: RoomState;
+  resultPhase?: RoomResultPhase | null;
   settings: GameSettings;
   gameType: string;
 
@@ -53,6 +60,8 @@ export interface Room {
   // Voting
   nextGameVotes: { [key: string]: number }; // Vote is GameType enum int or string
 
+  /** When play starts this round (UTC); later than now during a game's lead-in countdown. */
+  roundStartTime?: string;
   roundEndTime?: string;
   isPaused: boolean;
   timeRemainingWhenPaused?: string;
@@ -207,8 +216,9 @@ export class SignalRService {
       this.logger.info(`[SignalR] Received GameTypeChanged: ${gameType}`);
       const current = this.currentRoomSubject.value;
       if (current) {
-        current.gameType = gameType;
-        this.currentRoomSubject.next({ ...current });
+        // The server only sends this once the room is back in the lobby. Switch state with the type so the
+        // new game's component never renders against the old game's data while the state patch is in flight.
+        this.currentRoomSubject.next({ ...current, gameType, state: 'Lobby', gameData: null });
       }
     });
 
@@ -406,6 +416,11 @@ export class SignalRService {
     if (roomCode) await this.hubConnection.invoke('EndGame', roomCode);
   }
 
+  public async playAgain(): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) await this.hubConnection.invoke('PlayAgain', roomCode);
+  }
+
   public async nextRound(): Promise<void> {
     const roomCode = this.currentRoomSubject.value?.code;
     if (roomCode) await this.hubConnection.invoke('NextRound', roomCode);
@@ -531,6 +546,7 @@ export class SignalRService {
 
   public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None', isScreen = false): Promise<string> {
     const guestId = this.authService.getGuestId();
+    await this.startConnection();
     return this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId, isScreen)
       .then((room: Room) => {
         this.logger.info(`[SignalR] Room created: ${room.code}, Game: ${room.gameType}`);

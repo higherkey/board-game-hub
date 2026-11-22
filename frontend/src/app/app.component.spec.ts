@@ -6,16 +6,7 @@ import { SignalRService } from './services/signalr.service';
 import { AuthService } from './services/auth.service';
 import { GameDataService } from './services/game-data.service';
 import { BehaviorSubject } from 'rxjs';
-import { CUSTOM_ELEMENTS_SCHEMA, Component, ChangeDetectionStrategy } from '@angular/core';
-import { NavbarComponent } from './core/components/navbar/navbar.component';
-
-@Component({
-  selector: 'app-navbar',
-  template: '',
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: true
-})
-class NavbarStubComponent { }
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 describe('AppComponent', () => {
   let mockRouter: any;
@@ -47,7 +38,7 @@ describe('AppComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [AppComponent, NavbarStubComponent], // Standalone
+      imports: [AppComponent],
       providers: [
         { provide: Router, useValue: mockRouter },
         { provide: SignalRService, useValue: mockSignalRService },
@@ -58,10 +49,6 @@ describe('AppComponent', () => {
       ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA]
     })
-      .overrideComponent(AppComponent, {
-        remove: { imports: [NavbarComponent] },
-        add: { imports: [NavbarStubComponent] }
-      })
       .compileComponents();
   });
 

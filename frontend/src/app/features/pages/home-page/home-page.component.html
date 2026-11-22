@@ -1,9 +1,9 @@
 <app-home-hero>
     <div class="hero-content">
-        <!-- Primary Action CTAs underneath the 3 steps (Matching /about page styling) -->
-        <div class="hero-ctas mt-4">
-            <button routerLink="/games" class="btn btn-primary btn-lg px-4 hero-create-btn shadow-sm">
-                <i class="bi bi-controller me-2" aria-hidden="true"></i>Choose a Game
+        <!-- Host and Join sit beside the headline, above the three steps -->
+        <div class="hero-ctas">
+            <button routerLink="/shelf" class="btn btn-primary btn-lg px-4 hero-create-btn shadow-sm">
+                <i class="bi bi-controller me-2" aria-hidden="true"></i>Host a game
             </button>
 
             <div class="hero-join-pill shadow-sm" [class.is-expanded]="isCodeInputFocused || (roomCode && roomCode.length > 0)" [class.has-error]="!!codeError">
@@ -55,85 +55,31 @@
     </div>
 </app-home-hero>
 
-<!-- ===================================================
-     TABLE VS HAND BREAKDOWN (Concise Concept Detail)
-     =================================================== -->
-<section class="hiw-section" aria-labelledby="hiw-heading">
-    <div class="hiw-inner">
-        <div class="section-header text-center">
-            <h2 class="section-title" id="hiw-heading">How Table vs. Hand Works</h2>
-            <p class="section-subtitle">A shared living-room experience built for any screen, anywhere.</p>
-        </div>
-
-        <div class="row g-4">
-            <!-- Table Card -->
-            <div class="col-md-4">
-                <div class="walkthrough-item p-4 h-100 rounded-3 bg-surface border text-center d-flex flex-column align-items-center">
-                    <div class="step-icon step-icon--primary mb-3">
-                        <i class="bi bi-tv fs-2" aria-hidden="true"></i>
-                    </div>
-                    <h3 class="h5 fw-bold text-primary mb-2">The Big Screen Table</h3>
-                    <p class="text-secondary small mb-0">
-                        Put the game up on your living room TV or laptop for everyone to see. It acts as the shared board &mdash; showing scores, timers, and round action.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Hand Card -->
-            <div class="col-md-4">
-                <div class="walkthrough-item p-4 h-100 rounded-3 bg-surface border text-center d-flex flex-column align-items-center">
-                    <div class="step-icon step-icon--accent mb-3">
-                        <i class="bi bi-phone fs-2" aria-hidden="true"></i>
-                    </div>
-                    <h3 class="h5 fw-bold text-primary mb-2">Your Private Hand</h3>
-                    <p class="text-secondary small mb-0">
-                        Each player joins on their smartphone. Secret cards, answers, and votes stay private on your own screen so no one else can peek.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Sync Engine Card -->
-            <div class="col-md-4">
-                <div class="walkthrough-item p-4 h-100 rounded-3 bg-surface border text-center d-flex flex-column align-items-center">
-                    <div class="step-icon step-icon--pink mb-3">
-                        <i class="bi bi-controller fs-2" aria-hidden="true"></i>
-                    </div>
-                    <h3 class="h5 fw-bold text-primary mb-2">Instant Multiplayer Fun</h3>
-                    <p class="text-secondary small mb-0">
-                        Zero downloads or sign-ups required to jump in. Everyone interacts in real time with instant updates across all your screens.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="text-center mt-4 pt-2">
-            <button routerLink="/games" class="btn btn-primary btn-lg px-4 hero-create-btn shadow-sm">
-                <i class="bi bi-controller me-2" aria-hidden="true"></i>Browse Games &amp; Host
-            </button>
-        </div>
+<!-- Take a game off the shelf: the playable games as boxes on a shelf -->
+<section class="home-shelf" aria-labelledby="shelf-heading">
+    <div class="home-shelf-head">
+        <h2 class="home-section-title" id="shelf-heading">Take a game off the shelf</h2>
+        <a routerLink="/shelf" class="home-shelf-all">See the whole shelf</a>
+    </div>
+    <div class="home-shelf-unit">
+        <ul class="home-shelf-row">
+            @for (game of featuredGames; track game.id) {
+                <li class="home-shelf-item">
+                    <a [routerLink]="['/shelf', slug(game.id)]" class="home-shelf-link" [attr.aria-label]="game.name + ', game details'">
+                        <app-game-box [game]="game"></app-game-box>
+                    </a>
+                </li>
+            }
+        </ul>
+        <div class="home-shelf-ledge" aria-hidden="true"></div>
     </div>
 </section>
 
-
-
-<!-- ===================================================
-     GAMES PREVIEW SECTION
-     =================================================== -->
-<section class="games-preview-section" aria-labelledby="games-preview-heading">
-    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-        <h2 class="section-title mb-0" id="games-preview-heading">Featured Games</h2>
-        <a routerLink="/games" class="btn btn-sm btn-outline-primary">
-            View All Games<i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
-        </a>
+<!-- How it works: one line, then the full explanation on About -->
+<section class="home-how" aria-labelledby="how-heading">
+    <div class="home-how-text">
+        <h2 class="home-how-title" id="how-heading">New to game night on screens?</h2>
+        <p class="home-how-sub">See how the table and your hand work, in one room or across the country.</p>
     </div>
-    <div class="games-preview-grid">
-        <a *ngFor="let game of featuredGames" [routerLink]="['/games', game.id]" class="preview-card text-decoration-none">
-            <span class="preview-icon" aria-hidden="true">{{ game.icon }}</span>
-            <div class="preview-info">
-                <span class="preview-name">{{ game.name }}</span>
-                <span class="preview-meta">{{ game.tags }} &middot; {{ game.minPlayers }}&ndash;{{ game.maxPlayers }} Players</span>
-            </div>
-            <i class="bi bi-arrow-right preview-arrow" aria-hidden="true"></i>
-        </a>
-    </div>
-</section>
+    <a routerLink="/about" fragment="how-it-works" class="btn btn-outline-primary home-how-btn">How it works</a>
+</section>

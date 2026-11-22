@@ -13,6 +13,8 @@ public interface IRoomService
     Room? GetRoom(string code);
     List<Room> GetPublicRooms();
     bool IsAuthorizedHost(Room room, string connectionId, string? userId = null);
+    bool IsRoomMember(Room room, string connectionId);
+    bool AreInSameRoom(string connectionIdA, string connectionIdB);
     Room? SetHostPlayer(string code, string connectionId);
     Room? RemoveHostPlayer(string code, string requesterConnectionId, string targetConnectionId);
     Room? RenamePlayer(string connectionId, string newName);
@@ -23,6 +25,8 @@ public interface IRoomService
 
     // Game Flow
     Task<Room?> StartGame(string code, GameSettings? settings = null);
+    Task<Room?> NextRound(string code);
+    Task<Room?> PlayAgain(string code);
     Task<Room?> PauseGame(string code);
     Task<Room?> ResumeGame(string code);
     Task<Room?> EndGame(string code);

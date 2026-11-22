@@ -46,11 +46,8 @@ export class SushiTrainBoardComponent {
         return this.gameState?.playerStates?.[playerId];
     }
 
-    nextRound() {
-        this.signalRService.nextRound();
-    }
-
     restartGame() {
-        this.signalRService.startGame();
+        if (this.room?.resultPhase === 'GameOver') void this.signalRService.playAgain();
+        else void this.signalRService.startGame();
     }
 }

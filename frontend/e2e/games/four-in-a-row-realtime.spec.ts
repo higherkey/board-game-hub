@@ -44,7 +44,7 @@ test('Four in a Row synchronizes two Hands and a read-only Table through a compl
             expect(room.roundScores[red.connectionId!]).toBe(1);
             expect(room.gameData.grid).toEqual(rooms[0].gameData.grid);
         }
-        await red.invoke('NextRound', code);
+        await red.invoke('PlayAgain', code);
         await expect.poll(() => rooms.every(room => room.gameData?.moveCount === 0 && room.state === 'Playing')).toBe(true);
         await red.invoke('EndGame', code);
         await expect.poll(() => rooms.every(room => room.state === 'Finished')).toBe(true);

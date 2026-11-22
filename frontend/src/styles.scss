@@ -6,7 +6,6 @@
 
 @use "sass:meta";
 @use "bootstrap/scss/bootstrap";
-@use "styles/dice-animations";
 
 // Share dice geometry once; keep it confined to the Farkle Table and Hand.
 :where(app-farkle-hand, app-farkle-table) {
@@ -139,9 +138,10 @@
 
   /* UI Elements */
   --border-color: oklch(88% 0.02 250);
+  /* Corners: square-ish everywhere (board-game-box look). md/lg stay as names so existing uses flatten too. */
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: var(--radius-sm);
+  --radius-lg: var(--radius-sm);
   --radius-pill: 9999px;
 
   /* Neobrutalist Hard Offset Shadows */
@@ -155,7 +155,7 @@
   --space-sm: 0.5rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
-  --space-xl: 2.5rem;
+  --space-xl: 2rem;
   --header-height: 72px;
 
   @media (max-width: 992px) {
@@ -174,6 +174,13 @@
   --bs-body-bg: var(--bg-base);
   --bs-body-color: var(--text-primary);
   --bs-body-font-family: 'Quicksand', sans-serif;
+  /* Bootstrap corners (rounded-*, cards, buttons, badges, inputs, dropdowns) follow the same square-ish rule. */
+  --bs-border-radius: var(--radius-sm);
+  --bs-border-radius-sm: var(--radius-sm);
+  --bs-border-radius-lg: var(--radius-sm);
+  --bs-border-radius-xl: var(--radius-sm);
+  --bs-border-radius-xxl: var(--radius-sm);
+  --bs-border-radius-2xl: var(--radius-sm);
 }
 
 /* Base Reset & Fluid Typography */
@@ -183,7 +190,15 @@ body {
   min-block-size: 100vh;
   min-block-size: 100dvh;
   position: relative;
-  overflow-x: hidden;
+  /* clip, not hidden: hidden turns body into its own scroll box, so the window never scrolls and
+     the router's scroll-to-top and the header's window:scroll listener never fire. */
+  overflow-x: clip;
+}
+
+app-root {
+  display: block;
+  block-size: 100%;
+  min-block-size: 100dvh;
 }
 
 body {
@@ -200,7 +215,7 @@ body::before {
   block-size: 100%;
   z-index: -1;
   background-image: url('assets/background-poly.svg');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
   pointer-events: none;
 }
@@ -451,20 +466,21 @@ p {
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  inline-size: 10px;
+  inline-size: 8px;
+  block-size: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-base);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--brand-blue);
-  border-radius: 5px;
+  background: color-mix(in oklch, var(--primary) 35%, transparent);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: color-mix(in oklch, var(--primary) 60%, transparent);
 }
 
 /* Shared Animations */

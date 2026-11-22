@@ -1,0 +1,15 @@
+<dialog #confirmDialog class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-message"
+    (cancel)="$event.preventDefault(); answer(false)">
+    @if (options(); as o) {
+        <div class="confirm-body">
+            <h2 class="confirm-title" id="confirm-title">{{ o.title || 'Are you sure?' }}</h2>
+            <p class="confirm-message" id="confirm-message">{{ o.message }}</p>
+            <div class="confirm-actions">
+                <button type="button" class="btn btn-outline-primary" (click)="answer(false)">{{ o.cancelLabel || 'Cancel' }}</button>
+                <button type="button" [class]="'btn ' + (o.confirmButtonClass || 'btn-primary')" (click)="answer(true)" autofocus>
+                    {{ o.confirmLabel || 'Confirm' }}
+                </button>
+            </div>
+        </div>
+    }
+</dialog>

@@ -59,6 +59,56 @@ public class RoomStateSerializerTests
         _serializer = new RoomStateSerializer(_gameServices);
     }
 
+    [Theory]
+    [InlineData("2", "1")]
+    [InlineData("\"Finished\"", "1")]
+    [InlineData("2", null)]
+    public void LegacyFinished_InfersPhaseAfterNativeHydration(string state, string? schema)
+    {
+        var json = "{" + (schema == null ? "" : "\"schemaVersion\":" + schema + ",")
+            + "\"state\":" + state + ",\"gameType\":\"SushiTrain\",\"roundNumber\":1,\"rawGameData\":{\"isGameOver\":true}}";
+        var room = _serializer.Deserialize(json);
+        Assert.IsType<SushiTrainState>(room.GameData);
+        Assert.Equal(ResultPhase.GameOver, room.ResultPhase);
+        using var persisted = JsonDocument.Parse(_serializer.Serialize(room));
+        Assert.Equal(2, persisted.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal("GameOver", persisted.RootElement.GetProperty("resultPhase").GetString());
+    }
+
+    [Fact]
+    public void SchemaTwo_PreservesExplicitFinishedPhaseDespiteChangedSettings()
+    {
+        var room = _serializer.Deserialize("{\"schemaVersion\":2,\"state\":\"Finished\",\"gameType\":\"Babble\",\"roundNumber\":1,\"resultPhase\":\"GameOver\",\"settings\":{\"totalRounds\":20}}");
+        Assert.Equal(ResultPhase.GameOver, room.ResultPhase);
+        var copy = _serializer.Deserialize(_serializer.Serialize(room));
+        Assert.Equal(ResultPhase.GameOver, copy.ResultPhase);
+    }
+
+    [Theory]
+    [InlineData(1, ResultPhase.RoundResults)]
+    [InlineData(2, ResultPhase.GameOver)]
+    public void LegacyFinished_RoundBasedPhaseUsesConfiguredLimit(int round, ResultPhase expected)
+    {
+        var json = JsonSerializer.Serialize(new { schemaVersion = 1, state = "Finished", gameType = "Babble", roundNumber = round, settings = new { totalRounds = 2 } });
+        Assert.Equal(expected, _serializer.Deserialize(json).ResultPhase);
+    }
+
+    [Theory]
+    [InlineData(20, 999, ResultPhase.GameOver)]
+    [InlineData(19, 999, ResultPhase.RoundResults)]
+    [InlineData(1, -999, ResultPhase.GameOver)]
+    public void LegacyFinished_BoundsConfiguredRoundLimit(int round, int totalRounds, ResultPhase expected)
+    {
+        var json = JsonSerializer.Serialize(new { schemaVersion = 1, state = "Finished", gameType = "Babble", roundNumber = round, settings = new { totalRounds } });
+        Assert.Equal(expected, _serializer.Deserialize(json).ResultPhase);
+    }
+
+    [Fact]
+    public void FutureSchema_IsRejected()
+    {
+        Assert.Throws<JsonException>(() => _serializer.Deserialize("{\"schemaVersion\":3}"));
+    }
+
     [Fact]
     public void SerializeAndDeserialize_PreservesRoomAndFarkleState()
     {

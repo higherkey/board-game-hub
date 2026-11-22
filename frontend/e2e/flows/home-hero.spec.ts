@@ -23,11 +23,11 @@ for (const width of [360, 768, 1024, 1440]) {
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(hero.locator('.dc-caption-title')).toHaveText(['Host', 'Join', 'Play']);
     await expect(page.locator('.dc-concept-flag, .unified-showcase-stage')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'How Table vs. Hand Works' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Take a game off the shelf' })).toBeVisible();
     const featured = page.getByRole('link', { name: /Four in a Row/ });
     await featured.scrollIntoViewIfNeeded();
     await expect(featured).toBeInViewport();
-    const explanation = page.getByRole('heading', { name: 'How Table vs. Hand Works' });
+    const explanation = page.getByRole('heading', { name: 'Take a game off the shelf' });
     await explanation.scrollIntoViewIfNeeded();
     await expect(explanation).toBeInViewport();
     await page.screenshot({ path: testInfo.outputPath('home-details-' + width + '.png') });
@@ -103,7 +103,7 @@ test('the concept route reuses the hero and keeps its navigation links', async (
   await expect(hero).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.locator('.dc-concept-flag')).toBeVisible();
-  await expect(hero.getByRole('link', { name: 'Choose a Game' })).toHaveAttribute('href', '/games');
+  await expect(hero.getByRole('link', { name: 'Choose a Game' })).toHaveAttribute('href', '/shelf');
   await expect(hero.getByRole('link', { name: 'Join a Room' })).toHaveAttribute('href', '/play');
   await page.goto('/design-consent');
   await expect(page).toHaveURL(/\/design-concept$/);

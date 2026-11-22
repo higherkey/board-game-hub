@@ -1,0 +1,203 @@
+/* About: what Board Game Hub is, how a game night works, and where you can play. */
+.about {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    max-inline-size: 1200px;
+    margin-inline: auto;
+    padding: var(--space-lg) var(--space-md) 3rem;
+
+    @media (max-width: 768px) { gap: 2rem; padding-block: var(--space-md) 2rem; }
+
+    p { margin: 0; }
+}
+
+.about-mission {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: var(--space-xl) 3rem;
+    align-items: end;
+
+    @media (max-width: 992px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.about-mission-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.about-kicker {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: var(--contrast-pink);
+}
+
+.about-title {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: var(--primary);
+}
+
+.about-lede {
+    max-inline-size: 48ch;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text-secondary);
+
+    a { color: var(--primary); font-weight: 700; }
+}
+
+.about-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    scroll-margin-block-start: 6rem;
+}
+
+.about-h2 {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.75rem, 3.2vw, 2.4rem);
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.about-h3 {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.about-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xl);
+
+    @media (max-width: 768px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.about-card {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: center;
+    padding: var(--space-lg);
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    box-shadow: 6px 6px 0 var(--primary);
+    color: var(--text-secondary);
+    font-weight: 600;
+
+    @media (max-width: 480px) { flex-direction: column; align-items: flex-start; }
+}
+
+.about-card--plain {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+}
+
+.about-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+/* Small flat drawings: the table (a TV with dice) and the hand (a phone with one die). */
+.about-art {
+    flex: none;
+    inline-size: 8.5rem;
+    block-size: auto;
+    padding: var(--space-sm);
+    background:
+        linear-gradient(135deg, color-mix(in oklch, var(--accent) 18%, transparent) 0 30%, transparent 30%),
+        var(--bg-surface-2);
+    border: 2px solid var(--primary);
+}
+
+.a-navy { fill: var(--primary); }
+.a-screen { fill: var(--primary-dark); }
+.a-die { fill: var(--bg-surface); }
+.a-die--teal { fill: var(--accent); }
+.a-die--pink { fill: var(--contrast-pink); }
+.a-pip { fill: var(--primary); }
+.a-die--pink ~ .a-pip { fill: var(--bg-surface); }
+
+.about-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xl);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @media (max-width: 992px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.about-step {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    color: var(--text-secondary);
+    font-weight: 600;
+    line-height: 1.55;
+}
+
+/* Same numbered tiles as the Home animation. */
+.about-num {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 3rem;
+    margin-block-end: var(--space-xs);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    box-shadow: 3px 3px 0 var(--primary);
+}
+
+.about-step:first-child .about-num {
+    background: var(--contrast-pink);
+    color: var(--bg-surface);
+}
+
+.about-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    padding: var(--space-xl);
+    background: var(--primary);
+    border-radius: var(--radius-sm);
+    box-shadow: 6px 6px 0 var(--accent);
+    color: var(--bg-surface);
+    font-weight: 600;
+
+    .about-h2 { color: var(--bg-surface); }
+
+    p { margin-block-start: var(--space-xs); }
+}
+
+.about-cta-btn {
+    min-block-size: 52px;
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-surface);
+    border-color: var(--bg-surface);
+    color: var(--primary);
+    box-shadow: 4px 4px 0 var(--contrast-pink);
+}

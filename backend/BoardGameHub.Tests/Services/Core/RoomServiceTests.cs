@@ -70,6 +70,7 @@ public class RoomServiceTests
         Assert.Same(room, await _sut.RequestUndo(room.Code, "red"));
         Assert.Same(liveRed, room.Players[0]);
         Assert.Equal(GameState.Playing, room.State);
+        Assert.Null(room.ResultPhase);
         Assert.Equal(5, liveRed.Score);
         Assert.Equal(3, room.Players[1].Score);
         Assert.Empty(room.RoundScores);
@@ -109,7 +110,7 @@ public class RoomServiceTests
         Assert.Same(room, await _sut.RequestUndo(room.Code, "red-new"));
         Assert.Equal("red-new", ((FourInARowState)room.GameData!).CurrentPlayerId);
         Assert.Equal(0, ((FourInARowState)room.GameData!).MoveCount);
-        Assert.Equal(1, room.Players[0].Score);
+        Assert.Equal(0, room.Players[0].Score);
     }
 
     [Theory]
@@ -213,6 +214,52 @@ public class RoomServiceTests
         mockService.Verify(s => s.StartRound(room, It.IsAny<GameSettings>()), Times.Once);
     }
 
+    [Theory]
+    [InlineData(3)]
+    [InlineData(0)]
+    public async Task StartGame_StartsPlayAfterTheLeadIn_WithoutShorteningTheRound(int leadIn)
+    {
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.Scatterbrain);
+        room.IsHostOverride = true;
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
+        mockService.Setup(s => s.RoundLeadInSeconds).Returns(leadIn);
+        _gameServices.Add(mockService.Object);
+
+        var before = DateTime.UtcNow;
+        await _sut.StartGame(room.Code, new GameSettings { TimerDurationSeconds = 60 });
+
+        room.RoundStartTime.Should().BeCloseTo(before.AddSeconds(leadIn), TimeSpan.FromSeconds(1));
+        (room.RoundEndTime!.Value - room.RoundStartTime!.Value).Should().Be(TimeSpan.FromSeconds(60));
+    }
+
+    [Theory]
+    [InlineData(-8, 2)]   // paused 10s ago, during the lead-in: the start moves forward with the clock
+    [InlineData(-20, -20)] // paused after play began: the start stays where it was
+    public async Task ResumeGame_MovesTheStartOnlyWhenPausedDuringTheLeadIn(int startOffset, int expectedStartOffset)
+    {
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.Babble);
+        var now = DateTime.UtcNow;
+        room.State = GameState.Playing;
+        room.IsPaused = true;
+        room.TimeRemainingWhenPaused = TimeSpan.FromSeconds(62);
+        room.RoundEndTime = now.AddSeconds(52); // so the pause happened 10 seconds ago
+        room.RoundStartTime = now.AddSeconds(startOffset);
+
+        await _sut.ResumeGame(room.Code);
+
+        room.IsPaused.Should().BeFalse();
+        room.RoundEndTime.Should().BeCloseTo(now.AddSeconds(62), TimeSpan.FromSeconds(1));
+        room.RoundStartTime.Should().BeCloseTo(now.AddSeconds(expectedStartOffset), TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void Babble_HasAThreeSecondLeadIn()
+    {
+        new BabbleGameService(new Mock<IBabbleService>().Object, new Mock<IDictionaryService>().Object, new Mock<ILogger<BabbleGameService>>().Object)
+            .RoundLeadInSeconds.Should().Be(3);
+    }
+
     [Fact]
     public void RemovePlayer_ShouldMarkPlayerDisconnected()
     {
@@ -265,6 +312,17 @@ public class RoomServiceTests
         // Assert
         room.GameType.Should().Be(GameType.Babble);
         room.State.Should().Be(GameState.Lobby);
+    }
+
+    [Fact]
+    public void UpdateSettings_NullDoesNotReplaceExistingSettings()
+    {
+        var room = _sut.CreateRoom("host", "Host", false);
+        var original = room.Settings;
+
+        _sut.UpdateSettings(room.Code, null!).Should().BeNull();
+
+        room.Settings.Should().BeSameAs(original);
     }
 
     [Fact]
@@ -322,6 +380,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         // Act
         await _sut.SubmitAction(room.Code, "conn1", "SOME_ACTION", default);
@@ -331,7 +390,7 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkStateDirtyForBroadcast()
+    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkFullDiffForBroadcast()
     {
         var mockService = new Mock<IGameService>();
         mockService.Setup(s => s.GameType).Returns(GameType.Farkle);
@@ -347,10 +406,10 @@ public class RoomServiceTests
 
         await _sut.SubmitAction(room.Code, "conn1", "BANK", default);
 
-        room.DirtyMembers.Should().ContainKey(nameof(Room.GameData)); // sanity: room is tracked
+        room.DirtyMembers.Should().ContainKey("ALL"); // sanity: room is tracked and marked for a full diff
 
         room.State.Should().Be(GameState.Finished);
-        room.DirtyMembers.Should().ContainKey(nameof(Room.State));
+        room.DirtyMembers.Should().ContainKey("ALL"); // full diff covers State
     }
 
     [Fact]
@@ -361,6 +420,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         // Act
         await _sut.CalculateRoundScores(room.Code);
@@ -599,14 +659,18 @@ public class RoomServiceTests
     public async Task SubmitAction_Overflow_ShouldUndoOnlyTenNewestSnapshots()
     {
         // Arrange
-        _gameServices.Add(new FourInARowGameService());
+        var plugin = new Mock<IGameService>();
+        plugin.SetupGet(p => p.GameType).Returns(GameType.FourInARow);
+        plugin.Setup(p => p.HandleAction(It.IsAny<Room>(), It.IsAny<GameAction>(), "host1")).ReturnsAsync(true);
+        _gameServices.Add(plugin.Object);
         var room = _sut.CreateRoom("host1", "Host", true, GameType.FourInARow);
+        room.State = GameState.Playing;
 
         // Act: exercise the real snapshot path beyond capacity and through multiple wraps.
         for (var i = 0; i < 35; i++)
         {
             room.RoundNumber = i;
-            await _sut.SubmitAction(room.Code, "host1", "UNKNOWN", null);
+            await _sut.SubmitAction(room.Code, "host1", "MOVE", null);
         }
 
         // Assert
@@ -680,6 +744,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         await _sut.SubmitAction(room.Code, "conn1", "SUBMIT_STROKE", null);
 
@@ -700,15 +765,17 @@ public class RoomServiceTests
         _gameServices.Add(mockService.Object);
 
         // Act - Call StartGame twice simultaneously
-        // First call passes settings (resets game), second call passes null (increments round)
+        // Only the first start may leave Lobby; the second start must not overwrite the active round.
         var t1 = _sut.StartGame(room.Code, new GameSettings());
         var t2 = _sut.StartGame(room.Code, null);
 
         await Task.WhenAll(t1, t2);
 
         // Assert
-        room.RoundNumber.Should().Be(2); // Exactly 2 rounds incremented
-        mockService.Verify(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()), Times.Exactly(2));
+        room.RoundNumber.Should().Be(1);
+        (await t1).Should().BeSameAs(room);
+        (await t2).Should().BeNull();
+        mockService.Verify(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()), Times.Once);
     }
 
     [Fact]
@@ -809,8 +876,10 @@ public class RoomServiceTests
         // Host connection
         _sut.IsAuthorizedHost(room, "conn1").Should().BeTrue();
         
-        // User ID match
-        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeTrue();
+        // Account identity alone does not grant authority to an unjoined connection.
+        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeFalse();
+        _sut.JoinRoom(room.Code, "table", "Table", "user1", isScreen: true);
+        _sut.IsAuthorizedHost(room, "table", "user1").Should().BeTrue();
 
         // Non-host connection
         _sut.IsAuthorizedHost(room, "conn2", "user2").Should().BeFalse();

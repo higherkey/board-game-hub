@@ -10,6 +10,7 @@ public abstract class BaseGameService<TState> : IGameService where TState : clas
     public virtual Task StartRound(Room room, GameSettings settings) => Task.CompletedTask;
     public virtual Task CalculateScores(Room room) => Task.CompletedTask;
     public virtual Task EndRound(Room room) => Task.CompletedTask;
+    public virtual int RoundLeadInSeconds => 0;
     public virtual Task<bool> HandleAction(Room room, GameAction action, string connectionId) => Task.FromResult(false);
 
     protected TState? GetState(Room? room)
