@@ -1,15 +1,13 @@
 .join-type-card {
     border-width: 2px;
     border-radius: var(--radius-sm);
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-check:checked + .join-type-card {
     background-color: var(--primary, #1e3a8a) !important;
     color: #ffffff !important;
     border-color: var(--primary, #1e3a8a) !important;
-    box-shadow: var(--shadow-md, 4px 4px 0px rgba(0, 0, 0, 0.2)) !important;
-    transform: translateY(-2px);
+    box-shadow: 3px 3px 0 var(--accent) !important;
 
     small {
         color: rgba(255, 255, 255, 0.95) !important;
@@ -23,7 +21,6 @@
     font-size: 1.2rem !important;
     padding: 0.75rem 1rem !important;
     border-radius: var(--radius-sm) !important;
-    transition: all 0.2s ease !important;
 
     &::placeholder {
         color: #64748b !important;
@@ -33,6 +30,8 @@
 
     &:focus {
         border-color: var(--contrast-pink, #ff4081) !important;
-        box-shadow: 0 0 0 4px rgba(255, 64, 129, 0.2) !important;
+        outline: 3px solid var(--accent-dark);
+        outline-offset: 1px;
+        box-shadow: none !important;
     }
 }

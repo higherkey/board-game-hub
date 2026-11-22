@@ -102,7 +102,7 @@ export class GreatMindsPlayerComponent implements OnChanges {
 
   getGradient(num: number): string {
     const hue = 200 + (num * 1.3);
-    return `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${hue + 40}, 80%, 40%))`;
+    return `hsl(${hue}, 60%, 36%)`; // flat, no gradients in the brand look
   }
 
   getCardStyle(card: number) {
@@ -114,7 +114,7 @@ export class GreatMindsPlayerComponent implements OnChanges {
     return {
       transform: `translateY(${translateY}px) scale(${scale})`,
       zIndex: 100,
-      boxShadow: `0 ${10 + this.presenceValue * 40}px ${20 + this.presenceValue * 60}px rgba(0,0,0,0.5)`
+      boxShadow: `4px ${4 + this.presenceValue * 12}px 0 var(--contrast-pink)`
     };
   }
 }

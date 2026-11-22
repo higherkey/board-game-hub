@@ -167,7 +167,8 @@
     transition: opacity 0.3s ease;
 
     &::backdrop {
-        background: rgba(0, 0, 0, 0.4);
+        background: var(--primary);
+        opacity: 0.45;
     }
 
     &.open {
@@ -187,11 +188,11 @@
     width: 60%;
     max-width: 260px;
     height: 100%;
-    background: linear-gradient(180deg, #1e1e28 0%, #12121a 100%);
-    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+    background: var(--bg-base);
+    border-inline-end: 2px solid var(--primary);
+    box-shadow: 4px 0 0 var(--primary);
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --text-primary: #ffffff;
 
     // Removed ::ng-deep. Use host context or component inputs instead.
 }
@@ -215,12 +216,15 @@
         }
     }
 
-    .btn-outline-light {
-        border-color: rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.05);
+    .menu-btn {
+        min-block-size: 44px;
+        border: 2px solid var(--primary);
+        border-radius: var(--radius-sm);
+        background: var(--bg-surface);
+        color: var(--primary);
+        box-shadow: 2px 2px 0 var(--primary);
 
-        &:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
+        &:hover { background: var(--bg-surface-2); }
+        &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
     }
 }

@@ -1,33 +1,40 @@
 .great-minds-container {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    color: white;
+    inline-size: 100%;
+    block-size: 100%;
+    background: var(--bg-base);
+    color: var(--primary);
     display: flex;
     flex-direction: column;
     position: relative;
 }
 
+/* The board and hand fill the room, so their absolutely placed HUD and pucks have room to sit. */
+app-great-minds-board,
+app-great-minds-player {
+    display: block;
+    flex: 1;
+    min-block-size: 0;
+}
+
 .top-nav {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    inset-block-start: 0.5rem;
+    inset-inline-end: 0.5rem;
     z-index: 50;
 }
 
 .info-btn {
-    width: 40px;
-    height: 40px;
+    inline-size: 44px;
+    block-size: 44px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.2);
-    color: white;
+    background: var(--bg-surface);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
-}
 
-.info-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
 }

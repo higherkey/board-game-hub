@@ -28,12 +28,12 @@
             </div>
             <div class="reveal-tooltip">
                 <div *ngIf="amIAi">
-                    <p class="text-red-400 font-bold text-lg">You are the AI</p>
+                    <p class="text-danger font-bold text-lg">You are the AI</p>
                     <p class="text-sm">Blend in. You don't know the prompt.</p>
                 </div>
                 <div *ngIf="!amIAi">
-                    <p class="text-green-400 font-bold text-lg">You are an Artist</p>
-                    <p class="text-sm">Prompt: <span class="font-bold text-white">{{ state.prompt }}</span></p>
+                    <p class="text-success font-bold text-lg">You are an Artist</p>
+                    <p class="text-sm">Prompt: <span class="font-bold text-primary">{{ state.prompt }}</span></p>
                 </div>
             </div>
         </div>

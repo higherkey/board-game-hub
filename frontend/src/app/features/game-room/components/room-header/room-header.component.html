@@ -89,17 +89,17 @@
         <div class="nav-menu-content p-3 d-flex flex-column gap-3"
             (click)="$event.stopPropagation()" (keydown)="onContentKeyDown($event)">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h4 class="mb-0 text-white fw-bold">Room Menu</h4>
-                <button type="button" class="btn-close btn-close-white" (click)="toggleNavMenu()" aria-label="Close Room Menu"></button>
+                <h4 class="mb-0 text-primary fw-bold">Room Menu</h4>
+                <button type="button" class="btn-close" (click)="toggleNavMenu()" aria-label="Close Room Menu"></button>
             </div>
 
             <div class="menu-actions d-flex flex-column gap-3">
-                <button type="button" class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleSound()">
+                <button type="button" class="btn btn-lg menu-btn w-100 d-flex align-items-center gap-3 py-3" (click)="toggleSound()">
                     <i class="bi fs-4" [class.bi-volume-mute-fill]="soundService.isMuted$ | async" [class.bi-volume-up-fill]="!(soundService.isMuted$ | async)"></i>
                     <span class="fw-bold">{{ (soundService.isMuted$ | async) ? 'Unmute Sound' : 'Mute Sound' }}</span>
                 </button>
 
-                <a routerLink="/" class="btn btn-lg btn-outline-light w-100 d-flex align-items-center gap-3 py-3" (click)="toggleNavMenu()">
+                <a routerLink="/" class="btn btn-lg menu-btn w-100 d-flex align-items-center gap-3 py-3" (click)="toggleNavMenu()">
                     <i class="bi bi-house-door-fill fs-4"></i>
                     <span class="fw-bold">Go Home</span>
                 </a>
@@ -111,7 +111,7 @@
                 </button>
 
                 <div class="mt-4 pt-4 border-top border-secondary">
-                    <div class="small text-uppercase text-white-50 mb-3 fw-bold ls-wide">Profile</div>
+                    <div class="small text-uppercase text-secondary mb-3 fw-bold ls-wide">Profile</div>
                     <app-user-profile-dropdown [session]="session" [compactMode]="false" menuAlign="start"></app-user-profile-dropdown>
                 </div>
             </div>
