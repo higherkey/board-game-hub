@@ -3,7 +3,7 @@
         [attr.aria-expanded]="isOpen" aria-haspopup="true" aria-controls="active-tables-menu">
         <i class="bi bi-controller fs-5"></i>
         <span class="btn-text">Active Tables</span>
-        <span class="badge rounded-pill bg-danger" *ngIf="(count$ | async) as count">{{ count > 0 ? count : '' }}</span>
+        <span class="badge bg-danger" *ngIf="(count$ | async) as count">{{ count > 0 ? count : '' }}</span>
     </button>
 
     <div id="active-tables-menu" class="active-tables-dropdown shadow-lg" *ngIf="isOpen">

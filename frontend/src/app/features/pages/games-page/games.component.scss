@@ -49,27 +49,31 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-md);
+
+    /* Phones: search and the filter button share one row; the filters open below both. */
+    @media (max-width: 768px) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-sm);
+    }
 }
 
 /* Phones only: one button opens the filters instead of two blocks of buttons filling the screen. */
 .shelf-filter-toggle {
     display: none;
+    position: relative;
     align-items: center;
-    gap: var(--space-sm);
-    align-self: flex-start;
-    min-block-size: 48px;
-    padding-inline: var(--space-md);
+    justify-content: center;
+    inline-size: 54px;
     border: 2px solid var(--primary);
     border-radius: var(--radius-sm);
     background: var(--bg-surface);
     color: var(--primary);
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    box-shadow: 3px 3px 0 var(--primary);
+    box-shadow: 5px 5px 0 var(--primary);
 
     svg {
-        inline-size: 20px;
-        block-size: 20px;
+        inline-size: 24px;
+        block-size: 24px;
         fill: none;
         stroke: currentColor;
         stroke-width: 2.2;
@@ -87,6 +91,9 @@
 }
 
 .shelf-filter-count {
+    position: absolute;
+    inset-block-start: -0.6rem;
+    inset-inline-end: -0.6rem;
     display: grid;
     place-items: center;
     min-inline-size: 1.4rem;
@@ -151,7 +158,7 @@
     font-family: 'Outfit', sans-serif;
     font-weight: 700;
 
-    @media (hover: none) { display: none; }
+    @media (hover: none), (max-width: 768px) { display: none; }
 }
 
 .shelf-filters {
@@ -161,6 +168,8 @@
 
     @media (max-width: 768px) {
         display: none;
+        grid-column: 1 / -1;
+        gap: var(--space-sm);
         &.is-open { display: flex; }
     }
 }
@@ -205,6 +214,12 @@
     }
 
     &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 3px; }
+
+    @media (max-width: 768px) {
+        min-block-size: 44px;
+        min-inline-size: 44px;
+        padding-inline: var(--space-sm);
+    }
 }
 
 .shelf-option--count { padding-inline: 0; }

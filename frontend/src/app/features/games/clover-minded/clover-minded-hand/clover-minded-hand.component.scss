@@ -39,8 +39,7 @@
 
 .phase-pill {
     padding: 7px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.06);
     font-size: 0.85rem;
     opacity: 0.95;
@@ -56,8 +55,7 @@
 .note {
     padding: 14px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 14px;
+    border-radius: var(--radius-sm);
     opacity: 0.9;
     font-weight: 700;
 }
@@ -78,7 +76,7 @@
     padding: 8px;
     background: radial-gradient(circle, rgba(16, 185, 129, 0.2), rgba(15, 23, 42, 0.8));
     border: 2px solid rgba(16, 185, 129, 0.4);
-    border-radius: 18px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -103,9 +101,8 @@
 
 .clue-zone {
     padding: 12px;
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .clue-zone-title {
@@ -131,8 +128,8 @@
     width: 100%;
     margin-top: 8px;
     background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-sm);
     padding: 10px 12px;
     color: white;
     font-weight: 800;
@@ -154,7 +151,7 @@
     width: 100%;
     padding: 14px 12px;
     border: 0;
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     font-weight: 900;
     letter-spacing: 0.08em;
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(59, 130, 246, 0.55));
@@ -170,8 +167,7 @@
 .submission-confirmation {
     padding: 14px;
     background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     color: #4ade80;
     font-weight: 800;
     text-align: center;
@@ -189,8 +185,7 @@
 .spectator-banner {
     padding: 12px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     opacity: 0.9;
     font-weight: 800;
 }
@@ -204,9 +199,8 @@
 .pool-panel,
 .clover-panel {
     padding: 12px;
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .panel-title {
@@ -263,9 +257,8 @@
 
 .slot {
     padding: 10px;
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     background: rgba(0, 0, 0, 0.22);
-    border: 1px solid rgba(255, 255, 255, 0.12);
     min-height: 190px;
     position: relative;
     display: flex;
@@ -284,7 +277,7 @@
     width: 100%;
     padding: 0;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -336,8 +329,7 @@
 }
 
 .mini-btn {
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.06);
     color: white;
     font-weight: 900;
@@ -356,7 +348,7 @@
 
 .guess-btn {
     padding: 14px 12px;
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     border: 0;
     font-weight: 1000;
     letter-spacing: 0.08em;
@@ -379,9 +371,8 @@
 .footer-note {
     opacity: 0.85;
     padding: 10px 12px;
-    border-radius: 14px;
+    border-radius: var(--radius-sm);
     background: rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.10);
     font-weight: 800;
 }
 

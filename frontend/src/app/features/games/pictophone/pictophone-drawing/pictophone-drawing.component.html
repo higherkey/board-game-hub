@@ -14,7 +14,7 @@
                 <!-- PALETTE -->
                 <div
                     class="palette-bar p-2 bg-white border-bottom d-flex align-items-center gap-3 overflow-auto shadow-sm">
-                    <div class="d-flex gap-1 p-1 bg-light rounded border">
+                    <div class="d-flex gap-1 p-1 bg-light rounded">
                         <button *ngFor="let c of colors" type="button"
                             class="color-swatch rounded-circle cursor-pointer border shadow-sm p-0"
                             [style.background-color]="c" [class.selected]="selectedColor === c"
@@ -38,8 +38,8 @@
                     (imageGenerated)="onImageGenerated($event)">
                 </app-canvas-draw>
 
-                <div class="canvas-controls p-3 bg-white border-top d-flex justify-content-center shadow-sm">
-                    <button class="btn btn-success btn-lg px-5 fw-bold rounded-pill shadow" (click)="submit()"
+                <div class="canvas-controls p-3 bg-white d-flex justify-content-center shadow-sm">
+                    <button class="btn btn-success btn-lg px-5 fw-bold shadow" (click)="submit()"
                         [disabled]="!currentImage">
                         <i class="bi bi-check-lg me-2"></i> I'm Done!
                     </button>

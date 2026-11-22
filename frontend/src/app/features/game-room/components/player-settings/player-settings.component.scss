@@ -2,8 +2,7 @@
     max-width: 900px;
     margin: 0.5rem auto;
     background: #ffffff;
-    border-radius: var(--radius-lg, 12px);
-    border: 1px solid var(--border-color, #eee);
+    border-radius: var(--radius-sm);
     box-shadow: var(--shadow-sm, 2px 2px 0px rgba(0, 0, 0, 0.05));
 
     @media (max-width: 768px) {
@@ -26,7 +25,6 @@
 }
 
 .qr-box {
-    border: 1px solid var(--border-color);
 }
 
 .ready-button {
@@ -39,15 +37,14 @@
 
 .info-card {
     background: var(--bg-surface-2);
-    border-radius: 12px;
-    border: 1px solid rgba(0, 0, 0, 0.03);
+    border-radius: var(--radius-sm);
 }
 
 .category-pill {
     padding: 0.2rem 0.6rem;
     background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
     font-size: 0.65rem;
     color: var(--text-dark);
 }

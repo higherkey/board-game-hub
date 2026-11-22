@@ -32,8 +32,7 @@
 .status .pill {
     padding: 7px 12px;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     font-size: 0.85rem;
 }
 
@@ -55,9 +54,8 @@
 .clue-progress {
     flex: 0 0 auto;
     padding: 10px 12px;
-    border-radius: 14px;
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .label {
@@ -82,9 +80,8 @@
 .message {
     margin-left: auto;
     padding: 10px 12px;
-    border-radius: 14px;
+    border-radius: var(--radius-sm);
     background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.22);
     opacity: 0.95;
 }
 
@@ -120,7 +117,7 @@
     padding: 12px;
     background: radial-gradient(circle, rgba(16, 185, 129, 0.25), rgba(15, 23, 42, 0.8));
     border: 3px solid rgba(16, 185, 129, 0.5);
-    border-radius: 24px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -130,7 +127,7 @@
     height: 120px;
     background: rgba(15, 23, 42, 0.7);
     border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -154,7 +151,7 @@
     position: absolute;
     background: rgba(15, 23, 42, 0.95);
     border: 2px solid #10b981;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     padding: 4px 12px;
     display: flex;
     flex-direction: column;
@@ -233,9 +230,8 @@
     font-size: 1.1rem;
     font-weight: 900;
     padding: 8px 10px;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
     min-height: 40px;
     display: flex;
     align-items: center;
@@ -250,8 +246,7 @@
 
 .pool-wrap {
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     padding: 12px;
     min-height: 0;
     display: flex;
@@ -275,7 +270,7 @@
     justify-content: center;
     align-items: center;
     padding: 6px;
-    border-radius: 14px;
+    border-radius: var(--radius-sm);
     background: rgba(0, 0, 0, 0.12);
 }
 

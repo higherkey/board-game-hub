@@ -16,11 +16,11 @@
             <kbd class="shelf-kbd" aria-hidden="true">/</kbd>
         </label>
 
-        <!-- Phones: filters fold away behind this button so the games stay on screen. -->
+        <!-- Phones: filters fold away behind this icon button, on the same row as search. -->
         <button type="button" class="shelf-filter-toggle" [attr.aria-expanded]="filtersOpen()" aria-controls="shelf-filters"
             (click)="filtersOpen.set(!filtersOpen())">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 7h10M18 7h3M3 17h4M12 17h9" /><circle cx="15.5" cy="7" r="2.5" /><circle cx="9.5" cy="17" r="2.5" /></svg>
-            Filters
+            <span class="visually-hidden">Filters</span>
             @if (filterCount()) {
                 <span class="shelf-filter-count">{{ filterCount() }}</span>
             }

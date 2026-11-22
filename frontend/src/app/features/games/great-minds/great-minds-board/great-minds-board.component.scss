@@ -70,7 +70,7 @@
     .card-display {
         width: 280px;
         height: 400px;
-        border-radius: 32px;
+        border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;

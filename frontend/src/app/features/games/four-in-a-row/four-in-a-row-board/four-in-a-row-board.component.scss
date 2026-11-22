@@ -2,10 +2,10 @@
 .board-shell { max-width: 600px; margin: auto; }
 .drop-controls, .board-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .drop-controls { margin-bottom: 8px; }
-button { min-width: 44px; min-height: 44px; background: #dbeafe; color: #172554; border: 0; border-radius: 6px; font-weight: 700; cursor: pointer; }
+button { min-width: 44px; min-height: 44px; background: #dbeafe; color: #172554; border: 0; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; }
 button:disabled { opacity: .5; cursor: default; }
 button:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
-.board { background: #1d4ed8; padding: 8px; border-radius: 12px; display: grid; gap: 4px; box-shadow: 0 8px 0 #172554; }
+.board { background: #1d4ed8; padding: 8px; border-radius: var(--radius-sm); display: grid; gap: 4px; box-shadow: 0 8px 0 #172554; }
 .cell { aspect-ratio: 1; border-radius: 50%; background: #0f172a; display: grid; place-items: center; }
 .token { width: 90%; height: 90%; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: clamp(1rem, 3vw, 1.7rem); }
 .red { background: #f87171; color: #450a0a; }

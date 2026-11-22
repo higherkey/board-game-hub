@@ -27,7 +27,7 @@
 
 .card-token {
     animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: linear-gradient(145deg, #ffffff, #f0f0f0);
     box-shadow: 3px 3px 6px #d9d9d9, -3px -3px 6px #ffffff;
 

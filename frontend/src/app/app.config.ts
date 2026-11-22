@@ -10,7 +10,7 @@ import { AppTitleStrategy } from './core/services/title-strategy.service';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withInMemoryScrolling({ anchorScrolling: 'enabled' })),
+    provideRouter(routes, withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' })),
     provideHttpClient(withXhr(), withInterceptors([authInterceptor, httpErrorInterceptor])),
     provideAnimations(),
     { provide: TitleStrategy, useClass: AppTitleStrategy }

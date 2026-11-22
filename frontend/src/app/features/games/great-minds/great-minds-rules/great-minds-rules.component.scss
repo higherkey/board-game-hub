@@ -18,9 +18,8 @@
         background: linear-gradient(135deg, #1e293b, #0f172a);
         width: 90%;
         max-width: 500px;
-        border-radius: 24px;
+        border-radius: var(--radius-sm);
         padding: 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         position: relative;
     }
@@ -80,7 +79,7 @@
         margin-top: 2rem;
         padding: 1rem;
         background: rgba(56, 189, 248, 0.1);
-        border-radius: 12px;
+        border-radius: var(--radius-sm);
         font-size: 0.9rem;
         text-align: center;
         color: #7dd3fc;
@@ -97,7 +96,7 @@
         color: #0f172a;
         border: none;
         padding: 1rem 3rem;
-        border-radius: 9999px;
+        border-radius: var(--radius-sm);
         font-weight: 600;
         letter-spacing: 0.1em;
         cursor: pointer;

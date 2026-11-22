@@ -6,8 +6,7 @@
             <app-game-combobox
                 [(ngModel)]="selectedGameType"
                 [options]="availableGames"
-                [disabled]="isIntermission"
-                [placeholder]="isIntermission ? 'GAME LOCKED' : 'CHOOSE GAME'"
+                placeholder="SWITCH GAME"
                 (selectionChange)="changeGameType($event)"
                 idPrefix="compact-game">
             </app-game-combobox>
@@ -27,24 +26,18 @@
                 class="form-control form-control-sm text-center w-50px" title="Total Rounds">
         </div>
 
-        <!-- Start Button -->
-        <div class="compact-item">
+        <!-- Next round / play again: only between rounds; a round in progress has nothing to start. -->
+        <div *ngIf="isIntermission" class="compact-item">
             <button type="button" class="btn fw-bold" (click)="startGame($event)" [disabled]="selectedGameType === 'None'"
                 [ngClass]="legacyFinish ? 'btn-danger' : 'btn-primary'"
                 class="border-none"
                 [style.background]="legacyFinish ? '' : 'linear-gradient(135deg, var(--secondary) 0%, var(--accent-dark) 100%)'">
-
-                <ng-container *ngIf="!isIntermission; else intermissionBtn">
-                    <i class="bi bi-play-fill me-1"></i> START
-                </ng-container>
-                <ng-template #intermissionBtn>
-                    <i class="bi" [class.bi-fast-forward-fill]="!legacyFinish"
-                        [class.bi-flag-fill]="legacyFinish"></i>
-                    {{ startLabel }}
-                </ng-template>
+                <i class="bi" [class.bi-fast-forward-fill]="!legacyFinish"
+                    [class.bi-flag-fill]="legacyFinish"></i>
+                {{ startLabel }}
             </button>
         </div>
-        <button *ngIf="isGameOver" type="button" class="btn btn-outline-danger fw-bold" (click)="emitExitGame($event)">END SESSION</button>
+        <button type="button" class="btn btn-outline-danger fw-bold" (click)="emitEndGame($event)">END GAME</button>
     </div>
 
     <!-- FULL MODE: Large 3-Column Grid -->
@@ -99,7 +92,7 @@
 
                     <!-- Selected Game Info Badge -->
                     <div *ngIf="selectedGameType !== 'None'"
-                        class="mt-2 p-2 rounded-2 bg-brand-blue-subtle text-brand-blue d-none d-md-flex align-items-center gap-2 border border-brand-blue border-opacity-10">
+                        class="mt-2 p-2 rounded-2 bg-brand-blue-subtle text-brand-blue d-none d-md-flex align-items-center gap-2 border-brand-blue border-opacity-10">
                         <span class="fs-5">{{ selectedGame?.icon }}</span>
                         <span class="fw-bold text-truncate">{{ selectedGame?.name }}</span>
                         <button *ngIf="!isIntermission" class="btn btn-sm btn-link text-brand-blue ms-auto p-0"
@@ -172,7 +165,7 @@
                 <div *ngIf="selectedGameType === 'Scatterbrain'" class="game-specific-settings mt-1 border-top pt-2">
                     <div class="setting-group">
                         <span class="x-small fw-bold text-uppercase mb-1 d-block">List Options</span>
-                            <div class="btn-group btn-group-xs w-100 shadow-sm rounded-2 overflow-hidden border">
+                            <div class="btn-group btn-group-xs w-100 shadow-sm rounded-2 overflow-hidden">
                                 <button class="btn p-1 x-small" [class.btn-primary]="listSelectionMode === 'manual'"
                                     [class.btn-light]="listSelectionMode !== 'manual'"
                                     (click)="listSelectionMode = 'manual'; updateListId()">CHOOSE</button>
@@ -200,7 +193,7 @@
                         </div>
 
                         <!-- List Preview Area (Visible to everyone if previewedList is set) -->
-                        <div *ngIf="previewedList" class="mt-2 p-2 bg-surface-2 border rounded-2 x-small">
+                        <div *ngIf="previewedList" class="mt-2 p-2 bg-surface-2 rounded-2 x-small">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="fw-bold text-uppercase">Categories: List {{ previewedList.id }}</span>
                                 <button class="btn btn-sm p-0 text-secondary"

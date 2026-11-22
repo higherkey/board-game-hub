@@ -11,7 +11,7 @@
             <!-- TIMER & ADMIN -->
             <div class="d-flex align-items-center gap-3">
                 <div *ngIf="room?.roundEndTime && state.phase !== 'Reveal'"
-                    class="d-flex align-items-center gap-2 px-3 py-1 rounded-pill border"
+                    class="d-flex align-items-center gap-2 px-3 py-1 border border-2 border-primary"
                     [class.bg-danger-subtle]="(timeLeft$ | async)! < 10"
                     [class.text-danger]="(timeLeft$ | async)! < 10">
                     <i class="bi bi-clock-fill"></i>

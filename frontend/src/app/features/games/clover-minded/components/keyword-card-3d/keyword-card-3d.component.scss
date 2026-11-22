@@ -1,7 +1,7 @@
 .card-3d {
     user-select: none;
     position: relative;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.2), transparent 35%),
         linear-gradient(145deg, rgba(16, 185, 129, 0.3), rgba(15, 23, 42, 0.95));
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -32,9 +32,8 @@
 .card-face {
     position: absolute;
     inset: 4px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.15);
     transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -49,7 +48,6 @@
     padding: 2px 5px;
     border-radius: 4px;
     background: rgba(15, 23, 42, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.25);
     max-width: 85%;
     overflow: hidden;
     white-space: nowrap;

@@ -11,8 +11,7 @@
 .glassmorphism {
     background: rgba(255, 255, 255, 0.7);
     
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 16px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
@@ -48,7 +47,7 @@
 
 .badge {
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
@@ -69,7 +68,7 @@
 
 .icon-btn {
     background: white;
-    border: 1px solid #e5e7eb;
+    border: 2px solid var(--primary);
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -91,8 +90,7 @@
     font-size: 14px;
     padding: 8px 16px;
     background: white;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-sm);
 }
 
 .role-reveal {
@@ -102,7 +100,7 @@
 .reveal-box {
     background: #f3f4f6;
     padding: 8px 16px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
     font-size: 14px;
     color: #4b5563;
@@ -123,7 +121,7 @@
     background: #1f2937;
     color: white;
     padding: 15px;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     z-index: 50;
     transform: translateY(10px);
@@ -146,7 +144,7 @@
 
 .canvas-wrapper {
     background: white;
-    border-radius: 20px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
@@ -170,7 +168,7 @@
     background: #10b981;
     color: white;
     padding: 8px 20px;
-    border-radius: 30px;
+    border-radius: var(--radius-sm);
     font-weight: 700;
     box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
     z-index: 10;
@@ -218,14 +216,14 @@ canvas {
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: #f9fafb;
     transition: all 0.2s;
 }
 
 .player-item.active-turn {
     background: #eff6ff;
-    border-left: 3px solid #3b82f6;
+    outline: 2px solid #3b82f6;
 }
 
 .color-dot {
@@ -248,8 +246,8 @@ canvas {
 .select-control {
     width: 100%;
     padding: 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
     margin-bottom: 10px;
     outline: none;
 }
@@ -260,7 +258,7 @@ canvas {
     color: white;
     border: none;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-weight: 700;
     cursor: pointer;
     transition: background 0.2s;
@@ -287,7 +285,7 @@ canvas {
     background: rgba(0, 0, 0, 0.8);
     color: white;
     padding: 10px 20px;
-    border-radius: 40px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     gap: 15px;
