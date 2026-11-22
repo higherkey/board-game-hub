@@ -40,6 +40,11 @@ describe('GreatMindsBoardComponent', () => {
         expect(mockSignalRService.startGame).not.toHaveBeenCalled();
     });
 
+    it('shows an empty pile before any card, then the card in its own flat colour', () => {
+        expect(component.getGradient(0)).toBe('var(--bg-surface-2)');
+        expect(component.getGradient(10)).toBe('hsl(213, 60%, 36%)');
+    });
+
     it('should create', () => {
         expect(component).toBeTruthy();
     });

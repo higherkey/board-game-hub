@@ -4,6 +4,7 @@ import { GreatMindsPlayerComponent } from './great-minds-player.component';
 import { SignalRService } from '../../../../services/signalr.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ConfirmService } from '../../../../shared/services/confirm.service';
 
 describe('GreatMindsPlayerComponent', () => {
     let component: GreatMindsPlayerComponent;
@@ -32,5 +33,18 @@ describe('GreatMindsPlayerComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy();
+    });
+
+    it('gives each card a flat colour, not a gradient', () => {
+        expect(component.getGradient(10)).toBe('hsl(213, 60%, 36%)');
+    });
+
+    it('uses a sync token only after the player confirms', async () => {
+        const confirm = spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(false);
+        await component.useSync();
+        expect(mockSignalRService.submitGreatMindsSync).not.toHaveBeenCalled();
+        confirm.and.resolveTo(true);
+        await component.useSync();
+        expect(mockSignalRService.submitGreatMindsSync).toHaveBeenCalled();
     });
 });

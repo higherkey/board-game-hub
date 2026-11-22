@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -289,12 +289,29 @@ describe('GameRoomComponent', () => {
     expect(mockStateService.startGame).toHaveBeenCalledWith(settings);
   });
 
-  xit('should call exitGame on stateService when confirmed', fakeAsync(() => {
+  it('should call exitGame on stateService when confirmed', async () => {
+    spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(true);
     component.roomCode = 'TEST';
-    component.onExitGame();
-    tick();
+    await component.onExitGame();
     expect(mockStateService.exitGame).toHaveBeenCalledWith('TEST');
-  }));
+  });
+
+  it('END GAME mid-round warns that the game stops, then ends it', async () => {
+    const confirm = spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(true);
+    roomSubject.next({ state: 'Playing' });
+    await component.onEndGame();
+    expect(confirm.calls.mostRecent().args[0].title).toBe('End the game now?');
+    expect(mockStateService.endGame).toHaveBeenCalled();
+  });
+
+  it('END GAME between rounds offers to finish, and does nothing when cancelled', async () => {
+    const confirm = spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(false);
+    roomSubject.next({ state: 'Intermission' });
+    mockStateService.endGame.calls.reset();
+    await component.onEndGame();
+    expect(confirm.calls.mostRecent().args[0].title).toBe('Finish Game?');
+    expect(mockStateService.endGame).not.toHaveBeenCalled();
+  });
 
   it('should show entry-stage when needsName is true', () => {
     mockStateService.needsName = true;

@@ -1,5 +1,5 @@
 <div class="rules-scrim">
-    <section class="rules" role="dialog" aria-modal="true" aria-labelledby="ut-rules-title">
+    <dialog class="rules" open aria-labelledby="ut-rules-title">
         <header class="rules-head">
             <h2 id="ut-rules-title">How to play</h2>
             <button type="button" class="close" (click)="dismiss.emit()" aria-label="Close rules"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
@@ -22,5 +22,5 @@
         <p><strong>Time runs out:</strong> the Crew votes on who the J is. Catch them and the Crew wins; miss and the J wins.</p>
 
         <button type="button" class="done" (click)="dismiss.emit()">Got it</button>
-    </section>
+    </dialog>
 </div>

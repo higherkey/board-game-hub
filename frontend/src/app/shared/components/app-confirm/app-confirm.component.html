@@ -1,5 +1,5 @@
 <dialog #confirmDialog class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-message"
-    (cancel)="$event.preventDefault(); answer(false)" (click)="backdropClick($event)">
+    (cancel)="$event.preventDefault(); answer(false)">
     @if (options(); as o) {
         <div class="confirm-body">
             <h2 class="confirm-title" id="confirm-title">{{ o.title || 'Are you sure?' }}</h2>

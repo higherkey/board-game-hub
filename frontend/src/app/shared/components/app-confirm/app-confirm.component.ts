@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewChild, signal } from '@angular/core';
 import { ConfirmService, ConfirmOptions } from '../../services/confirm.service';
 
 /**
@@ -33,6 +33,7 @@ export class AppConfirmComponent {
     }
 
     /** A click on the backdrop lands on the dialog element itself, outside its content. */
+    @HostListener('click', ['$event'])
     protected backdropClick(event: MouseEvent): void {
         if (event.target === this.dialog.nativeElement) this.answer(false);
     }

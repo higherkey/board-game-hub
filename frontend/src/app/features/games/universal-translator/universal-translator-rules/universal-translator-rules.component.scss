@@ -4,6 +4,7 @@
 }
 
 .rules {
+    position: static; margin: 0; /* the scrim centres it, not the browser default */
     inline-size: 100%; max-inline-size: 40rem; max-block-size: 90vh; overflow-y: auto; padding: 1rem 1.25rem;
     background: var(--bg-surface); color: var(--text-secondary);
     border: 2px solid var(--primary); border-radius: var(--radius-sm); box-shadow: 6px 6px 0 var(--primary);
