@@ -1,4 +1,5 @@
-import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../../../services/signalr.service';
 
@@ -24,6 +25,8 @@ export class GreatMindsPlayerComponent implements OnChanges {
   isSwiping: boolean = false;
   presenceValue: number = 0;
   swipeThreshold: number = 200; // Pixels to trigger play
+
+  private readonly confirmService = inject(ConfirmService);
 
   constructor(private readonly signalR: SignalRService) { }
 
@@ -92,10 +95,9 @@ export class GreatMindsPlayerComponent implements OnChanges {
     this.updatePresence(0); // Clear presence immediately after play
   }
 
-  useSync() {
-    if (confirm("Use a Sync Token? This discards everyone's lowest card.")) {
-      this.signalR.submitGreatMindsSync();
-    }
+  async useSync() {
+    const ok = await this.confirmService.confirm({ title: 'Use a Sync Token?', message: "This discards everyone's lowest card.", confirmLabel: 'Use token' });
+    if (ok) this.signalR.submitGreatMindsSync();
   }
 
   getGradient(num: number): string {
