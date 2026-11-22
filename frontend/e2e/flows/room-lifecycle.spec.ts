@@ -122,8 +122,9 @@ for (const hostIsTable of [true, false]) {
             await invokeRoom(host.page, 'EndGame');
             await synchronized('Finished', 'GameOver', 1);
             await expect(host.page.getByRole('button', { name: /next round/i })).toHaveCount(0);
-            host.page.once('dialog', dialog => dialog.accept());
-            await host.page.getByRole('button', { name: /end session/i }).filter({ visible: true }).first().click();
+            await host.page.getByRole('button', { name: /end game/i }).filter({ visible: true }).first().click();
+            // The site's own confirm dialog, not the browser's.
+            await host.page.locator('dialog.confirm[open] .confirm-actions button').last().click();
             await synchronized('Lobby', null, 0);
             for (const session of sessions) {
                 const room = await receivedRoom(session.page);

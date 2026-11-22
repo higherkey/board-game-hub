@@ -216,8 +216,9 @@ export class SignalRService {
       this.logger.info(`[SignalR] Received GameTypeChanged: ${gameType}`);
       const current = this.currentRoomSubject.value;
       if (current) {
-        current.gameType = gameType;
-        this.currentRoomSubject.next({ ...current });
+        // The server only sends this once the room is back in the lobby. Switch state with the type so the
+        // new game's component never renders against the old game's data while the state patch is in flight.
+        this.currentRoomSubject.next({ ...current, gameType, state: 'Lobby', gameData: null });
       }
     });
 
@@ -545,6 +546,7 @@ export class SignalRService {
 
   public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None', isScreen = false): Promise<string> {
     const guestId = this.authService.getGuestId();
+    await this.startConnection();
     return this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId, isScreen)
       .then((room: Room) => {
         this.logger.info(`[SignalR] Room created: ${room.code}, Game: ${room.gameType}`);

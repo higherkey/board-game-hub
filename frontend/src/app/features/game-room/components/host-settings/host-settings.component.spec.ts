@@ -135,7 +135,7 @@ describe('HostSettingsComponent', () => {
                 button.click();
                 expect(resultPhase === 'GameOver' ? component.playAgain.emit : component.nextRound.emit).toHaveBeenCalledWith(component.settings);
                 expect(component.endGame.emit).not.toHaveBeenCalled();
-                if (resultPhase === 'GameOver') expect(fixture.nativeElement.textContent).toContain('END SESSION');
+                if (resultPhase === 'GameOver') expect(fixture.nativeElement.textContent).toContain(compactMode ? 'END GAME' : 'END SESSION');
             });
         }
     }
@@ -158,6 +158,52 @@ describe('HostSettingsComponent', () => {
         component.availableGames = [{ id: 'Coup', name: 'Coup' }] as any;
         await component.changeGameType('Coup');
         expect(mockSignalRService.setGameType).toHaveBeenCalledWith('ROOM1', 'Coup');
+    });
+
+    const buttonByText = (text: string) => Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .find((b: any) => b.textContent.includes(text)) as HTMLButtonElement | undefined;
+
+    it('mid-round compact controls offer END GAME (ends the game) and no start button', () => {
+        component.compactMode = true;
+        component.isIntermission = false;
+        spyOn(component.endGame, 'emit');
+        spyOn(component.exitGame, 'emit');
+        fixture.detectChanges();
+        expect(buttonByText('START')).toBeUndefined();
+        buttonByText('END GAME')!.click();
+        expect(component.endGame.emit).toHaveBeenCalled();
+        expect(component.exitGame.emit).not.toHaveBeenCalled();
+    });
+
+    it('between rounds compact END GAME returns the room to the lobby', () => {
+        component.compactMode = true;
+        component.isIntermission = true;
+        component.resultPhase = 'RoundResults';
+        spyOn(component.endGame, 'emit');
+        spyOn(component.exitGame, 'emit');
+        fixture.detectChanges();
+        buttonByText('END GAME')!.click();
+        expect(component.exitGame.emit).toHaveBeenCalled();
+        expect(component.endGame.emit).not.toHaveBeenCalled();
+    });
+
+    it('switching games in compact controls asks first and keeps the game when cancelled', async () => {
+        const confirm = TestBed.inject(ConfirmService).confirm as jasmine.Spy;
+        confirm.and.returnValue(Promise.resolve(false));
+        mockSignalRService.setGameType = jasmine.createSpy('setGameType').and.returnValue(Promise.resolve());
+        component.compactMode = true;
+        component.isIntermission = true;
+        component.roomCode = 'ROOM1';
+        component.currentGameType = 'Babble';
+        component.availableGames = [{ id: 'Babble', name: 'Babble' }, { id: 'Farkle', name: 'Farkle' }] as any;
+        await component.changeGameType('Farkle');
+        expect(confirm).toHaveBeenCalled();
+        expect(mockSignalRService.setGameType).not.toHaveBeenCalled();
+        expect(component.selectedGameType).toBe('Babble');
+
+        confirm.and.returnValue(Promise.resolve(true));
+        await component.changeGameType('Farkle');
+        expect(mockSignalRService.setGameType).toHaveBeenCalledWith('ROOM1', 'Farkle');
     });
 
     it('should warn locally if onToggleReady is called without a game selected (as screen)', () => {

@@ -7,12 +7,13 @@ import { AuthService } from '../../services/auth.service';
 import { SignalRService } from '../../services/signalr.service';
 import { UserProfileDropdownComponent } from '../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { LogoComponent } from '../../shared/logo/logo.component';
+import { AppConfirmComponent } from '../../shared/components/app-confirm/app-confirm.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
    selector: 'app-layout',
    standalone: true,
-   imports: [CommonModule, RouterModule, LogoComponent, ActiveGamesComponent, UserProfileDropdownComponent],
+   imports: [CommonModule, RouterModule, LogoComponent, ActiveGamesComponent, UserProfileDropdownComponent, AppConfirmComponent],
    templateUrl: './layout.component.html',
    changeDetection: ChangeDetectionStrategy.Eager,
    styleUrls: ['./layout.component.scss']

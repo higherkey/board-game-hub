@@ -3,7 +3,7 @@ import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, Dest
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { take } from 'rxjs';
+import { firstValueFrom, take } from 'rxjs';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
 import { GameSettings, Player } from '../../services/signalr.service';
 import { AuthService } from '../../services/auth.service';
@@ -255,7 +255,14 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   async onEndGame(event?: MouseEvent) {
-    const confirmed = await this.confirmService.confirm({
+    const playing = (await firstValueFrom(this.stateService.currentRoom$))?.state === 'Playing';
+    const confirmed = await this.confirmService.confirm(playing ? {
+      title: 'End the game now?',
+      message: 'The game stops here and everyone sees the final scores.',
+      confirmLabel: 'END GAME',
+      cancelLabel: 'KEEP PLAYING',
+      confirmButtonClass: 'btn-danger'
+    } : {
       title: 'Finish Game?',
       message: 'Final results are in. Finish the game and return everyone to game selection?',
       confirmLabel: 'FINISH GAME',
@@ -269,9 +276,9 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
   async onExitGame(event?: MouseEvent) {
     const confirmed = await this.confirmService.confirm({
-      title: 'End Session?',
-      message: 'Are you sure you want to end the session and return to the lobby?',
-      confirmLabel: 'END SESSION',
+      title: 'End the game?',
+      message: 'Everyone goes back to the lobby to pick the next game.',
+      confirmLabel: 'END GAME',
       cancelLabel: 'CANCEL',
       confirmButtonClass: 'btn-danger'
     }, event);

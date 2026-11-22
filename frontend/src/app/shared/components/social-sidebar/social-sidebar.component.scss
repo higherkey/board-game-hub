@@ -25,7 +25,7 @@
         border: none;
         color: white;
         cursor: pointer;
-        border-radius: 5px 0 0 5px;
+        border-radius: var(--radius-sm) 0 0 var(--radius-sm);
         font-size: 20px;
     }
 
@@ -57,7 +57,7 @@
         margin-bottom: 10px;
         padding: 10px;
         background: rgba(0, 0, 0, 0.3);
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
     }
 
     .message {
@@ -80,7 +80,7 @@
         align-items: center;
         padding: 8px;
         background: rgba(0, 0, 0, 0.3);
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         margin-bottom: 8px;
         font-size: 12px;
     }

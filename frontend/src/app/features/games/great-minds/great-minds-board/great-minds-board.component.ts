@@ -95,9 +95,9 @@ export class GreatMindsBoardComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   getGradient(num: number): string {
-    if (num === 0) return 'rgba(255,255,255,0.05)';
+    if (num === 0) return 'var(--bg-surface-2)';
     const hue = 200 + (num * 1.3);
-    return `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${hue + 40}, 80%, 40%))`;
+    return `hsl(${hue}, 60%, 36%)`; // flat, no gradients in the brand look
   }
 
   get isDefeat(): boolean {
@@ -122,7 +122,7 @@ export class GreatMindsBoardComponent implements OnInit, OnDestroy, OnChanges {
     return {
       transform: `translateY(-${lift}px) scale(${scale})`,
       opacity: opacity,
-      boxShadow: `0 0 ${20 + p * 40}px ${p * 20}px rgba(255,255,255,${0.2 + p * 0.3})`
+      boxShadow: `3px ${3 + p * 9}px 0 var(--primary)`
     };
   }
 }

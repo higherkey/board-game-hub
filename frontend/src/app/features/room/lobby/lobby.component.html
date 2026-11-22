@@ -31,10 +31,10 @@
                         <p class="card-text small text-muted mb-3">{{ game.description }}</p>
 
                         <div class="badges d-flex gap-2 justify-content-center mb-3">
-                            <span class="badge bg-dark border border-secondary text-secondary"><i
+                            <span class="badge bg-dark border-secondary text-secondary"><i
                                     class="bi bi-people-fill me-1"></i>{{ game.minPlayers }}-{{ game.maxPlayers
                                 }}</span>
-                            <span class="badge bg-dark border border-secondary text-secondary"><i
+                            <span class="badge bg-dark border-secondary text-secondary"><i
                                     class="bi bi-clock-fill me-1"></i>{{ game.averagePlayTime }}m</span>
                         </div>
 
@@ -57,7 +57,7 @@
                 <div
                     class="card-header bg-dark text-white py-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
                     <span class="fw-bold text-uppercase small spacing-wide">Players</span>
-                    <span class="badge bg-primary rounded-pill">{{ getPlayers().length }}</span>
+                    <span class="badge bg-primary">{{ getPlayers().length }}</span>
                 </div>
                 <ul class="list-group list-group-flush overflow-auto flex-grow-1 unique-scrollbar">
                     <li class="list-group-item d-flex align-items-center gap-2 border-bottom-light"

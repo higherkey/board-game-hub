@@ -81,7 +81,7 @@
             <!-- Tableau (Played Cards) -->
             <div class="tableau p-4 min-h-[200px] flex flex-wrap content-start gap-2">
                 <div *ngFor="let card of getPlayerState(p.connectionId)?.tableau"
-                    class="card-token bg-white border border-gray-300 rounded shadow-sm p-1 w-16 h-20 flex flex-col items-center justify-center transform transition-all hover:scale-110"
+                    class="card-token bg-white border border-2 border-primary rounded shadow-sm p-1 w-16 h-20 flex flex-col items-center justify-center transform transition-all hover:scale-110"
                     [ngClass]="{'ring-2 ring-yellow-400': card.isNew}">
                     <div class="text-3xl mb-1">{{getCardEmoji(card.type)}}</div>
                     <div class="text-[0.6rem] text-center leading-tight truncate w-full px-1">{{getCardName(card.type)}}

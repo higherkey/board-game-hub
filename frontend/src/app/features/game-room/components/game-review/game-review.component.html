@@ -30,7 +30,7 @@
                                     <span class="fw-bold">{{ans.playerName}}</span>:
                                     <span class="ms-2 fst-italic">{{ans.text || '(No Answer)'}}</span>
                                 </div>
-                                <span class="badge rounded-pill" [class.bg-success]="ans.isValid"
+                                <span class="badge" [class.bg-success]="ans.isValid"
                                     [class.bg-danger]="!ans.isValid">
                                     {{ans.points}} pts
                                 </span>

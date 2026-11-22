@@ -28,12 +28,12 @@ test.describe('Babble Multiplayer', () => {
         await startButton.click();
 
         // 6. Verify game starts for both
-        await expect(hostPage.locator('.babble-grid')).toBeVisible();
-        await expect(guestPage.locator('.babble-grid')).toBeVisible();
+        await expect(hostPage.locator('.babble-grid, .hand-grid')).toBeVisible();
+        await expect(guestPage.locator('.babble-grid, .hand-grid')).toBeVisible();
 
         // 7. Verify the grid content is synchronized (First 4 letters)
-        const hostLetters = await hostPage.locator('.letter-tile').allInnerTexts();
-        const guestLetters = await guestPage.locator('.letter-tile').allInnerTexts();
+        const hostLetters = await hostPage.locator('.letter-tile, .hand-tile').allInnerTexts();
+        const guestLetters = await guestPage.locator('.letter-tile, .hand-tile').allInnerTexts();
 
         expect(hostLetters).toEqual(guestLetters);
         expect(hostLetters.length).toBe(16); // Standard 4x4 grid

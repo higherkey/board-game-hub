@@ -148,9 +148,8 @@
                     </div>
                 </div>
 
-                <!-- HOST CONTROLS (Mobile Only - Bottom of Game View) -->
-                <div class="d-md-none host-controls-bar" *ngIf="(stateService.isHost$ | async)">
-                     <!-- Toggle for Host Controls if they take up too much space? For now, just show them as requested -->
+                <!-- HOST CONTROLS (Bottom of Game View; on desktop only mid-round, the intermission bar covers between rounds) -->
+                <div class="host-controls-bar" *ngIf="(stateService.isHost$ | async)" [class.d-md-none]="stateService.isIntermission$ | async">
                      <details class="host-controls">
                         <summary class="host-controls-summary">
                             <i class="bi bi-sliders" aria-hidden="true"></i> Host controls

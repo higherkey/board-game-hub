@@ -10,6 +10,9 @@ describe('DiceScene', () => {
 
     beforeEach(() => {
         if (!canUseWebGl()) pending('No WebGL in this browser');
+        // Browsers pause animation frames in windows that are not visible; drive frames by timer so the test is steady.
+        spyOn(window, 'requestAnimationFrame').and.callFake(cb => setTimeout(() => cb(performance.now()), 16) as unknown as number);
+        spyOn(window, 'cancelAnimationFrame').and.callFake(id => clearTimeout(id));
         host = document.createElement('div');
         host.style.cssText = 'width: 480px; height: 360px';
         document.body.appendChild(host);

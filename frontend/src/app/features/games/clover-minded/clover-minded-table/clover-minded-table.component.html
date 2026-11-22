@@ -156,7 +156,7 @@
                  *ngFor="let pId of s.participantIds; let i = index"
                  [class]="'pos-' + (i % 4)"
                  [id]="'bucket-' + pId">
-                <div class="avatar">{{ pId[0] }}</div>
+                <div class="avatar" aria-hidden="true">{{ getPlayerName(pId).charAt(0) }}</div>
                 <div class="p-name">{{ getPlayerName(pId) }}</div>
             </div>
         </div>

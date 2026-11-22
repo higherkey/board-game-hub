@@ -55,7 +55,7 @@
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 16px;
     cursor: pointer;
     display: flex;
@@ -75,7 +75,7 @@
 
 .video-chat-container {
     background: rgba(0, 0, 0, 0.1);
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     padding: 15px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -86,7 +86,6 @@
         background: rgba(0, 0, 0, 0.4);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         padding: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
 
         &.top-right {
             top: 20px;
@@ -170,7 +169,7 @@
         display: flex;
         align-items: center;
         background: white;
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         padding: 6px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         gap: 10px;
@@ -185,7 +184,7 @@
         flex-shrink: 0;
         width: 60px;
         height: 45px;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         overflow: hidden;
         background: #e9ecef;
         display: flex;
@@ -262,7 +261,7 @@
     /* height: auto; -- let aspect ratio or container define height */
     aspect-ratio: 4/3;
     background: #000;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 
@@ -362,10 +361,9 @@ video {
     right: 15px;
     width: 200px;
     background: #1e1e2e;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 1100;
 
     .settings-header {
