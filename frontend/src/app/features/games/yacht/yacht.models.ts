@@ -30,6 +30,8 @@ export interface YachtState {
   activePlayerId: string;
   turnNumber: number;
   rollsUsed: number;
+  /** Goes up on every server roll; the dice tray throws only when it changes. */
+  rollId?: number;
   dice: number[];
   held: boolean[];
   availableScores: Record<string, number | null>;

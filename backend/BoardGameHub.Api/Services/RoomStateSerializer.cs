@@ -43,7 +43,7 @@ public class RoomStateSerializer : IRoomStateSerializer
 
         var envelope = new RoomStateEnvelope
         {
-            SchemaVersion = 1,
+            SchemaVersion = 2,
             Code = room.Code,
             Revision = room.Revision,
             CreatedAt = room.CreatedAt,
@@ -51,6 +51,7 @@ public class RoomStateSerializer : IRoomStateSerializer
             ExpiresAt = room.ExpiresAt,
             GameType = room.GameType,
             State = room.State,
+            ResultPhase = room.ResultPhase,
             Settings = room.Settings ?? new GameSettings(),
             IsPublic = room.IsPublic,
             HostScreenId = room.HostScreenId,
@@ -59,6 +60,7 @@ public class RoomStateSerializer : IRoomStateSerializer
             IsHostOverride = room.IsHostOverride,
             RoundNumber = room.RoundNumber,
             NextGameVotes = room.NextGameVotes != null ? new Dictionary<string, GameType>(room.NextGameVotes) : new(),
+            RoundStartTime = room.RoundStartTime,
             RoundEndTime = room.RoundEndTime,
             IsPaused = room.IsPaused,
             TimeRemainingWhenPaused = room.TimeRemainingWhenPaused,
@@ -105,6 +107,9 @@ public class RoomStateSerializer : IRoomStateSerializer
         var envelope = JsonSerializer.Deserialize<RoomStateEnvelope>(json, DefaultOptions)
             ?? throw new JsonException("Failed to deserialize RoomStateEnvelope from JSON.");
 
+        if (envelope.SchemaVersion is < 1 or > 2)
+            throw new JsonException($"Unsupported room state schema version {envelope.SchemaVersion}.");
+
         var room = new Room
         {
             Code = envelope.Code,
@@ -114,6 +119,7 @@ public class RoomStateSerializer : IRoomStateSerializer
             ExpiresAt = envelope.ExpiresAt,
             GameType = envelope.GameType,
             State = envelope.State,
+            ResultPhase = envelope.ResultPhase,
             Settings = envelope.Settings ?? new GameSettings(),
             IsPublic = envelope.IsPublic,
             HostScreenId = envelope.HostScreenId,
@@ -122,6 +128,7 @@ public class RoomStateSerializer : IRoomStateSerializer
             IsHostOverride = envelope.IsHostOverride,
             RoundNumber = envelope.RoundNumber,
             NextGameVotes = envelope.NextGameVotes ?? new Dictionary<string, GameType>(),
+            RoundStartTime = envelope.RoundStartTime,
             RoundEndTime = envelope.RoundEndTime,
             IsPaused = envelope.IsPaused,
             TimeRemainingWhenPaused = envelope.TimeRemainingWhenPaused,
@@ -158,6 +165,7 @@ public class RoomStateSerializer : IRoomStateSerializer
             }
         }
 
+        RoomLifecyclePolicy.Normalize(room);
         return room;
     }
 }

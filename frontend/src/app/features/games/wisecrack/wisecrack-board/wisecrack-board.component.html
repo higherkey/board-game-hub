@@ -33,7 +33,7 @@
                 </div>
                 <!-- Vote Count Reveal -->
                 <div *ngIf="battleWinner"
-                    class="absolute -top-4 -right-4 bg-yellow-500 text-black font-bold rounded-full w-12 h-12 flex items-center justify-center shadow-lg text-xl">
+                    class="absolute -top-4 -right-4 bg-yellow-500 text-black font-bold rounded w-12 h-12 flex items-center justify-center shadow-lg text-xl">
                     {{getVotes('A')}}
                 </div>
             </div>
@@ -48,7 +48,7 @@
                 </div>
                 <!-- Vote Count Reveal -->
                 <div *ngIf="battleWinner"
-                    class="absolute -top-4 -right-4 bg-yellow-500 text-black font-bold rounded-full w-12 h-12 flex items-center justify-center shadow-lg text-xl">
+                    class="absolute -top-4 -right-4 bg-yellow-500 text-black font-bold rounded w-12 h-12 flex items-center justify-center shadow-lg text-xl">
                     {{getVotes('B')}}
                 </div>
             </div>
@@ -57,7 +57,7 @@
         <!-- Controls (Host only usually, but board triggers) -->
         <div *ngIf="battleWinner" class="mt-8">
             <button (click)="nextBattle()"
-                class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-full text-xl shadow-lg transition-transform transform active:scale-95">
+                class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded text-xl shadow-lg transition-transform transform active:scale-95">
                 Next Battle &rarr;
             </button>
         </div>
@@ -78,12 +78,12 @@
     </div>
 </div>
 <div *ngIf="isHost && isResult" class="mt-8">
-    <button *ngIf="room.roundNumber < 3" (click)="nextRound()"
-        class="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full text-xl shadow-lg transition-transform transform active:scale-95">
-        Next Round &rarr;
+    <button *ngIf="isGameOver || (room.resultPhase != null ? room.resultPhase === 'RoundResults' : room.roundNumber < 3)" (click)="nextRound()"
+        class="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded text-xl shadow-lg transition-transform transform active:scale-95">
+        {{ isGameOver ? 'Play Again' : 'Next Round' }} &rarr;
     </button>
-    <button *ngIf="room.roundNumber >= 3" (click)="endGame()"
-        class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full text-xl shadow-lg transition-transform transform active:scale-95">
+    <button *ngIf="room.resultPhase == null && room.roundNumber >= 3" (click)="endGame()"
+        class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded text-xl shadow-lg transition-transform transform active:scale-95">
         End Game
     </button>
 </div>

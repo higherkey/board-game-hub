@@ -4,16 +4,6 @@ import { of, BehaviorSubject } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { SignalRService } from '../../services/signalr.service';
 import { LayoutComponent } from './layout.component';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { NavbarComponent } from '../components/navbar/navbar.component';
-
-@Component({
-  selector: 'app-navbar',
-  template: '',
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: true
-})
-class NavbarStubComponent { }
 
 describe('LayoutComponent', () => {
   let component: LayoutComponent;
@@ -37,10 +27,6 @@ describe('LayoutComponent', () => {
         }
       ]
     })
-      .overrideComponent(LayoutComponent, {
-        remove: { imports: [NavbarComponent] },
-        add: { imports: [NavbarStubComponent] }
-      })
       .compileComponents();
 
     fixture = TestBed.createComponent(LayoutComponent);

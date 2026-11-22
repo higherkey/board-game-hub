@@ -8,6 +8,8 @@ public class YachtState
     public string ActivePlayerId { get; set; } = string.Empty;
     public int TurnNumber { get; set; } = 1;
     public int RollsUsed { get; set; }
+    /// <summary>Goes up by one on every server roll. Screens animate a throw only when it changes, so a refresh never replays one.</summary>
+    public int RollId { get; set; }
     public int[] Dice { get; set; } = new int[5];
     public bool[] Held { get; set; } = new bool[5];
     // Server-calculated legal choices and scores; clients never submit point values.

@@ -19,10 +19,13 @@ export class ToastService {
     constructor() { }
 
     show(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', duration: number = 3000) {
+        const currentToasts = this.toastsSubject.value;
+        // Many failed requests at once (e.g. backend down) must not stack identical toasts.
+        if (currentToasts.some(t => t.message === message && t.type === type)) return;
+
         const id = ++this.counter;
         const toast: Toast = { id, message, type, duration };
 
-        const currentToasts = this.toastsSubject.value;
         this.toastsSubject.next([...currentToasts, toast]);
 
         if (duration > 0) {

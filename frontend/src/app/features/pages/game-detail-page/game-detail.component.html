@@ -1,179 +1,116 @@
-<div class="game-detail-container pb-5">
-    <div class="hero-section" [style.background-image]="'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8))'">
-        <div class="container position-relative py-5 mt-5">
-            <div class="row align-items-center">
-                <div class="col-md-auto text-center mb-4 mb-md-0">
-                    <div class="display-1 game-hero-icon">{{ game?.icon }}</div>
-                </div>
-                <div class="col-md text-center text-md-start">
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-2 small opacity-75">
-                            <li class="breadcrumb-item"><a routerLink="/games"
-                                    class="text-white text-decoration-none">Library</a></li>
-                            <li class="breadcrumb-item active text-white" aria-current="page">{{ game?.name }}</li>
-                        </ol>
-                    </nav>
-                    <h1 class="display-3 fw-black text-white text-uppercase tracking-tighter mb-3">{{ game?.name }}</h1>
-                    <p class="lead text-white-50 mb-4">{{ game?.description }}</p>
+<div class="gd">
+    @if (game(); as g) {
+        <nav class="gd-crumbs" aria-label="Breadcrumb">
+            <a routerLink="/shelf">The shelf</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">{{ g.name }}</span>
+        </nav>
 
-                    <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-3">
-                        <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-lg"
-                            [routerLink]="['/game/create']" [queryParams]="{gameType: $safeNavigationMigration(game?.id)}">
-                            <i class="bi bi-play-fill me-2"></i> PLAY NOW
-                        </button>
-                        <a class="btn btn-outline-light btn-lg rounded-pill px-4 fw-bold"
-                            [routerLink]="['/social', $safeNavigationMigration(game?.id)]">
-                            <i class="bi bi-people-fill me-2"></i> COMMUNITY HUB
-                        </a>
-                    </div>
+        <section class="gd-hero" aria-labelledby="gd-title">
+            <app-game-box class="gd-box" [game]="g"></app-game-box>
+            <div class="gd-intro">
+                <span class="gd-status" [class.is-playable]="playable()">{{ playable() ? 'Playable now' : 'Coming soon' }}</span>
+                <h1 class="gd-title" id="gd-title">{{ g.name }}</h1>
+                <p class="gd-desc">{{ g.description }}</p>
+
+                <dl class="gd-facts">
+                    @for (fact of facts(); track fact.label) {
+                        <div class="gd-fact">
+                            <dt>{{ fact.label }}</dt>
+                            <dd>{{ fact.value }}</dd>
+                        </div>
+                    }
+                </dl>
+
+                @if (tags().length) {
+                    <ul class="gd-tags" aria-label="Kind of game">
+                        @for (tag of tags(); track tag) {
+                            <li>{{ tag }}</li>
+                        }
+                    </ul>
+                }
+
+                <div class="gd-actions">
+                    <a class="btn btn-primary gd-host" [routerLink]="['/game/create']" [queryParams]="{ gameType: g.id }">
+                        {{ playable() ? 'Host ' + g.name : 'Try it early' }}
+                    </a>
+                    <a class="btn btn-outline-primary gd-join" routerLink="/play">Join with a code</a>
+                    <a class="gd-community" [routerLink]="['/social', g.id]">Talk about {{ g.name }}</a>
                 </div>
+                @if (!playable()) {
+                    <p class="gd-early">This game is still being built. You can try it early, but expect rough edges.</p>
+                }
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="container mt-n5 position-relative z-1">
-        <div class="row g-4">
-            <!-- Main Content -->
-            <div class="col-lg-8">
-                <!-- Rules Section -->
-                <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-                    <button
-                        class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center w-100"
-                        (click)="toggleRules()">
-                        <h3 class="m-0 fw-bold d-flex align-items-center">
-                            <i class="bi bi-journal-text text-primary me-3"></i> How to Play
-                        </h3>
-                        <i class="bi h4 m-0" [class.bi-plus-lg]="!isRulesExpanded"
-                            [class.bi-dash-lg]="isRulesExpanded"></i>
-                    </button>
-                    <div class="rules-content collapse" [class.show]="isRulesExpanded">
-                        <div class="card-body p-4 pt-0 border-top">
-                            <p class="text-secondary">Get ready for an exciting game of {{ game?.name }}! Here are the
-                                basic rules to get you started:</p>
-                            <ul class="list-group list-group-flush opacity-90">
-                                <li class="list-group-item px-0 py-3 border-0">
-                                    <div class="d-flex gap-3">
-                                        <span
-                                            class="badge bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center"
-                                            style="width: 28px; height: 28px;">1</span>
-                                        <div><strong>Join a Lobby:</strong> Create a new room and share the code with
-                                            your friends.</div>
-                                    </div>
-                                </li>
-                                <li class="list-group-item px-0 py-3 border-0">
-                                    <div class="d-flex gap-3">
-                                        <span
-                                            class="badge bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center"
-                                            style="width: 28px; height: 28px;">2</span>
-                                        <div><strong>Use Your Phone:</strong> Everyone joins using their mobile devices
-                                            as controllers.</div>
-                                    </div>
-                                </li>
-                                <li class="list-group-item px-0 py-3 border-0">
-                                    <div class="d-flex gap-3">
-                                        <span
-                                            class="badge bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center"
-                                            style="width: 28px; height: 28px;">3</span>
-                                        <div><strong>Have Fun:</strong> Follow the on-screen prompts and compete for the
-                                            highest score!</div>
-                                    </div>
-                                </li>
-                            </ul>
-                            <div class="mt-3 p-3 bg-light rounded-3 small text-secondary">
-                                <i class="bi bi-info-circle me-2"></i> Detailed rules are available inside the game
-                                room.
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <section class="gd-section" aria-labelledby="gd-steps">
+            <h2 class="gd-h2" id="gd-steps">{{ guide().stepsTitle }}</h2>
+            <ol class="gd-steps">
+                @for (step of guide().steps; track step.title; let i = $index) {
+                    <li class="gd-step">
+                        <span class="gd-num" aria-hidden="true">{{ i + 1 }}</span>
+                        <h3 class="gd-h3">{{ step.title }}</h3>
+                        <p>{{ step.body }}</p>
+                    </li>
+                }
+            </ol>
+        </section>
 
-                <!-- News Section -->
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-body p-4">
-                        <h3 class="fw-bold mb-4 d-flex align-items-center">
-                            <i class="bi bi-megaphone text-primary me-3"></i> Latest Updates
-                        </h3>
-                        <div class="news-item mb-4">
-                            <span class="badge bg-info-subtle text-info mb-2">New Feature</span>
-                            <h5 class="fw-bold">Enhanced Social Features Coming Soon!</h5>
-                            <p class="text-secondary small">We're working on making the community hub even better for {{
-                                game?.name }} fans. Stay tuned for custom content sharing!</p>
-                            <span class="text-muted smaller">January 7, 2026</span>
-                        </div>
-                        <div class="news-item">
-                            <span class="badge bg-success-subtle text-success mb-2">Stability</span>
-                            <h5 class="fw-bold">Version 1.2 Performance Boost</h5>
-                            <p class="text-secondary small">Fixed several minor issues with the scoring logic and
-                                improved the real-time syncing between devices.</p>
-                            <span class="text-muted smaller">December 28, 2025</span>
-                        </div>
-                    </div>
+        <section class="gd-section gd-split">
+            @if (guide().scoring; as scoring) {
+                <div class="gd-card gd-scoring">
+                    <h2 class="gd-h2" id="gd-scoring">{{ scoring.title }}</h2>
+                    <table class="gd-table" aria-labelledby="gd-scoring">
+                        <tbody>
+                            @for (row of scoring.rows; track row[0]) {
+                                <tr>
+                                    <th scope="row">{{ row[0] }}</th>
+                                    <td>{{ row[1] }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (scoring.note) {
+                        <p class="gd-note">{{ scoring.note }}</p>
+                    }
                 </div>
+            }
+            <div class="gd-side">
+                <article class="gd-card">
+                    <h2 class="gd-h3">What you need</h2>
+                    <p>One shared screen for the table: a TV, laptop or tablet. A phone for each player, in the same room or miles apart.</p>
+                </article>
+                @for (note of guide().notes ?? []; track note.title) {
+                    <article class="gd-card">
+                        <h2 class="gd-h3">{{ note.title }}</h2>
+                        <p>{{ note.body }}</p>
+                    </article>
+                }
             </div>
+        </section>
 
-            <!-- Sidebar -->
-            <div class="col-lg-4">
-                <!-- Stats Section -->
-                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-surface">
-                    <div class="card-body p-4 text-center">
-                        <h3 class="fw-bold mb-4 d-flex align-items-center justify-content-center">
-                            <i class="bi bi-graph-up-arrow text-primary me-3"></i> Your Stats
-                        </h3>
-
-                        <div *ngIf="!isLoggedIn" class="py-4">
-                            <div class="display-6 mb-3">🔒</div>
-                            <h5 class="fw-bold">Registration Required</h5>
-                            <p class="text-secondary small mb-4">Register or Login to track your progress, save high
-                                scores, and earn achievements!</p>
-                            <a routerLink="/register" class="btn btn-outline-primary rounded-pill px-4">Create
-                                Account</a>
-                        </div>
-
-                        <div *ngIf="isLoggedIn" class="py-2">
-                            <output *ngIf="isLoadingHistory" class="spinner-border text-primary my-4">
-                                <span class="visually-hidden">Loading...</span>
-                            </output>
-
-                            <div *ngIf="!isLoadingHistory && gameHistory.length === 0" class="text-center py-4">
-                                <p class="text-secondary mb-4">You haven't played {{ game?.name }} yet.</p>
-                                <button class="btn btn-primary rounded-pill px-4" [routerLink]="['/game/create']"
-                                    [queryParams]="{gameType: $safeNavigationMigration(game?.id)}">
-                                    PLAY YOUR FIRST GAME
-                                </button>
-                            </div>
-
-                            <div *ngIf="!isLoadingHistory && gameHistory.length > 0" class="text-start">
-                                <!-- Actual stats would go here -->
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-secondary">Games Played</span>
-                                    <span class="fw-bold">{{ gameHistory.length }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-secondary">Best Score</span>
-                                    <span class="fw-bold">120</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-secondary">Win Rate</span>
-                                    <span class="fw-bold">45%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        @if (similar().length) {
+            <section class="gd-section" aria-labelledby="gd-similar">
+                <div class="gd-similar-head">
+                    <h2 class="gd-h2" id="gd-similar">More like {{ g.name }}</h2>
+                    <a routerLink="/shelf" class="gd-shelf-link">See the whole shelf</a>
                 </div>
-
-                <!-- Ad/Teaser -->
-                <div class="card border-0 shadow-sm rounded-4 bg-gradient-brand text-white overflow-hidden">
-                    <div class="card-body p-4 position-relative">
-                        <h4 class="fw-bold mb-3">Want more?</h4>
-                        <p class="small opacity-75 mb-4">Discover more games like {{ game?.name }} in our extensive
-                            library.</p>
-                        <a routerLink="/games" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">Explore All
-                            Games</a>
-                        <i class="bi bi-controller position-absolute bottom-0 end-0 m-2 opacity-25"
-                            style="font-size: 5rem; transform: rotate(15deg) translate(10px, 20px);"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                <ul class="gd-similar">
+                    @for (other of similar(); track other.id) {
+                        <li>
+                            <a [routerLink]="['/shelf', slug(other.id)]" class="gd-box-link" [attr.aria-label]="other.name + ', game details'">
+                                <app-game-box [game]="other"></app-game-box>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    } @else if (game() === null) {
+        <section class="gd-missing" aria-labelledby="gd-missing-title">
+            <h1 class="gd-title" id="gd-missing-title">That game is not on the shelf</h1>
+            <p class="gd-desc">The link may be old, or the game was renamed. Everything we have is on the shelf.</p>
+            <a class="btn btn-primary gd-host" routerLink="/shelf">See the whole shelf</a>
+        </section>
+    }
 </div>

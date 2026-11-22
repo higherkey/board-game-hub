@@ -45,7 +45,7 @@
                     <div class="clue-zone" *ngFor="let idx of [0,1,2,3]">
                         <div class="clue-zone-header d-flex justify-content-between align-items-center">
                             <span class="clue-zone-title fw-bold">Clue {{ idx + 1 }}</span>
-                            <span class="pair-words badge bg-dark text-info">
+                            <span class="pair-words badge">
                                 {{ getMyPair(s, idx)?.[0] }} + {{ getMyPair(s, idx)?.[1] }}
                             </span>
                         </div>

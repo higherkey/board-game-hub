@@ -2,7 +2,7 @@
     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
         <h2 class="m-0">Round Review</h2>
         <button *ngIf="isHost" class="btn btn-light fw-bold" (click)="nextRound()">
-            Next Round <i class="bi bi-arrow-right"></i>
+            {{ isGameOver ? 'Play Again' : 'Next Round' }} <i class="bi bi-arrow-right"></i>
         </button>
     </div>
     <div class="card-body">
@@ -30,7 +30,7 @@
                                     <span class="fw-bold">{{ans.playerName}}</span>:
                                     <span class="ms-2 fst-italic">{{ans.text || '(No Answer)'}}</span>
                                 </div>
-                                <span class="badge rounded-pill" [class.bg-success]="ans.isValid"
+                                <span class="badge" [class.bg-success]="ans.isValid"
                                     [class.bg-danger]="!ans.isValid">
                                     {{ans.points}} pts
                                 </span>

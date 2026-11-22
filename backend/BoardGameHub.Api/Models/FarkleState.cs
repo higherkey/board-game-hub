@@ -36,7 +36,9 @@ public class FarkleState
     public int CurrentTurnScore { get; set; }
     public List<FarkleDie> Dice { get; set; } = new();
     public FarklePhase Phase { get; set; } = FarklePhase.Picking;
-    
+    /// <summary>Goes up by one on every server roll. Screens animate a throw only when it changes, so a refresh never replays one.</summary>
+    public int RollId { get; set; }
+
     // ConnectionId -> PlayerState
     public Dictionary<string, FarklePlayerState> PlayerStates { get; set; } = new();
 

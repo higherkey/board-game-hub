@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SignalRService } from '../../../../services/signalr.service';
+import { SignalRService, getRoomResultPhase } from '../../../../services/signalr.service';
 
 @Component({
     selector: 'app-poppycock-board',
@@ -24,8 +24,10 @@ export class PoppycockBoardComponent implements OnChanges {
 
     constructor(private readonly signalRService: SignalRService) { }
 
+    get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
+
     nextRound() {
-        this.signalRService.nextRound();
+        void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
     }
 
     ngOnChanges(changes: SimpleChanges): void {

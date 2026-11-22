@@ -24,8 +24,8 @@ test.describe('Game Selection and Start', () => {
         await startBtn.click();
 
         // 4. Verify game starts for both Host and Guest
-        await expect(host.page.locator('.babble-grid')).toBeVisible({ timeout: 15000 });
-        await expect(guest.page.locator('.babble-grid')).toBeVisible({ timeout: 15000 });
+        await expect(host.page.locator('.babble-grid, .hand-grid')).toBeVisible({ timeout: 15000 });
+        await expect(guest.page.locator('.babble-grid, .hand-grid')).toBeVisible({ timeout: 15000 });
 
         await host.context.close();
         await guest.context.close();
@@ -42,8 +42,8 @@ test.describe('Game Selection and Start', () => {
         // Nobody is ready: clicking start must not launch the game
         await host.page.locator('button:has-text("START GAME")').click();
         await host.page.waitForTimeout(2000);
-        await expect(host.page.locator('.babble-grid')).toHaveCount(0);
-        await expect(guest.page.locator('.babble-grid')).toHaveCount(0);
+        await expect(host.page.locator('.babble-grid, .hand-grid')).toHaveCount(0);
+        await expect(guest.page.locator('.babble-grid, .hand-grid')).toHaveCount(0);
         await expect(host.page.locator("#full-game-input")).toHaveValue("Babble");
 
         await host.context.close();

@@ -169,6 +169,9 @@ public class AuthControllerTests
         var userProp = responseProps.First(p => p.Name == "User").GetValue(okResult.Value);
         
         tokenProp.Should().NotBeNull();
+        var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jwt = tokenHandler.ReadJwtToken((string)tokenProp!);
+        jwt.Claims.Should().Contain(c => c.Type == "AvatarUrl" && c.Value == "new-url");
         
         var userReflectedProps = userProp!.GetType().GetProperties();
         var avatarProp = userReflectedProps.First(p => p.Name == "AvatarUrl").GetValue(userProp);

@@ -22,10 +22,10 @@ describe('AboutComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render mission and vision statements', () => {
+  it('leads with the mission as the page heading', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h2')?.textContent).toContain('Distance disappears at the game table');
-    expect(compiled.textContent).toContain('Connecting people and making them feel right at the same table');
+    expect(compiled.querySelectorAll('h1').length).toBe(1);
+    expect(compiled.querySelector('h1')?.textContent).toContain('Distance disappears at the game table');
   });
 
   it('should reference eight1five design studio', () => {
@@ -35,10 +35,12 @@ describe('AboutComponent', () => {
     expect(studioLink?.textContent).toContain('eight1five design');
   });
 
-  it('should render Table vs Hand concepts', () => {
+  it('explains the table and the hand, the three steps and where you can play', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('How Table vs. Hand Works');
-    expect(compiled.textContent).toContain('The Table Role');
-    expect(compiled.textContent).toContain('The Hand Role');
+    const headings = [...compiled.querySelectorAll('h2, h3')].map(h => h.textContent?.trim());
+    expect(headings).toEqual(jasmine.arrayContaining(['Two screens, one game', 'The table', 'Your hand',
+      'How a game night works', 'Host', 'Join', 'Play', 'Where you can play', 'In the same room', 'Miles apart']));
+    expect(compiled.querySelector('#how-it-works')).not.toBeNull();
+    expect(compiled.querySelector('a[href="/shelf"]')?.textContent).toContain('Host a game');
   });
 });

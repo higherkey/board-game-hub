@@ -52,8 +52,8 @@ describe('LandingPageComponent', () => {
   it('should create and populate featured games with Deployed or Testing status', () => {
     expect(component).toBeTruthy();
     expect(mockGameDataService.refreshGames).toHaveBeenCalled();
-    expect(component.featuredGames.length).toBe(3);
-    expect(component.featuredGames.map(g => g.id)).toEqual(['1', '2', '4']);
+    expect(component.featuredGames.length).toBe(4);
+    expect(component.featuredGames.map(g => g.id)).toEqual(['1', '2', '4', '5']);
   });
 
   it('submits a typed room code when the expanded arrow is clicked', async () => {
@@ -98,7 +98,7 @@ describe('LandingPageComponent', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('app-home-hero').length).toBe(1);
     expect(el.querySelectorAll('h1').length).toBe(1);
-    expect(el.querySelector('h1')?.textContent).toContain('Game night,');
+    expect(el.querySelector('h1')?.textContent).toContain('Play Connected.');
     expect(el.querySelector('.dc-concept-flag')).toBeNull();
     expect(el.querySelector('.showcase-tv, .showcase-phone, .hero-steps-grid')).toBeNull();
   });
@@ -110,9 +110,9 @@ describe('LandingPageComponent', () => {
     expect(hero.querySelector('[aria-label="4-letter room code"]')).not.toBeNull();
     expect(hero.querySelector('[aria-label="Enter room code directly"]')).not.toBeNull();
     expect(el.querySelector('.hero-beta-note')?.textContent).toContain('Public Beta');
-    expect(el.querySelector('#hiw-heading')?.textContent).toContain('Table vs. Hand');
-    expect(el.querySelector('#games-preview-heading')?.textContent).toBe('Featured Games');
-    expect(el.querySelectorAll('.preview-card').length).toBe(3);
+    expect(el.querySelector('#shelf-heading')?.textContent).toBe('Take a game off the shelf');
+    expect(el.querySelector('#how-heading')?.textContent).toContain('New to game night');
+    expect(el.querySelectorAll('.home-shelf-item app-game-box').length).toBe(4);
   });
 
   describe('toggleCodeEntry', () => {

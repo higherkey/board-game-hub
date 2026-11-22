@@ -3,9 +3,10 @@ import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, Dest
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { take } from 'rxjs';
+import { firstValueFrom, take } from 'rxjs';
 import { GameDataService, GameDefinition } from '../../services/game-data.service';
 import { GameSettings, Player } from '../../services/signalr.service';
+import { AuthService } from '../../services/auth.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
 import { HostSettingsComponent } from './components/host-settings/host-settings.component';
@@ -42,6 +43,7 @@ import { DeviceService } from '../../services/device.service';
 })
 export class GameRoomComponent implements OnInit, AfterViewInit {
   readonly deviceService = inject(DeviceService);
+  private readonly authService = inject(AuthService);
   roomCode = '';
   isCreating = false;
   promptPlayerName = '';
@@ -169,6 +171,11 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit() {
+    document.body.classList.add('overflow-hidden');
+    this.destroyRef.onDestroy(() => {
+      document.body.classList.remove('overflow-hidden');
+    });
+
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       this.roomCode = (params.get('code') || '').toUpperCase();
       this.isCreating = this.roomCode === 'CREATE';
@@ -211,8 +218,14 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     this.gameDataService.refreshGames();
 
     const isMobile = this.deviceService.isMobileValue;
-    this.stateService.isScreen = !isMobile;
-    this.stateService.needsName = true;
+    const savedRole = typeof localStorage !== 'undefined' ? localStorage.getItem('bgh_preferred_role') : null;
+    this.stateService.isScreen = savedRole ? savedRole === 'table' : !isMobile;
+
+    const guestName = this.authService.getGuestName() || this.authService.currentUserValue?.displayName;
+    this.stateService.needsName = this.isCreating || !guestName;
+    if (!this.promptPlayerName && guestName) {
+      this.promptPlayerName = guestName;
+    }
   }
 
   async submitEntry(entryData: { name: string, joinType: 'player' | 'table', isPublic: boolean }) {
@@ -242,7 +255,14 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   }
 
   async onEndGame(event?: MouseEvent) {
-    const confirmed = await this.confirmService.confirm({
+    const playing = (await firstValueFrom(this.stateService.currentRoom$))?.state === 'Playing';
+    const confirmed = await this.confirmService.confirm(playing ? {
+      title: 'End the game now?',
+      message: 'The game stops here and everyone sees the final scores.',
+      confirmLabel: 'END GAME',
+      cancelLabel: 'KEEP PLAYING',
+      confirmButtonClass: 'btn-danger'
+    } : {
       title: 'Finish Game?',
       message: 'Final results are in. Finish the game and return everyone to game selection?',
       confirmLabel: 'FINISH GAME',
@@ -256,9 +276,9 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
   async onExitGame(event?: MouseEvent) {
     const confirmed = await this.confirmService.confirm({
-      title: 'End Session?',
-      message: 'Are you sure you want to end the session and return to the lobby?',
-      confirmLabel: 'END SESSION',
+      title: 'End the game?',
+      message: 'Everyone goes back to the lobby to pick the next game.',
+      confirmLabel: 'END GAME',
       cancelLabel: 'CANCEL',
       confirmButtonClass: 'btn-danger'
     }, event);

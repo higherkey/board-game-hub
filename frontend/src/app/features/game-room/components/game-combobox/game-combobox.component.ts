@@ -101,6 +101,9 @@ export class GameComboboxComponent implements ControlValueAccessor, OnInit {
             case 'Enter':
                 if (this.isOpen && this.activeIndex >= 0) {
                     this.selectOption(this.filteredOptions[this.activeIndex]);
+                } else if (this.filter && this.filteredOptions.length) {
+                    // Typed a name without arrowing: take the top match rather than leave text that selects nothing.
+                    this.selectOption(this.filteredOptions[0]);
                 }
                 this.close();
                 event.preventDefault();

@@ -16,7 +16,7 @@ test.describe('Table vs. Hand Routing and Role UI', () => {
 
         // 4. Hand (mobile) hides the sidebar behind the bottom PLAYERS tab
         await expect(guestHand.page.locator('app-room-sidebar')).toBeHidden();
-        await guestHand.page.getByText('PLAYERS', { exact: true }).click();
+        await guestHand.page.getByRole('button', { name: 'Players' }).click();
         await expect(guestHand.page.locator('app-room-sidebar').getByText(hostTable.playerName)).toBeVisible({ timeout: 10000 });
 
         await hostTable.context.close();
