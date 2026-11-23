@@ -94,8 +94,8 @@ jobs:
       - name: Determine Target Environment & DB Connection
         env:
           TARGET_BRANCH: ${{ github.ref_name }}
-          PROD_CONNECTION: ${{ secrets.SUPABASE_CONNECTION_STRING_PROD }}
-          STAGING_CONNECTION: ${{ secrets.SUPABASE_CONNECTION_STRING_STAGING }}
+          PROD_CONNECTION: ${{ secrets.NEON_CONNECTION_STRING_PROD }}
+          STAGING_CONNECTION: ${{ secrets.NEON_CONNECTION_STRING_STAGING }}
           DEV_CONNECTION: ${{ secrets.NEON_CONNECTION_STRING_DEV }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
