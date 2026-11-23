@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: boardgamehub-postgres
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "5432:5432"
     environment:
@@ -20,7 +20,7 @@ services:
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: boardgamehub-pgadmin
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "8080:80"
     environment:

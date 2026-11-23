@@ -1,0 +1,53 @@
+name: Cleanup Branch Notes on Dev
+
+# Branch notes live on feature branches and in their PRs only. Pruning them on
+# dev as soon as a PR merges means they are already gone when dev is promoted
+# to staging and main, so main never needs a bot commit of its own and stays
+# an ancestor of dev.
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: cleanup-branch-notes-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Prune Branch Notes
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prune branch notes files on dev
+        run: |
+          if [ -d "docs/branch-notes" ]; then
+            echo "Pruning merged branch notes on dev..."
+            find docs/branch-notes/ -mindepth 1 -type f ! -name '.gitkeep' -delete
+            find docs/branch-notes/ -mindepth 1 -type d -empty -delete
+            touch docs/branch-notes/.gitkeep
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [[ -n $(git status --porcelain docs/branch-notes/) ]]; then
+            git add docs/branch-notes/
+            git commit -m "chore(docs): Clean up merged branch notes on dev [skip ci]"
+            git pull --rebase origin dev
+            git push origin dev
+          else
+            echo "No branch notes to clean up on dev."
+          fi

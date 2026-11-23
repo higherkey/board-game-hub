@@ -89,7 +89,10 @@ public class AdminController : ControllerBase
     [HttpPost("rooms/create")]
     public IActionResult CreateRoom([FromBody] CreateRoomAuth req)
     {
-        Enum.TryParse<GameType>(req.GameType, true, out var type);
+        if (!Enum.TryParse<GameType>(req.GameType, true, out var type) || !Enum.IsDefined(type))
+        {
+            return BadRequest("Unknown game type.");
+        }
         var room = _roomService.CreateRoom(Guid.NewGuid().ToString(), req.HostName, true, type);
         return Ok(new { room.Code });
     }
@@ -136,7 +139,8 @@ public class AdminController : ControllerBase
         if (req.Target == "global")
         {
              // Use the system user for global messages 
-             var adminEmail = _configuration["Admin:Email"] ?? "admin@boardgamehub.com";
+             var adminEmail = _configuration["Admin:Email"];
+             if (string.IsNullOrEmpty(adminEmail)) return BadRequest("Admin email is not configured.");
              var adminUser = await _userManager.FindByNameAsync(adminEmail);
              if (adminUser != null)
              {

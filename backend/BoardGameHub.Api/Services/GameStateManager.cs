@@ -51,6 +51,7 @@ public class GameStateManager : IHostedService, IDisposable
             [nameof(Room.Code)] = ("code", r => r.Code),
             [nameof(Room.Players)] = ("players", r => r.Players),
             [nameof(Room.State)] = ("state", r => r.State),
+            [nameof(Room.ResultPhase)] = ("resultPhase", r => r.ResultPhase),
             [nameof(Room.Settings)] = ("settings", r => r.Settings),
             [nameof(Room.GameType)] = ("gameType", r => r.GameType),
             [nameof(Room.IsPublic)] = ("isPublic", r => r.IsPublic),
@@ -61,6 +62,7 @@ public class GameStateManager : IHostedService, IDisposable
             [nameof(Room.GameData)] = ("gameData", r => r.GameData),
             [nameof(Room.RoundNumber)] = ("roundNumber", r => r.RoundNumber),
             [nameof(Room.NextGameVotes)] = ("nextGameVotes", r => r.NextGameVotes),
+            [nameof(Room.RoundStartTime)] = ("roundStartTime", r => r.RoundStartTime),
             [nameof(Room.RoundEndTime)] = ("roundEndTime", r => r.RoundEndTime),
             [nameof(Room.IsPaused)] = ("isPaused", r => r.IsPaused),
             [nameof(Room.TimeRemainingWhenPaused)] = ("timeRemainingWhenPaused", r => r.TimeRemainingWhenPaused),
@@ -90,10 +92,12 @@ public class GameStateManager : IHostedService, IDisposable
         _logger = logger;
         _persistenceService = persistenceService;
         _serializer = serializer;
+        Serilog.Log.Information(">>> GameStateManager constructor completed <<<");
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        Serilog.Log.Information(">>> GameStateManager.StartAsync ENTERED <<<");
         _cts = new CancellationTokenSource();
         _processingTask = Task.Run(() => ProcessChannelAsync(_cts.Token), CancellationToken.None);
         _logger.LogInformation("GameStateManager Event-Driven Loop Started.");
@@ -149,24 +153,20 @@ public class GameStateManager : IHostedService, IDisposable
 
     public void MarkDirty(string roomCode, string? member = null)
     {
-        _dirtyRooms.TryAdd(roomCode, true);
-        
+        // Order matters: record the member first, then raise the flag, then enqueue.
+        // A member added after the reader drained DirtyMembers therefore always leaves
+        // the flag set for a later channel entry.
         if (_activeRooms.TryGetValue(roomCode, out var room))
         {
             room.Revision++;
             room.UpdatedAt = DateTime.UtcNow;
             room.ExpiresAt = DateTime.UtcNow.AddHours(4);
 
-            if (member != null)
-            {
-                room.DirtyMembers.TryAdd(member, 0);
-            }
-            else
-            {
-                // Null member -> Force full diff
-                room.DirtyMembers.TryAdd("ALL", 0);
-            }
+            // Null member -> Force full diff
+            room.DirtyMembers.TryAdd(member ?? "ALL", 0);
         }
+
+        _dirtyRooms[roomCode] = true;
 
         // Non-blocking channel push for event-driven dispatching
         _channel.Writer.TryWrite(roomCode);
@@ -181,7 +181,17 @@ public class GameStateManager : IHostedService, IDisposable
                 while (_channel.Reader.TryRead(out var roomCode))
                 {
                     if (ct.IsCancellationRequested) break;
-                    await ProcessRoomUpdateAsync(roomCode, ct);
+                    for (var attempt = 0; attempt < 3; attempt++)
+                    {
+                        if (await ProcessRoomUpdateAsync(roomCode, ct)) break;
+                        if (!_activeRooms.ContainsKey(roomCode)) break;
+                        if (attempt == 2)
+                        {
+                            _logger.LogWarning("Retry budget exhausted for room {RoomCode}; retaining dirty state until another notification", roomCode);
+                            break;
+                        }
+                        await Task.Delay(100, ct);
+                    }
                 }
             }
         }
@@ -195,17 +205,21 @@ public class GameStateManager : IHostedService, IDisposable
         }
     }
 
-    internal async Task ProcessRoomUpdateAsync(string roomCode, CancellationToken ct = default)
+    internal async Task<bool> ProcessRoomUpdateAsync(string roomCode, CancellationToken ct = default)
     {
         try 
         {
             if (!_activeRooms.TryGetValue(roomCode, out var liveRoom))
             {
                 _dirtyRooms.TryRemove(roomCode, out _);
-                return;
+                return true;
             }
 
-            _dirtyRooms.TryRemove(roomCode, out _);
+            // Flag already consumed by an earlier pass: nothing pending.
+            if (!_dirtyRooms.TryRemove(roomCode, out _))
+            {
+                return true;
+            }
 
             // Check Dirty Members - Extract and clear atomically
             var dirtyMembers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -231,29 +245,16 @@ public class GameStateManager : IHostedService, IDisposable
                 await liveRoom.StateLock.WaitAsync(ct);
                 try
                 {
+                    RoomLifecyclePolicy.Normalize(liveRoom);
                     currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
-                    if (_persistenceService != null && _serializer != null)
-                    {
-                        snapshot = new RoomSnapshot
-                        {
-                            RoomCode = liveRoom.Code,
-                            GameType = liveRoom.GameType.ToString(),
-                            State = liveRoom.State.ToString(),
-                            SchemaVersion = 1,
-                            Revision = liveRoom.Revision,
-                            RoomEnvelopeJson = _serializer.Serialize(liveRoom),
-                            CreatedAt = liveRoom.CreatedAt,
-                            UpdatedAt = liveRoom.UpdatedAt,
-                            ExpiresAt = liveRoom.ExpiresAt
-                        };
-                    }
+                    snapshot = BuildSnapshot(liveRoom);
                 }
                 finally
                 {
                     liveRoom.StateLock.Release();
                 }
                 
-                if (currentJson == null) return;
+                if (currentJson == null) return true;
 
                 patch = _diffService.GetDiff(lastJson, currentJson);
                 
@@ -269,25 +270,12 @@ public class GameStateManager : IHostedService, IDisposable
                     await liveRoom.StateLock.WaitAsync(ct);
                     try
                     {
+                        RoomLifecyclePolicy.Normalize(liveRoom);
                         currentJson = JsonSerializer.SerializeToNode(liveRoom, _jsonOptions);
-                        if (_persistenceService != null && _serializer != null)
-                        {
-                            snapshot = new RoomSnapshot
-                            {
-                                RoomCode = liveRoom.Code,
-                                GameType = liveRoom.GameType.ToString(),
-                                State = liveRoom.State.ToString(),
-                                SchemaVersion = 1,
-                                Revision = liveRoom.Revision,
-                                RoomEnvelopeJson = _serializer.Serialize(liveRoom),
-                                CreatedAt = liveRoom.CreatedAt,
-                                UpdatedAt = liveRoom.UpdatedAt,
-                                ExpiresAt = liveRoom.ExpiresAt
-                            };
-                        }
+                        snapshot = BuildSnapshot(liveRoom);
                     }
                     finally { liveRoom.StateLock.Release(); }
-                    if (currentJson == null) return;
+                    if (currentJson == null) return true;
                     _lastSnapshots[roomCode] = currentJson;
                     patch = currentJson;
                 }
@@ -297,21 +285,12 @@ public class GameStateManager : IHostedService, IDisposable
                     await liveRoom.StateLock.WaitAsync(ct);
                     try
                     {
-                        if (_persistenceService != null && _serializer != null)
+                        if (RoomLifecyclePolicy.Normalize(liveRoom))
                         {
-                            snapshot = new RoomSnapshot
-                            {
-                                RoomCode = liveRoom.Code,
-                                GameType = liveRoom.GameType.ToString(),
-                                State = liveRoom.State.ToString(),
-                                SchemaVersion = 1,
-                                Revision = liveRoom.Revision,
-                                RoomEnvelopeJson = _serializer.Serialize(liveRoom),
-                                CreatedAt = liveRoom.CreatedAt,
-                                UpdatedAt = liveRoom.UpdatedAt,
-                                ExpiresAt = liveRoom.ExpiresAt
-                            };
+                            dirtyMembers.Add(nameof(Room.State));
+                            dirtyMembers.Add(nameof(Room.ResultPhase));
                         }
+                        snapshot = BuildSnapshot(liveRoom);
 
                         foreach (var member in dirtyMembers)
                         {
@@ -324,7 +303,7 @@ public class GameStateManager : IHostedService, IDisposable
                                 var oldVal = lastJson[key];
                                 var partialDiff = _diffService.GetDiff(oldVal, valNode);
                                 
-                                if (partialDiff != null)
+                                if (partialDiff != null || (oldVal != null && valNode == null))
                                 {
                                     patchObj[key] = partialDiff;
                                     if (lastJson is JsonObject oldObj)
@@ -335,24 +314,7 @@ public class GameStateManager : IHostedService, IDisposable
                             }
                             else
                             {
-                                // Unknown custom member fallback
-                                var propInfo = typeof(Room).GetProperty(member);
-                                if (propInfo != null)
-                                {
-                                    var val = propInfo.GetValue(liveRoom);
-                                    var key = JsonNamingPolicy.CamelCase.ConvertName(member);
-                                    var valNode = JsonSerializer.SerializeToNode(val, _jsonOptions);
-                                    var oldVal = lastJson[key];
-                                    var partialDiff = _diffService.GetDiff(oldVal, valNode);
-                                    if (partialDiff != null)
-                                    {
-                                        patchObj[key] = partialDiff;
-                                        if (lastJson is JsonObject oldObj)
-                                        {
-                                            oldObj[key] = valNode;
-                                        }
-                                    }
-                                }
+                                _logger.LogDebug("Skipping unknown dirty member {Member} for room {RoomCode}", member, roomCode);
                             }
                         }
                     }
@@ -374,11 +336,46 @@ public class GameStateManager : IHostedService, IDisposable
             {
                 _persistenceService?.QueueSave(snapshot);
             }
+            return true;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing room update for room {RoomCode}", roomCode);
+
+            // The flag and members were consumed before the failure; re-mark for a full diff so the
+            // update is not lost. The consumer retries within its bounded budget.
+            if (_activeRooms.TryGetValue(roomCode, out var failedRoom))
+            {
+                // The cached baseline may contain a patch whose send failed; retry from the full state.
+                _lastSnapshots.TryRemove(roomCode, out _);
+                failedRoom.DirtyMembers.TryAdd("ALL", 0);
+                _dirtyRooms[roomCode] = true;
+                return false;
+            }
+            return true;
         }
+    }
+
+    // Caller must hold liveRoom.StateLock.
+    private RoomSnapshot? BuildSnapshot(Room room)
+    {
+        if (_persistenceService == null || _serializer == null) return null;
+        return new RoomSnapshot
+        {
+            RoomCode = room.Code,
+            GameType = room.GameType.ToString(),
+            State = room.State.ToString(),
+            SchemaVersion = 2,
+            Revision = room.Revision,
+            RoomEnvelopeJson = _serializer.Serialize(room),
+            CreatedAt = room.CreatedAt,
+            UpdatedAt = room.UpdatedAt,
+            ExpiresAt = room.ExpiresAt
+        };
     }
 
     public void Dispose()

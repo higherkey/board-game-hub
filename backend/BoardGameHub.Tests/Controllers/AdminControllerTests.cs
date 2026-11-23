@@ -66,6 +66,27 @@ public class AdminControllerTests : IDisposable
         _context.Dispose();
     }
 
+    [Theory]
+    [InlineData("Unknown")]
+    [InlineData("2147483647")]
+    public void CreateRoom_RejectsUnknownOrUndefinedGameTypes(string gameType)
+    {
+        var result = _sut.CreateRoom(new AdminController.CreateRoomAuth("Host", gameType));
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        _mockRoomService.Verify(r => r.CreateRoom(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(),
+            It.IsAny<GameType>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<bool>()), Times.Never);
+    }
+
+    [Fact]
+    public void CreateRoom_PreservesNoneLobbySelection()
+    {
+        _mockRoomService.Setup(r => r.CreateRoom(It.IsAny<string>(), "Host", true, GameType.None, null, null, false))
+            .Returns(new Room { Code = "TEST" });
+
+        _sut.CreateRoom(new AdminController.CreateRoomAuth("Host", "None")).Should().BeOfType<OkObjectResult>();
+    }
+
     [Fact]
     public void Controller_ShouldHaveAuthorizeAdminAttribute()
     {
@@ -156,5 +177,17 @@ public class AdminControllerTests : IDisposable
         result.Should().NotBeNull();
         _mockSocialService.Verify(s => s.SaveGlobalMessage("admin_id", "Test message"), Times.Once);
         _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", new object[] { "ADMIN", "Test message" }, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendMessage_WhenAdminEmailNotConfigured_ReturnsBadRequestAndSendsNothing()
+    {
+        _mockConfig.Setup(c => c["Admin:Email"]).Returns((string?)null);
+
+        var result = await _sut.SendMessage(new AdminController.MsgReq("Test message", "global"));
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", It.IsAny<object[]>(), default), Times.Never);
     }
 }

@@ -36,7 +36,14 @@ namespace BoardGameHub.Api.Migrations
                 columns: new[] { "State", "ExpiresAt", "UpdatedAt" });
 
             migrationBuilder.Sql("ALTER TABLE public.\"ActiveRooms\" ENABLE ROW LEVEL SECURITY;");
-            migrationBuilder.Sql("REVOKE ALL ON TABLE public.\"ActiveRooms\" FROM anon, authenticated;");
+            // anon/authenticated exist only on Supabase; skip on plain Postgres/Neon.
+            migrationBuilder.Sql(@"
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+                        REVOKE ALL ON TABLE public.""ActiveRooms"" FROM anon, authenticated;
+                    END IF;
+                END $$;");
         }
 
         /// <inheritdoc />

@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
     selector: 'app-about',
     standalone: true,
-    imports: [CommonModule, RouterModule, PageHeaderComponent],
-    templateUrl: './about.component.html'
+    imports: [RouterModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './about.component.html',
+    styleUrls: ['./about.component.scss']
 })
 export class AboutComponent { }

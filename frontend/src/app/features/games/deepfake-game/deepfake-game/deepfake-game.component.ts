@@ -1,7 +1,7 @@
-import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SignalRService, Room } from '../../../../services/signalr.service';
+import { SignalRService, Room, getRoomResultPhase } from '../../../../services/signalr.service';
 import { Subscription } from 'rxjs';
 import { DeepfakeRulesComponent } from '../deepfake-rules/deepfake-rules.component';
 
@@ -30,6 +30,7 @@ interface DeepfakeStroke {
   standalone: true,
   imports: [CommonModule, FormsModule, DeepfakeRulesComponent],
   templateUrl: './deepfake-game.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './deepfake-game.component.scss'
 })
 export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -264,8 +265,10 @@ export class DeepfakeGameComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
+
   handleNextRound() {
-    this.signalRService.nextRound();
+    void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
   }
 
   // Voting Status

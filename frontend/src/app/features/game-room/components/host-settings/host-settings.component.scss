@@ -10,9 +10,9 @@
 .settings-panel {
     background: white;
     padding: 1rem;
-    border-radius: var(--radius-lg, 12px);
-    border: 1px solid var(--border-color, #eee);
-    box-shadow: var(--shadow-sm, 2px 2px 0px rgba(0, 0, 0, 0.05));
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
     width: 100%;
     height: 100%;
     box-sizing: border-box;
@@ -20,6 +20,49 @@
     flex-direction: column;
     justify-content: space-between;
     overflow-y: auto;
+
+    @media (max-width: 768px) {
+        padding: 0.5rem 0.75rem;
+
+        .settings-grid {
+            gap: 0.5rem;
+        }
+
+        .settings-col {
+            gap: 0.35rem;
+        }
+
+        .room-info-col {
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border-light, #eee);
+        }
+
+        .qr-box {
+            padding: 0.25rem !important;
+        }
+
+        .qr-img {
+            width: 60px;
+            height: 60px;
+        }
+
+        .ready-button {
+            padding: 0.45rem 0.75rem !important;
+            font-size: 0.95rem;
+            margin-bottom: 0 !important;
+        }
+
+        .btn-start {
+            padding: 0.55rem 1rem;
+            font-size: 1rem;
+            margin-bottom: 0 !important;
+        }
+
+        .group-label {
+            margin-bottom: 0.25rem !important;
+            font-size: 0.7rem;
+        }
+    }
 
     h3 {
         margin: 0;
@@ -115,7 +158,7 @@
     border: none;
     background: linear-gradient(135deg, var(--brand-blue) 0%, #1e1e2e 100%);
     color: white;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     transition: all 0.2s;
 
     &:hover:not(:disabled) {
@@ -137,7 +180,6 @@
 }
 
 .qr-box {
-    border: 1px solid #eee;
     flex-shrink: 0;
 
     img {
@@ -160,8 +202,7 @@
 .room-code-badge {
     background: var(--surface-2, #f8f9fa);
     padding: 0.5rem;
-    border-radius: 8px;
-    border: 1px dashed var(--border-light, #ddd);
+    border-radius: var(--radius-sm);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -175,9 +216,8 @@
 
 .category-pill {
     background: white;
-    border: 1px solid #eee;
     padding: 2px 8px;
-    border-radius: 20px;
+    border-radius: var(--radius-sm);
     font-size: 0.65rem;
     font-weight: 600;
     color: var(--text-secondary);
@@ -211,8 +251,7 @@
     margin-top: auto;
 
     &::backdrop {
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.55);
     }
 
     .modal-content-wrapper {

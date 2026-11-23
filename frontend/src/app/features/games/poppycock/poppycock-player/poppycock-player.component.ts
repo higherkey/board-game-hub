@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService } from '../../../../services/signalr.service';
@@ -8,6 +8,7 @@ import { SignalRService } from '../../../../services/signalr.service';
     standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './poppycock-player.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./poppycock-player.component.scss']
 })
 export class PoppycockPlayerComponent implements OnChanges {
@@ -76,15 +77,15 @@ export class PoppycockPlayerComponent implements OnChanges {
     }
 
     pauseGame() {
-        this.signalRService.pauseGame();
+        this.signalRService.pauseGame().catch(error => console.error(error));
     }
 
     resumeGame() {
-        this.signalRService.resumeGame();
+        this.signalRService.resumeGame().catch(error => console.error(error));
     }
 
     endRound() {
-        this.signalRService.endRound();
+        this.signalRService.endRound().catch(error => console.error(error));
     }
 
     getLetter(index: number): string {

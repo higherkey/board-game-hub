@@ -1,4 +1,5 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ConfirmService } from '../../../../shared/services/confirm.service';
 import { CommonModule } from '@angular/common';
 import { SignalRService } from '../../../../services/signalr.service';
 
@@ -7,6 +8,7 @@ import { SignalRService } from '../../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './great-minds-player.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./great-minds-player.component.scss']
 })
 export class GreatMindsPlayerComponent implements OnChanges {
@@ -23,6 +25,8 @@ export class GreatMindsPlayerComponent implements OnChanges {
   isSwiping: boolean = false;
   presenceValue: number = 0;
   swipeThreshold: number = 200; // Pixels to trigger play
+
+  private readonly confirmService = inject(ConfirmService);
 
   constructor(private readonly signalR: SignalRService) { }
 
@@ -91,15 +95,14 @@ export class GreatMindsPlayerComponent implements OnChanges {
     this.updatePresence(0); // Clear presence immediately after play
   }
 
-  useSync() {
-    if (confirm("Use a Sync Token? This discards everyone's lowest card.")) {
-      this.signalR.submitGreatMindsSync();
-    }
+  async useSync() {
+    const ok = await this.confirmService.confirm({ title: 'Use a Sync Token?', message: "This discards everyone's lowest card.", confirmLabel: 'Use token' });
+    if (ok) this.signalR.submitGreatMindsSync();
   }
 
   getGradient(num: number): string {
     const hue = 200 + (num * 1.3);
-    return `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${hue + 40}, 80%, 40%))`;
+    return `hsl(${hue}, 60%, 36%)`; // flat, no gradients in the brand look
   }
 
   getCardStyle(card: number) {
@@ -111,7 +114,7 @@ export class GreatMindsPlayerComponent implements OnChanges {
     return {
       transform: `translateY(${translateY}px) scale(${scale})`,
       zIndex: 100,
-      boxShadow: `0 ${10 + this.presenceValue * 40}px ${20 + this.presenceValue * 60}px rgba(0,0,0,0.5)`
+      boxShadow: `4px ${4 + this.presenceValue * 12}px 0 var(--contrast-pink)`
     };
   }
 }

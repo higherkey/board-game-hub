@@ -1,6 +1,8 @@
 import { Type } from '@angular/core';
+import { YachtComponent } from './yacht/yacht.component';
 
 import { BabbleComponent } from './babble/babble-game/babble.component';
+import { BabbleHandComponent } from './babble/babble-hand/babble-hand.component';
 import { ScatterbrainComponent } from './scatterbrain/scatterbrain-game/scatterbrain.component';
 import { ScatterbrainHandComponent } from './scatterbrain/scatterbrain-hand/scatterbrain-hand.component';
 import { OneAndOnlyGameComponent } from './one-and-only/one-and-only-game/one-and-only-game.component';
@@ -34,8 +36,13 @@ export interface GameConfig {
 }
 
 export const GAME_REGISTRY: Record<string, GameConfig> = {
+    'Yacht': {
+        tableComponent: YachtComponent,
+        handComponent: YachtComponent
+    },
     'Babble': {
-        tableComponent: BabbleComponent
+        tableComponent: BabbleComponent,
+        handComponent: BabbleHandComponent
     },
     'Scatterbrain': {
         tableComponent: ScatterbrainComponent,
@@ -85,6 +92,7 @@ export const GAME_REGISTRY: Record<string, GameConfig> = {
         tableComponent: WarshipsGameComponent
     },
     'FourInARow': {
+        handComponent: FourInARowGameComponent,
         tableComponent: FourInARowGameComponent
     },
     'Farkle': {

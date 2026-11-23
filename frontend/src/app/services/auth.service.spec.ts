@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService, AuthResponse, User } from './auth.service';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { Router, provideRouter } from '@angular/router';
 
 describe('AuthService', () => {
@@ -20,7 +20,7 @@ describe('AuthService', () => {
             providers: [
                 AuthService,
                 provideRouter([]),
-                provideHttpClient(),
+                provideHttpClient(withXhr()),
                 provideHttpClientTesting()
             ]
         });
@@ -47,6 +47,7 @@ describe('AuthService', () => {
                 expect(localStorage.getItem('auth_token')).toBe('fake-jwt-token');
                 expect(service.getToken()).toBe('fake-jwt-token');
                 expect(service.isAuthenticated()).toBeTrue();
+                expect(service.isLoggedIn()).toBeTrue();
             });
 
             const req = httpMock.expectOne('/api/auth/login');
@@ -74,6 +75,26 @@ describe('AuthService', () => {
             service.logout();
             expect(localStorage.getItem('auth_token')).toBeNull();
             expect(router.navigate).toHaveBeenCalledWith(['/']);
+        });
+
+        it('should immediately provide avatar in session when setting guest name', () => {
+            service.setGuestName('GuestPlayer');
+            let currentSession: any = null;
+            service.session$.subscribe(s => currentSession = s);
+
+            expect(currentSession).toBeTruthy();
+            expect(currentSession?.name).toBe('GuestPlayer');
+            expect(currentSession?.isGuest).toBeTrue();
+            expect(currentSession?.avatarUrl).toBeTruthy();
+            expect(currentSession?.avatarUrl).toContain('dicebear.com');
+        });
+
+        it('should generate avatar when calling getGuestId if missing', () => {
+            const guestId = service.getGuestId();
+            expect(guestId).toBeTruthy();
+            const storedAvatar = localStorage.getItem('guest_avatar');
+            expect(storedAvatar).toBeTruthy();
+            expect(storedAvatar).toContain(guestId);
         });
     });
 

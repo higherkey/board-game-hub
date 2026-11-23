@@ -1,0 +1,23 @@
+:host {
+    display: block;
+}
+
+.dc-concept-flag {
+    max-inline-size: 1200px;
+    margin: var(--space-md) auto 0;
+    padding: var(--space-xs) var(--space-md);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+app-home-hero a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 48px;
+
+    &:focus-visible {
+        outline: 3px solid var(--accent-dark);
+        outline-offset: 3px;
+    }
+}

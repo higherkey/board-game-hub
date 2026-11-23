@@ -1,12 +1,13 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Room, SignalRService } from '../../../../services/signalr.service';
+import { Room, SignalRService, getRoomResultPhase } from '../../../../services/signalr.service';
 
 @Component({
   selector: 'app-wisecrack-board',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './wisecrack-board.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./wisecrack-board.component.scss']
 })
 export class WisecrackBoardComponent {
@@ -76,8 +77,10 @@ export class WisecrackBoardComponent {
     this.signalRService.nextWisecrackBattle();
   }
 
+  get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
+
   nextRound() {
-    this.signalRService.nextRound();
+    void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
   }
 
   endGame() {

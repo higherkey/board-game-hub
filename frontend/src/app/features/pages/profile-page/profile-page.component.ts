@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { AuthService, Session, User } from '../../../services/auth.service';
 import { Subject, takeUntil } from 'rxjs';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './profile-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile-page.component.scss'
 })
 export class ProfilePageComponent implements OnInit, OnDestroy {

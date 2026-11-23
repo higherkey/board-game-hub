@@ -1,11 +1,18 @@
 using BoardGameHub.Api.Models;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace BoardGameHub.Api.Services;
 
 public class PoppycockGameService : BaseGameService<PoppycockState>
 {
+    private readonly ILogger<PoppycockGameService> _logger;
     public override GameType GameType => GameType.Poppycock;
+
+    public PoppycockGameService(ILogger<PoppycockGameService>? logger = null)
+    {
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<PoppycockGameService>.Instance;
+    }
 
     public override Task StartRound(Room room, GameSettings settings)
     {
@@ -13,7 +20,7 @@ public class PoppycockGameService : BaseGameService<PoppycockState>
         var dasher = room.Players[room.RoundNumber % room.Players.Count];
         
         // 2. Select random category
-        var category = (PoppycockCategory)new Random().Next(Enum.GetValues<PoppycockCategory>().Length);
+        var category = (PoppycockCategory)Random.Shared.Next(Enum.GetValues<PoppycockCategory>().Length);
         
         // 3. Select random prompt for that category
         var prompt = GetRandomPrompt(category);
@@ -77,7 +84,7 @@ public class PoppycockGameService : BaseGameService<PoppycockState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Poppycock CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Poppycock CalculateScores");
             throw;
         }
         return Task.CompletedTask;
@@ -201,7 +208,7 @@ public class PoppycockGameService : BaseGameService<PoppycockState>
             _ => new[] { new PoppycockPrompt("Unknown", "Nothing", "Misc") }
         };
 
-        return prompts[new Random().Next(prompts.Length)];
+        return prompts[Random.Shared.Next(prompts.Length)];
     }
 
     public override async Task<bool> HandleAction(Room room, GameAction action, string connectionId)

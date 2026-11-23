@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import { SushiTrainBoardComponent } from '../sushi-train-board/sushi-train-board.component';
@@ -9,6 +9,7 @@ import { SushiTrainPlayerComponent } from '../sushi-train-player/sushi-train-pla
     standalone: true,
     imports: [CommonModule, SushiTrainBoardComponent, SushiTrainPlayerComponent],
     templateUrl: './sushi-train.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./sushi-train.component.scss']
 })
 export class SushiTrainComponent implements OnInit {

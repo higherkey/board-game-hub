@@ -39,50 +39,22 @@
   </dialog>
 
   <div class="dice-tray-area">
-    <div class="dice-felt">
-      <fieldset class="dice-grid" aria-label="Dice">
-        <button *ngFor="let die of state.dice; let i = index" 
-             class="die-3d-container"
-             [class.held]="die.isHeld"
-             [class.reserved]="die.isReserved"
-             [class.rolling]="state.phase === 'Rolling'"
-             [tabindex]="die.isHeld ? -1 : 0"
-             [attr.aria-pressed]="die.isHeld || die.isReserved"
-             [attr.aria-label]="'Die showing ' + die.value"
-             [disabled]="die.isHeld"
-             (click)="toggleDie(i)">
-          
-          <div class="die-3d" [attr.data-value]="die.value">
-            <!-- Opposite sides add up to 7 -->
-            <div class="face top"><div class="pip" *ngFor="let p of getPips(die.value)"></div></div>
-            <div class="face bottom"><div class="pip" *ngFor="let p of getPips(7 - die.value)"></div></div>
-            <div class="face front"><div class="pip" *ngFor="let p of getPips((die.value % 6) + 1)"></div></div>
-            <div class="face back"><div class="pip" *ngFor="let p of getPips(7 - ((die.value % 6) + 1))"></div></div>
-            <div class="face right"><div class="pip" *ngFor="let p of getPips(((die.value + 1) % 6) + 1)"></div></div>
-            <div class="face left"><div class="pip" *ngFor="let p of getPips(7 - (((die.value + 1) % 6) + 1))"></div></div>
-          </div>
-          
-          <div class="die-shadow"></div>
-          
-          <!-- Absolute positioned labels to prevent layout shift -->
-          <div class="status-indicator banked" *ngIf="die.isHeld">Banked</div>
-          <div class="status-indicator keeping" *ngIf="die.isReserved">Keep</div>
-        </button>
-      </fieldset>
-    </div>
+    <app-dice-tray [dice]="trayDice(state.dice)" [rollId]="state.rollId ?? null" motion="short" [aspect]="4 / 3"
+      [selectable]="myConnectionId === state.activePlayerId" (dieToggle)="toggleDie($event)"
+      (settled)="landing.land(state.rollId)" label="Your dice. Tap one to keep it."></app-dice-tray>
   </div>
 
   <!-- Controls -->
   <div class="controls" *ngIf="myConnectionId === state.activePlayerId">
     <!-- aria-live announces phase changes to screen readers -->
     <div aria-live="assertive" aria-atomic="true" class="sr-only">
-      <ng-container [ngSwitch]="state.phase">
+      <ng-container [ngSwitch]="landing.phase(state)">
         <span *ngSwitchCase="'Farkled'">Farkle! Your turn is over.</span>
         <span *ngSwitchCase="'Rolling'">Dice are rolling.</span>
         <span *ngSwitchCase="'Banked'">Points banked.</span>
       </ng-container>
     </div>
-    <ng-container [ngSwitch]="state.phase">
+    <ng-container [ngSwitch]="landing.phase(state)">
       <div *ngSwitchCase="'Picking'" class="button-group">
         <button class="btn roll" (click)="roll()">
           {{ getRollCount() > 0 ? 'Roll ' + getRollCount() + ' Dice' : 'Roll Again' }}

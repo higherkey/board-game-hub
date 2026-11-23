@@ -76,6 +76,44 @@ describe('SignalRService', () => {
     expect(mockHubConnection.on).toHaveBeenCalled(); // Should register listeners in constructor
   });
 
+  it('transports authoritative result phases, including explicit reset patches', async () => {
+    getCallback('RoomUpdated')({ code: 'TEST', players: [], state: 'Playing' });
+    getCallback('RoomStatePatch')({ state: 'Finished', resultPhase: 'RoundResults' });
+    expect(service.currentRoomSubject.value?.resultPhase).toBe('RoundResults');
+    getCallback('RoomStatePatch')({ resultPhase: 'GameOver' });
+    await service.playAgain();
+    expect(mockHubConnection.invoke).toHaveBeenCalledWith('PlayAgain', 'TEST');
+    expect(service.currentRoomSubject.value?.resultPhase).toBe('GameOver');
+    getCallback('RoomStatePatch')({ state: 'Playing', resultPhase: null });
+    expect(service.currentRoomSubject.value?.resultPhase).toBeNull();
+  });
+
+  describe('UndoVoteFinished', () => {
+    const outcomes: [string | undefined, string][] = [
+      ['Passed', 'Undo vote passed. Game state has been restored.'],
+      ['Failed', 'Undo request was rejected.'],
+      ['Vote Completed', 'Undo vote completed.'],
+      [undefined, 'Undo vote completed.']
+    ];
+
+    for (const [result, message] of outcomes) {
+      it(`clears the vote and shows feedback for ${result ?? 'legacy empty payload'}`, () => {
+        getCallback('RoomUpdated')({ code: 'TEST', players: [], currentVote: { votes: {} } });
+        const toast = TestBed.inject(ToastService);
+
+        getCallback('UndoVoteFinished')(result);
+
+        expect(service.currentRoomSubject.value?.currentVote).toBeNull();
+        expect(toast.showInfo).toHaveBeenCalledOnceWith(message);
+      });
+    }
+
+    it('handles completion before a room is available', () => {
+      expect(() => getCallback('UndoVoteFinished')('Failed')).not.toThrow();
+      expect(TestBed.inject(ToastService).showInfo).toHaveBeenCalledWith('Undo request was rejected.');
+    });
+  });
+
   describe('startConnection', () => {
     it('should start connection if disconnected', async () => {
       mockHubConnection.state = HubConnectionState.Disconnected;
@@ -135,6 +173,22 @@ describe('SignalRService', () => {
       expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'ABCD', 'Player', 'guest-uuid', false, null);
       expect(result).toBeTrue();
       expect(service.currentRoomSubject.value?.code).toBe('ABCD');
+      expect(service.isScreenMode).toBeFalse();
+    });
+
+    it('joinRoom should record isScreen and expose it via isScreenMode getter', async () => {
+      mockHubConnection.invoke.withArgs('JoinRoom', 'SCREEN_ROOM', 'ScreenHost', 'guest-uuid', true, null).and.returnValue(Promise.resolve({
+        code: 'SCREEN_ROOM',
+        players: [],
+        gameType: 'CloverMinded',
+        settings: {}
+      }));
+
+      const result = await service.joinRoom('SCREEN_ROOM', 'ScreenHost', true);
+
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinRoom', 'SCREEN_ROOM', 'ScreenHost', 'guest-uuid', true, null);
+      expect(result).toBeTrue();
+      expect(service.isScreenMode).toBeTrue();
     });
 
     it('joinRoom should NOT update currentRoomSubject on failure', async () => {
@@ -389,6 +443,45 @@ describe('SignalRService', () => {
       expect(updated?.gameData.score).toBe(100);
       expect(updated?.players.length).toBe(2);
       expect(updated?.code).toBe('PATCH'); // Should verify original props remain
+    });
+
+    it('should catch error and not throw in validateActiveRooms when connection fails', async () => {
+      spyOn(service, 'getActiveRooms').and.returnValue([{ code: 'ROOM1', gameType: 'Babble', lastPlayed: new Date().toISOString() }]);
+      mockHubConnection.state = HubConnectionState.Disconnected;
+      mockHubConnection.start.and.returnValue(Promise.reject(new Error('Connection error')));
+
+      await expectAsync(service.validateActiveRooms()).toBeResolved();
+    });
+
+    it('should invoke CloverDragMove via cloverDragMove when in room', async () => {
+      service.currentRoomSubject.next({ code: 'CLOV1' } as any);
+      await service.cloverDragMove('card-1', 100, 200);
+
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('CloverDragMove', 'CLOV1', 'card-1', 100, 200);
+    });
+
+    it('should invoke joinLobby and getPublicRooms in joinLobby', async () => {
+      spyOn(service, 'getPublicRooms').and.returnValue(Promise.resolve([]));
+      mockHubConnection.state = HubConnectionState.Connected;
+
+      await service.joinLobby();
+
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('JoinLobby');
+      expect(service.getPublicRooms).toHaveBeenCalled();
+    });
+
+    it('should invoke SetHostPlayer and RemoveHostPlayer', async () => {
+      await service.setHostPlayer('ROOM1', 'target-user');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('SetHostPlayer', 'ROOM1', 'target-user');
+
+      await service.removeHostPlayer('ROOM1', 'target-user');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('RemoveHostPlayer', 'ROOM1', 'target-user');
+    });
+
+    it('should invoke RenamePlayer', async () => {
+      mockHubConnection.state = HubConnectionState.Connected;
+      await service.renamePlayer('NewPlayerName');
+      expect(mockHubConnection.invoke).toHaveBeenCalledWith('RenamePlayer', 'NewPlayerName');
     });
   });
 });

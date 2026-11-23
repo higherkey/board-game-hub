@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SignalRService } from '../../../../services/signalr.service';
@@ -20,6 +20,7 @@ interface ScriptToken {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './breaking-news.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './breaking-news.component.scss'
 })
 export class BreakingNewsComponent implements OnInit, OnChanges, OnDestroy {

@@ -35,8 +35,6 @@ public class SymbologyGameService : BaseGameService<SymbologyState>
         _logger = logger;
     }
 
-    private readonly Random _random = new();
-    
     // Basic word list for now
     private readonly List<string> _words = new()
     {
@@ -54,7 +52,7 @@ public class SymbologyGameService : BaseGameService<SymbologyState>
         var state = new SymbologyState();
         
         // 2. Select Word
-        state.CurrentWord = _words[_random.Next(_words.Count)];
+        state.CurrentWord = _words[Random.Shared.Next(_words.Count)];
         
         // 3. Assign Active Player
         // Determine round robin or random? Let's go Round Robin based on existing player order if tracked, 
@@ -96,7 +94,7 @@ public class SymbologyGameService : BaseGameService<SymbologyState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Symbology CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Symbology CalculateScores");
         }
         return Task.CompletedTask;
     }

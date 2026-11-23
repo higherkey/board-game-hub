@@ -28,15 +28,22 @@ export interface Player {
   isReady: boolean;
   isScreen: boolean;
   avatarUrl?: string;
-  userId?: string;
+  isRegistered?: boolean;
 }
 
 export type RoomState = 'Lobby' | 'Playing' | 'Finished';
+export type RoomResultPhase = 'RoundResults' | 'GameOver';
+
+/** Null or absent phases preserve each caller's legacy continuation. */
+export function getRoomResultPhase(room: Pick<Room, 'resultPhase'> | null | undefined, legacyPhase: RoomResultPhase | null = null): RoomResultPhase | null {
+  return room?.resultPhase ?? legacyPhase;
+}
 
 export interface Room {
   code: string;
   players: Player[];
   state: RoomState;
+  resultPhase?: RoomResultPhase | null;
   settings: GameSettings;
   gameType: string;
 
@@ -53,6 +60,8 @@ export interface Room {
   // Voting
   nextGameVotes: { [key: string]: number }; // Vote is GameType enum int or string
 
+  /** When play starts this round (UTC); later than now during a game's lead-in countdown. */
+  roundStartTime?: string;
   roundEndTime?: string;
   isPaused: boolean;
   timeRemainingWhenPaused?: string;
@@ -113,7 +122,7 @@ export class SignalRService {
   ) {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(environment.hubUrl, {
-        accessTokenFactory: () => localStorage.getItem('auth_token') || ''
+        accessTokenFactory: () => this.authService.getToken() || ''
       })
       .withAutomaticReconnect()
       .build();
@@ -207,8 +216,9 @@ export class SignalRService {
       this.logger.info(`[SignalR] Received GameTypeChanged: ${gameType}`);
       const current = this.currentRoomSubject.value;
       if (current) {
-        current.gameType = gameType;
-        this.currentRoomSubject.next({ ...current });
+        // The server only sends this once the room is back in the lobby. Switch state with the type so the
+        // new game's component never renders against the old game's data while the state patch is in flight.
+        this.currentRoomSubject.next({ ...current, gameType, state: 'Lobby', gameData: null });
       }
     });
 
@@ -241,13 +251,20 @@ export class SignalRService {
       }
     });
 
-    this.hubConnection.on('UndoVoteFinished', () => {
-      // Just a signal, room update comes separately usually, 
-      // but we can clear vote here locally to be safe.
+    this.hubConnection.on('UndoVoteFinished', (result?: string) => {
+      // State restoration arrives separately through the room state stream.
       const current = this.currentRoomSubject.value;
       if (current) {
         current.currentVote = null;
         this.currentRoomSubject.next({ ...current });
+      }
+      if (result === 'Passed') {
+        this.toastService.showInfo('Undo vote passed. Game state has been restored.');
+      } else if (result === 'Failed') {
+        this.toastService.showInfo('Undo request was rejected.');
+      } else {
+        // Older servers only announce completion, without an outcome.
+        this.toastService.showInfo('Undo vote completed.');
       }
     });
 
@@ -315,7 +332,7 @@ export class SignalRService {
     this.hubConnection.onreconnected(connectionId => {
       console.info('SignalR Reconnected', connectionId);
       this.connectionId$.next(connectionId || this.hubConnection.connectionId);
-      this.validateActiveRooms();
+      void this.validateActiveRooms();
     });
 
     // Public Lobby Events
@@ -354,8 +371,13 @@ export class SignalRService {
     await this.hubConnection.invoke('StartGame', this.currentRoomSubject.value?.code, settings);
   }
 
+  /** Awaitable variant for controls that need pending/error feedback. */
+  public submitGameAction(actionType: string, payload: any): Promise<void> {
+    return this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value?.code, actionType, payload);
+  }
+
   public sendGameAction(actionType: string, payload: any) {
-    this.hubConnection.invoke('SubmitAction', this.currentRoomSubject.value?.code, actionType, payload)
+    this.submitGameAction(actionType, payload)
       .catch(err => console.error(err));
   }
 
@@ -392,6 +414,11 @@ export class SignalRService {
   public async endGame(): Promise<void> {
     const roomCode = this.currentRoomSubject.value?.code;
     if (roomCode) await this.hubConnection.invoke('EndGame', roomCode);
+  }
+
+  public async playAgain(): Promise<void> {
+    const roomCode = this.currentRoomSubject.value?.code;
+    if (roomCode) await this.hubConnection.invoke('PlayAgain', roomCode);
   }
 
   public async nextRound(): Promise<void> {
@@ -445,7 +472,7 @@ export class SignalRService {
         console.info('SignalR Connection started', connectionId);
 
         // Proactively validate active rooms on startup to catch any that closed while offline
-        this.validateActiveRooms();
+        void this.validateActiveRooms();
       } catch (err) {
         console.error('Error while starting connection: ' + err);
         this.connectionStatus$.next('Error');
@@ -498,11 +525,11 @@ export class SignalRService {
     const currentRooms = this.getActiveRooms();
     if (currentRooms.length === 0) return;
 
-    if (this.hubConnection.state !== HubConnectionState.Connected) {
-      await this.startConnection();
-    }
-
     try {
+      if (this.hubConnection.state !== HubConnectionState.Connected) {
+        await this.startConnection();
+      }
+
       const codes = currentRooms.map(r => r.code);
       const validCodes: string[] = await this.hubConnection.invoke('ValidateRooms', codes);
 
@@ -519,6 +546,7 @@ export class SignalRService {
 
   public async createRoom(playerName: string, isPublic: boolean, gameType: string = 'None', isScreen = false): Promise<string> {
     const guestId = this.authService.getGuestId();
+    await this.startConnection();
     return this.hubConnection.invoke('CreateRoom', playerName, isPublic, gameType, guestId, isScreen)
       .then((room: Room) => {
         this.logger.info(`[SignalR] Room created: ${room.code}, Game: ${room.gameType}`);
@@ -568,7 +596,7 @@ export class SignalRService {
     }
     await this.hubConnection.invoke('JoinLobby');
     // Initial fetch to populate list
-    this.getPublicRooms();
+    await this.getPublicRooms();
   }
 
   public async leaveLobby(): Promise<void> {
@@ -593,6 +621,10 @@ export class SignalRService {
 
   private lastPlayerName: string | null = null;
   private lastIsScreen = false;
+
+  public get isScreenMode(): boolean {
+    return this.lastIsScreen;
+  }
 
   public async joinRoom(roomCode: string, playerName: string, isScreen = false): Promise<boolean> {
     if (this.hubConnection.state !== HubConnectionState.Connected) {
@@ -651,8 +683,11 @@ export class SignalRService {
   public async cloverDragMove(cardId: string, x: number, y: number): Promise<void> {
     const roomCode = this.currentRoomSubject.value?.code;
     if (roomCode) {
-      this.hubConnection.invoke('CloverDragMove', roomCode, cardId, x, y)
-        .catch(err => console.error(err));
+      try {
+        await this.hubConnection.invoke('CloverDragMove', roomCode, cardId, x, y);
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
   // ... rest of file

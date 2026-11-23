@@ -207,4 +207,27 @@ public class ScatterbrainGameServiceTests
         result.Should().BeTrue();
         state.Vetoes["p1"].Should().Contain(0);
     }
+
+    [Theory]
+    [InlineData(ScatterbrainData.LetterMode.Normal)]
+    [InlineData(ScatterbrainData.LetterMode.Hard)]
+    [InlineData((ScatterbrainData.LetterMode)99)]
+    public void ScatterbrainData_GetLetter_ShouldReturnValidChar(ScatterbrainData.LetterMode mode)
+    {
+        var letter = ScatterbrainData.GetLetter(mode);
+        char.IsLetter(letter).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ScatterbrainData_GetRandomList_And_GenerateList_ShouldReturnCategories()
+    {
+        var randomList = ScatterbrainData.GetRandomList();
+        randomList.Should().NotBeNullOrEmpty();
+
+        var aiListWithKeyword = ScatterbrainData.GenerateList("nature");
+        aiListWithKeyword.Should().NotBeNullOrEmpty();
+
+        var aiListFallback = ScatterbrainData.GenerateList("UnknownRandomKeywordThatDoesNotMatchAnything");
+        aiListFallback.Should().NotBeNullOrEmpty();
+    }
 }

@@ -26,10 +26,9 @@ public class UniversalTranslatorService : BaseGameService<UniversalTranslatorSta
         
         var players = room.Players.ToList();
         var count = players.Count;
-        var r = new Random();
         
         // Shuffle
-        players = players.OrderBy(x => r.Next()).ToList();
+        players = players.OrderBy(x => Random.Shared.Next()).ToList();
         
         var roles = new Dictionary<string, UniversalTranslatorRole>();
         
@@ -73,8 +72,7 @@ public class UniversalTranslatorService : BaseGameService<UniversalTranslatorSta
     private List<string> GetRandomWords(int count)
     {
         var pool = new[] { "Robot", "Laser", "Spaceship", "Alien", "Planet", "Star", "Galaxy", "Portal", "Time Machine", "Asteroid", "Black Hole", "Supernova", "Satellite", "Astronaut", "Comet", "Nebula", "Telescope", "Mars", "Pluto", "Rocket" };
-        var r = new Random();
-        return pool.OrderBy(x => r.Next()).Take(count).ToList();
+        return pool.OrderBy(x => Random.Shared.Next()).Take(count).ToList();
     }
 
     public Task<bool> PickWord(Room room, string playerId, string word)

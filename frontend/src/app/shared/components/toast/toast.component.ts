@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService } from '../../services/toast.service';
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -9,6 +9,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
   imports: [CommonModule],
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   animations: [
     trigger('slideInOut', [
       transition(':enter', [

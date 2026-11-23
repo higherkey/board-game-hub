@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './core/layout/layout.component';
-import { GameRoomComponent } from './features/game-room/game-room.component';
 import { GamesComponent } from './features/pages/games-page/games.component';
 import { LandingPageComponent } from './features/pages/home-page/home-page.component';
 import { AuthComponent } from './features/pages/login-page/login.component';
@@ -9,9 +8,10 @@ import { PlayComponent } from './features/pages/play-page/play.component';
 import { SocialComponent } from './features/pages/social-page/social.component';
 import { NotFoundComponent } from './features/pages/not-found-page/not-found.component';
 import { adminGuard } from './core/guards/admin.guard';
+import { gameTitleResolver } from './features/pages/game-detail-page/game-title.resolver';
+import { gameSlug } from './shared/game-slug';
 
-export const routes: Routes = [
-    {
+export const routes: Routes = [    {
         path: 'admin',
         loadComponent: () => import('./features/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
         canActivate: [adminGuard],
@@ -23,12 +23,15 @@ export const routes: Routes = [
         children: [
             { path: '', component: LandingPageComponent, title: 'Home' },
             { path: 'play', component: PlayComponent, title: 'Play & Connect' },
-            { path: 'games', component: GamesComponent, title: 'Games Library' },
-            { path: 'games/:gameId', loadComponent: () => import('./features/pages/game-detail-page/game-detail.component').then(m => m.GameDetailComponent), title: 'Game Details' },
+            { path: 'shelf', component: GamesComponent, title: 'The shelf' },
+            { path: 'shelf/:slug', loadComponent: () => import('./features/pages/game-detail-page/game-detail.component').then(m => m.GameDetailComponent), title: gameTitleResolver },
+            // Old addresses keep working: /games and /games/CloverMinded move to /shelf and /shelf/clover-minded.
+            { path: 'games', redirectTo: 'shelf', pathMatch: 'full' },
+            { path: 'games/:gameId', redirectTo: ({ params }) => `/shelf/${gameSlug(params['gameId'])}` },
             { path: 'social', component: SocialComponent, canActivate: [authGuard], title: 'Social' },
-            { path: 'social/:gameId', loadComponent: () => import('./features/pages/game-social/game-social.component').then(m => m.GameSocialComponent), title: 'Game Social Hub' },
+            { path: 'social/:gameId', loadComponent: () => import('./features/pages/game-social/game-social.component').then(m => m.GameSocialComponent), canActivate: [authGuard], title: 'Game Social Hub' },
             { path: 'history', loadComponent: () => import('./features/game-history/game-history.component').then(m => m.GameHistoryComponent), canActivate: [authGuard], title: 'Game History' },
-            { path: 'profile', loadComponent: () => import('./features/pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent), title: 'My Profile' },
+            { path: 'profile', loadComponent: () => import('./features/pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent), canActivate: [authGuard], title: 'My Profile' },
             { path: 'about', loadComponent: () => import('./features/pages/about-page/about.component').then(m => m.AboutComponent), title: 'About' },
             { path: 'login', component: AuthComponent, title: 'Login' },
             { path: 'register', loadComponent: () => import('./features/pages/register-page/register.component').then(m => m.RegisterComponent), title: 'Register' },
@@ -36,7 +39,9 @@ export const routes: Routes = [
             { path: 'terms-of-service', loadComponent: () => import('./features/pages/terms-of-service/terms-of-service').then(m => m.TermsOfService), title: 'Terms of Service' },
             { path: 'data-privacy', loadComponent: () => import('./features/pages/data-privacy/data-privacy').then(m => m.DataPrivacy), title: 'Data Privacy' },
             { path: 'news', loadComponent: () => import('./features/pages/news-page/news.component').then(m => m.NewsComponent), title: 'What\'s New' },
-            { path: 'game/:code', component: GameRoomComponent, title: 'Game Room' },
+            { path: 'design-concept', loadComponent: () => import('./features/pages/design-concept-page/design-concept.component').then(m => m.DesignConceptComponent), title: 'Design Concept: Hero' },
+            { path: 'design-consent', redirectTo: 'design-concept', pathMatch: 'full' },
+            { path: 'game/:code', loadComponent: () => import('./features/game-room/game-room.component').then(m => m.GameRoomComponent), title: 'Game Room' },
             { path: 'not-found', component: NotFoundComponent, title: '404 - Page Not Found' }
         ]
     },

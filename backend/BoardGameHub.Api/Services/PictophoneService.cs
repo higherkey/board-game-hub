@@ -57,7 +57,7 @@ public class PictophoneService : BaseGameService<PictophoneState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Pictophone CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Pictophone CalculateScores");
         }
         return Task.CompletedTask;
     }

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Room, SignalRService } from '../../../../services/signalr.service';
@@ -8,6 +8,7 @@ import { Room, SignalRService } from '../../../../services/signalr.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './wisecrack-player.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./wisecrack-player.component.scss']
 })
 export class WisecrackPlayerComponent {
@@ -91,14 +92,14 @@ export class WisecrackPlayerComponent {
   }
 
   pauseGame() {
-    this.signalRService.pauseGame();
+    this.signalRService.pauseGame().catch(error => console.error(error));
   }
 
   resumeGame() {
-    this.signalRService.resumeGame();
+    this.signalRService.resumeGame().catch(error => console.error(error));
   }
 
   endRound() {
-    this.signalRService.endRound();
+    this.signalRService.endRound().catch(error => console.error(error));
   }
 }

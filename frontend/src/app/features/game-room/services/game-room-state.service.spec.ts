@@ -8,6 +8,7 @@ import { AuthService } from '../../../services/auth.service';
 import { GameDataService } from '../../../services/game-data.service';
 import { SignalRService, Room, Player } from '../../../services/signalr.service';
 import { ToastService } from '../../../shared/services/toast.service';
+import { SoundService } from '../../../core/services/sound.service';
 import { LoggerService } from '../../../core/services/logger.service';
 
 describe('GameRoomStateService', () => {
@@ -53,6 +54,7 @@ describe('GameRoomStateService', () => {
       toggleReady: jasmine.createSpy('toggleReady').and.returnValue(Promise.resolve()),
       setGameType: jasmine.createSpy('setGameType'),
       startGame: jasmine.createSpy('startGame'),
+      playAgain: jasmine.createSpy('playAgain').and.resolveTo(),
       updateSettings: jasmine.createSpy('updateSettings').and.returnValue(Promise.resolve()),
       nextRound: jasmine.createSpy('nextRound').and.returnValue(Promise.resolve()),
       endGame: jasmine.createSpy('endGame').and.returnValue(Promise.resolve()),
@@ -72,7 +74,7 @@ describe('GameRoomStateService', () => {
     };
 
     routerMock = {
-      navigate: jasmine.createSpy('navigate')
+      navigate: jasmine.createSpy('navigate').and.returnValue(Promise.resolve(true))
     };
 
     toastMock = {
@@ -90,6 +92,7 @@ describe('GameRoomStateService', () => {
     TestBed.configureTestingModule({
       providers: [
         GameRoomStateService,
+        { provide: SoundService, useValue: { playVictory: jasmine.createSpy('playVictory') } },
         { provide: SignalRService, useValue: signalRMock },
         { provide: AuthService, useValue: authMock },
         { provide: Router, useValue: routerMock },
@@ -133,6 +136,54 @@ describe('GameRoomStateService', () => {
     it('should initialize connection on initializeRoom', () => {
       service.initializeRoom('ABCD', false);
       expect(signalRMock.startConnection).toHaveBeenCalled();
+    });
+
+    it('does not auto-join when the initial connection fails', async () => {
+      signalRMock.startConnection.and.rejectWith('offline');
+      await service.initializeRoom('ABCD', false);
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      expect(loggerMock.error).toHaveBeenCalledWith('Failed to connect to room', 'offline');
+      expect(toastMock.showError).toHaveBeenCalledWith('Failed to connect. Please try again.');
+    });
+
+    it('clears stale room state before connection startup finishes for room creation', async () => {
+      let finishConnection!: () => void;
+      signalRMock.startConnection.and.returnValue(new Promise<void>(resolve => finishConnection = resolve));
+      const initialization = service.initializeRoom('CREATE', true);
+      expect(signalRMock.clearState).toHaveBeenCalled();
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      finishConnection();
+      await initialization;
+    });
+
+    for (const rejectedJoin of [false, true]) {
+      it(`handles an auto-join ${rejectedJoin ? 'rejection' : 'missing room'} when navigation also rejects`, fakeAsync(() => {
+        if (rejectedJoin) signalRMock.joinRoom.and.rejectWith('offline');
+        else signalRMock.joinRoom.and.resolveTo(false);
+        routerMock.navigate.and.rejectWith('route failure');
+        void service.initializeRoom('ABCD', false);
+        tick();
+        expect(toastMock.showError).toHaveBeenCalled();
+        expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to the shelf', 'route failure');
+        expect(signalRMock.removeActiveRoom).toHaveBeenCalledTimes(rejectedJoin ? 0 : 1);
+        expect(service.needsName).toBeTrue();
+      }));
+    }
+
+    it('auto-joins and clears needsName when guest has a stored name', fakeAsync(() => {
+      signalRMock.joinRoom.and.returnValue(Promise.resolve(true));
+      void service.initializeRoom('ABCD', false);
+      tick();
+      expect(signalRMock.joinRoom).toHaveBeenCalledWith('ABCD', 'Tester', jasmine.any(Boolean));
+      expect(service.needsName).toBeFalse();
+    }));
+
+    it('sets needsName to true when no stored name exists', async () => {
+      authMock.getGuestName.and.returnValue(null);
+      authMock.currentUserValue = null;
+      await service.initializeRoom('ABCD', false);
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      expect(service.needsName).toBeTrue();
     });
 
     it('should create room and navigate on submitEntry (isCreating=true)', async () => {
@@ -188,13 +239,83 @@ describe('GameRoomStateService', () => {
     it('should navigate on leaveRoom', async () => {
       await service.leaveRoom('ABCD');
       expect(signalRMock.leaveRoom).toHaveBeenCalledWith('ABCD');
-      expect(routerMock.navigate).toHaveBeenCalledWith(['/games']);
+      expect(routerMock.navigate).toHaveBeenCalledWith(['/shelf']);
     });
+
+    it('reports failed navigation after leaving without an unhandled rejection', fakeAsync(() => {
+      routerMock.navigate.and.rejectWith('route failure');
+      void service.leaveRoom('ABCD');
+      tick();
+      expect(loggerMock.error).toHaveBeenCalledWith('Failed to navigate to the shelf', 'route failure');
+    }));
 
     it('should call changeRole', async () => {
       await service.changeRole(true);
       expect(signalRMock.changeRole).toHaveBeenCalledWith(true);
     });
+  });
+
+  describe('result lifecycle', () => {
+    for (const resultPhase of ['RoundResults', 'GameOver'] as const) {
+      it('keeps the active game mounted for Finished ' + resultPhase, () => {
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Finished', resultPhase });
+        service.gameStarted$.pipe(take(1)).subscribe(started => expect(started).toBeTrue());
+        service.isIntermission$.pipe(take(1)).subscribe(intermission => expect(intermission).toBeTrue());
+        service.gameComponent$.pipe(take(1)).subscribe(component => expect(component).toBeTruthy());
+      });
+    }
+
+    it('updates replay settings then requests a fresh game', async () => {
+      await service.playAgain(mockRoom.settings);
+      expect(signalRMock.updateSettings).toHaveBeenCalledWith(mockRoom.settings);
+      expect(signalRMock.playAgain).toHaveBeenCalled();
+      expect(signalRMock.nextRound).not.toHaveBeenCalled();
+    });
+
+    it('reports replay failures without attempting to start a new round', async () => {
+      signalRMock.playAgain.and.rejectWith('offline');
+      await service.playAgain(mockRoom.settings);
+      expect(toastMock.showError).toHaveBeenCalledWith('Failed to play again.');
+      expect(signalRMock.nextRound).not.toHaveBeenCalled();
+    });
+
+    it('plays final victory on a Hand when no Table is present, once per fresh game', () => {
+      for (let game = 0; game < 2; game++) {
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Playing', resultPhase: null });
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Finished', resultPhase: 'GameOver' });
+      }
+      expect(TestBed.inject(SoundService).playVictory).toHaveBeenCalledTimes(2);
+    });
+
+    for (const isScreen of [false, true]) {
+      it('prioritizes the Table for final-only victory audio with isScreen=' + isScreen, () => {
+        signalRMock.checkIsHost.and.returnValue(!isScreen);
+        const room: Room = { ...mockRoom, players: [
+          { ...mockRoom.players[0], isScreen, isHost: !isScreen },
+          { ...mockRoom.players[0], connectionId: 'other', isScreen: !isScreen }
+        ] };
+        const sound = TestBed.inject(SoundService).playVictory;
+        signalRMock.currentRoom$.next({ ...room, state: 'Playing', resultPhase: null });
+        signalRMock.currentRoom$.next({ ...room, state: 'Finished', resultPhase: 'RoundResults' });
+        expect(sound).not.toHaveBeenCalled();
+        service.gameInputs$.pipe(take(1)).subscribe(inputs => {
+          expect(inputs['isHost']).toBe(!isScreen);
+          expect(inputs['isTable']).toBe(isScreen);
+          expect(inputs['isHand']).toBe(!isScreen);
+        });
+        signalRMock.currentRoom$.next({ ...room, state: 'Finished', resultPhase: 'GameOver' });
+        signalRMock.currentRoom$.next({ ...room, state: 'Finished', resultPhase: 'GameOver' });
+        expect(sound).toHaveBeenCalledTimes(isScreen ? 1 : 0);
+      });
+    }
+
+    for (const resultPhase of [undefined, null]) {
+      it('keeps legacy finished audio when phase is ' + resultPhase, () => {
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Playing', resultPhase });
+        signalRMock.currentRoom$.next({ ...mockRoom, state: 'Finished', resultPhase });
+        expect(TestBed.inject(SoundService).playVictory).toHaveBeenCalledTimes(1);
+      });
+    }
   });
 
   describe('State Syncing', () => {
@@ -234,10 +355,28 @@ describe('GameRoomStateService', () => {
       signalRMock.currentRoom$.next(roomWithHandGame);
     });
 
+    it('should select BabbleHandComponent for Babble when isScreen is false', (done) => {
+      const roomWithBabbleHand: Room = {
+        ...mockRoom,
+        gameType: 'Babble',
+        players: [{ connectionId: 'my-id', name: 'Tester', isHost: true, isReady: false, isScreen: false, score: 0 }]
+      };
+
+      service.gameComponent$.pipe(
+        filter((c: any) => !!c),
+        take(1)
+      ).subscribe(comp => {
+        expect(comp).toBeTruthy();
+        expect(comp.name).toContain('BabbleHand');
+        done();
+      });
+      signalRMock.currentRoom$.next(roomWithBabbleHand);
+    });
+
     it('should fallback to tableComponent when isScreen is false and handComponent is undefined', (done) => {
       const roomWithSingleComp: Room = {
         ...mockRoom,
-        gameType: 'Babble',
+        gameType: 'OneAndOnly',
         players: [{ connectionId: 'my-id', name: 'Tester', isHost: true, isReady: false, isScreen: false, score: 0 }]
       };
 

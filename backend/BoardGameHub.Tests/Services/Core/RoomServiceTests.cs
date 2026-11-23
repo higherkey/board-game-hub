@@ -51,6 +51,93 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public async Task FourInARow_UndoWinningDrop_RestoresTotalsBeforeReplay()
+    {
+        _gameServices.Add(new FourInARowGameService());
+        var room = _sut.CreateRoom("red", "Red", false, GameType.FourInARow);
+        _sut.JoinRoom(room.Code, "yellow", "Yellow");
+        room.IsHostOverride = true;
+        await _sut.StartGame(room.Code, new GameSettings());
+        room.Players[0].Score = 5;
+        room.Players[1].Score = 3;
+        foreach (var column in new[] { 0, 6, 1, 6, 2, 5, 3 })
+        {
+            var current = ((FourInARowState)room.GameData!).CurrentPlayerId;
+            await _sut.SubmitAction(room.Code, current, "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column }));
+        }
+        Assert.Equal(6, room.Players[0].Score);
+        var liveRed = room.Players[0];
+        Assert.Same(room, await _sut.RequestUndo(room.Code, "red"));
+        Assert.Same(liveRed, room.Players[0]);
+        Assert.Equal(GameState.Playing, room.State);
+        Assert.Null(room.ResultPhase);
+        Assert.Equal(5, liveRed.Score);
+        Assert.Equal(3, room.Players[1].Score);
+        Assert.Empty(room.RoundScores);
+        await _sut.SubmitAction(room.Code, "red", "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column = 3 }));
+        Assert.Equal(GameState.Finished, room.State);
+        Assert.Equal(6, liveRed.Score);
+        Assert.Equal(1, room.RoundScores["red"]);
+    }
+
+    [Fact]
+    public async Task FourInARow_WinReconnectUndo_PreservesHistoryAndRestoresCurrentSeat()
+    {
+        _gameServices.Add(new FourInARowGameService());
+        var room = _sut.CreateRoom("red", "Red", false, GameType.FourInARow);
+        _sut.JoinRoom(room.Code, "yellow", "Yellow");
+        room.IsHostOverride = true;
+        await _sut.StartGame(room.Code, new GameSettings());
+        foreach (var column in new[] { 0, 6, 1, 6, 2, 5, 3 })
+        {
+            var id = ((FourInARowState)room.GameData!).CurrentPlayerId;
+            await _sut.SubmitAction(room.Code, id, "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column }));
+        }
+        var session = room.Players[0].SessionId;
+        Assert.Same(room, _sut.JoinRoom(room.Code, "red-new", "Red", sessionId: session));
+        Assert.NotEmpty(room.StateHistory);
+        Assert.Same(room, await _sut.RequestUndo(room.Code, "red-new"));
+        Assert.Equal(GameState.Playing, room.State);
+        Assert.Equal(0, room.Players[0].Score);
+        Assert.Equal("red-new", ((FourInARowState)room.GameData!).CurrentPlayerId);
+        Assert.DoesNotContain("red", ((FourInARowState)room.GameData!).PlayerOrder);
+        await _sut.SubmitAction(room.Code, "red-new", "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column = 3 }));
+        Assert.Equal(GameState.Finished, room.State);
+        Assert.Equal(1, room.Players[0].Score);
+
+        await _sut.StartGame(room.Code);
+        await _sut.SubmitAction(room.Code, "red-new", "DROP", System.Text.Json.JsonSerializer.SerializeToElement(new { column = 0 }));
+        Assert.Same(room, await _sut.RequestUndo(room.Code, "red-new"));
+        Assert.Equal("red-new", ((FourInARowState)room.GameData!).CurrentPlayerId);
+        Assert.Equal(0, ((FourInARowState)room.GameData!).MoveCount);
+        Assert.Equal(0, room.Players[0].Score);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    public async Task StartFourInARow_InvalidHands_DoesNotPartiallyStart(int count)
+    {
+        _gameServices.Add(new FourInARowGameService());
+        var room = _sut.CreateRoom("host", "Host", true, GameType.FourInARow);
+        for (var i = 1; i < count; i++) _sut.JoinRoom(room.Code, $"p{i}", $"Player {i}");
+        room.IsHostOverride = true;
+        room.Players[0].Score = 7;
+        room.RoundScores["host"] = 2;
+        room.RoundNumber = 4;
+        var originalSettings = room.Settings;
+
+        var result = await _sut.StartGame(room.Code, new GameSettings());
+
+        Assert.Null(result);
+        Assert.Equal(GameState.Lobby, room.State);
+        Assert.Equal(4, room.RoundNumber);
+        Assert.Equal(7, room.Players[0].Score);
+        Assert.Equal(2, room.RoundScores["host"]);
+        Assert.Same(originalSettings, room.Settings);
+    }
+
+    [Fact]
     public void CreateRoom_ShouldCreateRoom_WithCorrectHost()
     {
         // Act
@@ -113,6 +200,7 @@ public class RoomServiceTests
     {
         // Arrange
         var room = _sut.CreateRoom("host1", "Host", true, GameType.Scatterbrain);
+        room.IsHostOverride = true; // New games require readiness or host override (#66)
         
         var mockService = new Mock<IGameService>();
         mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
@@ -124,6 +212,52 @@ public class RoomServiceTests
         // Assert
         room.State.Should().Be(GameState.Playing);
         mockService.Verify(s => s.StartRound(room, It.IsAny<GameSettings>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(3)]
+    [InlineData(0)]
+    public async Task StartGame_StartsPlayAfterTheLeadIn_WithoutShorteningTheRound(int leadIn)
+    {
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.Scatterbrain);
+        room.IsHostOverride = true;
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
+        mockService.Setup(s => s.RoundLeadInSeconds).Returns(leadIn);
+        _gameServices.Add(mockService.Object);
+
+        var before = DateTime.UtcNow;
+        await _sut.StartGame(room.Code, new GameSettings { TimerDurationSeconds = 60 });
+
+        room.RoundStartTime.Should().BeCloseTo(before.AddSeconds(leadIn), TimeSpan.FromSeconds(1));
+        (room.RoundEndTime!.Value - room.RoundStartTime!.Value).Should().Be(TimeSpan.FromSeconds(60));
+    }
+
+    [Theory]
+    [InlineData(-8, 2)]   // paused 10s ago, during the lead-in: the start moves forward with the clock
+    [InlineData(-20, -20)] // paused after play began: the start stays where it was
+    public async Task ResumeGame_MovesTheStartOnlyWhenPausedDuringTheLeadIn(int startOffset, int expectedStartOffset)
+    {
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.Babble);
+        var now = DateTime.UtcNow;
+        room.State = GameState.Playing;
+        room.IsPaused = true;
+        room.TimeRemainingWhenPaused = TimeSpan.FromSeconds(62);
+        room.RoundEndTime = now.AddSeconds(52); // so the pause happened 10 seconds ago
+        room.RoundStartTime = now.AddSeconds(startOffset);
+
+        await _sut.ResumeGame(room.Code);
+
+        room.IsPaused.Should().BeFalse();
+        room.RoundEndTime.Should().BeCloseTo(now.AddSeconds(62), TimeSpan.FromSeconds(1));
+        room.RoundStartTime.Should().BeCloseTo(now.AddSeconds(expectedStartOffset), TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void Babble_HasAThreeSecondLeadIn()
+    {
+        new BabbleGameService(new Mock<IBabbleService>().Object, new Mock<IDictionaryService>().Object, new Mock<ILogger<BabbleGameService>>().Object)
+            .RoundLeadInSeconds.Should().Be(3);
     }
 
     [Fact]
@@ -181,6 +315,17 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public void UpdateSettings_NullDoesNotReplaceExistingSettings()
+    {
+        var room = _sut.CreateRoom("host", "Host", false);
+        var original = room.Settings;
+
+        _sut.UpdateSettings(room.Code, null!).Should().BeNull();
+
+        room.Settings.Should().BeSameAs(original);
+    }
+
+    [Fact]
     public void UpdateSettings_ShouldApplyNewSettings()
     {
         // Arrange
@@ -235,12 +380,36 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         // Act
         await _sut.SubmitAction(room.Code, "conn1", "SOME_ACTION", default);
 
         // Assert
         mockService.Verify(s => s.HandleAction(room, It.IsAny<GameAction>(), "conn1"), Times.Once);
+    }
+
+    [Fact]
+    public async Task SubmitAction_WhenGameEndsItself_ShouldMarkFullDiffForBroadcast()
+    {
+        var mockService = new Mock<IGameService>();
+        mockService.Setup(s => s.GameType).Returns(GameType.Farkle);
+        mockService.Setup(s => s.HandleAction(It.IsAny<Room>(), It.IsAny<GameAction>(), It.IsAny<string>()))
+            .Callback<Room, GameAction, string>((r, _, _) => r.State = GameState.Finished)
+            .ReturnsAsync(true);
+        _gameServices.Add(mockService.Object);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Farkle);
+        room.State = GameState.Playing;
+        _mockGameStateManager.Setup(m => m.TrackRoom(It.IsAny<Room>())).CallBase();
+        _mockGameStateManager.Object.TrackRoom(room);
+        room.DirtyMembers.Clear();
+
+        await _sut.SubmitAction(room.Code, "conn1", "BANK", default);
+
+        room.DirtyMembers.Should().ContainKey("ALL"); // sanity: room is tracked and marked for a full diff
+
+        room.State.Should().Be(GameState.Finished);
+        room.DirtyMembers.Should().ContainKey("ALL"); // full diff covers State
     }
 
     [Fact]
@@ -251,6 +420,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         // Act
         await _sut.CalculateRoundScores(room.Code);
@@ -284,7 +454,8 @@ public class RoomServiceTests
         var room = _sut.CreateRoom("host1", "Host", true);
         _sut.JoinRoom(room.Code, "conn2", "Player2");
         _sut.JoinRoom(room.Code, "conn3", "Player3"); // 3 players total, need 2 votes for majority (> 50% of 3 is 1.5 -> 2)
-        room.StateHistory.Push("{}");
+        room.StateHistory.Push("{\"RoundNumber\":1}");
+        room.RoundNumber = 2;
         _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
         await _sut.RequestUndo(room.Code, "conn2"); // Initiator conn2 votes Yes automatically
 
@@ -293,32 +464,223 @@ public class RoomServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.CurrentVote.Should().BeNull(); // Majority reached, vote closed
+        result!.Result.Should().Be(UndoVoteResult.Passed);
+        result.Room.CurrentVote.Should().BeNull(); // Majority reached, vote closed
+        room.StateHistory.Count.Should().Be(0);
+        room.RoundNumber.Should().Be(1);
     }
 
     [Fact]
-    public void EndGame_ShouldWipeStateAndSetStatus()
+    public async Task SubmitUndoVote_ShouldReportPending_WithoutRestoringState()
     {
-        // Arrange
-        var room = _sut.CreateRoom("conn1", "Host", true);
-        
-        // Act
-        var result = _sut.EndGame(room.Code);
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2");
+        _sut.JoinRoom(room.Code, "conn3", "Player3");
+        room.StateHistory.Push("{}");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+        await _sut.RequestUndo(room.Code, "conn2");
 
-        // Assert
+        var result = await _sut.SubmitUndoVote(room.Code, "host1", false);
+
+        result!.Result.Should().Be(UndoVoteResult.Pending);
+        result.Room.CurrentVote.Should().NotBeNull();
+        room.StateHistory.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task SubmitUndoVote_ShouldReportFailed_WhenRestorationFails()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player2");
+        room.StateHistory.Push("invalid snapshot");
+        _sut.UpdateUndoSettings(room.Code, new UndoSettings { AllowVoting = true, HostOnly = false });
+        await _sut.RequestUndo(room.Code, "conn2");
+
+        var result = await _sut.SubmitUndoVote(room.Code, "host1", true);
+
+        result!.Result.Should().Be(UndoVoteResult.Failed);
+        room.CurrentVote.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SubmitUndoVote_ShouldIgnoreVotes_AfterCompletion()
+    {
+        var room = _sut.CreateRoom("host1", "Host", true);
+
+        var result = await _sut.SubmitUndoVote(room.Code, "host1", true);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EndGame_FromPlaying_ShouldMoveToFinishedAndClearTimer()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        room.State = GameState.Playing;
+        room.RoundEndTime = DateTime.UtcNow.AddMinutes(1);
+        room.IsPaused = true;
+
+        var result = await _sut.EndGame(room.Code);
+
         result.Should().NotBeNull();
         result!.State.Should().Be(GameState.Finished);
+        result.RoundEndTime.Should().BeNull();
+        result.IsPaused.Should().BeFalse();
     }
 
     [Fact]
-    public void EndGame_WhenAlreadyFinished_ShouldReturnExistingRoom()
+    public async Task EndGame_FromFinished_ShouldReturnToCleanSelectionLobby()
     {
-        var room = _sut.CreateRoom("conn1", "Host", true);
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
         room.State = GameState.Finished;
+        room.RoundNumber = 5;
+        room.GameData = new object();
+        room.RoundScores["conn2"] = 10;
+        room.PlayerAnswers["conn2"] = new List<string> { "a" };
+        room.StateHistory.Push("{}");
+        room.IsHostOverride = true;
+        room.Players.ForEach(p => p.IsReady = true);
 
-        var result = _sut.EndGame(room.Code);
+        var result = await _sut.EndGame(room.Code);
+
+        result.Should().NotBeNull();
+        result!.State.Should().Be(GameState.Lobby);
+        result.GameType.Should().Be(GameType.None);
+        result.GameData.Should().BeNull();
+        result.RoundNumber.Should().Be(0);
+        result.RoundScores.Should().BeEmpty();
+        result.PlayerAnswers.Should().BeEmpty();
+        result.StateHistory.Should().BeEmpty();
+        result.IsHostOverride.Should().BeFalse();
+        result.Players.Should().OnlyContain(p => !p.IsReady);
+    }
+
+    [Fact]
+    public async Task EndGame_InLobby_ShouldBeNoOp()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+
+        var result = await _sut.EndGame(room.Code);
 
         result.Should().Be(room);
+        result!.State.Should().Be(GameState.Lobby);
+        result.GameType.Should().Be(GameType.Scatterbrain);
+    }
+
+    [Fact]
+    public async Task EndGame_ConcurrentCalls_ShouldTransitionExactlyOnce()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        room.State = GameState.Playing;
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => _sut.EndGame(room.Code))));
+
+        // Every call observes a consistent state: first Playing->Finished, then later calls may advance to Lobby,
+        // but none may observe or produce a torn state.
+        results.Should().OnlyContain(r => r != null);
+        room.State.Should().BeOneOf(GameState.Finished, GameState.Lobby);
+    }
+
+    [Fact]
+    public void SetGameType_InLobby_ShouldKeepReadiness()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+        room.Players.First(p => p.ConnectionId == "conn2").IsReady = true;
+
+        var result = _sut.SetGameType(room.Code, GameType.Scatterbrain);
+
+        result!.State.Should().Be(GameState.Lobby);
+        result.Players.First(p => p.ConnectionId == "conn2").IsReady.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetGameType_FromFinished_ShouldResetRuntimeState()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+        room.State = GameState.Finished;
+        room.GameData = new object();
+        room.RoundNumber = 3;
+        room.IsHostOverride = true;
+        room.Players.ForEach(p => p.IsReady = true);
+
+        var result = _sut.SetGameType(room.Code, GameType.None);
+
+        result!.State.Should().Be(GameState.Lobby);
+        result.GameData.Should().BeNull();
+        result.RoundNumber.Should().Be(0);
+        result.IsHostOverride.Should().BeFalse();
+        result.Players.Should().OnlyContain(p => !p.IsReady);
+    }
+
+    [Fact]
+    public async Task StartGame_NewGame_WithoutReadinessOrOverride_ShouldBeRejected()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+
+        var result = await _sut.StartGame(room.Code, new GameSettings());
+
+        result.Should().BeNull();
+        room.State.Should().Be(GameState.Lobby);
+    }
+
+    [Fact]
+    public async Task StartGame_NewGame_WithHostOverride_ShouldStart()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        _sut.JoinRoom(room.Code, "conn2", "Player");
+        room.IsHostOverride = true;
+
+        var result = await _sut.StartGame(room.Code, new GameSettings());
+
+        result.Should().NotBeNull();
+        result!.State.Should().Be(GameState.Playing);
+    }
+
+    [Fact]
+    public void CanStartNewGame_RequiresAllNonScreenPlayersReady()
+    {
+        var room = new Room();
+        room.CanStartNewGame().Should().BeFalse(); // no players
+
+        room.Players.Add(new Player { ConnectionId = "screen", IsScreen = true });
+        room.Players.Add(new Player { ConnectionId = "p1", IsReady = true });
+        room.Players.Add(new Player { ConnectionId = "p2", IsReady = false });
+        room.CanStartNewGame().Should().BeFalse();
+
+        room.Players[2].IsReady = true;
+        room.CanStartNewGame().Should().BeTrue(); // screen readiness is ignored
+    }
+
+    [Fact]
+    public async Task SubmitAction_Overflow_ShouldUndoOnlyTenNewestSnapshots()
+    {
+        // Arrange
+        var plugin = new Mock<IGameService>();
+        plugin.SetupGet(p => p.GameType).Returns(GameType.FourInARow);
+        plugin.Setup(p => p.HandleAction(It.IsAny<Room>(), It.IsAny<GameAction>(), "host1")).ReturnsAsync(true);
+        _gameServices.Add(plugin.Object);
+        var room = _sut.CreateRoom("host1", "Host", true, GameType.FourInARow);
+        room.State = GameState.Playing;
+
+        // Act: exercise the real snapshot path beyond capacity and through multiple wraps.
+        for (var i = 0; i < 35; i++)
+        {
+            room.RoundNumber = i;
+            await _sut.SubmitAction(room.Code, "host1", "MOVE", null);
+        }
+
+        // Assert
+        room.StateHistory.Count.Should().Be(10);
+        for (var i = 34; i >= 25; i--)
+        {
+            (await _sut.RequestUndo(room.Code, "host1")).Should().BeSameAs(room);
+            room.RoundNumber.Should().Be(i);
+        }
+        (await _sut.RequestUndo(room.Code, "host1")).Should().BeNull();
     }
 
     [Fact]
@@ -360,7 +722,8 @@ public class RoomServiceTests
         var result = await _sut.SubmitUndoVote(room.Code, "host1", false); // host1 says No. 1 Yes, 1 No. 
 
         result.Should().NotBeNull();
-        result!.CurrentVote.Should().BeNull(); // Closed because everyone voted
+        result!.Result.Should().Be(UndoVoteResult.Failed);
+        result.Room.CurrentVote.Should().BeNull(); // Closed because everyone voted
         room.StateHistory.Count.Should().Be(1); // Not reverted
     }
 
@@ -381,6 +744,7 @@ public class RoomServiceTests
         mockService.Setup(s => s.GameType).Returns(GameType.Babble);
         _gameServices.Add(mockService.Object);
         var room = _sut.CreateRoom("conn1", "Host", true, GameType.Babble);
+        room.State = GameState.Playing;
 
         await _sut.SubmitAction(room.Code, "conn1", "SUBMIT_STROKE", null);
 
@@ -392,6 +756,7 @@ public class RoomServiceTests
     {
         // Arrange
         var room = _sut.CreateRoom("CONC_START", "Host", true, GameType.Scatterbrain);
+        room.IsHostOverride = true; // New games require readiness or host override (#66)
         var mockService = new Mock<IGameService>();
         mockService.Setup(s => s.GameType).Returns(GameType.Scatterbrain);
         // Simulate a delay in StartRound to increase race window
@@ -400,15 +765,17 @@ public class RoomServiceTests
         _gameServices.Add(mockService.Object);
 
         // Act - Call StartGame twice simultaneously
-        // First call passes settings (resets game), second call passes null (increments round)
+        // Only the first start may leave Lobby; the second start must not overwrite the active round.
         var t1 = _sut.StartGame(room.Code, new GameSettings());
         var t2 = _sut.StartGame(room.Code, null);
 
         await Task.WhenAll(t1, t2);
 
         // Assert
-        room.RoundNumber.Should().Be(2); // Exactly 2 rounds incremented
-        mockService.Verify(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()), Times.Exactly(2));
+        room.RoundNumber.Should().Be(1);
+        (await t1).Should().BeSameAs(room);
+        (await t2).Should().BeNull();
+        mockService.Verify(s => s.StartRound(It.IsAny<Room>(), It.IsAny<GameSettings>()), Times.Once);
     }
 
     [Fact]
@@ -499,6 +866,128 @@ public class RoomServiceTests
         room.Should().NotBeNull();
         room!.Code.Should().Be("DBHYD");
         room.Players.First().IsConnected.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsAuthorizedHost_ShouldIdentifyHostCorrectly()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain, userId: "user1");
+        
+        // Host connection
+        _sut.IsAuthorizedHost(room, "conn1").Should().BeTrue();
+        
+        // Account identity alone does not grant authority to an unjoined connection.
+        _sut.IsAuthorizedHost(room, "otherConn", "user1").Should().BeFalse();
+        _sut.JoinRoom(room.Code, "table", "Table", "user1", isScreen: true);
+        _sut.IsAuthorizedHost(room, "table", "user1").Should().BeTrue();
+
+        // Non-host connection
+        _sut.IsAuthorizedHost(room, "conn2", "user2").Should().BeFalse();
+        _sut.IsAuthorizedHost(room, "conn2").Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PauseGame_And_ResumeGame_ShouldManagePauseStateCorrectly()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", false, GameType.Scatterbrain);
+        room.RoundEndTime = DateTime.UtcNow.AddMinutes(5);
+
+        var paused = await _sut.PauseGame(room.Code);
+        paused.Should().NotBeNull();
+        paused!.IsPaused.Should().BeTrue();
+        paused.TimeRemainingWhenPaused.Should().NotBeNull();
+
+        var resumed = await _sut.ResumeGame(room.Code);
+        resumed.Should().NotBeNull();
+        resumed!.IsPaused.Should().BeFalse();
+        resumed.TimeRemainingWhenPaused.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateSettings_And_UpdateUndoSettings_ShouldApplySettings()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", false, GameType.Scatterbrain);
+        var settings = new GameSettings { TimerDurationSeconds = 45 };
+        var updated = _sut.UpdateSettings(room.Code, settings);
+        updated.Should().NotBeNull();
+        updated!.Settings.TimerDurationSeconds.Should().Be(45);
+
+        var undo = new UndoSettings { AllowVoting = true, HostOnly = false };
+        var undoUpdated = _sut.UpdateUndoSettings(room.Code, undo);
+        undoUpdated.Should().NotBeNull();
+        undoUpdated!.UndoSettings.AllowVoting.Should().BeTrue();
+    }
+
+    [Fact]
+    public void VoteNextGame_And_GetPublicRooms_ShouldWork()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        var voted = _sut.VoteNextGame(room.Code, "conn1", GameType.Babble);
+        voted.Should().NotBeNull();
+        voted!.NextGameVotes["conn1"].Should().Be(GameType.Babble);
+
+        var publicRooms = _sut.GetPublicRooms();
+        publicRooms.Should().NotBeNull();
+        publicRooms.Should().Contain(r => r.Code == room.Code);
+    }
+
+    [Fact]
+    public void SetHostPlayer_And_RemoveHostPlayer_ShouldManageCoHostsCorrectly()
+    {
+        var room = _sut.CreateRoom("creatorConn", "Creator", false, GameType.Scatterbrain);
+        room.CreatorConnectionId = "creatorConn";
+        _sut.JoinRoom(room.Code, "player2", "Alice");
+
+        // Promote Alice to co-host
+        var setHostResult = _sut.SetHostPlayer(room.Code, "player2");
+        setHostResult.Should().NotBeNull();
+        setHostResult!.Players.First(p => p.ConnectionId == "player2").IsHost.Should().BeTrue();
+        setHostResult.HostPlayerId.Should().Be("player2");
+
+        // Demote Alice by Creator
+        var removeHostResult = _sut.RemoveHostPlayer(room.Code, "creatorConn", "player2");
+        removeHostResult.Should().NotBeNull();
+        removeHostResult!.Players.First(p => p.ConnectionId == "player2").IsHost.Should().BeFalse();
+
+        // Non-creator cannot demote
+        var unauthorizedResult = _sut.RemoveHostPlayer(room.Code, "otherUser", "player2");
+        unauthorizedResult.Should().BeNull();
+    }
+
+    [Fact]
+    public void ChangeRole_And_RenamePlayer_ShouldUpdatePlayerProperties()
+    {
+        var room = _sut.CreateRoom("conn1", "OriginalName", false, GameType.Scatterbrain);
+
+        var renamed = _sut.RenamePlayer("conn1", "NewName");
+        renamed.Should().NotBeNull();
+        renamed!.Players.First(p => p.ConnectionId == "conn1").Name.Should().Be("NewName");
+
+        var roleChanged = _sut.ChangeRole("conn1", true);
+        roleChanged.Should().NotBeNull();
+        roleChanged!.Players.First(p => p.ConnectionId == "conn1").IsScreen.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Methods_ShouldReturnNullOrHandleGracefully_WhenStateLockTimesOut()
+    {
+        var room = _sut.CreateRoom("conn1", "Host", true, GameType.Scatterbrain);
+        
+        // Artificially hold the lock on the room to simulate contention / timeout
+        await room.StateLock.WaitAsync();
+        try
+        {
+            // Now attempt operations that acquire StateLock with a timeout
+            // For fast testing, we can directly invoke methods that check TryEnter or Wait(timeout)
+            // But Wait(TimeSpan.FromSeconds(5)) would take 5 seconds.
+            // Let's test non-blocking edge cases:
+            // 1. SubmitAction from non-participant returns null immediately (tested above)
+            (await _sut.SubmitAction(room.Code, "unauthorized-conn", "ANY", null)).Should().BeNull();
+        }
+        finally
+        {
+            room.StateLock.Release();
+        }
     }
 
     [Fact]

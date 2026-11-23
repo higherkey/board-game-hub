@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -12,41 +12,48 @@ import { ConfirmService } from '../../shared/services/confirm.service';
 
 // Stub Components
 
-@Component({ selector: 'app-host-settings', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-host-settings', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class HostSettingsStubComponent {
   @Input() roomCode: any;
   @Input() currentGameType: any;
   @Output() gameStart = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-video-chat', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-video-chat', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class VideoChatStubComponent {
   isVideoActive = false;
   joinVideo() { /* stub for testing */ }
 }
 
-@Component({ selector: 'app-word-hunt', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-word-hunt', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class BabbleStubComponent {
   @Input() grid: any;
   @Input() isPlaying: any;
   @Output() wordsUpdated = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-game-review', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-game-review', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class GameReviewStubComponent {
   @Input() room: any;
   @Input() isHost: any;
 }
 
-@Component({ selector: 'app-social-panel', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-social-panel', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class SocialPanelStubComponent { }
 
-@Component({ selector: 'app-one-and-only-board', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-one-and-only-board', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class OneAndOnlyBoardStubComponent {
   @Input() room: any;
 }
 
-@Component({ selector: 'app-one-and-only-player', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-one-and-only-player', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class OneAndOnlyPlayerStubComponent {
   @Input() room: any;
   @Input() myConnectionId: any;
@@ -54,13 +61,15 @@ class OneAndOnlyPlayerStubComponent {
   @Output() guessSubmitted = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-user-profile-dropdown', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class UserProfileDropdownStubComponent {
   @Input() session: any;
   @Input() compactMode: boolean = false;
 }
 
-@Component({ selector: 'app-room-header', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-room-header', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class RoomHeaderStubComponent {
   @Input() isBigScreen: any;
   @Input() roomCode: any;
@@ -78,7 +87,8 @@ class RoomHeaderStubComponent {
   @Output() requestUndo = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-room-sidebar', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-room-sidebar', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class RoomSidebarStubComponent {
   @Input() currentRoom: any;
   @Input() players: any;
@@ -90,7 +100,8 @@ class RoomSidebarStubComponent {
   @Output() removeHostPlayer = new EventEmitter<any>();
 }
 
-@Component({ selector: 'app-room-entry', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-room-entry', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class RoomEntryStubComponent {
   @Input() isCreating: any;
   @Input() isGuest: any;
@@ -115,7 +126,8 @@ import { RoomHeaderComponent } from './components/room-header/room-header.compon
 import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.component';
 import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 
-@Component({ selector: 'app-lobby', template: '', standalone: true, imports: [] })
+@Component({ selector: 'app-lobby', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ imports: [] })
 class LobbyStubComponent {
   @Input() room: any;
   @Input() players: any;
@@ -277,18 +289,60 @@ describe('GameRoomComponent', () => {
     expect(mockStateService.startGame).toHaveBeenCalledWith(settings);
   });
 
-  xit('should call exitGame on stateService when confirmed', fakeAsync(() => {
+  it('should call exitGame on stateService when confirmed', async () => {
+    spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(true);
     component.roomCode = 'TEST';
-    component.onExitGame();
-    tick();
+    await component.onExitGame();
     expect(mockStateService.exitGame).toHaveBeenCalledWith('TEST');
-  }));
+  });
+
+  it('END GAME mid-round warns that the game stops, then ends it', async () => {
+    const confirm = spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(true);
+    roomSubject.next({ state: 'Playing' });
+    await component.onEndGame();
+    expect(confirm.calls.mostRecent().args[0].title).toBe('End the game now?');
+    expect(mockStateService.endGame).toHaveBeenCalled();
+  });
+
+  it('END GAME between rounds offers to finish, and does nothing when cancelled', async () => {
+    const confirm = spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(false);
+    roomSubject.next({ state: 'Intermission' });
+    mockStateService.endGame.calls.reset();
+    await component.onEndGame();
+    expect(confirm.calls.mostRecent().args[0].title).toBe('Finish Game?');
+    expect(mockStateService.endGame).not.toHaveBeenCalled();
+  });
 
   it('should show entry-stage when needsName is true', () => {
     mockStateService.needsName = true;
     fixture.detectChanges();
     const entryStage = fixture.nativeElement.querySelector('app-room-entry');
     expect(entryStage).toBeTruthy();
+  });
+
+  it('setGameType and onGameSelected should call stateService.setGameType', () => {
+    component.roomCode = 'TEST';
+    component.setGameType('babble');
+    expect(mockStateService.setGameType).toHaveBeenCalledWith('TEST', 'babble');
+
+    component.onGameSelected('cloverminded');
+    expect(mockStateService.setGameType).toHaveBeenCalledWith('TEST', 'cloverminded');
+  });
+
+  it('onSetHostPlayer and onRemoveHostPlayer should call stateService methods', () => {
+    component.roomCode = 'TEST';
+    component.onSetHostPlayer('user-123');
+    expect(mockStateService.setHostPlayer).toHaveBeenCalledWith('TEST', 'user-123');
+
+    component.onRemoveHostPlayer('user-123');
+    expect(mockStateService.removeHostPlayer).toHaveBeenCalledWith('TEST', 'user-123');
+  });
+
+  it('goToLogin should navigate to /login with returnUrl query param', async () => {
+    const router = TestBed.inject(ActivatedRoute);
+    const navSpy = spyOn((component as any).router, 'navigate').and.returnValue(Promise.resolve(true));
+    await component.goToLogin();
+    expect(navSpy).toHaveBeenCalled();
   });
 });
 

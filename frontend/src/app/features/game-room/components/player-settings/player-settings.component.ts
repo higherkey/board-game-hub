@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameSettings, Room } from '../../../../services/signalr.service';
 import { GameDefinition } from '../../../../services/game-data.service';
@@ -9,6 +9,7 @@ import { SoundService } from '../../../../core/services/sound.service';
     standalone: true,
     imports: [CommonModule],
     templateUrl: './player-settings.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './player-settings.component.scss'
 })
 export class PlayerSettingsComponent {

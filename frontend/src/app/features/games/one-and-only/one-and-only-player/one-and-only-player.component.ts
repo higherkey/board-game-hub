@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CanvasDrawComponent } from '../../../../shared/components/canvas-draw/canvas-draw.component';
@@ -8,6 +8,7 @@ import { CanvasDrawComponent } from '../../../../shared/components/canvas-draw/c
     standalone: true,
     imports: [CommonModule, FormsModule, CanvasDrawComponent],
     templateUrl: './one-and-only-player.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./one-and-only-player.component.scss']
 })
 export class OneAndOnlyPlayerComponent {

@@ -9,13 +9,20 @@ public class FarkleService : BaseGameService<FarkleState>
 {
     private readonly ILogger<FarkleService> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly Random _random;
 
     public override GameType GameType => GameType.Farkle;
 
     public FarkleService(ILogger<FarkleService> logger, IServiceProvider serviceProvider)
+        : this(logger, serviceProvider, Random.Shared)
+    {
+    }
+
+    internal FarkleService(ILogger<FarkleService> logger, IServiceProvider serviceProvider, Random random)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _random = random;
     }
 
     public override Task StartRound(Room room, GameSettings settings)
@@ -75,7 +82,7 @@ public class FarkleService : BaseGameService<FarkleState>
             case "ROLL":
                 return Task.FromResult(HandleRoll(state));
             case "BANK":
-                return Task.FromResult(HandleBank(state));
+                return Task.FromResult(HandleBank(room, state));
             case "TOGGLE_DIE":
                 return Task.FromResult(HandleToggleDie(state, action.Payload));
             default:
@@ -114,7 +121,7 @@ public class FarkleService : BaseGameService<FarkleState>
         return true;
     }
 
-    private bool HandleBank(FarkleState state)
+    private bool HandleBank(Room room, FarkleState state)
     {
         if (state.Phase != FarklePhase.Picking) return false;
 
@@ -147,7 +154,7 @@ public class FarkleService : BaseGameService<FarkleState>
             }
         }
 
-        AdvanceTurn(state);
+        AdvanceTurn(room, state);
         return true;
     }
 
@@ -169,9 +176,10 @@ public class FarkleService : BaseGameService<FarkleState>
     private void RollDice(FarkleState state)
     {
         state.Phase = FarklePhase.Rolling;
+        state.RollId++;
         foreach (var die in state.Dice.Where(d => !d.IsHeld))
         {
-            die.Value = Random.Shared.Next(1, 7);
+            die.Value = _random.Next(1, 7);
             die.IsReserved = false;
             die.IsScoring = false;
         }
@@ -189,7 +197,7 @@ public class FarkleService : BaseGameService<FarkleState>
             var roomCode = state.RoomCode; 
             _ = Task.Run(async () => {
                 await Task.Delay(3000);
-                await ExecuteAutoAdvance(roomCode);
+                await ExecuteAutoAdvance(roomCode, state);
             });
         }
         else
@@ -198,24 +206,22 @@ public class FarkleService : BaseGameService<FarkleState>
         }
     }
 
-    private async Task ExecuteAutoAdvance(string roomCode)
+    internal async Task ExecuteAutoAdvance(string roomCode, FarkleState scheduledState)
     {
         using var scope = _serviceProvider.CreateScope();
         var roomService = scope.ServiceProvider.GetRequiredService<IRoomService>();
         var gameStateManager = scope.ServiceProvider.GetRequiredService<GameStateManager>();
         
         var room = roomService.GetRoom(roomCode);
-        if (room == null || room.GameData is not FarkleState state || state.Phase != FarklePhase.Farkled) return;
+        if (room == null) return;
 
         await room.StateLock.WaitAsync();
         try
         {
-            // Re-verify phase under lock
-            if (state.Phase == FarklePhase.Farkled)
-            {
-                AdvanceTurn(state);
-                gameStateManager.MarkDirty(room.Code);
-            }
+            if (room.State != GameState.Playing || !ReferenceEquals(room.GameData, scheduledState)
+                || scheduledState.Phase != FarklePhase.Farkled) return;
+            AdvanceTurn(room, scheduledState);
+            gameStateManager.MarkDirty(room.Code);
         }
         finally
         {
@@ -223,7 +229,7 @@ public class FarkleService : BaseGameService<FarkleState>
         }
     }
 
-    private void AdvanceTurn(FarkleState state)
+    private void AdvanceTurn(Room room, FarkleState state)
     {
         var playerIds = state.PlayerStates.Keys.ToList();
         int currentIndex = playerIds.IndexOf(state.ActivePlayerId);
@@ -236,6 +242,8 @@ public class FarkleService : BaseGameService<FarkleState>
         {
             state.Phase = FarklePhase.GameOver;
             state.WinningPlayerId = state.PlayerStates.Values.OrderByDescending(p => p.TotalScore).First().PlayerId;
+            room.State = GameState.Finished;
+            _ = CalculateScores(room);
         }
         else
         {

@@ -22,6 +22,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
     private Task? _processingTask;
     private Timer? _cleanupTimer;
     private int _isCleaningUp = 0;
+    private int _missingTableWarned = 0;
 
     public const int ChannelCapacity = 10_000;
     public const int BatchSize = 100;
@@ -62,25 +63,28 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         _gameStateManager = gameStateManager;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("RoomPersistenceWorker is starting.");
+        Serilog.Log.Information(">>> RoomPersistenceWorker.StartAsync ENTERED <<<");
 
-        // 1. Cold Boot Hydration
-        try
-        {
-            await RehydrateActiveRoomsAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed during cold boot active room rehydration.");
-        }
-
-        // 2. Start Background Consumer Loop
         _cts = new CancellationTokenSource();
-        _processingTask = Task.Run(() => ProcessChannelLoopAsync(_cts.Token), CancellationToken.None);
 
-        // 3. Start Periodic Cleanup Timer
+        // 1. Offload Cold Boot Hydration and Background Loop so host startup and Kestrel socket binding are not blocked
+        _processingTask = Task.Run(async () =>
+        {
+            try
+            {
+                await RehydrateActiveRoomsAsync(_cts.Token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed during cold boot active room rehydration.");
+            }
+
+            await ProcessChannelLoopAsync(_cts.Token);
+        }, CancellationToken.None);
+
+        // 2. Start Periodic Cleanup Timer
         _cleanupTimer = new Timer(static state =>
         {
             if (state is RoomPersistenceWorker self)
@@ -90,6 +94,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         }, this, TimeSpan.FromSeconds(CleanupIntervalSeconds), TimeSpan.FromSeconds(CleanupIntervalSeconds));
 
         _logger.LogInformation("RoomPersistenceWorker started successfully.");
+        return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -141,7 +146,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         var written = _channel.Writer.TryWrite(RoomPersistenceMessage.Upsert(snapshot));
         if (!written)
         {
-            var sanitizedRoomCode = System.Text.RegularExpressions.Regex.Replace(snapshot.RoomCode ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            var sanitizedRoomCode = System.Text.RegularExpressions.Regex.Replace(snapshot.RoomCode ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
             _logger.LogWarning(
                 "RoomPersistenceWorker channel full (capacity {Capacity}): dropped save for room {RoomCode} at revision {Revision}. Consumer may be lagging.",
                 ChannelCapacity, sanitizedRoomCode, snapshot.Revision);
@@ -155,7 +160,7 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
         var written = _channel.Writer.TryWrite(RoomPersistenceMessage.Delete(roomCode.ToUpperInvariant()));
         if (!written)
         {
-            var sanitizedRoomCode = System.Text.RegularExpressions.Regex.Replace(roomCode ?? string.Empty, @"[\r\n\x00-\x1F\x7F]", " ");
+            var sanitizedRoomCode = System.Text.RegularExpressions.Regex.Replace(roomCode, @"[\r\n\x00-\x1F\x7F]", " ", System.Text.RegularExpressions.RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
             _logger.LogWarning(
                 "RoomPersistenceWorker channel full (capacity {Capacity}): dropped delete for room {RoomCode}. Consumer may be lagging.",
                 ChannelCapacity, sanitizedRoomCode);
@@ -242,10 +247,30 @@ public class RoomPersistenceWorker : IHostedService, IRoomPersistenceService, ID
 
             _logger.LogInformation("Pruned {Count} expired active rooms from PostgreSQL and memory.", expiredRooms.Count);
         }
+        catch (Exception ex) when (IsMissingActiveRoomsTable(ex))
+        {
+            // Schema not migrated on this database yet (#215). Warn once instead of erroring every cycle.
+            if (Interlocked.Exchange(ref _missingTableWarned, 1) == 0)
+            {
+                _logger.LogWarning("ActiveRooms table does not exist on the configured database; room persistence is inactive until migrations are applied.");
+            }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while cleaning up expired active rooms.");
         }
+    }
+
+    internal static bool IsMissingActiveRoomsTable(Exception? ex)
+    {
+        for (var current = ex; current != null; current = current.InnerException)
+        {
+            if (current is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.UndefinedTable })
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public async Task FlushAsync(CancellationToken cancellationToken = default)

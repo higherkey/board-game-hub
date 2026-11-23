@@ -105,6 +105,7 @@ Run commands from repo root unless noted.
 - **Changelog & News**: User-facing notes are automatically synced to the `/news` page via GitHub Actions upon merge to `main`.
 
 ## Engineering Standards to honor
+- **Zero-Token Background Polling:** Never poll external status (such as CI/CD jobs, build statuses, or cloud deployment logs) using rapid conversational tool calls or short sleeps across turns. Instead, execute a single self-terminating background wait loop in a CLI process (e.g., PowerShell loop with internal Start-Sleep or native --watch / --tail flags) that completes when a terminal state is reached. Rely on the reactive task wakeup system to resume execution without burning context tokens or conversational turns.
 - **Table vs. Hand:** Always respect the `Player.IsScreen` flag. Ensure animations and UX are synchronized between the shared Table and private Hand devices.
 - **Surgical Edits:** Prioritize targeted `replace` calls over full-file rewrites.
 
@@ -123,9 +124,7 @@ Run commands from repo root unless noted.
 - `.cursor/agents/deploy.md`:
   - Production deployments are expected from pushes to `main` via workflows in `.github/workflows/`.
   - Use `gh run list/watch` to inspect deployment runs when needed.
-- `.agent/workflows/peer-review.md`:
-  - Defines a full peer-review sequence (code/UX/accessibility/Sonar/build verification) for deep audit tasks.
-- `.agent/workflows/testing-workflow.md`:
-  - Dictates the monorepo approach to unit testing, execution verification, and coverage requirements.
-- `.agent/workflows/feature-tracking.md`:
-  - **MANDATORY**: Running trace document (`/docs/traces/`) required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`).
+- Shared skills in [`higherkey/ai-standards`](https://github.com/higherkey/ai-standards) (`skills/`): `github-commands`, `sonarqube-review`, `peer-review-with-quality`, `testing-workflow`, and `feature-tracking` replace the former `.agent/workflows/*.md` files.
+- Branch Notes (`docs/branch-notes/[normalized-branch-name]-notes.md`, per the `feature-tracking` skill):
+  - **MANDATORY**: Running branch notes document required for all work on **prefixed branches** (e.g., `feat/`, `fix/`, `chore/`). Sections: Discoveries & Deviations, Blockers & Risks (4a), Quick Wins (4b), Deferred Items (4c).
+  - Merged branch notes are automatically pruned on `dev` by [`.github/workflows/cleanup-branch-notes.yml`](.github/workflows/cleanup-branch-notes.yml), so they never reach `staging` or `main` and `main` gets no bot commits. `.github/workflows/guard-branch-notes.yml` fails PRs into `staging`/`main` that still contain notes, so remove notes from hotfix branches before merging them into `main`.

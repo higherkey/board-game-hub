@@ -97,6 +97,13 @@ describe('GameComboboxComponent', () => {
             component.onKeyDown(event);
             expect(component.selectOption).toHaveBeenCalledWith(mockOptions[1]);
         });
+
+        it('should select the top match on Enter after typing without arrowing', () => {
+            spyOn(component, 'selectOption');
+            component.onInput({ target: { value: 'two' } } as any);
+            component.onKeyDown(new KeyboardEvent('keydown', { key: 'Enter' }));
+            expect(component.selectOption).toHaveBeenCalledWith(mockOptions[1]);
+        });
     });
 
     it('should handle background click to close', () => {

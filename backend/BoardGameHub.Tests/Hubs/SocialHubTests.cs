@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Moq;
 using Xunit;
 using BoardGameHub.Api.Models;
+using BoardGameHub.Api.Models.Dtos;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -57,6 +58,54 @@ public class SocialHubTests
         _mockClientProxy.Verify(c => c.SendCoreAsync("ReceiveGlobalMessage", new object[] { "user123", "Global hello!" }, default), Times.Once);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SendMessage_TooLong_ThrowsAndDoesNotSaveOrBroadcast(bool global)
+    {
+        var message = new string('a', SocialHub.MaxMessageLength + 1);
+
+        var act = () => global ? _sut.SendGlobalMessage(message) : _sut.SendMessage("target123", message);
+
+        await act.Should().ThrowAsync<HubException>().WithMessage("Message is too long.");
+        _mockSocialService.Verify(s => s.SaveChatMessage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true, null)]
+    [InlineData(false, null)]
+    [InlineData(true, "")]
+    [InlineData(false, "")]
+    [InlineData(true, "   ")]
+    [InlineData(false, "   ")]
+    public async Task SendMessage_Blank_IsIgnored(bool global, string? message)
+    {
+        if (global) await _sut.SendGlobalMessage(message!);
+        else await _sut.SendMessage("target123", message!);
+
+        _mockSocialService.Verify(s => s.SaveChatMessage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockSocialService.Verify(s => s.SaveGlobalMessage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SendMessage_AtMaxLength_IsSaved(bool global)
+    {
+        var message = new string('a', SocialHub.MaxMessageLength);
+
+        if (global) await _sut.SendGlobalMessage(message);
+        else await _sut.SendMessage("target123", message);
+
+        if (global) _mockSocialService.Verify(s => s.SaveGlobalMessage("user123", message), Times.Once);
+        else _mockSocialService.Verify(s => s.SaveChatMessage("user123", "target123", message), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync(global ? "ReceiveGlobalMessage" : "ReceiveMessage",
+            new object[] { "user123", message }, default), Times.Once);
+    }
+
     [Fact]
     public async Task SendFriendRequest_ShouldSendAndBroadcast()
     {
@@ -82,7 +131,7 @@ public class SocialHubTests
     public async Task GetGlobalChatHistory_ShouldReturnHistoryFromService()
     {
         // Arrange
-        var history = new List<ChatMessage> { new ChatMessage() };
+        var history = new List<ChatMessageDto> { new ChatMessageDto { Id = 1, Content = "test" } };
         _mockSocialService.Setup(s => s.GetGlobalChatHistory(50)).ReturnsAsync(history);
 
         // Act
@@ -96,7 +145,7 @@ public class SocialHubTests
     public async Task GetFriends_ShouldReturnFriendsFromService()
     {
         // Arrange
-        var friends = new List<BoardGameHub.Api.Models.User> { new BoardGameHub.Api.Models.User() };
+        var friends = new List<UserDto> { new UserDto { Id = "u1", UserName = "User1" } };
         _mockSocialService.Setup(s => s.GetFriends("user123")).ReturnsAsync(friends);
 
         // Act
@@ -110,7 +159,7 @@ public class SocialHubTests
     public async Task GetFriendRequests_ShouldReturnRequestsFromService()
     {
         // Arrange
-        var requests = new List<Friendship> { new Friendship() };
+        var requests = new List<FriendRequestDto> { new FriendRequestDto { Id = 1, RequesterId = "r1" } };
         _mockSocialService.Setup(s => s.GetFriendRequests("user123")).ReturnsAsync(requests);
 
         // Act
@@ -118,5 +167,16 @@ public class SocialHubTests
 
         // Assert
         result.Should().BeEquivalentTo(requests);
+    }
+
+    [Fact]
+    public async Task RemoveFriend_ShouldCallServiceAndBroadcastToFriend()
+    {
+        // Act
+        await _sut.RemoveFriend("friend456");
+
+        // Assert
+        _mockSocialService.Verify(s => s.RemoveFriend("user123", "friend456"), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("FriendRemoved", new object[] { "user123" }, default), Times.Once);
     }
 }

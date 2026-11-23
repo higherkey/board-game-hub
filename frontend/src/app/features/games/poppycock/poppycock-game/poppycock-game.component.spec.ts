@@ -2,11 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PoppycockGameComponent } from './poppycock-game.component';
 import { SignalRService } from '../../../../services/signalr.service';
 import { MockSignalRService } from '../../../../testing/mock-signalr.service';
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-poppycock-board',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
 class MockBoardComponent {
@@ -16,6 +17,7 @@ class MockBoardComponent {
 @Component({
   selector: 'app-poppycock-player',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
 class MockPlayerComponent {
@@ -25,6 +27,7 @@ class MockPlayerComponent {
 @Component({
   selector: 'app-poppycock-rules',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
 class MockRulesComponent {}

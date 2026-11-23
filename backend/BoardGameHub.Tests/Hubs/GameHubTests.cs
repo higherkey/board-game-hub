@@ -59,6 +59,30 @@ public class GameHubTests
         _sut.Context = _mockContext.Object;
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ReplayAndNextRound_NormalizeCodeAndUseExplicitService(bool replay)
+    {
+        var room = new Room { Code = "TEST", State = GameState.Finished };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+        _mockRoomService.Setup(r => r.PlayAgain("TEST")).ReturnsAsync(room);
+        _mockRoomService.Setup(r => r.NextRound("TEST")).ReturnsAsync(room);
+        if (replay)
+        {
+            await _sut.PlayAgain(" test ");
+            _mockRoomService.Verify(r => r.PlayAgain("TEST"), Times.Once);
+        }
+        else
+        {
+            await _sut.NextRound(" test ");
+            _mockRoomService.Verify(r => r.NextRound("TEST"), Times.Once);
+        }
+        _mockRoomService.Verify(r => r.StartGame(It.IsAny<string>(), It.IsAny<GameSettings?>()), Times.Never);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("GameStarted", It.IsAny<object[]>(), default), Times.Once);
+    }
+
     [Fact]
     public async Task CreateRoom_ShouldCreateAndJoinGroupAndBroadcast()
     {
@@ -110,8 +134,10 @@ public class GameHubTests
     public async Task StartGame_ShouldBroadcastGameStarted()
     {
         // Arrange
-        var room = new Room { Code = "TEST", IsPublic = true };
+        var room = new Room { Code = "TEST", IsPublic = true, IsHostOverride = true };
         var settings = new GameSettings();
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
         _mockRoomService.Setup(r => r.StartGame("TEST", settings)).ReturnsAsync(room);
 
         // Act
@@ -120,6 +146,49 @@ public class GameHubTests
         // Assert
         _mockClientProxy.Verify(c => c.SendCoreAsync("GameStarted", new object[] { room }, default), Times.Once);
         _mockClientProxy.Verify(c => c.SendCoreAsync("PublicRoomDeleted", new object[] { "TEST" }, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task StartGame_FromLobby_WhenPlayersNotReady_ShouldThrowAndNotStart()
+    {
+        var room = new Room { Code = "TEST" };
+        room.Players.Add(new Player { ConnectionId = "conn2", IsReady = false });
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+
+        var act = () => _sut.StartGame("TEST", new GameSettings());
+
+        await act.Should().ThrowAsync<HubException>().WithMessage("*ready*");
+        _mockRoomService.Verify(r => r.StartGame(It.IsAny<string>(), It.IsAny<GameSettings?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task EndGame_WhenRoomReturnsToLobby_ShouldBroadcastGameTypeChangedAndPublicUpdate()
+    {
+        var room = new Room { Code = "TEST", IsPublic = true, State = GameState.Finished };
+        var lobbyRoom = new Room { Code = "TEST", IsPublic = true, State = GameState.Lobby, GameType = GameType.None };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+        _mockRoomService.Setup(r => r.EndGame("TEST")).ReturnsAsync(lobbyRoom);
+
+        await _sut.EndGame("TEST");
+
+        _mockClientProxy.Verify(c => c.SendCoreAsync("GameTypeChanged", new object[] { "None" }, default), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("PublicRoomUpdated", new object[] { lobbyRoom }, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task EndGame_WhenRoomMovesToResults_ShouldNotBroadcastLobbyEvents()
+    {
+        var room = new Room { Code = "TEST", IsPublic = true, State = GameState.Playing };
+        var finished = new Room { Code = "TEST", IsPublic = true, State = GameState.Finished };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+        _mockRoomService.Setup(r => r.EndGame("TEST")).ReturnsAsync(finished);
+
+        await _sut.EndGame("TEST");
+
+        _mockClientProxy.Verify(c => c.SendCoreAsync("GameTypeChanged", It.IsAny<object[]>(), default), Times.Never);
     }
 
     [Fact]
@@ -183,6 +252,8 @@ public class GameHubTests
     {
         // Arrange
         var room = new Room { Code = "TEST", GameType = GameType.Scatterbrain };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
         _mockRoomService.Setup(r => r.SetGameType("TEST", GameType.Scatterbrain)).Returns(room);
 
         // Act
@@ -198,6 +269,8 @@ public class GameHubTests
         // Arrange
         var settings = new GameSettings { TimerDurationSeconds = 30 };
         var room = new Room { Code = "TEST", IsPublic = true, State = GameState.Lobby };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
         _mockRoomService.Setup(r => r.UpdateSettings("TEST", settings)).Returns(room);
 
         // Act
@@ -213,6 +286,8 @@ public class GameHubTests
     {
         // Arrange
         var room = new Room { Code = "TEST", Players = new List<Player> { new Player { Name = "P1" } } };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
         _mockRoomService.Setup(r => r.CalculateRoundScores("TEST")).ReturnsAsync(room);
 
         // Act
@@ -286,7 +361,7 @@ public class GameHubTests
         // Arrange
         var vote = new UndoVote { InitiatorName = "P1" };
         var room = new Room { Code = "TEST", CurrentVote = vote };
-        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(room);
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(new UndoVoteSubmission(room, UndoVoteResult.Pending));
 
         // Act
         await _sut.SubmitUndoVote("TEST", true);
@@ -295,17 +370,141 @@ public class GameHubTests
         _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteUpdate", new object[] { vote }, default), Times.Once);
     }
 
-    [Fact]
-    public async Task SubmitUndoVote_ShouldBroadcastFinished_WhenVoteClosed()
+    [Theory]
+    [InlineData(UndoVoteResult.Passed, "Passed")]
+    [InlineData(UndoVoteResult.Failed, "Failed")]
+    public async Task SubmitUndoVote_ShouldBroadcastOutcome_WhenVoteClosed(UndoVoteResult result, string message)
     {
-        // Arrange
-        var room = new Room { Code = "TEST", CurrentVote = null };
-        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(room);
+        var room = new Room { Code = "TEST" };
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true))
+            .ReturnsAsync(new UndoVoteSubmission(room, result));
 
-        // Act
         await _sut.SubmitUndoVote("TEST", true);
 
-        // Assert
-        _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteFinished", new object[] { "Vote Completed" }, default), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteFinished", new object[] { message }, default), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("UndoVoteUpdate", It.IsAny<object[]>(), default), Times.Never);
+    }
+
+    [Fact]
+    public async Task HostGuards_ShouldThrowHubException_WhenCallerNotAuthorizedHost()
+    {
+        // Arrange
+        var room = new Room { Code = "TEST" };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(false);
+
+        // Act & Assert - SetGameType
+        var actSetGameType = () => _sut.SetGameType("TEST", "Babble");
+        await actSetGameType.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+
+        // Act & Assert - SetHostPlayer
+        var actSetHostPlayer = () => _sut.SetHostPlayer("TEST", "conn2");
+        await actSetHostPlayer.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+
+        // Act & Assert - UpdateSettings
+        var actUpdateSettings = () => _sut.UpdateSettings("TEST", new GameSettings());
+        await actUpdateSettings.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+
+        // Act & Assert - StartGame
+        var actStartGame = () => _sut.StartGame("TEST", new GameSettings());
+        await actStartGame.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+
+        // Act & Assert - EndRound
+        var actEndRound = () => _sut.EndRound("TEST");
+        await actEndRound.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+
+        // Act & Assert - NextRound
+        var actNextRound = () => _sut.NextRound("TEST");
+        await actNextRound.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+
+        await Assert.ThrowsAsync<HubException>(() => _sut.PlayAgain("TEST"));
+        await Assert.ThrowsAsync<HubException>(() => _sut.EndGame("TEST"));
+        _mockRoomService.Verify(r => r.PlayAgain(It.IsAny<string>()), Times.Never);
+        _mockRoomService.Verify(r => r.EndGame(It.IsAny<string>()), Times.Never);
+
+        // Act & Assert - NextWisecrackBattle
+        var actNextBattle = () => _sut.NextWisecrackBattle("TEST");
+        await actNextBattle.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+
+        // Act & Assert - UniversalTranslatorForcePhase
+        var actForcePhase = () => _sut.UniversalTranslatorForcePhase("TEST", "Voting");
+        await actForcePhase.Should().ThrowAsync<HubException>()
+            .WithMessage("*Only an authorized host*");
+    }
+
+    [Fact]
+    public async Task HostGuards_ShouldAllowExecution_WhenCallerIsAuthorizedHost()
+    {
+        // Arrange
+        var room = new Room { Code = "TEST", GameType = GameType.Babble, State = GameState.Playing };
+        _mockRoomService.Setup(r => r.GetRoom("TEST")).Returns(room);
+        _mockRoomService.Setup(r => r.IsAuthorizedHost(room, "conn1", "user123")).Returns(true);
+        _mockRoomService.Setup(r => r.StartGame("TEST", It.IsAny<GameSettings?>())).ReturnsAsync(room);
+        _mockRoomService.Setup(r => r.CalculateRoundScores("TEST")).ReturnsAsync(room);
+
+        // Act & Assert - EndRound
+        await _sut.EndRound("TEST");
+        _mockRoomService.Verify(r => r.CalculateRoundScores("TEST"), Times.Once);
+
+        // Act & Assert - NextRound
+        await _sut.NextRound("TEST");
+        _mockRoomService.Verify(r => r.NextRound("TEST"), Times.Once);
+
+        // Act & Assert - SetGameType
+        _mockRoomService.Setup(r => r.SetGameType("TEST", GameType.Scatterbrain)).Returns(room);
+        await _sut.SetGameType("TEST", "Scatterbrain");
+        _mockRoomService.Verify(r => r.SetGameType("TEST", GameType.Scatterbrain), Times.Once);
+
+        // Act & Assert - SetHostPlayer
+        _mockRoomService.Setup(r => r.SetHostPlayer("TEST", "conn2")).Returns(room);
+        await _sut.SetHostPlayer("TEST", "conn2");
+        _mockRoomService.Verify(r => r.SetHostPlayer("TEST", "conn2"), Times.Once);
+
+        // Act & Assert - UpdateSettings
+        var settings = new GameSettings { TimerDurationSeconds = 120 };
+        _mockRoomService.Setup(r => r.UpdateSettings("TEST", settings)).Returns(room);
+        await _sut.UpdateSettings("TEST", settings);
+        _mockRoomService.Verify(r => r.UpdateSettings("TEST", settings), Times.Once);
+
+        // Act & Assert - PauseGame & ResumeGame
+        await _sut.PauseGame("TEST");
+        _mockRoomService.Verify(r => r.PauseGame("TEST"), Times.Once);
+        await _sut.ResumeGame("TEST");
+        _mockRoomService.Verify(r => r.ResumeGame("TEST"), Times.Once);
+
+        // Act & Assert - EndGame
+        await _sut.EndGame("TEST");
+        _mockRoomService.Verify(r => r.EndGame("TEST"), Times.Once);
+
+        // Act & Assert - RemoveHostPlayer
+        _mockRoomService.Setup(r => r.RemoveHostPlayer("TEST", "conn1", "conn2")).Returns(room);
+        await _sut.RemoveHostPlayer("TEST", "conn2");
+        _mockRoomService.Verify(r => r.RemoveHostPlayer("TEST", "conn1", "conn2"), Times.Once);
+
+        // Act & Assert - VoteNextGame
+        await _sut.VoteNextGame("TEST", "Babble");
+        _mockRoomService.Verify(r => r.VoteNextGame("TEST", "conn1", GameType.Babble), Times.Once);
+
+        // Act & Assert - UpdateUndoSettings
+        var undoSettings = new UndoSettings { AllowVoting = true, HostOnly = false };
+        await _sut.UpdateUndoSettings("TEST", undoSettings);
+        _mockRoomService.Verify(r => r.UpdateUndoSettings("TEST", undoSettings), Times.Once);
+
+        // Act & Assert - RequestUndo
+        _mockRoomService.Setup(r => r.RequestUndo("TEST", "conn1")).ReturnsAsync(new Room { Code = "TEST", CurrentVote = new UndoVote { InitiatorId = "conn1" } });
+        await _sut.RequestUndo("TEST");
+        _mockRoomService.Verify(r => r.RequestUndo("TEST", "conn1"), Times.Once);
+
+        // Act & Assert - SubmitUndoVote
+        _mockRoomService.Setup(r => r.SubmitUndoVote("TEST", "conn1", true)).ReturnsAsync(new UndoVoteSubmission(new Room { Code = "TEST" }, UndoVoteResult.Failed));
+        await _sut.SubmitUndoVote("TEST", true);
+        _mockRoomService.Verify(r => r.SubmitUndoVote("TEST", "conn1", true), Times.Once);
     }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { WebRTCService, RemoteStream } from '../../../../services/webrtc.service';
@@ -13,6 +13,7 @@ export type VideoViewMode = 'sidebar' | 'overlay' | 'docked-top' | 'docked-botto
   standalone: true,
   imports: [CommonModule],
   templateUrl: './video-chat.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './video-chat.component.scss'
 })
 export class VideoChatComponent implements OnInit, OnDestroy {

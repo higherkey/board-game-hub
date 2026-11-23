@@ -48,7 +48,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto model)
     {
-        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
+        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, lockoutOnFailure: true);
 
         if (result.Succeeded)
         {
@@ -101,6 +101,11 @@ public class AuthController : ControllerBase
             new Claim("DisplayName", user.DisplayName),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (!string.IsNullOrEmpty(user.AvatarUrl))
+        {
+            claims.Add(new Claim("AvatarUrl", user.AvatarUrl));
+        }
 
         foreach (var role in roles)
         {

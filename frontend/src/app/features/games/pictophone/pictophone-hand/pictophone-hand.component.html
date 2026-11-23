@@ -9,7 +9,7 @@
 
             <div class="d-flex align-items-center gap-2">
                 <div *ngIf="room?.roundEndTime && room?.gameData?.phase !== 'Reveal'"
-                    class="d-flex align-items-center gap-1 px-2 py-1 rounded border bg-surface-2"
+                    class="d-flex align-items-center gap-1 px-2 py-1 rounded bg-surface-2"
                     [class.text-danger]="(timeLeft$ | async)! < 10">
                     <i class="bi bi-clock-fill"></i>
                     <span class="fw-bold">{{ timeLeft$ | async }}s</span>
@@ -41,7 +41,7 @@
 
         <!-- DRAWING PHASE -->
         <ng-container *ngIf="state.phase === 'Drawing'">
-            <app-pictophone-drawing [prompt]="getPreviousPage(state)?.content" [timeLeft]="timeLeft$ | async"
+            <app-pictophone-drawing [prompt]="$safeNavigationMigration(getPreviousPage(state)?.content)" [timeLeft]="timeLeft$ | async"
                 (imageSubmitted)="onSubmit($event)" (draftChanged)="onDraftChanged($event)">
             </app-pictophone-drawing>
         </ng-container>

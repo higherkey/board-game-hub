@@ -87,5 +87,21 @@ describe('ToastService', () => {
         expect(currentToasts.length).toBe(0);
         sub.unsubscribe();
     });
+
+    it('should not stack a toast identical to one already showing', fakeAsync(() => {
+        let currentToasts: Toast[] = [];
+        const sub = service.toasts$.subscribe(t => currentToasts = t);
+
+        for (let i = 0; i < 20; i++) service.showError('A server error occurred.');
+        service.showInfo('A server error occurred.');
+        expect(currentToasts.length).toBe(2);
+
+        tick(5000);
+        expect(currentToasts.length).toBe(0);
+        service.showError('A server error occurred.');
+        expect(currentToasts.length).toBe(1);
+        tick(5000);
+        sub.unsubscribe();
+    }));
 });
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, fromEvent, debounceTime } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -10,9 +10,11 @@ export class DeviceService {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      window.addEventListener('resize', () => {
-        this.isMobileSubject.next(this.checkMobile());
-      });
+      fromEvent(window, 'resize')
+        .pipe(debounceTime(150))
+        .subscribe(() => {
+          this.isMobileSubject.next(this.checkMobile());
+        });
     }
   }
 

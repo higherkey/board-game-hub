@@ -13,7 +13,8 @@ public class TestBase : WebApplicationFactory<Program>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                { "ConnectionStrings:DefaultConnection", "" },
+                // Unique in-memory database per factory so parallel test hosts don't race on startup seeding.
+                { "ConnectionStrings:DefaultConnection", $"InMemory-{Guid.NewGuid():N}" },
                 { "Jwt:Key", "ThisIsAVerySecretKeyForTestingPurposesOnly123!" },
                 { "Testing:DisablePersistenceWorker", "true" }
             });

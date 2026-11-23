@@ -1,9 +1,11 @@
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, ChangeDetectionStrategy, DestroyRef, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmService } from '../../../../shared/services/confirm.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GameSettings, SignalRService, Player } from '../../../../services/signalr.service';
+import { GameSettings, SignalRService, Player, RoomResultPhase, getRoomResultPhase } from '../../../../services/signalr.service';
 import { GameDataService, GameDefinition } from '../../../../services/game-data.service';
 import { GameComboboxComponent } from '../game-combobox/game-combobox.component';
 
@@ -12,13 +14,17 @@ import { GameComboboxComponent } from '../game-combobox/game-combobox.component'
   standalone: true,
   imports: [CommonModule, FormsModule, GameComboboxComponent],
   templateUrl: './host-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './host-settings.component.scss'
 })
 export class HostSettingsComponent implements OnChanges, OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly toastService = inject(ToastService);
   @Input() roomCode!: string;
   @Input() currentGameType: string | undefined = 'None';
   @Input() compactMode = false;
   @Input() isIntermission = false;
+  @Input() resultPhase?: RoomResultPhase | null;
   @Input() currentRound = 1;
   @Input() totalRounds = 5;
   @Input() players: Player[] = [];
@@ -28,9 +34,12 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   @Input() isHostOverride = false;
   @Output() gameStart = new EventEmitter<any>();
   @Output() nextRound = new EventEmitter<GameSettings>();
+  @Output() playAgain = new EventEmitter<GameSettings>();
   @Output() endGame = new EventEmitter<MouseEvent>();
   @Output() exitGame = new EventEmitter<MouseEvent>();
   @Output() toggleReady = new EventEmitter<boolean>();
+
+  @ViewChild(GameComboboxComponent) private readonly gameCombobox?: GameComboboxComponent;
 
   selectedGameType = 'None';
   availableGames: GameDefinition[] = [];
@@ -59,7 +68,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
   ) { }
 
   ngOnInit() {
-    this.gameDataService.games$.subscribe(games => {
+    this.gameDataService.games$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(games => {
       if (games) {
         // Allow Deployed, Testing, AND InDevelopment (to match Games Library)
         this.availableGames = games.filter(g => g.status === 'Deployed' || g.status === 'Testing' || g.status === 'InDevelopment');
@@ -177,7 +186,23 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     }
 
     if (this.roomCode) {
-      if (this.isIntermission) return;
+      // Compact controls only show inside a game, so switching there ends that game: confirm first.
+      if (this.compactMode) {
+        const previous = this.currentGameType || 'None';
+        const next = this.availableGames.find(g => g.id === this.selectedGameType);
+        const confirmed = this.selectedGameType !== previous && this.selectedGameType !== 'None' && await this.confirmService.confirm({
+          title: `Switch to ${next?.name ?? 'another game'}?`,
+          message: 'This ends the current game. Everyone goes back to the lobby with the new game picked.',
+          confirmLabel: 'SWITCH GAME',
+          cancelLabel: 'KEEP PLAYING'
+        });
+        if (!confirmed) {
+          this.selectedGameType = previous;
+          // ngModel never saw the cancelled pick as an input, so it would not repaint; reset the box directly.
+          this.gameCombobox?.writeValue(previous);
+          return;
+        }
+      }
 
       this.gameSearchQuery = this.availableGames.find(g => g.id === this.selectedGameType)?.name || '';
       console.info(`[HostSettings] Requesting Game Change to: ${this.selectedGameType}`);
@@ -219,26 +244,37 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     this.signalRService.updateUndoSettings(this.undoSettings);
   }
 
-  async startGame(event?: MouseEvent) {
+  /** A new game may start only when every player is ready, or the host forced room readiness (#66). */
+  get canStartNewGame(): boolean {
+    if (this.isHostOverride) return true;
     const playersOnly = this.players.filter(p => !p.isScreen);
-    const readyPlayers = playersOnly.filter(p => p.isReady).length;
-    const totalPlayers = playersOnly.length;
+    return playersOnly.length > 0 && playersOnly.every(p => p.isReady);
+  }
 
-    if (totalPlayers === 0) {
-      alert('Cannot start the game! No players in the room.');
+  get isGameOver(): boolean {
+    return getRoomResultPhase(this) === 'GameOver';
+  }
+
+  get legacyFinish(): boolean {
+    return this.resultPhase == null && this.isIntermission && this.currentRound >= (this.settings.totalRounds || 5);
+  }
+
+  get startLabel(): string {
+    return this.isGameOver ? 'PLAY AGAIN' : this.legacyFinish ? 'FINISH GAME' : this.isIntermission ? 'NEXT ROUND' : 'START GAME';
+  }
+
+  startGame(event?: MouseEvent) {
+    const playersOnly = this.players.filter(p => !p.isScreen);
+
+    if (playersOnly.length === 0) {
+      this.toastService.showWarning('Cannot start the game! No players in the room.');
       return;
     }
 
-    // Relaxed Start: Show confirmation if not everyone is ready
-    if (readyPlayers < totalPlayers) {
-      const confirmed = await this.confirmService.confirm({
-        title: 'Players Not Ready!',
-        message: 'Some players haven\'t readied up yet. Starting now might leave them out or cause issues.',
-        confirmLabel: 'START ANYWAY',
-        cancelLabel: 'WAIT FOR OTHERS'
-      }, event);
-
-      if (!confirmed) return;
+    // Starting a new game requires readiness or the host override; next rounds are not gated.
+    if (!this.isIntermission && !this.canStartNewGame) {
+      this.toastService.showWarning('Waiting for players to ready up. Use "Force Room Ready" on the Table to start anyway.');
+      return;
     }
 
     this.confirmStart(event);
@@ -246,9 +282,10 @@ export class HostSettingsComponent implements OnChanges, OnInit {
 
   confirmStart(event?: MouseEvent) {
     this.logger.info(`[HostSettings] Host confirms start of ${this.isIntermission ? 'next round' : 'game'}`);
-    if (this.isIntermission) {
-      // Check for Game Over condition (Soft Stop)
-      if (this.currentRound >= (this.settings.totalRounds || 5)) {
+    if (this.isGameOver) {
+      this.playAgain.emit(this.settings);
+    } else if (this.isIntermission) {
+      if (this.legacyFinish) {
         this.endGame.emit(event);
       } else {
         this.nextRound.emit(this.settings);
@@ -262,6 +299,15 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     this.exitGame.emit(event);
   }
 
+  /** Mid-round, end the game and show final scores; between rounds or after the game, go back to the lobby. */
+  emitEndGame(event?: MouseEvent) {
+    if (this.isIntermission) {
+      this.exitGame.emit(event);
+    } else {
+      this.endGame.emit(event);
+    }
+  }
+
   getQrCodeUrl(): string {
     const url = globalThis.location.origin + '/game/' + this.roomCode;
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&bgcolor=ffffff`;
@@ -272,7 +318,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
       const newState = !this.isHostOverride;
       this.logger.info(`[HostSettings] Screen-Host triggering Room Ready override (forcedState: ${newState})`);
       if (newState && this.selectedGameType === 'None') {
-        alert('Please select a game first!');
+        this.toastService.showWarning('Please select a game first!');
         return;
       }
       // If we are the Screen (Table), toggle the room-level override

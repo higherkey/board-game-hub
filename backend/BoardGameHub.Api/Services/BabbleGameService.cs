@@ -43,6 +43,9 @@ public class BabbleGameService : BaseGameService<BabbleState>
 
     public override GameType GameType => GameType.Babble;
 
+    /// <summary>Everyone sees the grid at the same moment after a short countdown.</summary>
+    public override int RoundLeadInSeconds => 3;
+
     public override Task StartRound(Room room, GameSettings settings)
     {
         _logger.LogInformation("Starting Babble round in room {Code}", room.Code);
@@ -183,7 +186,7 @@ public class BabbleGameService : BaseGameService<BabbleState>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in Babble CalculateScores: {ex.Message}");
+            _logger.LogError(ex, "Error in Babble CalculateScores");
             throw;
         }
 

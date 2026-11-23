@@ -146,5 +146,10 @@ describe('PlayComponent', () => {
         expect(mockSignalRService.getPublicRooms).toHaveBeenCalled();
         expect(component.loading).toBeFalse();
     });
+
+    it('should call leaveLobby on ngOnDestroy', () => {
+        component.ngOnDestroy();
+        expect(mockSignalRService.leaveLobby).toHaveBeenCalled();
+    });
 });
 

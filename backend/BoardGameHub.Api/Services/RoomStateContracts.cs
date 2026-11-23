@@ -17,6 +17,7 @@ public class RoomStateEnvelope
     public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddHours(4);
     public GameType GameType { get; set; } = GameType.None;
     public GameState State { get; set; } = GameState.Lobby;
+    public ResultPhase? ResultPhase { get; set; }
     public GameSettings Settings { get; set; } = new();
     public bool IsPublic { get; set; }
     public string? HostScreenId { get; set; }
@@ -25,6 +26,7 @@ public class RoomStateEnvelope
     public bool IsHostOverride { get; set; }
     public int RoundNumber { get; set; }
     public Dictionary<string, GameType> NextGameVotes { get; set; } = new();
+    public DateTime? RoundStartTime { get; set; }
     public DateTime? RoundEndTime { get; set; }
     public bool IsPaused { get; set; }
     public TimeSpan? TimeRemainingWhenPaused { get; set; }

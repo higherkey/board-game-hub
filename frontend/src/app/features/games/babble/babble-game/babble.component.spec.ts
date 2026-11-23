@@ -67,11 +67,11 @@ describe('BabbleComponent', () => {
         expect(component.isBlurred).toBeTrue();
     });
 
-    it('should NOT show timer text during countdown', fakeAsync(() => {
-        component.countdownSeconds = 3;
+    it('should NOT show timer text during the server lead-in countdown', fakeAsync(() => {
         component.room = createMockRoom({
             gameType: 'Babble',
             state: 'Playing',
+            roundStartTime: new Date(Date.now() + 700).toISOString(),
             roundEndTime: new Date(Date.now() + 10000).toISOString()
         });
 
@@ -85,10 +85,12 @@ describe('BabbleComponent', () => {
         });
 
         tick(500);
+        expect(component.countdownSeconds).toBe(1);
         expect(component.timerText).toBe('--:--');
 
-        component.countdownSeconds = 0;
-        tick(500);
+        tick(500); // the server start time has now passed
+        expect(component.countdownSeconds).toBe(0);
+        expect(component.isBlurred).toBeFalse();
         expect(component.timerText).not.toBe('--:--');
 
         discardPeriodicTasks();
@@ -192,6 +194,33 @@ describe('BabbleComponent', () => {
                 word: 'TEST',
                 isValid: true
             });
+        });
+
+        it('should toggle definition display', () => {
+            const res = { word: 'TEST' };
+            component.showDefinition(res);
+            expect(component.selectedWord).toBe(res);
+            component.showDefinition(res);
+            expect(component.selectedWord).toBeNull();
+        });
+
+        it('should handle startResizing and update sidebarWidth', () => {
+            const event = new MouseEvent('mousedown');
+            spyOn(event, 'preventDefault');
+            component.startResizing(event);
+
+            expect(component.isResizing).toBeTrue();
+            expect(event.preventDefault).toHaveBeenCalled();
+
+            // Simulate mouse move
+            const moveEvent = new MouseEvent('mousemove', { clientX: 200 });
+            (component as any).onMouseMove(moveEvent);
+
+            expect(component.sidebarWidth).toBeGreaterThanOrEqual(300);
+
+            // Simulate mouse up
+            (component as any).onMouseUp();
+            expect(component.isResizing).toBeFalse();
         });
     });
 });

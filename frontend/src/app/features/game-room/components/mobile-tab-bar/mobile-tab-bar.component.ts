@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type GameRoomTab = 'game' | 'players';
@@ -8,6 +8,7 @@ export type GameRoomTab = 'game' | 'players';
     standalone: true,
     imports: [CommonModule],
     templateUrl: './mobile-tab-bar.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./mobile-tab-bar.component.scss']
 })
 export class MobileTabBarComponent {

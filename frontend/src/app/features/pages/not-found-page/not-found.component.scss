@@ -1,6 +1,5 @@
 .not-found-container {
-    min-height: calc(100vh - var(--header-height));
-    padding: var(--space-xl);
+    padding-block: var(--space-lg);
     background: transparent;
 }
 

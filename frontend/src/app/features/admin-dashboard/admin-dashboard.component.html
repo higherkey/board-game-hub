@@ -87,7 +87,7 @@
                                         <td>{{ room.hostName }}</td>
                                         <td>{{ room.playerCount }}</td>
                                         <td>
-                                            <span class="badge bg-light text-dark border">{{ room.globalState }}</span>
+                                            <span class="badge bg-light text-dark">{{ room.globalState }}</span>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
@@ -97,7 +97,7 @@
                                                     (click)="openSettings(room)">Settings</button>
                                                 <button class="btn btn-outline-danger"
                                                     (click)="terminateRoom(room.code)">End</button>
-                                                <button class="btn btn-light border" (click)="toggleDetails(room.code)">
+                                                <button class="btn btn-light border border-2 border-primary" (click)="toggleDetails(room.code)">
                                                     Details {{ expandedRows.has(room.code) ? '▲' : '▼' }}
                                                 </button>
                                             </div>
@@ -123,10 +123,10 @@
                                                     </h6>
                                                     <div class="d-flex flex-wrap gap-2">
                                                         <div *ngFor="let p of room.players"
-                                                            class="badge bg-white text-dark border p-2 d-flex align-items-center gap-2">
+                                                            class="badge bg-white text-dark border border-2 border-primary p-2 d-flex align-items-center gap-2">
                                                             <span *ngIf="p.isHost" title="Host">👑</span>
                                                             {{ p.name }}
-                                                            <span class="badge bg-light text-secondary border">{{
+                                                            <span class="badge bg-light text-secondary border border-2 border-primary">{{
                                                                 p.score
                                                                 }}</span>
                                                         </div>

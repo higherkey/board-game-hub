@@ -5,9 +5,9 @@
         right: 20px;
         width: 300px;
         background: var(--surface-card);
-        border: 1px solid var(--border-color);
+        border: 2px solid var(--primary);
         box-shadow: var(--shadow-lg);
-        border-radius: 12px;
+        border-radius: var(--radius-sm);
         padding: 1rem;
         z-index: 1050;
         animation: slideIn 0.3s ease-out;
@@ -28,7 +28,7 @@
     .vote-status {
         background: var(--surface-ground);
         padding: 0.5rem;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
     }
 
     @keyframes slideIn {

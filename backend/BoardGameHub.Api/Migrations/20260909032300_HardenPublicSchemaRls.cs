@@ -11,13 +11,19 @@ namespace BoardGameHub.Api.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-                ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
-                ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
-                ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON ROUTINES FROM anon, authenticated;
+                -- anon/authenticated exist only on Supabase; skip on plain Postgres/Neon.
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+                        ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
+                        ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+                        ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON ROUTINES FROM anon, authenticated;
 
-                REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
-                REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
-                REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM anon, authenticated;
+                        REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+                        REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+                        REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM anon, authenticated;
+                    END IF;
+                END $$;
 
                 ALTER TABLE public.""AspNetRoles"" ENABLE ROW LEVEL SECURITY;
                 ALTER TABLE public.""AspNetUsers"" ENABLE ROW LEVEL SECURITY;

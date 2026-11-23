@@ -1,4 +1,9 @@
 using BoardGameHub.Api.Models;
+using BoardGameHub.Api.Hubs;
+using BoardGameHub.Api.Services;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using BoardGameHub.Api.Services.Games;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -21,6 +26,97 @@ public class FarkleServiceTests
         _service = new FarkleService(_loggerMock.Object, _serviceProviderMock.Object);
     }
 
+    private static (ServiceProvider Provider, GameStateManager Manager) CallbackDependencies(Room room)
+    {
+        var rooms = new Mock<IRoomService>();
+        rooms.Setup(r => r.GetRoom(room.Code)).Returns(room);
+        var clients = new Mock<IHubClients>();
+        clients.Setup(c => c.Group(It.IsAny<string>())).Returns(Mock.Of<IClientProxy>());
+        var hub = new Mock<IHubContext<GameHub>>();
+        hub.Setup(h => h.Clients).Returns(clients.Object);
+        var manager = new GameStateManager(hub.Object, new StateDiffService(), NullLogger<GameStateManager>.Instance);
+        var services = new ServiceCollection();
+        services.AddSingleton(rooms.Object);
+        services.AddSingleton(manager);
+        return (services.BuildServiceProvider(), manager);
+    }
+
+    private static FarkleState ScheduledFinalTurn() => new()
+    {
+        RoomCode = "FARK", Phase = FarklePhase.Farkled, ActivePlayerId = "p2",
+        PlayerStates = new()
+        {
+            ["p1"] = new() { PlayerId = "p1", TotalScore = 10000, IsFinalTurn = true },
+            ["p2"] = new() { PlayerId = "p2", TotalScore = 500 }
+        }
+    };
+
+    [Theory]
+    [InlineData("finished")]
+    [InlineData("lobby")]
+    [InlineData("replay")]
+    [InlineData("undo")]
+    [InlineData("phase")]
+    public async Task DelayedCallback_RechecksCurrentRoomUnderLockAndRejectsStaleWork(string transition)
+    {
+        var scheduled = ScheduledFinalTurn();
+        var room = new Room { Code = "FARK", GameType = GameType.Farkle, State = GameState.Playing, GameData = scheduled };
+        var (provider, manager) = CallbackDependencies(room);
+        using (provider)
+        using (manager)
+        {
+            var plugin = new FarkleService(NullLogger<FarkleService>.Instance, provider);
+            manager.TrackRoom(room);
+            await manager.ProcessRoomUpdateAsync(room.Code);
+            await room.StateLock.WaitAsync();
+            Task callback;
+            string expected;
+            try
+            {
+                callback = plugin.ExecuteAutoAdvance(room.Code, scheduled);
+                Assert.False(callback.IsCompleted);
+                switch (transition)
+                {
+                    case "finished": room.State = GameState.Finished; room.ResultPhase = ResultPhase.GameOver; break;
+                    case "lobby": room.State = GameState.Lobby; break;
+                    case "replay": room.GameData = ScheduledFinalTurn(); break;
+                    case "undo": room.GameData = JsonSerializer.Deserialize<FarkleState>(JsonSerializer.Serialize(scheduled)); break;
+                    case "phase": scheduled.Phase = FarklePhase.Picking; break;
+                }
+                expected = JsonSerializer.Serialize(room);
+            }
+            finally { room.StateLock.Release(); }
+            await callback;
+            Assert.Equal(expected, JsonSerializer.Serialize(room));
+            Assert.Empty(room.DirtyMembers);
+        }
+    }
+
+    [Fact]
+    public async Task DelayedCallback_CurrentFarkleCompletesAndBroadcastsGameOver()
+    {
+        var scheduled = ScheduledFinalTurn();
+        var room = new Room
+        {
+            Code = "FARK", GameType = GameType.Farkle, State = GameState.Playing, GameData = scheduled,
+            Players = new() { new() { ConnectionId = "p1" }, new() { ConnectionId = "p2" } }
+        };
+        var (provider, manager) = CallbackDependencies(room);
+        using (provider)
+        using (manager)
+        {
+            var plugin = new FarkleService(NullLogger<FarkleService>.Instance, provider);
+            manager.TrackRoom(room);
+            await manager.ProcessRoomUpdateAsync(room.Code);
+            await plugin.ExecuteAutoAdvance(room.Code, scheduled);
+            Assert.Equal(GameState.Finished, room.State);
+            Assert.Equal(FarklePhase.GameOver, scheduled.Phase);
+            Assert.Equal(10000, room.Players[0].Score);
+            await manager.ProcessRoomUpdateAsync(room.Code);
+            Assert.Equal(ResultPhase.GameOver, room.ResultPhase);
+        }
+    }
+
     [Theory]
     [InlineData(new int[] { 1, 1, 1, 2, 3, 4 }, 300)]  // Three 1s = 300
     [InlineData(new int[] { 5, 5, 5, 2, 3, 4 }, 500)]  // Three 5s = 500
@@ -38,6 +134,61 @@ public class FarkleServiceTests
     {
         var result = FarkleService.CalculateDiceScore(dice.ToList());
         result.Should().Be(expectedScore);
+    }
+
+    [Fact]
+    public async Task HandleAction_BankReachingTargetThenFinalTurnCompletes_SetsRoomFinished()
+    {
+        var room = new Room { Code = "FARK", State = GameState.Playing };
+        room.Players.Add(new Player { ConnectionId = "p1", Name = "One" });
+        room.Players.Add(new Player { ConnectionId = "p2", Name = "Two" });
+        var state = new FarkleState { RoomCode = "FARK", Phase = FarklePhase.Picking, ActivePlayerId = "p1" };
+        state.PlayerStates["p1"] = new FarklePlayerState { PlayerId = "p1", TotalScore = 9950 };
+        state.PlayerStates["p2"] = new FarklePlayerState { PlayerId = "p2", TotalScore = 600 };
+        state.Dice = Enumerable.Range(0, 6).Select(_ => new FarkleDie { Value = 2 }).ToList();
+        state.Dice[0].Value = 1;
+        state.Dice[0].IsReserved = true;
+        room.GameData = state;
+
+        (await _service.HandleAction(room, new GameAction("BANK", null), "p1")).Should().BeTrue();
+
+        // Target reached, but p2 still gets a final turn.
+        state.PlayerStates["p1"].IsFinalTurn.Should().BeTrue();
+        room.State.Should().Be(GameState.Playing);
+
+        state.ActivePlayerId.Should().Be("p2");
+        state.Phase = FarklePhase.Picking;
+        state.CurrentTurnScore = 0;
+        state.Dice = Enumerable.Range(0, 6).Select(_ => new FarkleDie { Value = 2 }).ToList();
+        state.Dice[0].Value = 1;
+        state.Dice[0].IsReserved = true;
+
+        (await _service.HandleAction(room, new GameAction("BANK", null), "p2")).Should().BeTrue();
+
+        state.Phase.Should().Be(FarklePhase.GameOver);
+        state.WinningPlayerId.Should().Be("p1");
+        room.State.Should().Be(GameState.Finished);
+        room.Players.First(p => p.ConnectionId == "p1").Score.Should().Be(10050);
+    }
+
+    [Fact]
+    public async Task StartRound_RollsWithANewRollId()
+    {
+        var room = new Room { Code = "FARK", State = GameState.Playing };
+        room.Players.Add(new Player { ConnectionId = "p1", Name = "One" });
+        room.Players.Add(new Player { ConnectionId = "p2", Name = "Two" });
+        await _service.StartRound(room, room.Settings);
+        ((FarkleState)room.GameData!).RollId.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task EndRound_SetsRoomStateFinished()
+    {
+        var room = new Room { Code = "FARK", State = GameState.Playing };
+
+        await _service.EndRound(room);
+
+        room.State.Should().Be(GameState.Finished);
     }
 
     [Fact]

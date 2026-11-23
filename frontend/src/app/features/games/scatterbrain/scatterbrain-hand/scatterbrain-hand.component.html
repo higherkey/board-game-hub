@@ -37,7 +37,7 @@
                         </label>
                         <input [id]="'answer-' + i" type="text" class="form-control form-control-lg border-0 shadow-sm"
                             [(ngModel)]="answers[i]" (blur)="submitAnswers()"
-                            [placeholder]="'Starts with ' + room?.gameData?.currentLetter" autocomplete="off">
+                            [placeholder]="'Starts with ' + $safeNavigationMigration(room?.gameData?.currentLetter)" autocomplete="off">
                     </div>
                     <div class="d-grid mt-4">
                         <button class="btn btn-success btn-lg fw-bold shadow-sm py-3" (click)="submitAnswers()"
