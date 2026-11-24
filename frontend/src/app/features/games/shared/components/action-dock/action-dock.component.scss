@@ -1,0 +1,13 @@
+/* Projected buttons keep the game's own styling; the dock only places them in thumb reach. */
+:host {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    padding-block-end: calc(var(--space-sm) + env(safe-area-inset-bottom, 0px));
+    background: var(--game-surface, var(--bg-surface));
+    border-block-start: 2px solid var(--game-ink, var(--primary));
+}

@@ -1,0 +1,52 @@
+<dialog #dialog class="menu" aria-label="Game menu" (cancel)="$event.preventDefault(); close()" (keydown.escape)="close()" (click)="backdrop($event)">
+    <header class="menu-head">
+        <span class="menu-room">Room <strong class="menu-code">{{ roomCode }}</strong></span>
+        <button type="button" class="menu-close" aria-label="Close menu" (click)="close()">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    </header>
+
+    @if (hasRules || scores) {
+    <section class="menu-section" aria-labelledby="menu-game">
+        <h2 class="menu-heading" id="menu-game">This game</h2>
+        <ul class="menu-list">
+            @if (hasRules) {
+                <li><button type="button" class="menu-item" (click)="pick(rules)"><i class="bi bi-question-circle" aria-hidden="true"></i>How to play</button></li>
+            }
+        </ul>
+        @if (scores) {
+            <app-tableau-ring class="menu-scores" [entries]="scores"></app-tableau-ring>
+        }
+    </section>
+    }
+
+    <section class="menu-section" aria-labelledby="menu-room">
+        <h2 class="menu-heading" id="menu-room">Room</h2>
+        <ul class="menu-list">
+            <li><button type="button" class="menu-item" (click)="pick(players)"><i class="bi bi-people" aria-hidden="true"></i>Players</button></li>
+            <li><button type="button" class="menu-item" (click)="copyInvite()"><i class="bi bi-link-45deg" aria-hidden="true"></i>{{ copied() ? 'Invite link copied' : 'Copy invite link' }}</button></li>
+            <li>
+                <button type="button" class="menu-item" (click)="toggleSound.emit()">
+                    <i class="bi" [class.bi-volume-up]="!isMuted" [class.bi-volume-mute]="isMuted" aria-hidden="true"></i>Sound {{ isMuted ? 'off' : 'on' }}
+                </button>
+            </li>
+            @if (videoReady) {
+                <li><button type="button" class="menu-item" (click)="pick(startVideo)"><i class="bi bi-camera-video" aria-hidden="true"></i>Video chat</button></li>
+            }
+            @if (canUndo) {
+                <li><button type="button" class="menu-item" (click)="pick(undo)"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Undo last move</button></li>
+            }
+        </ul>
+    </section>
+
+    @if (isHost) {
+        <section class="menu-section" aria-labelledby="menu-host">
+            <h2 class="menu-heading" id="menu-host">Host</h2>
+            <ng-content select="[menuHost]"></ng-content>
+        </section>
+    }
+
+    <div class="menu-foot">
+        <button type="button" class="menu-item menu-leave" (click)="pick(leave)"><i class="bi bi-box-arrow-left" aria-hidden="true"></i>Leave room</button>
+    </div>
+</dialog>

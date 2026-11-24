@@ -1,19 +1,25 @@
-import { Component, Input, OnChanges, SimpleChanges, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnInit, ViewChild, TemplateRef, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import { secondsUntilPlay } from '../../../../shared/round-timing';
+import { GameChromeService, playersAsEntries } from '../../../game-room/services/game-chrome.service';
+import { ActionDockComponent } from '../../shared/components/action-dock/action-dock.component';
+import { BabbleRulesComponent } from '../babble-rules/babble-rules.component';
+import { babbleProgress, babbleStatus } from '../babble-chrome';
 
 @Component({
   selector: 'app-babble-hand',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ActionDockComponent, BabbleRulesComponent],
   templateUrl: './babble-hand.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./babble-hand.component.scss']
 })
-export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
+export class BabbleHandComponent implements OnInit, OnChanges {
   private readonly signalRService = inject(SignalRService);
+  private readonly chrome = inject(GameChromeService);
+  @ViewChild('rules', { static: true }) private readonly rules!: TemplateRef<unknown>;
 
   @Input() room: Room | null = null;
   @Input() myConnectionId: string = '';
@@ -36,15 +42,16 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
   selectedWord: any = null;
   showOnlyMyWords = true;
 
-  // Countdown & blur state, from the server's round start time
-  isBlurred = true;
-  countdownSeconds = 0;
+  /** Seconds left in the server lead-in; the room shows the countdown itself. */
+  get countdownSeconds(): number {
+    return secondsUntilPlay(this.room);
+  }
 
-  // Timer state
-  timerText = '--:--';
-  isUrgent = false;
-  isEnding = false;
-  private timerInterval: any;
+  /** The board stays hidden while paused or during the lead-in. */
+  get isBlurred(): boolean {
+    return !this.isFinished && (this.isPaused || this.countdownSeconds > 0);
+  }
+
 
   get isPlaying(): boolean {
     return this.room?.state === 'Playing';
@@ -76,6 +83,7 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit() {
+    this.chrome.rules.set(this.rules);
     if (this.room) {
       this.updateStateFromRoom();
     }
@@ -87,15 +95,7 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  ngOnDestroy() {
-    this.stopTimer();
-  }
-
   private updateStateFromRoom() {
-    if (this.isFinished) {
-      this.isEnding = false;
-    }
-
     const data = this.room?.gameData || this.room?.gameState;
     if (data?.lastRoundResults) {
       this.lastRoundResults = data.lastRoundResults;
@@ -106,15 +106,7 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
       this.processGridUpdate(grid);
     }
 
-    this.isPlaying ? this.startTimer() : this.stopTimer();
-
-    this.syncLeadIn();
-  }
-
-  /** The board stays hidden while paused or during the server's lead-in countdown. */
-  private syncLeadIn() {
-    this.countdownSeconds = secondsUntilPlay(this.room);
-    this.isBlurred = !this.isFinished && (this.isPaused || this.countdownSeconds > 0);
+    this.chrome.publish({ status: babbleStatus(this.room), progress: babbleProgress(this.room), scores: this.room ? playersAsEntries(this.room, undefined, this.myConnectionId) : null, ended: babbleStatus(this.room) === 'Final results', autoEndRound: true });
   }
 
   private processGridUpdate(grid: any) {
@@ -124,61 +116,6 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
       this.boardSize = Math.max(3, Math.round(Math.sqrt(this.gridChars.length)) || 4);
       this.foundWords = [];
       this.currentWord = '';
-    }
-  }
-
-  private startTimer() {
-    if (this.timerInterval) return;
-
-    this.timerInterval = setInterval(() => {
-      this.syncLeadIn();
-      if (!this.room?.roundEndTime) {
-        this.timerText = '--:--';
-        return;
-      }
-
-      if (this.countdownSeconds > 0) {
-        this.timerText = '--:--';
-        return;
-      }
-
-      if (this.isPaused) {
-        this.timerText = 'PAUSED';
-        this.isUrgent = false;
-        return;
-      }
-
-      const endTime = new Date(this.room.roundEndTime).getTime();
-      const now = Date.now();
-      const diff = endTime - now;
-
-      if (diff <= 0) {
-        this.handleTimerEnd();
-        return;
-      }
-
-      const seconds = Math.floor(diff / 1000);
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-
-      this.timerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-      this.isUrgent = seconds < 10;
-    }, 500);
-  }
-
-  private handleTimerEnd() {
-    this.timerText = '00:00';
-    this.isUrgent = true;
-    this.stopTimer();
-    if (this.isHost && this.isPlaying) {
-      this.handleEndRound();
-    }
-  }
-
-  private stopTimer() {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
     }
   }
 
@@ -212,35 +149,6 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
       this.signalRService.submitAnswers(this.foundWords);
     }
     this.currentWord = '';
-  }
-
-  // Host toolbar actions
-  handleEndRound() {
-    if (this.isEnding) return;
-    if (this.isHost && this.room) {
-      this.isEnding = true;
-      this.signalRService.endRound().catch(() => {
-        this.isEnding = false;
-      });
-    }
-  }
-
-  handleNextRound() {
-    if (this.isHost && this.room) {
-      void this.signalRService.nextRound();
-    }
-  }
-
-  handlePause() {
-    if (this.isHost) {
-      void this.signalRService.pauseGame();
-    }
-  }
-
-  handleResume() {
-    if (this.isHost) {
-      void this.signalRService.resumeGame();
-    }
   }
 
   // Results & validation actions

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CloverMindedTableComponent } from './clover-minded-table.component';
 import { SignalRService } from '../../../../services/signalr.service';
+import { GameChromeService } from '../../../game-room/services/game-chrome.service';
 import { of } from 'rxjs';
 
 describe('CloverMindedTableComponent', () => {
@@ -16,7 +17,8 @@ describe('CloverMindedTableComponent', () => {
         await TestBed.configureTestingModule({
             imports: [CloverMindedTableComponent],
             providers: [
-                { provide: SignalRService, useValue: mockSignalRService }
+                { provide: SignalRService, useValue: mockSignalRService },
+                GameChromeService
             ]
         }).compileComponents();
 
@@ -66,5 +68,22 @@ describe('CloverMindedTableComponent', () => {
     it('should return null for empty slot', () => {
         const card = component.getSlotCard(1);
         expect(card).toBeNull();
+    });
+
+    it("publishes its status, progress and rules, and has no title row or phase pill of its own", () => {
+        fixture.componentRef.setInput("room", { ...component.room });
+        fixture.detectChanges();
+        const chrome = TestBed.inject(GameChromeService);
+        expect(chrome.status()).toBe("Solve Alice’s clover");
+        expect(chrome.rules()).not.toBeNull();
+        const el: HTMLElement = fixture.nativeElement;
+        for (const sel of [".table-header", ".hand-header", ".pill", ".phase-pill", ".emoji"]) expect(el.querySelector(sel)).withContext(sel).toBeNull();
+    });
+
+    it("never shows a Hand's private keyword pairs on the Table", () => {
+        component.room = { ...component.room, gameData: { ...component.room.gameData, phase: "ClueWriting", prepByPlayer: { p2: { pairWords: [["Secret", "Pair"]] } } } } as any;
+        fixture.componentRef.setInput("room", component.room);
+        fixture.detectChanges();
+        expect(fixture.nativeElement.textContent).not.toContain("Secret");
     });
 });

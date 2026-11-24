@@ -1,0 +1,46 @@
+:host { display: block; }
+
+.tableau {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 2px solid var(--game-ink, var(--primary));
+    border-radius: var(--radius-sm);
+    background: var(--game-surface, var(--bg-surface));
+}
+
+.tableau-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-inline-start: 6px solid transparent;
+    font-weight: 600;
+    color: var(--game-ink, var(--text-primary));
+
+    & + & { border-block-start: 2px solid var(--bg-surface-2); }
+
+    &.is-active {
+        border-inline-start-color: var(--game-accent, var(--contrast-pink));
+        background: color-mix(in oklch, var(--game-accent, var(--contrast-pink)) 12%, transparent);
+        font-weight: 700;
+    }
+}
+
+.tableau-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tableau-me { font-weight: 600; color: var(--text-secondary); }
+
+.tableau-score {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}

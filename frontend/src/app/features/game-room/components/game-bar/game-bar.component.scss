@@ -1,0 +1,70 @@
+@use '../../../../shared/sheet' as sheet;
+
+:host { display: block; }
+
+.game-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: 52px;
+    padding-inline: var(--space-xs) var(--space-sm);
+    background: var(--bg-surface);
+    border-block-end: 2px solid var(--primary);
+
+    @media (max-width: 576px) { min-block-size: 48px; gap: var(--space-xs); }
+}
+
+.game-bar-icon { @include sheet.icon-button; }
+
+.game-bar-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-inline-size: 0;
+    line-height: 1.15;
+}
+
+.game-bar-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.game-bar-status {
+    overflow: hidden;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.game-bar-progress {
+    font-weight: 700;
+    color: var(--text-secondary);
+    white-space: nowrap;
+
+    @media (max-width: 400px) { font-size: 0.85rem; }
+}
+
+.game-bar-clock {
+    min-inline-size: 4.25rem;
+    padding: 0.15rem 0.5rem;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--primary);
+
+    &.is-urgent {
+        border-color: var(--danger);
+        background: var(--danger);
+        color: var(--bg-surface);
+    }
+}

@@ -1,209 +1,124 @@
-.farkle-table-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  background: var(--primary-dark, #002244);
-  color: white;
+/* Farkle's own look: a dark felt table with cream ink and a brass accent, in the site's fonts and corners. */
+:host {
+  --game-surface: oklch(26% 0.05 165);
+  --game-ink: oklch(95% 0.02 90);
+  --game-accent: oklch(80% 0.14 80);
+  display: block;
+  block-size: 100%;
+  container-type: inline-size;
+  background: var(--game-surface);
+  color: var(--game-ink);
+}
+
+.farkle-table {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) minmax(14rem, 18rem);
+  grid-template-areas: "scores stage guide";
+  grid-template-rows: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-lg);
+  block-size: 100%;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
+/* Mid-size screens: tray on the left, scores above the guide on the right, so scores stay on screen. */
+@container (max-width: 1100px) {
+  .farkle-table {
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 16rem);
+    grid-template-areas: "stage scores" "stage guide";
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}
+
+/* Phone-width Tables: one column, tray first. */
+@container (max-width: 640px) {
+  .farkle-table {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "stage" "scores" "guide";
+    gap: var(--space-md);
+    padding: var(--space-md);
+  }
+}
+
+.farkle-scores { grid-area: scores; }
+.farkle-guide { grid-area: guide; }
+
+.farkle-label {
+  margin: 0 0 var(--space-sm);
   font-family: 'Outfit', sans-serif;
-  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--game-accent);
 }
 
-.scoreboard {
-  width: 300px;
-  background: rgba(255, 255, 255, 0.03);
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem;
-
-  .scoreboard-header {
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin-bottom: 2rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #4ecca3;
-    border-bottom: 2px solid #4ecca3;
-    padding-bottom: 0.5rem;
-  }
-
-  .player-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.05);
-    transition: all 0.3s ease;
-    position: relative;
-
-    &.active {
-      background: rgba(78, 204, 163, 0.15);
-      outline: 2px solid #4ecca3;
-      transform: translateX(10px);
-    }
-
-    .player-name { font-weight: 500; }
-    .player-score { font-weight: 700; font-size: 1.2rem; }
-    
-    .last-turn {
-      grid-column: 2;
-      font-size: 0.7rem;
-      color: #4ecca3;
-      text-align: right;
-    }
-  }
+.farkle-scores app-tableau-ring {
+  --game-surface: color-mix(in oklch, var(--game-ink) 6%, transparent);
+  font-size: 1.1rem;
 }
 
-.main-area {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+.farkle-stage {
+  grid-area: stage;
   position: relative;
-}
-
-.header {
-  padding: 2rem;
-  text-align: center;
-
-  .current-turn-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    .active-player-name {
-      font-size: 2.5rem;
-      font-weight: 800;
-    }
-
-    .turn-score {
-      font-size: 1.5rem;
-      color: var(--accent, #38b2ac);
-      background: rgba(56, 178, 172, 0.1);
-      padding: 0.5rem 1.5rem;
-      border-radius: var(--radius-sm);
-      display: inline-block;
-      margin: 0 auto;
-    }
-  }
-}
-
-.player-indicators {
   display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  z-index: 10;
-
-  .player-seat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    opacity: 0.4;
-    transition: all 0.5s ease;
-    transform: scale(0.8);
-
-    &.active {
-      opacity: 1;
-      transform: scale(1.1);
-      .seat-avatar {
-        box-shadow: 0 0 20px var(--accent, #38b2ac);
-        border-color: var(--accent, #38b2ac);
-      }
-      .seat-name { color: var(--accent, #38b2ac); font-weight: 800; }
-    }
-
-    .seat-avatar {
-      width: 60px;
-      height: 60px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-
-    .seat-name {
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-  }
-}
-
-.announcement-overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.4);
+  gap: var(--space-sm);
+  align-self: stretch;
+  min-inline-size: 0;
+}
+
+.farkle-at-risk {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin: 0;
+  font-weight: 700;
+}
+
+.farkle-at-risk-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.5rem, 6cqi, 4.5rem);
+  line-height: 1;
+  color: var(--game-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.farkle-table-tray { display: block; inline-size: 100%; }
+
+.farkle-announce {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
   pointer-events: none;
-  z-index: 100;
 }
 
 .farkle-burst {
-  font-size: 8rem;
-  font-weight: 900;
-  color: #ff4757;
-  text-shadow: 0 0 30px rgba(255, 71, 87, 0.8);
-  animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.winner-burst {
-  font-size: 5rem;
-  font-weight: 900;
-  color: #4ecca3;
-  text-shadow: 0 0 30px rgba(78, 204, 163, 0.8);
-  background: rgba(0,0,0,0.8);
-  padding: 2rem 4rem;
+  padding: var(--space-md) var(--space-xl);
+  border: 3px solid var(--game-ink);
   border-radius: var(--radius-sm);
-  animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: var(--danger);
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(3rem, 10cqi, 7rem);
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--game-ink);
+  animation: farkle-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  &--win { background: var(--game-accent); color: var(--game-surface); text-transform: none; }
 }
 
-@keyframes pop-in {
-  0% { transform: scale(0); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+@keyframes farkle-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-.scoring-guide {
-  width: 250px;
-  background: rgba(255, 255, 255, 0.03);
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem;
-
-  .guide-header {
-    font-size: 1.2rem;
-    font-weight: 800;
-    margin-bottom: 1.5rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #4ecca3;
-    opacity: 0.8;
-  }
-
-  .guide-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-
-    .guide-item {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-
-      span:first-child { opacity: 0.6; }
-      span:last-child { font-weight: 700; color: #4ecca3; }
-    }
-  }
+@media (prefers-reduced-motion: reduce) {
+  .farkle-burst { animation: none; }
 }
-
-.farkle-table-tray { display: block; inline-size: min(100%, 1100px); margin-inline: auto; }

@@ -1,15 +1,4 @@
 <div class="hand-root">
-    <div class="hand-header">
-        <div class="title">
-            <span class="emoji">🍀</span>
-            <span class="name">Your Hand</span>
-        </div>
-
-        <div class="phase-pill" *ngIf="state as s">
-            {{ phaseLabel(s.phase) }}
-        </div>
-    </div>
-
     <div class="hand-body" *ngIf="state as s; else notInGame">
         <ng-container *ngIf="!isInParticipantList(s); else inHandScope">
             <div class="note">
@@ -62,12 +51,13 @@
                     <span class="check">✓</span> Submitted successfully. Waiting for other players...
                 </div>
 
-                <button class="primary-btn"
-                    *ngIf="!isSubmitted(s)"
-                    [disabled]="!canSubmitClues(s) || isSubmitting"
-                    (click)="submitClues(s)">
-                    {{ isSubmitting ? 'SUBMITTING...' : "I'M DONE" }}
-                </button>
+                <app-action-dock *ngIf="!isSubmitted(s)">
+                    <button type="button" class="primary-btn"
+                        [disabled]="!canSubmitClues(s) || isSubmitting"
+                        (click)="submitClues(s)">
+                        {{ isSubmitting ? 'Sending…' : 'Send my clues' }}
+                    </button>
+                </app-action-dock>
             </div>
 
             <!-- RESOLUTION -->
@@ -185,3 +175,5 @@
         </div>
     </ng-template>
 </div>
+
+<ng-template #rules><app-clover-rules></app-clover-rules></ng-template>

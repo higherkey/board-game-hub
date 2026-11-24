@@ -22,65 +22,6 @@
   overflow: hidden;
 }
 
-/* ---------- Shared small controls ---------- */
-.hand-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-block-size: 44px;
-  padding-inline: 0.75rem;
-  border: 2px solid var(--primary);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  color: var(--primary);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  box-shadow: 2px 2px 0 var(--primary);
-
-  @media (max-width: 380px) { padding-inline: 0.55rem; font-size: 0.9rem; }
-
-  &:active:not(:disabled) { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--primary); }
-  &:disabled { opacity: 0.5; }
-  &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
-}
-
-.hand-btn--on {
-  background: var(--primary);
-  color: var(--bg-surface);
-}
-
-.hand-btn--danger {
-  border-color: var(--danger, oklch(52% 0.2 25));
-  color: var(--danger, oklch(52% 0.2 25));
-  box-shadow: 2px 2px 0 var(--danger, oklch(52% 0.2 25));
-}
-
-/* ---------- Host strip: one slim row ---------- */
-.host-toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding-block-end: var(--space-sm);
-  border-block-end: 2px solid var(--bg-surface-2);
-}
-
-.host-label {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  color: var(--contrast-pink);
-}
-
-.host-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-inline-start: auto;
-}
-
 /* ---------- Playing ---------- */
 .play-phase {
   display: flex;
@@ -88,69 +29,6 @@
   gap: var(--space-sm);
   flex: 1;
   min-block-size: 0;
-}
-
-.hand-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-}
-
-.game-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-/* The room header already names the game; keep the heading for screen readers only. */
-.game-name {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  margin: 0;
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-  color: var(--primary);
-}
-
-.round-pill {
-  padding: 0.1rem 0.5rem;
-  border: 2px solid var(--primary);
-  border-radius: var(--radius-sm);
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--primary);
-}
-
-.timer-card {
-  min-inline-size: 5.5rem;
-  padding: 0.2rem 0.75rem;
-  border: 2px solid var(--primary);
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: var(--bg-surface);
-  text-align: center;
-  box-shadow: 3px 3px 0 var(--accent);
-
-  &.urgent {
-    background: var(--contrast-pink);
-    border-color: var(--contrast-pink);
-    box-shadow: 3px 3px 0 var(--primary);
-  }
-}
-
-.timer-digits {
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
 .grid-section {
@@ -164,9 +42,10 @@
 .hand-grid {
   display: grid;
   gap: 6px;
-  inline-size: min(100%, 40dvh, 360px);
+  /* The room chrome is one slim bar now, so the board takes most of a phone screen. */
+  inline-size: min(100%, 54dvh, 460px);
 
-  @media (max-height: 700px) { inline-size: min(100%, 35dvh, 360px); }
+  @media (max-height: 700px) { inline-size: min(100%, 46dvh, 460px); }
   aspect-ratio: 1;
   padding: 6px;
   background: var(--bg-surface-2);
@@ -197,12 +76,12 @@
   background: var(--bg-surface);
   color: var(--primary);
   font-family: 'Outfit', sans-serif;
-  font-size: clamp(1.2rem, 6vw, 1.9rem);
+  font-size: clamp(1.4rem, 8vw, 2.6rem);
   font-weight: 700;
   box-shadow: 2px 2px 0 var(--primary);
   cursor: pointer;
 
-  &[data-letter='Qu'] { font-size: clamp(1rem, 4.5vw, 1.4rem); }
+  &[data-letter='Qu'] { font-size: clamp(1.1rem, 6vw, 1.9rem); }
 
   &:active:not(:disabled) {
     transform: translate(2px, 2px);
@@ -213,30 +92,6 @@
 
   &:disabled { cursor: default; }
   &:focus-visible { outline: 3px solid var(--contrast-pink); outline-offset: 1px; }
-}
-
-.countdown-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: var(--space-xs);
-  pointer-events: none;
-  color: var(--bg-surface);
-
-  .countdown-value {
-    font-family: 'Outfit', sans-serif;
-    font-size: 4rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .countdown-message {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
 }
 
 /* ---------- Word entry ---------- */
@@ -388,14 +243,6 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
-}
-
-.results-title {
-  margin: 0;
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--primary);
 }
 
 .results-summary {
@@ -609,4 +456,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .fade-in { animation: none; }
+}
+
+/* The word form docks full-bleed at the bottom, in thumb reach. */
+.word-dock {
+  margin-inline: calc(var(--space-md) * -1);
+  margin-block-end: calc(var(--space-sm) * -1);
 }

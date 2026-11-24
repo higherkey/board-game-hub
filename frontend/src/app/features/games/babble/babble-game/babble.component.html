@@ -1,36 +1,6 @@
 <div class="babble-view" [class.showing-results]="isFinished" [class.is-host]="isHost" [class.resizing]="isResizing" [style.--sidebar-width.px]="sidebarWidth">
     <div class="game-main">
-        <div class="babble-header d-none d-md-flex">
-            <h2>Babble</h2>
-
-            <div class="header-controls d-flex align-items-center gap-3">
-                <div class="timer-card" *ngIf="isPlaying" [class.urgent]="isUrgent">
-                    <i class="bi bi-stopwatch-fill"></i>
-                    <span>{{ timerText }}</span>
-                </div>
-
-                <!-- Integrated Host Controls -->
-                <div *ngIf="isHost && isPlaying" class="host-controls-panel d-none d-md-flex align-items-center gap-2">
-                    <ng-container *ngTemplateOutlet="hostControlsTemplate"></ng-container>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Header (Visible on small screens) -->
-        <div class="babble-mobile-header d-flex d-md-none justify-content-between align-items-center mb-2">
-            <h3 class="m-0 fs-4 fw-bold text-primary">Babble</h3>
-            <div class="d-flex align-items-center gap-2">
-                <div class="timer-card py-1 px-2" *ngIf="isPlaying" [class.urgent]="isUrgent">
-                    <i class="bi bi-stopwatch-fill fs-6"></i>
-                    <span class="fs-6">{{ timerText }}</span>
-                </div>
-                <div *ngIf="isHost && isPlaying" class="host-controls-panel d-flex align-items-center gap-1">
-                    <ng-container *ngTemplateOutlet="hostControlsTemplate"></ng-container>
-                </div>
-            </div>
-        </div>
-
-        <!-- Grid Display -->
+        <!-- Grid Display: title, clock and host controls live in the room's game bar and menu. -->
         <div class="grid-stage position-relative">
             <div class="babble-grid" [class]="'size-' + boardSize" [class.blurred-board]="isBlurred">
                 <div class="letter-tile animate-pop" *ngFor="let char of gridChars; let i = index"
@@ -39,17 +9,8 @@
                 </div>
             </div>
 
-            <!-- Countdown Overlay -->
-            <div *ngIf="isPlaying && isBlurred && countdownSeconds > 0"
-                class="position-absolute top-50 start-50 translate-middle text-center countdown-overlay">
-                <div class="display-1 fw-bold text-white countdown-text">{{ countdownSeconds }}</div>
-                <div class="h4 text-white text-uppercase ls-widest mt-2 fw-bold countdown-subtext">Get Ready!</div>
-            </div>
         </div>
 
-        <p *ngIf="!isPlaying && !isFinished && room?.state === 'Finished'" class="text-center text-dim mt-4">
-            Round Over! Calculating scores...
-        </p>
     </div>
 
     <div class="resize-handle d-none d-md-block" (mousedown)="startResizing($event)"></div>
@@ -75,10 +36,9 @@
 
         <!-- Table Screen View (Passive display only) -->
         <div *ngIf="isScreen && isPlaying" class="controls-section">
-            <div class="found-words-area">
-                <h5 class="mb-3">Playing Words</h5>
-                <p class="text-muted small">Players submit words on their hand controllers.</p>
-            </div>
+            <h2 class="table-scores-title">Scores</h2>
+            <app-tableau-ring [entries]="entries"></app-tableau-ring>
+            <p class="table-hint">Find words on your phone. Results show here when the round ends.</p>
         </div>
 
         <!-- RESULTS VIEW -->
@@ -180,25 +140,7 @@
                 </div>
             </div>
 
-            <div class="results-footer d-flex justify-content-center pt-3" *ngIf="isHost">
-                <button class="btn btn-primary fw-bold shadow-sm px-4 py-2" (click)="handleNextRound()">
-                    {{ isGameOver ? 'Play Again' : 'Next Round' }} <i class="bi bi-arrow-right-circle ms-2"></i>
-                </button>
-            </div>
         </div>
     </div>
-    <ng-template #hostControlsTemplate>
-        <ng-container *ngIf="isPlaying">
-            <app-end-round-button (endRound)="handleEndRound()" [disabled]="isEnding" size="sm"></app-end-round-button>
-
-            <button *ngIf="!isPaused" class="btn btn-sm btn-outline-warning" (click)="handlePause()" title="Pause" aria-label="Pause round">
-                <i class="bi bi-pause-fill"></i>
-            </button>
-            <button *ngIf="isPaused" class="btn btn-sm btn-warning" (click)="handleResume()" title="Resume" aria-label="Resume round">
-                <i class="bi bi-play-fill"></i>
-            </button>
-
-            <output *ngIf="isEnding" class="spinner-border spinner-border-sm text-accent"></output>
-        </ng-container>
-    </ng-template>
+    <ng-template #rules><app-babble-rules></app-babble-rules></ng-template>
 </div>

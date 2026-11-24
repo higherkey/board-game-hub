@@ -1,0 +1,38 @@
+@use '../../../../../shared/sheet' as sheet;
+
+.rules { @include sheet.sheet(end); }
+
+.rules-head { @include sheet.sheet-head; }
+
+.rules-title {
+    flex: 1;
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.rules-close { @include sheet.icon-button; }
+
+/* Games write plain lists and paragraphs; this gives them one readable rhythm. */
+.rules-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text-secondary);
+
+    :is(h3, h4) {
+        margin: var(--space-sm) 0 0;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    :is(p, ul, ol, dl) { margin: 0; }
+    :is(ul, ol) { padding-inline-start: 1.25rem; }
+}

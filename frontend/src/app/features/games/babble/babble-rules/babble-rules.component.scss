@@ -1,0 +1,29 @@
+:host { display: flex; flex-direction: column; gap: var(--space-sm); }
+
+.babble-rules {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: 0;
+    padding-inline-start: 1.1rem;
+}
+
+.babble-rules-title {
+    margin: var(--space-xs) 0 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.babble-rules-scores { margin: 0; }
+
+.babble-rules-row {
+    display: flex;
+    justify-content: space-between;
+    padding-block: 0.3rem;
+    border-block-end: 2px solid var(--bg-surface-2);
+
+    dt { font-weight: 600; }
+    dd { margin: 0; font-family: 'Outfit', sans-serif; font-weight: 700; }
+}

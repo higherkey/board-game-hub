@@ -4,6 +4,7 @@ import { SignalRService } from '../../../../services/signalr.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { createMockRoom } from '../../../../shared/testing/test-helpers';
+import { GameChromeService } from '../../../game-room/services/game-chrome.service';
 
 describe('BabbleComponent', () => {
     let component: BabbleComponent;
@@ -23,7 +24,8 @@ describe('BabbleComponent', () => {
         await TestBed.configureTestingModule({
             imports: [BabbleComponent, FormsModule, CommonModule],
             providers: [
-                { provide: SignalRService, useValue: mockSignalRService }
+                { provide: SignalRService, useValue: mockSignalRService },
+                GameChromeService
             ]
         }).compileComponents();
 
@@ -48,7 +50,6 @@ describe('BabbleComponent', () => {
     });
 
     it('should be blurred when paused', () => {
-        component.isBlurred = false;
         component.room = createMockRoom({
             gameType: 'Babble',
             isPaused: true,
@@ -67,7 +68,7 @@ describe('BabbleComponent', () => {
         expect(component.isBlurred).toBeTrue();
     });
 
-    it('should NOT show timer text during the server lead-in countdown', fakeAsync(() => {
+    it('hides the board during the server lead-in, then shows it', fakeAsync(() => {
         component.room = createMockRoom({
             gameType: 'Babble',
             state: 'Playing',
@@ -86,12 +87,10 @@ describe('BabbleComponent', () => {
 
         tick(500);
         expect(component.countdownSeconds).toBe(1);
-        expect(component.timerText).toBe('--:--');
 
         tick(500); // the server start time has now passed
         expect(component.countdownSeconds).toBe(0);
         expect(component.isBlurred).toBeFalse();
-        expect(component.timerText).not.toBe('--:--');
 
         discardPeriodicTasks();
     }));
@@ -124,32 +123,36 @@ describe('BabbleComponent', () => {
         });
     });
 
-    describe('Host Controls', () => {
-        beforeEach(() => {
+
+    describe("shared chrome", () => {
+        it("publishes status, round progress, scores and rules", () => {
+            component.room = createMockRoom({ gameType: "Babble", state: "Playing", roundNumber: 2, totalRounds: 5, players: [{ connectionId: "conn1", name: "Ann", score: 4, isHost: false, isReady: true, isScreen: false }], gameData: { grid: "ABCDEFGHIJKLMNOP" } });
+            fixture.componentRef.setInput("room", component.room);
+            fixture.detectChanges();
+            const chrome = TestBed.inject(GameChromeService);
+            expect(chrome.status()).toBe("Find words");
+            expect(chrome.progress()).toBe("Round 2 of 5");
+            expect(chrome.scores()).toEqual([{ id: "conn1", name: "Ann", score: 4, active: false, isMe: true }]);
+            expect(chrome.rules()).not.toBeNull();
+            expect(chrome.autoEndRound()).toBeTrue();
+        });
+
+        it("leaves title, clock, countdown and host controls to the room", () => {
             component.isHost = true;
             fixture.detectChanges();
+            const el: HTMLElement = fixture.nativeElement;
+            for (const sel of [".babble-header",".babble-mobile-header",".timer-card",".countdown-overlay","app-end-round-button",".results-footer"]) expect(el.querySelector(sel)).withContext(sel).toBeNull();
         });
 
-        it('should call pauseGame when handlePause is called', () => {
-            component.handlePause();
-            expect(mockSignalRService.pauseGame).toHaveBeenCalled();
-        });
-
-        it('should call resumeGame when handleResume is called', () => {
-            component.handleResume();
-            expect(mockSignalRService.resumeGame).toHaveBeenCalled();
-        });
-
-        it('should call endRound when handleEndRound is called', () => {
-            component.handleEndRound();
-            expect(mockSignalRService.endRound).toHaveBeenCalled();
-            expect(component.isEnding).toBeTrue();
-        });
-
-        it('should call nextRound when handleNextRound is called', () => {
-            component.handleNextRound();
-            expect(mockSignalRService.nextRound).toHaveBeenCalled();
-        });
+        it("never ends the round itself when the clock runs out", fakeAsync(() => {
+            component.isHost = true;
+            component.room = createMockRoom({ gameType: "Babble", state: "Playing", roundEndTime: new Date(Date.now() - 1000).toISOString(), gameData: { grid: "ABCDEFGHIJKLMNOP" } });
+            fixture.componentRef.setInput("room", component.room);
+            fixture.detectChanges();
+            tick(2000);
+            expect(mockSignalRService.endRound).not.toHaveBeenCalled();
+            discardPeriodicTasks();
+        }));
     });
 
     describe('Results View', () => {

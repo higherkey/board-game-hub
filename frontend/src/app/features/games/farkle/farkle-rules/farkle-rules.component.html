@@ -1,0 +1,15 @@
+<div class="farkle-rules">
+    <ul class="farkle-rules-steps">
+        <li>Roll, then keep at least one scoring die.</li>
+        <li>Roll the rest to push your luck, or bank your turn score.</li>
+        <li>A roll with nothing to keep is a Farkle: the turn scores 0.</li>
+        <li>Kept all six? Roll all six again.</li>
+        <li>Your first bank needs 500 or more. First past 10,000 gives everyone one last turn.</li>
+    </ul>
+    <h3 class="farkle-rules-title">Scoring</h3>
+    <dl class="farkle-rules-scores">
+        @for (row of scoring; track row[0]) {
+            <div class="farkle-rules-row"><dt>{{ row[0] }}</dt><dd>{{ row[1] }}</dd></div>
+        }
+    </dl>
+</div>

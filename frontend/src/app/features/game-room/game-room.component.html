@@ -1,5 +1,22 @@
+@let room = stateService.currentRoom$ | async;
+@let inPlay = !stateService.needsName && !!(stateService.gameStarted$ | async);
+@let amHost = (stateService.isHost$ | async) || false;
 <div class="container-fluid p-0 d-flex flex-column h-100">
-    <!-- 1. HEADER (Top Bar) -->
+    <!-- 1. HEADER: the room header in the lobby; during play every game shares one game bar. -->
+    @if (inPlay) {
+    <app-game-bar
+        [gameName]="getCurrentGameDisplayName(room?.gameType)"
+        [status]="room?.resultPhase === 'GameOver' && !chrome.ended() ? 'Game over' : chrome.status()"
+        [progress]="chrome.progress()"
+        [clock]="clock()"
+        [hasRules]="!!chrome.rules()"
+        (menuOpen)="gameMenu.open()"
+        (rulesOpen)="rulesDrawer.open()">
+        @if (amHost && (stateService.isIntermission$ | async)) {
+        <button barAction type="button" class="btn btn-primary bar-next" (click)="hostNext($event)">{{ hostNextLabel(room) }}</button>
+        }
+    </app-game-bar>
+    } @else {
     <app-room-header
         [isBigScreen]="isBigScreen"
         [roomCode]="roomCode"
@@ -7,15 +24,65 @@
         [gameDisplayName]="getCurrentGameDisplayName($safeNavigationMigration((stateService.currentRoom$ | async)?.gameType))"
         [videoChatReady]="videoChatReady"
         [isVideoActive]="isVideoActive"
-        [gameStarted]="(stateService.gameStarted$ | async) ?? false"
-        [currentRound]="(stateService.currentRoom$ | async)?.roundNumber || 1"
-        [totalRounds]="(stateService.currentRoom$ | async)?.totalRounds || (stateService.currentRoom$ | async)?.settings?.totalRounds || 5"
         [session]="stateService.session$ | async"
-        [showUndoButton]="(stateService.gameStarted$ | async) !== null && (stateService.gameStarted$ | async) !== false && (stateService.currentRoom$ | async)?.gameType !== 'Babble'"
         (leaveRoom)="leaveRoom()"
         (startVideoChat)="videoChat?.joinVideo()"
-        (requestUndo)="requestUndo()"
     ></app-room-header>
+    }
+
+    <!-- The one in-game menu: this game, the room, host controls, leave. -->
+    <app-game-menu #gameMenu
+        [roomCode]="roomCode"
+        [isHost]="amHost"
+        [canUndo]="inPlay && room?.gameType !== 'Babble'"
+        [isMuted]="(soundService.isMuted$ | async) || false"
+        [videoReady]="videoChatReady"
+        [hasRules]="!!chrome.rules()"
+        [scores]="chrome.scores()"
+        (rules)="rulesDrawer.open()"
+        (players)="openPlayers()"
+        (toggleSound)="soundService.toggleMute(); soundService.playClick()"
+        (startVideo)="videoChat?.joinVideo()"
+        (undo)="requestUndo()"
+        (leave)="leaveRoom()">
+        @if (inPlay && amHost) {
+        <div menuHost class="menu-host">
+            @if (isTimedGame && room?.state === 'Playing' && !(stateService.isIntermission$ | async)) {
+            <div class="round-controls">
+                @if (room?.isPaused) {
+                <button type="button" class="btn btn-outline-primary" (click)="resumeRound()">
+                    <i class="bi bi-play-fill" aria-hidden="true"></i> Resume round
+                </button>
+                } @else {
+                <button type="button" class="btn btn-outline-primary" (click)="pauseRound()">
+                    <i class="bi bi-pause-fill" aria-hidden="true"></i> Pause round
+                </button>
+                }
+                <button type="button" class="btn btn-outline-danger" (click)="gameMenu.close(); endRoundEarly($event)">
+                    <i class="bi bi-skip-end-fill" aria-hidden="true"></i> End round
+                </button>
+            </div>
+            }
+            <app-host-settings #menuHostSettings [roomCode]="roomCode" [compactMode]="true"
+                [resultPhase]="room?.resultPhase"
+                [isIntermission]="(stateService.isIntermission$ | async) || false"
+                [currentGameType]="room?.gameType || ''"
+                [players]="(stateService.players$ | async) || []"
+                [currentRound]="room?.roundNumber || 0"
+                [totalRounds]="room?.totalRounds || room?.settings?.totalRounds || 5"
+                [meReady]="(stateService.me$ | async)?.isReady || false" [isHost]="true"
+                [isScreen]="(stateService.me$ | async)?.isScreen || false"
+                [isHostOverride]="room?.isHostOverride || false"
+                (playAgain)="gameMenu.close(); stateService.playAgain($event)"
+                (gameStart)="gameMenu.close(); startGame($event)"
+                (nextRound)="gameMenu.close(); onNextRound($event)" (endGame)="gameMenu.close(); onEndGame($event)" (exitGame)="gameMenu.close(); onExitGame($event)"
+                (toggleReady)="toggleReady($event)">
+            </app-host-settings>
+        </div>
+        }
+    </app-game-menu>
+
+    <app-rules-drawer #rulesDrawer [rules]="chrome.rules()"></app-rules-drawer>
 
     <!-- UNDO TOAST OVERLAY -->
     <app-undo-toast *ngIf="(stateService.currentRoom$ | async)?.currentVote" [vote]="$safeNavigationMigration((stateService.currentRoom$ | async)?.currentVote)"
@@ -45,6 +112,13 @@
             <div class="mt-3">
                 <app-video-chat #videoChat (viewModeChange)="onVideoLayoutChange($event)" (isVideoActiveChange)="isVideoActive = $event"></app-video-chat>
             </div>
+
+            <!-- Phones in play have no tab bar: the game menu opens Players, this goes back. -->
+            @if (inPlay) {
+            <button type="button" class="btn btn-primary d-md-none back-to-game" (click)="setMobileView('game')">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to game
+            </button>
+            }
         </div>
 
         <!-- MAIN GAME STAGE -->
@@ -123,6 +197,13 @@
                                   [ngComponentOutletInputs]="(stateService.gameInputs$ | async) || {}">
                     </ng-container>
 
+                    <!-- Paused and lead-in overlays cover the play surface only, so the game bar and clock stay readable. -->
+                    @if (clock()?.state === 'paused') {
+                    <output class="room-overlay"><span class="room-overlay-big">Paused</span><span>{{ amHost ? 'Resume from the game menu.' : 'The host will resume the round.' }}</span></output>
+                    } @else if (clock()?.state === 'leadIn') {
+                    <output class="room-overlay"><span class="room-overlay-big">{{ clock()?.text }}</span><span>Get ready</span></output>
+                    }
+
                     <!-- Fallback removed: All games should have explicit components now -->
                     <div *ngIf="!(stateService.gameComponent$ | async)"
                         class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
@@ -131,61 +212,12 @@
                     </div>
                 </div>
 
-                <!-- INTERMISSION SETTINGS BAR (Host Only - Desktop) -->
-                <div *ngIf="(stateService.isIntermission$ | async) && (stateService.isHost$ | async)"
-                    class="intermission-bar position-absolute bottom-0 start-0 w-100 p-3 border-top border-secondary d-none d-md-block intermission-bar-style">
-                    <div class="container-fluid d-flex align-items-center justify-content-center">
-                        <app-host-settings [roomCode]="roomCode"
-                                        [resultPhase]="(stateService.currentRoom$ | async)?.resultPhase"
-                                        [isIntermission]="(stateService.isIntermission$ | async) || false"
-                                        (playAgain)="stateService.playAgain($event)" [compactMode]="true"
-                            [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
-                            [currentRound]="(stateService.currentRoom$ | async)?.roundNumber || 0"
-                            [totalRounds]="(stateService.currentRoom$ | async)?.totalRounds || (stateService.currentRoom$ | async)?.settings?.totalRounds || 5"
-                            [players]="(stateService.players$ | async) || []"
-                            (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)">
-                        </app-host-settings>
-                    </div>
-                </div>
-
-                <!-- HOST CONTROLS (Bottom of Game View; on desktop only mid-round, the intermission bar covers between rounds) -->
-                <div class="host-controls-bar" *ngIf="(stateService.isHost$ | async)" [class.d-md-none]="stateService.isIntermission$ | async">
-                     <details class="host-controls">
-                        <summary class="host-controls-summary">
-                            <i class="bi bi-sliders" aria-hidden="true"></i> Host controls
-                        </summary>
-                        <div class="host-controls-panel">
-                            <div>
-                                <!-- Dynamic Host Controls from Active Game -->
-                                <div *ngIf="activeGameComponent?.hostControlsTemplate" class="mb-3 border-bottom pb-3">
-                                    <ng-container *ngTemplateOutlet="activeGameComponent.hostControlsTemplate"></ng-container>
-                                </div>
-
-                                <app-host-settings [roomCode]="roomCode"
-                                        [resultPhase]="(stateService.currentRoom$ | async)?.resultPhase"
-                                        [isIntermission]="(stateService.isIntermission$ | async) || false"
-                                        (playAgain)="stateService.playAgain($event)" [compactMode]="true"
-                                    [currentGameType]="(stateService.currentRoom$ | async)?.gameType || ''"
-                                    [players]="(stateService.players$ | async) || []"
-                                    [currentRound]="(stateService.currentRoom$ | async)?.roundNumber || 0"
-                                    [totalRounds]="(stateService.currentRoom$ | async)?.totalRounds || (stateService.currentRoom$ | async)?.settings?.totalRounds || 5"
-                                    [meReady]="(stateService.me$ | async)?.isReady || false" [isHost]="(stateService.isHost$ | async) || false"
-                                    [isScreen]="(stateService.me$ | async)?.isScreen || false"
-                                    [isHostOverride]="(stateService.currentRoom$ | async)?.isHostOverride || false"
-                                    (gameStart)="startGame($event)"
-                                    (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
-                                    (toggleReady)="toggleReady($event)">
-                                </app-host-settings>
-                            </div>
-                        </div>
-                     </details>
-                </div>
             </div>
         </div>
     </div>
 
     <!-- 3. MOBILE TAB BAR (Small Screens Only) -->
-    <app-mobile-tab-bar *ngIf="!stateService.needsName" [activeTab]="mobileView" [isHost]="(stateService.isHost$ | async) || false"
+    <app-mobile-tab-bar *ngIf="!stateService.needsName && !inPlay" [activeTab]="mobileView" [isHost]="(stateService.isHost$ | async) || false"
         (tabChange)="setMobileView($event)">
     </app-mobile-tab-bar>
 </div>

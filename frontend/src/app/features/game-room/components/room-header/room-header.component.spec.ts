@@ -56,12 +56,6 @@ describe('RoomHeaderComponent', () => {
     expect(component.startVideoChat.emit).toHaveBeenCalled();
   });
 
-  it('should emit requestUndo when requestUndo emission is triggered', () => {
-    spyOn(component.requestUndo, 'emit');
-    component.requestUndo.emit();
-    expect(component.requestUndo.emit).toHaveBeenCalled();
-  });
-
   it('should apply the .game-room-header class to the root header element to ensure styles are applied', () => {
     const headerElement = fixture.nativeElement.querySelector('header');
     expect(headerElement).toBeTruthy();

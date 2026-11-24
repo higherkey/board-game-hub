@@ -1,0 +1,13 @@
+<dialog #dialog class="rules" aria-labelledby="rules-title" (keydown.escape)="close()" (click)="backdrop($event)">
+    <header class="rules-head">
+        <h2 class="rules-title" id="rules-title">How to play</h2>
+        <button type="button" class="rules-close" aria-label="Close rules" (click)="close()">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    </header>
+    <div class="rules-body">
+        @if (rules) {
+            <ng-container [ngTemplateOutlet]="rules"></ng-container>
+        }
+    </div>
+</dialog>

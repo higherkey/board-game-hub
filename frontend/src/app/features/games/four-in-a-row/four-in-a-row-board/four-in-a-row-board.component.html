@@ -1,9 +1,4 @@
 <div class="board-shell">
-    <div class="drop-controls" *ngIf="interactive" aria-label="Choose a column">
-        <button type="button" *ngFor="let column of columns" (click)="columnDrop.emit(column)"
-            [disabled]="room?.gameData?.grid?.[column]?.[0] !== 0"
-            [attr.aria-label]="'Drop in column ' + (column + 1)">{{ column + 1 }} ↓</button>
-    </div>
     <div class="board" role="table" aria-label="Four in a Row board">
         <div class="board-row" role="row" *ngFor="let row of rows">
             <div class="cell" role="cell" *ngFor="let column of columns" [attr.aria-label]="cellLabel(column, row)"
@@ -15,5 +10,10 @@
             </div>
         </div>
     </div>
-    <p class="board-caption">7 columns · 6 rows · Connect four to win</p>
+    <!-- Column buttons sit under their columns, in thumb reach. -->
+    <div class="drop-controls" *ngIf="interactive" aria-label="Choose a column">
+        <button type="button" *ngFor="let column of columns" (click)="columnDrop.emit(column)"
+            [disabled]="room?.gameData?.grid?.[column]?.[0] !== 0"
+            [attr.aria-label]="'Drop in column ' + (column + 1)">{{ column + 1 }} <i class="bi bi-arrow-up" aria-hidden="true"></i></button>
+    </div>
 </div>

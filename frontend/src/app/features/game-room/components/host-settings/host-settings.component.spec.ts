@@ -217,4 +217,62 @@ describe('HostSettingsComponent', () => {
         expect(component.toggleReady.emit).not.toHaveBeenCalled();
         expect(toast.showWarning).toHaveBeenCalledWith('Please select a game first!');
     });
+
+    describe("start gate", () => {
+        const hands = (n: number) => Array.from({ length: n }, (_, i) =>
+            ({ connectionId: "p" + i, name: "P" + i, score: 0, isHost: false, isReady: true, isScreen: false }));
+        const tv = { connectionId: "tv", name: "TV", score: 0, isHost: true, isReady: true, isScreen: true };
+        beforeEach(() => {
+            component.availableGames = [{ id: "FourInARow", name: "Four in a Row", minPlayers: 2, maxPlayers: 2, timerType: 0 }] as any;
+            component.selectedGameType = "FourInARow";
+        });
+
+        it("explains when too few players have joined, counting Hands only", () => {
+            component.players = [tv, ...hands(1)] as any;
+            expect(component.startBlocker).toBe("Four in a Row needs 2 players. 1 has joined.");
+        });
+
+        it("explains when too many players have joined", () => {
+            component.players = hands(3) as any;
+            expect(component.startBlocker).toBe("Four in a Row takes at most 2 players. 3 have joined.");
+        });
+
+        it("allows a start inside the range, and never blocks the next round", () => {
+            component.players = hands(2) as any;
+            expect(component.startBlocker).toBeNull();
+            component.players = hands(1) as any;
+            component.isIntermission = true;
+            expect(component.startBlocker).toBeNull();
+        });
+
+        it("says player, not players, for a one-player minimum", () => {
+            component.availableGames = [{ id: "Babble", name: "Babble", minPlayers: 1, maxPlayers: 8, timerType: 2 }] as any;
+            component.selectedGameType = "Babble";
+            component.players = [tv] as any;
+            expect(component.startBlocker).toBe("Babble needs at least 1 player. 0 have joined.");
+        });
+
+        it("labels the compact timer and rounds fields in words, with no inline styles", () => {
+            component.availableGames = [{ id: "Babble", name: "Babble", minPlayers: 1, maxPlayers: 8, timerType: 2 }] as any;
+            component.selectedGameType = "Babble";
+            component.compactMode = true;
+            component.isIntermission = true;
+            fixture.detectChanges();
+            const el: HTMLElement = fixture.nativeElement;
+            expect(el.querySelector("label[for=compact-timer]")!.textContent).toContain("Seconds");
+            expect(el.querySelector("label[for=compact-rounds]")!.textContent).toContain("Rounds");
+            expect(el.querySelector("#compact-timer")).not.toBeNull();
+            expect(el.querySelector("#compact-rounds")).not.toBeNull();
+            expect(el.querySelectorAll(".compact-row [style]")).toHaveSize(0);
+        });
+
+        it("disables Start and shows the reason beside it", () => {
+            component.players = hands(1) as any;
+            fixture.detectChanges();
+            const start = fixture.nativeElement.querySelector(".btn-start") as HTMLButtonElement;
+            expect(start.disabled).toBeTrue();
+            expect(start.getAttribute("aria-describedby")).toBe("start-blocker");
+            expect(fixture.nativeElement.querySelector("#start-blocker").textContent).toContain("needs 2 players");
+        });
+    });
 });

@@ -22,7 +22,7 @@ Board Game Hub exists to **connect people and make them feel as close as possibl
 
 ## UI shell selection
 
-- Games may register a **Table shell** and a **Hand shell** in `frontend/src/app/features/games/game.registry.ts` (`hostComponent` = Table, `playerComponent` = Hand when both are set).
+- Games may register a **Table shell** and a **Hand shell** in `frontend/src/app/features/games/game.registry.ts` (`tableComponent` = Table, `handComponent` = Hand when both are set).
 - `GameRoomComponent` chooses the shell from **`isScreen`**, not from host vs non-host. See `docs/platform-table-hand-plan.md`.
 
 ## Related files

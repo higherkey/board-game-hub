@@ -33,12 +33,6 @@
             <i class="bi bi-camera-video"></i>
         </button>
 
-        <!-- Undo Button -->
-        <button type="button" class="btn btn-pink btn-sm"
-            *ngIf="showUndoButton" (click)="requestUndo.emit()"
-            title="Request Undo" aria-label="Request Undo">
-            <i class="bi bi-arrow-counterclockwise"></i>
-        </button>
     </div>
 
     <!-- Center: Room Info & Game Title Badge -->
@@ -70,11 +64,6 @@
             <i class="bi bi-camera-video"></i>
         </button>
 
-        <!-- Round Indicator (Middle) -->
-        <div *ngIf="gameStarted"
-            class="header-round-badge ms-3 d-none d-md-block">
-            ROUND {{ currentRound }} / {{ totalRounds }}
-        </div>
 
         <!-- Profile (Desktop Only) -->
         <div class="d-none d-md-flex align-items-center header-profile">

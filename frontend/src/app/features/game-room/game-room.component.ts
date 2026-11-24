@@ -1,11 +1,11 @@
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy, NgZone, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { firstValueFrom, take } from 'rxjs';
-import { GameDataService, GameDefinition } from '../../services/game-data.service';
-import { GameSettings, Player } from '../../services/signalr.service';
+import { distinctUntilChanged, firstValueFrom, map, take } from 'rxjs';
+import { GameDataService, GameDefinition, TimerType } from '../../services/game-data.service';
+import { GameSettings, Player, Room } from '../../services/signalr.service';
 import { AuthService } from '../../services/auth.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { GameRoomTab, MobileTabBarComponent } from './components/mobile-tab-bar/mobile-tab-bar.component';
@@ -19,6 +19,12 @@ import { RoomSidebarComponent } from './components/room-sidebar/room-sidebar.com
 import { RoomEntryComponent } from './components/room-entry/room-entry.component';
 import { GameRoomStateService } from './services/game-room-state.service';
 import { DeviceService } from '../../services/device.service';
+import { SoundService } from '../../core/services/sound.service';
+import { RoundClock, roundClock } from '../../shared/round-timing';
+import { GameChromeService } from './services/game-chrome.service';
+import { GameBarComponent } from './components/game-bar/game-bar.component';
+import { GameMenuComponent } from './components/game-menu/game-menu.component';
+import { RulesDrawerComponent } from '../games/shared/components/rules-drawer/rules-drawer.component';
 
 @Component({
   selector: 'app-game-room',
@@ -35,8 +41,12 @@ import { DeviceService } from '../../services/device.service';
     MobileTabBarComponent,
     RoomHeaderComponent,
     RoomSidebarComponent,
-    RoomEntryComponent
+    RoomEntryComponent,
+    GameBarComponent,
+    GameMenuComponent,
+    RulesDrawerComponent
   ],
+  providers: [GameChromeService],
   templateUrl: './game-room.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./game-room.component.scss']
@@ -50,7 +60,18 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   
   // Creation options
   availableGames: GameDefinition[] = [];
-  public activeGameComponent: any = null; // Reference to the active game instance
+
+  /** What the active game publishes to the game bar, menu and rules (one instance per room). */
+  readonly chrome = inject(GameChromeService);
+  readonly soundService = inject(SoundService);
+  readonly clock = signal<RoundClock | null>(null);
+  private readonly zone = inject(NgZone);
+  private room: Room | null = null;
+  private isHost = false;
+  /** The round end time the host already acted on, so the end call goes out once per round (round numbers repeat across games). */
+  private autoEndedFor: string | null = null;
+  /** The host settings inside the game menu: the bar's next step runs through them so menu edits apply. */
+  @ViewChild('menuHostSettings') private readonly menuHostSettings?: HostSettingsComponent;
 
   // Mobile views: 'game' | 'players' | 'host'
   mobileView: GameRoomTab = 'game';
@@ -217,6 +238,25 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     });
     this.gameDataService.refreshGames();
 
+    this.stateService.currentRoom$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(room => {
+      this.room = room;
+      this.tick();
+    });
+    this.stateService.currentRoom$.pipe(
+      map(room => room?.gameType),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => this.chrome.reset());
+    this.stateService.isHost$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(isHost => this.isHost = isHost);
+    // A Table is the shared screen: give the game the full width once play starts.
+    this.stateService.gameStarted$.pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)).subscribe(started => {
+      if (started && this.stateService.isScreen) this.isSidebarCollapsed = true;
+      if (!started) this.mobileView = 'game';
+    });
+    // Outside Angular: a tick only redraws the page when the clock it shows changes.
+    const clockTimer = this.zone.runOutsideAngular(() => setInterval(() => this.tick(), 500));
+    this.destroyRef.onDestroy(() => clearInterval(clockTimer));
+
     const isMobile = this.deviceService.isMobileValue;
     const savedRole = typeof localStorage !== 'undefined' ? localStorage.getItem('bgh_preferred_role') : null;
     this.stateService.isScreen = savedRole ? savedRole === 'table' : !isMobile;
@@ -304,14 +344,77 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     }
   }
 
+  /** Timed games (timer required or optional) get pause, end round and auto-end. */
+  get isTimedGame(): boolean {
+    const type = this.room?.gameType?.toLowerCase();
+    const game = this.availableGames.find(g => g.id.toLowerCase() === type);
+    return !!game && game.timerType !== TimerType.NotApplicable;
+  }
+
+  pauseRound() {
+    void this.stateService.pauseRound();
+  }
+
+  resumeRound() {
+    void this.stateService.resumeRound();
+  }
+
+  async endRoundEarly(event?: MouseEvent) {
+    const confirmed = await this.confirmService.confirm({
+      title: 'End this round now?',
+      message: 'Play stops and everyone sees this round\'s results.',
+      confirmLabel: 'END ROUND',
+      cancelLabel: 'KEEP PLAYING',
+      confirmButtonClass: 'btn-danger'
+    }, event);
+    if (confirmed) await this.stateService.endRound();
+  }
+
+  /** Between rounds the host's next step sits on the game bar, not two taps deep in the menu. */
+  hostNextLabel(room: Room | null): string {
+    if (room?.resultPhase === 'GameOver') return 'Play again';
+    return this.isLegacyFinish(room) ? 'Finish game' : 'Next round';
+  }
+
+  hostNext(event?: MouseEvent) {
+    this.menuHostSettings?.startGame(event);
+  }
+
+  /** Games that predate result phases finish after their last round. */
+  private isLegacyFinish(room: Room | null): boolean {
+    return room?.resultPhase == null && (room?.roundNumber ?? 0) >= (room?.totalRounds ?? room?.settings?.totalRounds ?? 5);
+  }
+
+  /** One clock tick: refresh the shared clock, and on the host end a timed-out round once. */
+  tick(now = Date.now()) {
+    // Untimed games still get a round end time from the server; it means nothing to players.
+    if (!this.isTimedGame) {
+      if (this.clock() !== null) this.zone.run(() => this.clock.set(null));
+      return;
+    }
+    const clock = roundClock(this.room, now);
+    const shown = this.clock();
+    if (shown?.text !== clock.text || shown?.state !== clock.state || shown?.urgent !== clock.urgent) this.zone.run(() => this.clock.set(clock));
+    const room = this.room;
+    const roundEnd = room?.roundEndTime ?? null;
+    if (clock.state === 'ended' && this.isHost && this.chrome.autoEndRound() && roundEnd && this.autoEndedFor !== roundEnd) {
+      this.autoEndedFor = roundEnd;
+      this.zone.run(() => void this.stateService.endRound().then(ended => {
+        if (!ended && this.autoEndedFor === roundEnd) this.autoEndedFor = null;
+      }));
+    }
+  }
+
+  /** Players live in the sidebar: a view of its own on phones, an expanded column on desktop. */
+  openPlayers() {
+    if (globalThis.innerWidth < 768) this.mobileView = 'players';
+    else this.isSidebarCollapsed = false;
+  }
+
   async leaveRoom() {
     await this.stateService.leaveRoom(this.roomCode);
   }
 
-
-  onGameComponentActivate(component: any) {
-    this.activeGameComponent = component;
-  }
 
 
   onSetHostPlayer(targetId: string) {

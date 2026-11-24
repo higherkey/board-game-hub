@@ -1,0 +1,35 @@
+/* Inherits colour from wherever it sits: the light rules drawer or the dark Farkle Table. */
+.farkle-rules {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.farkle-rules-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: 0;
+    padding-inline-start: 1.1rem;
+}
+
+.farkle-rules-title {
+    margin: var(--space-xs) 0 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--game-accent, var(--primary));
+}
+
+.farkle-rules-scores { margin: 0; }
+
+.farkle-rules-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding-block: 0.3rem;
+    border-block-end: 2px solid color-mix(in oklch, currentColor 14%, transparent);
+
+    dt { font-weight: 600; }
+    dd { margin: 0; font-family: 'Outfit', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; }
+}
