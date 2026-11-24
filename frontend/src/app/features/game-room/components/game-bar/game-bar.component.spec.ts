@@ -16,8 +16,7 @@ describe('GameBarComponent', () => {
     });
 
     it('announces the status politely, with the game name', () => {
-        const status = el.querySelector('[role=status]')!;
-        expect(status.getAttribute('aria-live')).toBe('polite');
+        const status = el.querySelector('output')!;
         expect(status.textContent).toContain('Your turn');
         expect(el.textContent).toContain('Farkle');
     });

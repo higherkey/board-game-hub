@@ -71,7 +71,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   /** The round end time the host already acted on, so the end call goes out once per round (round numbers repeat across games). */
   private autoEndedFor: string | null = null;
   /** The host settings inside the game menu: the bar's next step runs through them so menu edits apply. */
-  @ViewChild('menuHostSettings') private menuHostSettings?: HostSettingsComponent;
+  @ViewChild('menuHostSettings') private readonly menuHostSettings?: HostSettingsComponent;
 
   // Mobile views: 'game' | 'players' | 'host'
   mobileView: GameRoomTab = 'game';

@@ -87,7 +87,7 @@ describe('FarkleHandComponent', () => {
     const chrome = TestBed.inject(GameChromeService);
     expect(chrome.status()).toBe("Your turn");
     expect(chrome.progress()).toBe("Turn score 250");
-    expect(chrome.scores()!.length).toBe(1);
+    expect(chrome.scores()!).toHaveSize(1);
     expect(chrome.rules()).not.toBeNull();
     expect(chrome.ended()).toBeFalse();
     fixture.componentRef.setInput("room", { ...component.room, gameData: { ...component.room.gameData, phase: FarklePhase.GameOver, winningPlayerId: "p1" } });

@@ -263,7 +263,7 @@ describe('HostSettingsComponent', () => {
             expect(el.querySelector("label[for=compact-rounds]")!.textContent).toContain("Rounds");
             expect(el.querySelector("#compact-timer")).not.toBeNull();
             expect(el.querySelector("#compact-rounds")).not.toBeNull();
-            expect(el.querySelectorAll(".compact-row [style]").length).toBe(0);
+            expect(el.querySelectorAll(".compact-row [style]")).toHaveSize(0);
         });
 
         it("disables Start and shows the reason beside it", () => {

@@ -403,7 +403,7 @@ describe('GameRoomComponent', () => {
 
     it('keeps one set of host controls, inside the game menu', () => {
       play({});
-      expect(el().querySelectorAll('app-host-settings').length).toBe(1);
+      expect(el().querySelectorAll('app-host-settings')).toHaveSize(1);
       expect(el().querySelector('app-game-menu app-host-settings')).not.toBeNull();
     });
 
@@ -412,7 +412,7 @@ describe('GameRoomComponent', () => {
       mockStateService.gameInputs$.next({ room: { code: 'ABCD' } });
       play({});
       fixture.detectChanges();
-      expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Your turn');
+      expect(el().querySelector('app-game-bar output')!.textContent).toContain('Your turn');
     });
 
     it('says Game over when the host ends a game that has not ended by its own rules', () => {
@@ -420,11 +420,11 @@ describe('GameRoomComponent', () => {
       play({ state: 'Finished', resultPhase: 'GameOver' });
       component.chrome.publish({ status: 'Guesty’s turn' });
       fixture.detectChanges();
-      expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Game over');
+      expect(el().querySelector('app-game-bar output')!.textContent).toContain('Game over');
 
       component.chrome.publish({ status: 'Ann wins', ended: true });
       fixture.detectChanges();
-      expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Ann wins');
+      expect(el().querySelector('app-game-bar output')!.textContent).toContain('Ann wins');
     });
 
     it('clears the previous game from the chrome when the game changes', () => {

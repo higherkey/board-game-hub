@@ -1,4 +1,4 @@
-<dialog #dialog class="menu" aria-label="Game menu" (cancel)="$event.preventDefault(); close()" (click)="backdrop($event)">
+<dialog #dialog class="menu" aria-label="Game menu" (cancel)="$event.preventDefault(); close()" (keydown.escape)="close()" (click)="backdrop($event)">
     <header class="menu-head">
         <span class="menu-room">Room <strong class="menu-code">{{ roomCode }}</strong></span>
         <button type="button" class="menu-close" aria-label="Close menu" (click)="close()">

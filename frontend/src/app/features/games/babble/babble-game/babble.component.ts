@@ -172,14 +172,14 @@ export class BabbleComponent implements OnInit, OnChanges, OnDestroy {
     document.addEventListener('mouseup', this.onMouseUp);
   }
 
-  private onMouseMove = (event: MouseEvent) => {
+  private readonly onMouseMove = (event: MouseEvent) => {
     if (!this.isResizing) return;
     const newWidth = window.innerWidth - event.clientX;
     // Bounded between 300px and 70% of screen width
     this.sidebarWidth = Math.max(300, Math.min(newWidth, window.innerWidth * 0.7));
   };
 
-  private onMouseUp = () => {
+  private readonly onMouseUp = () => {
     this.isResizing = false;
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);

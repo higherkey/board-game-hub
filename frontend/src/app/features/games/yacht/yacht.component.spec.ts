@@ -129,7 +129,7 @@ describe('YachtComponent', () => {
     fixture.componentRef.setInput('room', { ...component.room, gameData: { ...state } });
     fixture.detectChanges();
     expect(TestBed.inject(GameChromeService).status()).toBe('Isaac and Winter tie');
-    expect(fixture.nativeElement.querySelectorAll('thead th.is-winner').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('thead th.is-winner')).toHaveSize(2);
     expect(fixture.nativeElement.querySelector('.category-picker')).toBeNull();
   });
 

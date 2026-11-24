@@ -94,7 +94,7 @@ describe('GameMenuComponent', () => {
 
     it('shows the room code and has no nested menus', () => {
         expect(dialog().textContent).toContain('ABCD');
-        expect(el.querySelectorAll('dialog [role=menu]').length).toBe(0);
-        expect(el.querySelectorAll('dialog details').length).toBe(0);
+        expect(el.querySelectorAll('dialog [role=menu]')).toHaveSize(0);
+        expect(el.querySelectorAll('dialog details')).toHaveSize(0);
     });
 });

@@ -4,7 +4,7 @@
     </button>
     <div class="game-bar-main">
         <span class="game-bar-name">{{ gameName }}</span>
-        <span class="game-bar-status" role="status" aria-live="polite">{{ status }}</span>
+        <output class="game-bar-status">{{ status }}</output>
     </div>
     @if (progress) {
         <span class="game-bar-progress">{{ progress }}</span>

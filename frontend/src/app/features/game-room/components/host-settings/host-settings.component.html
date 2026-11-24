@@ -222,7 +222,7 @@
                 <i class="bi" [class.bi-play-fill]="!isIntermission" [class.bi-fast-forward-fill]="isIntermission"></i>
                 {{ startLabel }}
             </button>
-            <p *ngIf="startBlocker" id="start-blocker" class="start-blocker" role="status">{{ startBlocker }}</p>
+            <output *ngIf="startBlocker" id="start-blocker" class="start-blocker">{{ startBlocker }}</output>
             <button *ngIf="isGameOver || (resultPhase == null && isIntermission)" type="button" class="btn btn-outline-danger w-100 fw-bold py-2"
                 (click)="emitExitGame($event)">
                 <i class="bi bi-stop-circle-fill me-1"></i> END SESSION

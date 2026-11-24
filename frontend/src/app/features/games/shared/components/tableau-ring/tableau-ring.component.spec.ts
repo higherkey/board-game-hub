@@ -17,7 +17,7 @@ describe('TableauRingComponent', () => {
 
     it('lists each player with a score, marking the active player and me', () => {
         const rows = el.querySelectorAll('li');
-        expect(rows.length).toBe(2);
+        expect(rows).toHaveSize(2);
         expect(rows[0].textContent).toContain('Ann');
         expect(rows[0].textContent).toContain('(you)');
         expect(rows[0].textContent).toContain('120');
