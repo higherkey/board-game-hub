@@ -81,6 +81,7 @@ export class YachtComponent implements OnInit, OnChanges {
     this.chrome.publish({
       status: this.status,
       progress: game && game.phase !== 'GameOver' ? `Turn ${game.turnNumber} of 13` : '',
+      ended: game?.phase === 'GameOver',
       scores: game ? game.playerOrder.map(id => ({ id, name: game.scorecards[id].playerName, score: game.scorecards[id].total, active: game.phase === 'Playing' && id === game.activePlayerId, isMe: id === this.myConnectionId })) : null
     });
     if (!this.canAct || !this.isAvailableCategory(this.pendingCategory ?? '')) {

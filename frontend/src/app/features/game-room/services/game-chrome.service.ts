@@ -13,11 +13,14 @@ export class GameChromeService {
     readonly progress = signal('');
     readonly rules = signal<TemplateRef<unknown> | null>(null);
     readonly scores = signal<TableauEntry[] | null>(null);
+    /** True once the game has ended by its own rules, so its status (a winner) outranks the room's generic "Game over". */
+    readonly ended = signal(false);
 
-    publish(p: { status?: string; progress?: string; scores?: TableauEntry[] | null }): void {
+    publish(p: { status?: string; progress?: string; scores?: TableauEntry[] | null; ended?: boolean }): void {
         if (p.status !== undefined) this.status.set(p.status);
         if (p.progress !== undefined) this.progress.set(p.progress);
         if (p.scores !== undefined) this.scores.set(p.scores);
+        if (p.ended !== undefined) this.ended.set(p.ended);
     }
 
     reset(): void {
@@ -25,6 +28,7 @@ export class GameChromeService {
         this.progress.set('');
         this.rules.set(null);
         this.scores.set(null);
+        this.ended.set(false);
     }
 }
 

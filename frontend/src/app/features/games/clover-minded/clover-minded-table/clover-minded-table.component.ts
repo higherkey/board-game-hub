@@ -80,7 +80,7 @@ export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy 
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        this.chrome.publish({ status: cloverStatus(this.state, this.myConnectionId, true, id => this.getPlayerName(id)), progress: cloverProgress(this.state), scores: null });
+        this.chrome.publish({ status: cloverStatus(this.state, this.myConnectionId, true, id => this.getPlayerName(id)), progress: cloverProgress(this.state), scores: null, ended: this.state?.phase === CloverMindedPhase.GameOver });
         if (changes['room'] && this.state) {
             const s = this.state;
             

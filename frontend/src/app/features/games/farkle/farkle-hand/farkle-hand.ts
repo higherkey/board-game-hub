@@ -83,7 +83,8 @@ export class FarkleHandComponent implements OnInit, OnChanges {
     this.chrome.publish({
       status: farkleStatus(state, this.myConnectionId),
       progress: state && state.phase !== FarklePhase.GameOver && state.currentTurnScore > 0 ? `Turn score ${state.currentTurnScore}` : '',
-      scores: this.entries
+      scores: this.entries,
+      ended: state?.phase === FarklePhase.GameOver
     });
   }
 

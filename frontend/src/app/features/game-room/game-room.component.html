@@ -6,7 +6,7 @@
     @if (inPlay) {
     <app-game-bar
         [gameName]="getCurrentGameDisplayName(room?.gameType)"
-        [status]="chrome.status()"
+        [status]="room?.resultPhase === 'GameOver' && !chrome.ended() ? 'Game over' : chrome.status()"
         [progress]="chrome.progress()"
         [clock]="clock()"
         [hasRules]="!!chrome.rules()"

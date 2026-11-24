@@ -53,7 +53,7 @@ export class FourInARowGameComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(): void {
-    this.chrome.publish({ status: this.status, progress: '', scores: this.entries });
+    this.chrome.publish({ status: this.status, progress: '', scores: this.entries, ended: this.room?.gameData?.phase === 'GameOver' });
   }
 
   drop(column: number): void {

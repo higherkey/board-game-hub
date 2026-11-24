@@ -13,14 +13,24 @@ describe('GameChromeService', () => {
         expect(chrome.progress()).toBe('Turn 1 of 13');
     });
 
-    it('resets status, progress, rules and scores', () => {
-        chrome.publish({ status: 'A', progress: 'B', scores: [{ id: '1', name: 'X', score: 1 }] });
+    it('remembers whether the game itself has ended', () => {
+        chrome.publish({ status: 'Ann wins', ended: true });
+        expect(chrome.ended()).toBeTrue();
+        chrome.publish({ status: 'Bo’s turn' });
+        expect(chrome.ended()).toBeTrue();
+        chrome.publish({ ended: false });
+        expect(chrome.ended()).toBeFalse();
+    });
+
+    it('resets status, progress, rules, scores and the end flag', () => {
+        chrome.publish({ status: 'A', progress: 'B', scores: [{ id: '1', name: 'X', score: 1 }], ended: true });
         chrome.rules.set({} as TemplateRef<unknown>);
         chrome.reset();
         expect(chrome.status()).toBe('');
         expect(chrome.progress()).toBe('');
         expect(chrome.rules()).toBeNull();
         expect(chrome.scores()).toBeNull();
+        expect(chrome.ended()).toBeFalse();
     });
 });
 

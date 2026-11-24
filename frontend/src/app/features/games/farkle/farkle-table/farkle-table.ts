@@ -50,7 +50,8 @@ export class FarkleTableComponent implements OnInit, OnChanges {
     this.chrome.publish({
       status: this.status,
       progress: state && state.phase !== 'GameOver' && state.currentTurnScore > 0 ? `Turn score ${state.currentTurnScore}` : '',
-      scores: this.entries
+      scores: this.entries,
+      ended: state?.phase === 'GameOver'
     });
   }
 

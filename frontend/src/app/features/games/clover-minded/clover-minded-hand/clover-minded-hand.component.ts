@@ -77,7 +77,7 @@ export class CloverMindedHandComponent implements OnInit, OnChanges, OnDestroy {
     ngOnChanges(changes: SimpleChanges): void {
         const s = this.state;
         const name = (id: string) => this.room?.players?.find(p => p.connectionId === id)?.name ?? 'Someone';
-        this.chrome.publish({ status: cloverStatus(s, this.myConnectionId, false, name), progress: cloverProgress(s), scores: null });
+        this.chrome.publish({ status: cloverStatus(s, this.myConnectionId, false, name), progress: cloverProgress(s), scores: null, ended: s?.phase === CloverMindedPhase.GameOver });
         if (!s) return;
 
         // Reset draft if not submitted

@@ -410,6 +410,18 @@ describe('GameRoomComponent', () => {
       expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Your turn');
     });
 
+    it('says Game over when the host ends a game that has not ended by its own rules', () => {
+      mockStateService.isIntermission$.next(true);
+      play({ state: 'Finished', resultPhase: 'GameOver' });
+      component.chrome.publish({ status: 'Guesty’s turn' });
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Game over');
+
+      component.chrome.publish({ status: 'Ann wins', ended: true });
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Ann wins');
+    });
+
     it('clears the previous game from the chrome when the game changes', () => {
       play({});
       component.chrome.publish({ status: 'Guesty’s turn' });
