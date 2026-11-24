@@ -26,7 +26,7 @@
             <li><button type="button" class="menu-item" (click)="pick(players)"><i class="bi bi-people" aria-hidden="true"></i>Players</button></li>
             <li><button type="button" class="menu-item" (click)="copyInvite()"><i class="bi bi-link-45deg" aria-hidden="true"></i>{{ copied() ? 'Invite link copied' : 'Copy invite link' }}</button></li>
             <li>
-                <button type="button" class="menu-item" [attr.aria-pressed]="!isMuted" (click)="toggleSound.emit()">
+                <button type="button" class="menu-item" (click)="toggleSound.emit()">
                     <i class="bi" [class.bi-volume-up]="!isMuted" [class.bi-volume-mute]="isMuted" aria-hidden="true"></i>Sound {{ isMuted ? 'off' : 'on' }}
                 </button>
             </li>

@@ -229,6 +229,7 @@ describe('BabbleHandComponent', () => {
           expect(chrome.progress()).toBe("Round 2 of 5");
           expect(chrome.scores()).toEqual([{ id: "conn1", name: "Ann", score: 4, active: false, isMe: true }]);
           expect(chrome.rules()).not.toBeNull();
+          expect(chrome.autoEndRound()).toBeTrue();
       });
 
       it("leaves title, clock, countdown and host controls to the room", () => {

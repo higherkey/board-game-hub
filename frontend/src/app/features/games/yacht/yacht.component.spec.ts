@@ -114,6 +114,15 @@ describe('YachtComponent', () => {
     expect(component.busy).toBeFalse();
   });
 
+  it('puts the score confirmation in thumb reach, in place of Roll', () => {
+    component.chooseCategory('Ones');
+    fixture.detectChanges();
+    const dock = fixture.nativeElement.querySelector('app-action-dock');
+    expect(dock.textContent).toContain('Score & end turn');
+    expect(dock.querySelector('.roll-button.roll')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.category-picker .score-confirm')).toBeNull();
+  });
+
   it('names every tied winner in the game bar and marks their columns', () => {
     state.phase = 'GameOver';
     state.winnerIds = ['p1', 'p2'];

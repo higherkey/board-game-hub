@@ -123,19 +123,7 @@ button {
   &:disabled { opacity: 0.6; }
 }
 
-.score-confirm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-block-start: var(--space-sm);
-  padding: var(--space-sm);
-  border: 2px solid var(--game-sea);
-  border-radius: var(--radius-sm);
-  background: var(--game-muted);
-
-  .score-message { flex-basis: 100%; }
-}
+.score-message { flex-basis: 100%; font-weight: 600; }
 
 .cancel-button {
   border: 2px solid var(--game-sea);

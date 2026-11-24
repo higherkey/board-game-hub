@@ -275,12 +275,28 @@
     min-width: 200px;
 }
 
-.w-50px {
-    width: 50px;
+/* Compact settings (the game menu's Host section): fields labelled in words, 44px controls. */
+.compact-field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
 }
 
-.border-none {
-    border: none;
+.compact-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.compact-input {
+    inline-size: 4.75rem;
+    min-block-size: 44px;
+    text-align: center;
+}
+
+.compact-start,
+.compact-end {
+    min-block-size: 44px;
 }
 
 .qr-img {

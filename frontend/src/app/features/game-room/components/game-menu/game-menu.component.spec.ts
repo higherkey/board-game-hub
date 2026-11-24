@@ -68,6 +68,12 @@ describe('GameMenuComponent', () => {
         expect([...el.querySelectorAll('dialog h2')].map(h => h.textContent!.trim())).not.toContain('This game');
     });
 
+    it('states sound once, in the label, not also as a toggle state', () => {
+        const sound = button('Sound')!;
+        expect(sound.textContent).toContain('Sound on');
+        expect(sound.hasAttribute('aria-pressed')).toBeFalse();
+    });
+
     it('offers Undo only when allowed', () => {
         expect(button('Undo')).toBeUndefined();
         fixture.componentInstance.canUndo = true;

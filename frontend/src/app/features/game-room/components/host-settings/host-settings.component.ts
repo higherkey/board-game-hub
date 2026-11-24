@@ -257,7 +257,7 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     if (this.isIntermission || !game?.minPlayers) return null;
     const hands = this.players.filter(p => !p.isScreen).length;
     const atLeast = game.maxPlayers === game.minPlayers ? '' : 'at least ';
-    if (hands < game.minPlayers) return `${game.name} needs ${atLeast}${game.minPlayers} players. ${hands} ${hands === 1 ? 'has' : 'have'} joined.`;
+    if (hands < game.minPlayers) return `${game.name} needs ${atLeast}${game.minPlayers} ${game.minPlayers === 1 ? 'player' : 'players'}. ${hands} ${hands === 1 ? 'has' : 'have'} joined.`;
     if (game.maxPlayers && hands > game.maxPlayers) return `${game.name} takes at most ${game.maxPlayers} players. ${hands} have joined.`;
     return null;
   }

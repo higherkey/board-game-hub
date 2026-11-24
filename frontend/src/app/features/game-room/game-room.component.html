@@ -199,7 +199,7 @@
 
                     <!-- Paused and lead-in overlays cover the play surface only, so the game bar and clock stay readable. -->
                     @if (clock()?.state === 'paused') {
-                    <div class="room-overlay" role="status"><span class="room-overlay-big">Paused</span><span>The host will resume the round.</span></div>
+                    <div class="room-overlay" role="status"><span class="room-overlay-big">Paused</span><span>{{ amHost ? 'Resume from the game menu.' : 'The host will resume the round.' }}</span></div>
                     } @else if (clock()?.state === 'leadIn') {
                     <div class="room-overlay" role="status"><span class="room-overlay-big">{{ clock()?.text }}</span><span>Get ready</span></div>
                     }

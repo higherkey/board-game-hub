@@ -245,6 +245,27 @@ describe('HostSettingsComponent', () => {
             expect(component.startBlocker).toBeNull();
         });
 
+        it("says player, not players, for a one-player minimum", () => {
+            component.availableGames = [{ id: "Babble", name: "Babble", minPlayers: 1, maxPlayers: 8, timerType: 2 }] as any;
+            component.selectedGameType = "Babble";
+            component.players = [tv] as any;
+            expect(component.startBlocker).toBe("Babble needs at least 1 player. 0 have joined.");
+        });
+
+        it("labels the compact timer and rounds fields in words, with no inline styles", () => {
+            component.availableGames = [{ id: "Babble", name: "Babble", minPlayers: 1, maxPlayers: 8, timerType: 2 }] as any;
+            component.selectedGameType = "Babble";
+            component.compactMode = true;
+            component.isIntermission = true;
+            fixture.detectChanges();
+            const el: HTMLElement = fixture.nativeElement;
+            expect(el.querySelector("label[for=compact-timer]")!.textContent).toContain("Seconds");
+            expect(el.querySelector("label[for=compact-rounds]")!.textContent).toContain("Rounds");
+            expect(el.querySelector("#compact-timer")).not.toBeNull();
+            expect(el.querySelector("#compact-rounds")).not.toBeNull();
+            expect(el.querySelectorAll(".compact-row [style]").length).toBe(0);
+        });
+
         it("disables Start and shows the reason beside it", () => {
             component.players = hands(1) as any;
             fixture.detectChanges();

@@ -1,5 +1,5 @@
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy, NgZone, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -65,6 +65,7 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   readonly chrome = inject(GameChromeService);
   readonly soundService = inject(SoundService);
   readonly clock = signal<RoundClock | null>(null);
+  private readonly zone = inject(NgZone);
   private room: Room | null = null;
   private isHost = false;
   /** The round end time the host already acted on, so the end call goes out once per round (round numbers repeat across games). */
@@ -252,7 +253,8 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
       if (started && this.stateService.isScreen) this.isSidebarCollapsed = true;
       if (!started) this.mobileView = 'game';
     });
-    const clockTimer = setInterval(() => this.tick(), 500);
+    // Outside Angular: a tick only redraws the page when the clock it shows changes.
+    const clockTimer = this.zone.runOutsideAngular(() => setInterval(() => this.tick(), 500));
     this.destroyRef.onDestroy(() => clearInterval(clockTimer));
 
     const isMobile = this.deviceService.isMobileValue;
@@ -387,18 +389,19 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   tick(now = Date.now()) {
     // Untimed games still get a round end time from the server; it means nothing to players.
     if (!this.isTimedGame) {
-      this.clock.set(null);
+      if (this.clock() !== null) this.zone.run(() => this.clock.set(null));
       return;
     }
     const clock = roundClock(this.room, now);
-    this.clock.set(clock);
+    const shown = this.clock();
+    if (shown?.text !== clock.text || shown?.state !== clock.state || shown?.urgent !== clock.urgent) this.zone.run(() => this.clock.set(clock));
     const room = this.room;
     const roundEnd = room?.roundEndTime ?? null;
     if (clock.state === 'ended' && this.isHost && this.chrome.autoEndRound() && roundEnd && this.autoEndedFor !== roundEnd) {
       this.autoEndedFor = roundEnd;
-      void this.stateService.endRound().then(ended => {
+      this.zone.run(() => void this.stateService.endRound().then(ended => {
         if (!ended && this.autoEndedFor === roundEnd) this.autoEndedFor = null;
-      });
+      }));
     }
   }
 

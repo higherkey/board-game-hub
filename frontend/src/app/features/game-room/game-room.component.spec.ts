@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy, OnChanges, inject } from '@angular/core';
 import { GameChromeService } from './services/game-chrome.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -409,6 +409,7 @@ describe('GameRoomComponent', () => {
 
     it('shows what the active game publishes in the game bar', () => {
       mockStateService.gameComponent$.next(PublishingGameStubComponent);
+      mockStateService.gameInputs$.next({ room: { code: 'ABCD' } });
       play({});
       fixture.detectChanges();
       expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Your turn');
@@ -444,6 +445,23 @@ describe('GameRoomComponent', () => {
       menuButton('Resume round')!.click();
       expect(mockStateService.resumeRound).toHaveBeenCalled();
       expect(el().querySelector('.room-overlay')!.textContent).toContain('Paused');
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('Resume from the game menu');
+    });
+
+    it('tells players, not the host, that the host will resume', () => {
+      play({ roundEndTime: at(60000), isPaused: true }, { host: false });
+      component.tick();
+      fixture.detectChanges();
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('The host will resume the round');
+    });
+
+    it('keeps the same clock while nothing on it changes, so the page is not redrawn each tick', () => {
+      play({ roundEndTime: at(60000) });
+      const now = Date.now();
+      component.tick(now);
+      const first = component.clock();
+      component.tick(now + 100);
+      expect(component.clock()).toBe(first);
     });
 
     it('ends a round early only after the host confirms', async () => {
@@ -560,8 +578,10 @@ describe('GameRoomComponent', () => {
 });
 
 @Component({ selector: 'app-publishing-game', template: '', standalone: true })
-class PublishingGameStubComponent {
+class PublishingGameStubComponent implements OnChanges {
   private readonly chrome = inject(GameChromeService);
-  constructor() { this.chrome.publish({ status: 'Your turn' }); }
+  @Input() room: any;
+  // Real games publish while the room renders them, in ngOnChanges.
+  ngOnChanges() { this.chrome.publish({ status: this.room ? 'Your turn' : '' }); }
 }
 

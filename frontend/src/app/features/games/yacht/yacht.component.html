@@ -33,11 +33,6 @@
           </button>
         </ng-container>
       </div>
-      <div class="score-confirm" *ngIf="pendingCategory">
-        <output class="score-message">Score <strong>{{ pendingPoints }}</strong> in <strong>{{ pendingLabel }}</strong>?</output>
-        <button type="button" class="roll-button" [disabled]="busy" (click)="confirmScore()">{{ pendingPoints === 0 ? 'Take zero & end turn' : 'Score & end turn' }}</button>
-        <button type="button" class="cancel-button" [disabled]="busy" (click)="pendingCategory = null">Cancel</button>
-      </div>
     </section>
 
     <section class="scorecards" aria-label="Scorecards">
@@ -60,9 +55,16 @@
   </div>
 
   <app-action-dock *ngIf="!isScreen && !isTable && game.phase !== 'GameOver'">
-    <button type="button" class="roll-button" [disabled]="!canRoll" (click)="roll()">
-      {{ game.rollsUsed === 0 ? 'Roll dice' : 'Roll again' }} <span>{{ game.rollsUsed }} / 3</span>
-    </button>
+    <!-- A chosen category swaps Roll for the confirm, so scoring stays in thumb reach. -->
+    @if (pendingCategory) {
+      <output class="score-message">Score <strong>{{ pendingPoints }}</strong> in <strong>{{ pendingLabel }}</strong>?</output>
+      <button type="button" class="roll-button" [disabled]="busy" (click)="confirmScore()">{{ pendingPoints === 0 ? 'Take zero & end turn' : 'Score & end turn' }}</button>
+      <button type="button" class="cancel-button" [disabled]="busy" (click)="pendingCategory = null">Cancel</button>
+    } @else {
+      <button type="button" class="roll-button roll" [disabled]="!canRoll" (click)="roll()">
+        {{ game.rollsUsed === 0 ? 'Roll dice' : 'Roll again' }} <span>{{ game.rollsUsed }} / 3</span>
+      </button>
+    }
   </app-action-dock>
 </section>
 
