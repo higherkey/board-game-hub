@@ -6,6 +6,7 @@
         </button>
     </header>
 
+    @if (hasRules || scores) {
     <section class="menu-section" aria-labelledby="menu-game">
         <h2 class="menu-heading" id="menu-game">This game</h2>
         <ul class="menu-list">
@@ -17,6 +18,7 @@
             <app-tableau-ring class="menu-scores" [entries]="scores"></app-tableau-ring>
         }
     </section>
+    }
 
     <section class="menu-section" aria-labelledby="menu-room">
         <h2 class="menu-heading" id="menu-room">Room</h2>

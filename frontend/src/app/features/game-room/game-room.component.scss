@@ -241,17 +241,21 @@
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    &.is-collapsed {
-        width: 0;
-        padding: 0;
-        margin: 0;
-        opacity: 0;
-        pointer-events: none;
-    }
-
     @media (min-width: 768px) {
         flex: 0 0 320px;
         max-width: 320px;
+    }
+
+    /* After the desktop basis, or the 320px basis keeps an empty column open. */
+    &.is-collapsed {
+        flex-basis: 0;
+        width: 0;
+        max-width: 0;
+        padding: 0;
+        margin: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
     }
 
     @media (min-width: 992px) {

@@ -61,6 +61,13 @@ describe('GameMenuComponent', () => {
         expect(el.querySelector('dialog app-tableau-ring')!.textContent).toContain('Ann');
     });
 
+    it('drops the This game heading when the game has neither rules nor scores', () => {
+        fixture.componentInstance.menu.hasRules = false;
+        fixture.componentInstance.isHost = true;
+        fixture.detectChanges();
+        expect([...el.querySelectorAll('dialog h2')].map(h => h.textContent!.trim())).not.toContain('This game');
+    });
+
     it('offers Undo only when allowed', () => {
         expect(button('Undo')).toBeUndefined();
         fixture.componentInstance.canUndo = true;
