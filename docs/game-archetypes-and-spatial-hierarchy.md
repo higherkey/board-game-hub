@@ -108,22 +108,28 @@ Developers compose one or more of these macro-archetypes to construct any game's
 
 ---
 
-## 4. Tier 2: Reusable Spatial Zone Primitives
+## 4. Shared Chrome and Tier 2 Primitives
 
-To eliminate boilerplate across games, the platform provides reusable standalone Angular components in `frontend/src/app/features/games/shared/components/`:
+### Chrome vs. surface
 
-| Zone | Primitive Component | Purpose & Interaction Model |
+Every game shares one set of **chrome**, owned by `GameRoomComponent`. The **play surface** belongs to each game.
+
+- **Chrome (identical in every game):** the game bar (`app-game-bar`: menu button, status line, progress, round clock, How to play), the game menu (`app-game-menu`), the rules drawer (`app-rules-drawer`), host controls, and the paused and lead-in overlays. Games never draw their own title, round badge, clock, rules toggle, or pause and end controls.
+- **Publishing:** games inject `GameChromeService` (provided by the room) and call `publish({ status, progress, scores, ended })` in `ngOnChanges`. They set `rules` to a `<ng-template #rules>` in `ngOnInit`. `ended: true` marks a game that ended by its own rules; otherwise a host-ended game reads "Game over".
+- **Game menu rule:** one menu button, always in the same corner, one flat list under at most three plain headings (This game, Room, Host), no nested menus, every item at most two taps from play.
+- **Surface:** each game lays out its own surface for the space it has, skinned with scoped `--game-*` custom properties. Similar games look alike only where that suits each game.
+
+### Primitives that exist
+
+These live in `frontend/src/app/features/games/shared/components/`. A game uses them only where they suit it.
+
+| Zone | Primitive | Status |
 | :--- | :--- | :--- |
-| **Zone 0** | `<app-game-stage>` | Root wrapper providing `100%` height, container queries, viewport containment, and theme propagation. |
-| **Zone 1** | `<app-player-hand>` | Bottom-docked card tray with horizontal scroll/fan, card selection states, and touch targets $\ge 44\text{px}$. |
-| **Zone 1** | `<app-action-dock>` | Bottom action bar housing primary gameplay buttons (Roll, Submit, End Turn, Buzz). |
-| **Zone 2** | `<app-secret-staging>` | Hidden info container (cards in reserve, secret clues) with tap-to-reveal privacy shields. |
-| **Zone 3** | `<app-player-tableau>` | Personal dashboard displaying score, tokens, dice lock bays, and status indicators. |
-| **Zone 3** | `<app-tableau-ring>` | Table-mode component displaying all players' tableaus simultaneously in a shared layout. |
-| **Zone 4** | `<app-game-board>` | Base container for grids, maps, and communal play mats with aspect-ratio preservation. |
-| **Zone 5** | `<app-turn-header>` | Status banner displaying round counter, active turn indicator, and animated timer ring. |
-| **Zone 6** | `<app-pass-handoff>` | Full-screen blocking modal for passing games ("PASS DEVICE TO [PLAYER]"). |
-| **Zone 6** | `<app-rules-drawer>` | Slide-over drawer providing quick rules and iconography reference without leaving the game. |
+| **Zone 1** | `<app-action-dock>` | Built. A sticky bottom bar for a Hand's main actions. |
+| **Zone 3** | `<app-tableau-ring>` | Built. Every player's score, the active player marked. |
+| **Zone 5** | Game bar (room chrome) | Built as `app-game-bar` in `features/game-room/components/`; replaces the proposed `<app-turn-header>`. |
+| **Zone 6** | `<app-rules-drawer>` | Built. Opened from the game bar and the game menu. |
+| Zone 0 / 1 / 2 / 3 / 4 / 6 | `app-game-stage`, `app-player-hand`, `app-secret-staging`, `app-player-tableau`, `app-game-board`, `app-pass-handoff` | Not built. Build one when a game needs it. |
 
 ---
 
