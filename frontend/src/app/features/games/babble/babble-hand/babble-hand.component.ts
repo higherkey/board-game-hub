@@ -227,19 +227,19 @@ export class BabbleHandComponent implements OnInit, OnChanges, OnDestroy {
 
   handleNextRound() {
     if (this.isHost && this.room) {
-      this.signalRService.nextRound();
+      void this.signalRService.nextRound();
     }
   }
 
   handlePause() {
     if (this.isHost) {
-      this.signalRService.pauseGame();
+      void this.signalRService.pauseGame();
     }
   }
 
   handleResume() {
     if (this.isHost) {
-      this.signalRService.resumeGame();
+      void this.signalRService.resumeGame();
     }
   }
 

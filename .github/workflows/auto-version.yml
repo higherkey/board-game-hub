@@ -28,7 +28,19 @@ jobs:
             echo "tag_suffix=dev" >> "$GITHUB_OUTPUT"
           fi
 
+      # A release candidate takes the version of the dev build it promotes, so rc and dev tags stay in step.
+      - name: Tag Release Candidate From Dev Version
+        if: github.ref_name == 'staging'
+        run: |
+          set -euo pipefail
+          base=$(git tag --merged HEAD --list 'v*-dev.*' --sort=-v:refname | head -1 | sed 's/-dev\..*//')
+          [ -n "$base" ] || { echo "::error::No dev tag in staging history"; exit 1; }
+          n=$(git tag --list "$base-rc.*" | wc -l | tr -d ' ')
+          git tag "$base-rc.$n"
+          git push origin "$base-rc.$n"
+
       - name: Bump Version and Push Tag
+        if: github.ref_name != 'staging'
         uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
