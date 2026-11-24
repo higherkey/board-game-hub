@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnInit, OnDestroy, ChangeDetectionStrategy, TemplateRef, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { KeywordCard3dComponent } from '../components/keyword-card-3d/keyword-card-3d.component';
 import { SignalRService, Room } from '../../../../services/signalr.service';
@@ -9,13 +9,17 @@ import {
     CloverCardModel,
     CloverSlotState
 } from '../clover-minded.types';
+import { GameChromeService } from '../../../game-room/services/game-chrome.service';
+import { CloverRulesComponent } from '../clover-rules/clover-rules.component';
+import { cloverProgress, cloverStatus } from '../clover-chrome';
+import { ActionDockComponent } from '../../shared/components/action-dock/action-dock.component';
 import { gsap } from 'gsap';
 import { throttleTime, Subject } from 'rxjs';
 
 @Component({
     selector: 'app-clover-minded-hand',
     standalone: true,
-    imports: [CommonModule, FormsModule, KeywordCard3dComponent],
+    imports: [CommonModule, FormsModule, KeywordCard3dComponent, ActionDockComponent, CloverRulesComponent],
     templateUrl: './clover-minded-hand.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./clover-minded-hand.component.scss']
@@ -29,6 +33,8 @@ export class CloverMindedHandComponent implements OnInit, OnChanges, OnDestroy {
     @Input() isScreen = false;
     @Input() isTable = false;
 
+    private readonly chrome = inject(GameChromeService);
+    @ViewChild('rules', { static: true }) private readonly rules!: TemplateRef<unknown>;
     phases = CloverMindedPhase;
 
     // clue drafts for clue-writing phase (4 clue zones).
@@ -51,6 +57,7 @@ export class CloverMindedHandComponent implements OnInit, OnChanges, OnDestroy {
     constructor(private readonly signalRService: SignalRService) { }
 
     ngOnInit(): void {
+        this.chrome.rules.set(this.rules);
         // Throttle drag updates to 15fps (66ms) to avoid flooding SignalR while keeping it smooth
         this.dragMove$.pipe(throttleTime(66)).subscribe(pos => {
             if (this.draggedCardId) {
@@ -69,6 +76,8 @@ export class CloverMindedHandComponent implements OnInit, OnChanges, OnDestroy {
 
     ngOnChanges(changes: SimpleChanges): void {
         const s = this.state;
+        const name = (id: string) => this.room?.players?.find(p => p.connectionId === id)?.name ?? 'Someone';
+        this.chrome.publish({ status: cloverStatus(s, this.myConnectionId, false, name), progress: cloverProgress(s), scores: null });
         if (!s) return;
 
         // Reset draft if not submitted
