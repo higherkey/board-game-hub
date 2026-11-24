@@ -1,6 +1,5 @@
 import { getRoomResultPhase, SignalRService } from './signalr.service';
 import { createMockRoom } from '../shared/testing/test-helpers';
-import { BabbleComponent } from '../features/games/babble/babble-game/babble.component';
 import { GameReviewComponent } from '../features/game-room/components/game-review/game-review.component';
 import { WisecrackBoardComponent } from '../features/games/wisecrack/wisecrack-board/wisecrack-board.component';
 import { PoppycockBoardComponent } from '../features/games/poppycock/poppycock-board/poppycock-board.component';
@@ -15,7 +14,6 @@ describe('Result phase projection and continuations', () => {
   });
 
   const controls = [
-    { name: 'Babble', create: (s: SignalRService) => new BabbleComponent(s), action: 'handleNextRound' },
     { name: 'Review', create: (s: SignalRService) => new GameReviewComponent(s), action: 'nextRound' },
     { name: 'Wisecrack', create: (s: SignalRService) => new WisecrackBoardComponent(s), action: 'nextRound' },
     { name: 'Poppycock', create: (s: SignalRService) => new PoppycockBoardComponent(s), action: 'nextRound' },
