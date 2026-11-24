@@ -42,7 +42,7 @@
 - Private information is never rendered on a Table (`isScreen === true`) (spec Heuristic 3).
 - Spacing stays compact, and every screen works the same at 390px as on desktop.
 - Commits use Conventional Commits in the imperative mood and end with the `Co-Authored-By` attribution line.
-- Work on branch `feat/unified-game-room`, with branch notes at `docs/branch-notes/feat-unified-game-room.md`.
+- Work on branch `feat/unified-game-room`, with branch notes at `docs/branch-notes/feat-unified-game-room-notes.md`.
 - Test commands (from `frontend/`): `npx ng test --watch=false --browsers=ChromeHeadless --include=<spec>`; full suite `npx ng test --watch=false --browsers=ChromeHeadless`; build `npx ng build`.
 
 ## Out of Scope
@@ -62,7 +62,7 @@
 
 ### Task 0: Branch and notes
 
-- [ ] `git switch -c feat/unified-game-room`. Create `docs/branch-notes/feat-unified-game-room.md` (Discoveries = the Why list, 4c = Out of Scope). Commit `docs: add plan and branch notes for unified game room`.
+- [ ] `git switch -c feat/unified-game-room`. Create `docs/branch-notes/feat-unified-game-room-notes.md` (Discoveries = the Why list, 4c = Out of Scope). Commit `docs: add plan and branch notes for unified game room`.
 
 ### Task 1: Round clock and chrome service
 
