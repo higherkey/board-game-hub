@@ -1,37 +1,6 @@
 <div class="babble-hand-container">
-  <!-- Host Toolbar (Only when Hand player is Host and game is active) -->
-  <aside *ngIf="isHost && isPlaying" class="host-toolbar" aria-label="Host Actions">
-    <span class="host-label">Hosting</span>
-    <div class="host-actions">
-      <button type="button" class="hand-btn" *ngIf="!isPaused" (click)="handlePause()" aria-label="Pause round">
-        <i class="bi bi-pause-fill" aria-hidden="true"></i>
-        <span>Pause</span>
-      </button>
-      <button type="button" class="hand-btn hand-btn--on" *ngIf="isPaused" (click)="handleResume()" aria-label="Resume round">
-        <i class="bi bi-play-fill" aria-hidden="true"></i>
-        <span>Resume</span>
-      </button>
-      <button type="button" class="hand-btn hand-btn--danger" (click)="handleEndRound()" [disabled]="isEnding" aria-label="End round early">
-        <i class="bi bi-skip-end-fill" aria-hidden="true"></i>
-        <span>End round</span>
-      </button>
-      <span *ngIf="isEnding" class="spinner-border spinner-border-sm" role="status" aria-label="Ending round"></span>
-    </div>
-  </aside>
-
   <!-- 1. PLAYING PHASE -->
   <div *ngIf="isPlaying" class="play-phase">
-    <!-- Hand Header: Round & Timer -->
-    <header class="hand-header">
-      <div class="game-meta">
-        <h2 class="game-name">Babble</h2>
-        <span class="round-pill">Round {{ room?.roundNumber || 1 }}</span>
-      </div>
-      <div class="timer-card" [class.urgent]="isUrgent" role="timer" aria-label="Time left">
-        <span class="timer-digits">{{ timerText }}</span>
-      </div>
-    </header>
-
     <!-- Letter Grid (Compact & Touch-Friendly) -->
     <section class="grid-section" aria-label="Letter Grid">
       <div class="hand-grid" [class]="'size-' + boardSize" [class.blurred-board]="isBlurred">
@@ -47,15 +16,28 @@
         </button>
       </div>
 
-      <!-- Countdown Overlay -->
-      <div *ngIf="isBlurred && countdownSeconds > 0" class="countdown-overlay">
-        <div class="countdown-value">{{ countdownSeconds }}</div>
-        <div class="countdown-message">Get Ready!</div>
-      </div>
     </section>
 
     <!-- Word Entry Controls -->
     <section class="entry-section" aria-label="Word Submission">
+
+      <!-- Found Words Chips -->
+      <div class="found-words-box">
+        <div class="found-words-heading">
+          <span class="heading-title">Found Words</span>
+          <span class="count-badge">{{ foundWords.length }}</span>
+        </div>
+        <div class="chips-scroll" *ngIf="foundWords.length > 0">
+          <span class="word-chip" *ngFor="let word of foundWords">{{ word }}</span>
+        </div>
+        <p *ngIf="foundWords.length === 0" class="empty-note">
+          Words you submit will appear here.
+        </p>
+      </div>
+    </section>
+
+    <!-- Word entry stays in thumb reach -->
+    <app-action-dock class="word-dock">
       <form class="word-input-row" (ngSubmit)="submitWord()">
         <input
           id="babbleHandWord"
@@ -86,28 +68,13 @@
           Add
         </button>
       </form>
-
-      <!-- Found Words Chips -->
-      <div class="found-words-box">
-        <div class="found-words-heading">
-          <span class="heading-title">Found Words</span>
-          <span class="count-badge">{{ foundWords.length }}</span>
-        </div>
-        <div class="chips-scroll" *ngIf="foundWords.length > 0">
-          <span class="word-chip" *ngFor="let word of foundWords">{{ word }}</span>
-        </div>
-        <p *ngIf="foundWords.length === 0" class="empty-note">
-          Words you submit will appear here.
-        </p>
-      </div>
-    </section>
+    </app-action-dock>
   </div>
 
   <!-- 2. RESULTS PHASE -->
   <div *ngIf="isFinished" class="results-phase fade-in">
     <header class="results-header">
       <div class="results-title-group">
-        <h3 class="results-title">Round {{ room?.roundNumber || 1 }} Results</h3>
         <p class="results-summary">
           Your round score: <span class="score-highlight">{{ myRoundScore }} pts</span>
         </p>
@@ -230,14 +197,6 @@
       </div>
     </div>
 
-    <!-- Host Next Round Button -->
-    <footer *ngIf="isHost" class="results-footer">
-      <button type="button" class="btn btn-primary fw-bold shadow-sm px-4 py-2" (click)="handleNextRound()">
-        <span>Next Round</span>
-        <i class="bi bi-arrow-right-circle ms-2"></i>
-      </button>
-    </footer>
-
     <!-- Guest Waiting Indicator -->
     <footer *ngIf="!isHost" class="results-waiting-footer">
       <span class="spinner-border spinner-border-sm me-2" role="status" aria-label="Waiting"></span>
@@ -245,3 +204,5 @@
     </footer>
   </div>
 </div>
+
+<ng-template #rules><app-babble-rules></app-babble-rules></ng-template>
