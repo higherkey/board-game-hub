@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -9,6 +9,5 @@ import { CommonModule } from '@angular/common';
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./four-in-a-row-rules.component.scss']
 })
-export class FourInARowRulesComponent {
-    @Output() closeRules = new EventEmitter<void>();
-}
+/** The rules, shown in the room's rules drawer. */
+export class FourInARowRulesComponent {}

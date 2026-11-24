@@ -1,13 +1,37 @@
-:host { display: block; block-size: 100%; overflow: auto; }
-.four-game { padding: 12px; background: var(--bg-base); color: var(--text-primary); min-block-size: 100%; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; max-inline-size: 600px; margin: auto; }
-h2 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--primary); font-size: clamp(1.2rem, 4vw, 1.7rem); margin: 0; }
-button { min-inline-size: 44px; min-block-size: 44px; border: 2px solid var(--primary); background: var(--bg-surface); color: var(--primary); font-family: 'Outfit', sans-serif; font-weight: 700; padding: 8px; border-radius: var(--radius-sm); box-shadow: 2px 2px 0 var(--primary); }
-button:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
-.status { text-align: center; font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-block: 12px; }
-.players { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-block-end: 12px; }
-.players span { padding: 6px 10px; border: 2px solid transparent; color: var(--text-secondary); }
-.players .active { border-color: var(--contrast-pink); border-radius: var(--radius-sm); color: var(--primary); }
-.players strong { display: block; color: var(--primary); }
-.end-hint { text-align: center; color: var(--text-secondary); margin: 16px 0 0; }
-@media (max-width: 400px) { .four-game { padding: 8px; } }
+/* Four in a Row's look: a blue rack with red and yellow discs. The board takes all the height it can. */
+:host {
+    --game-rack: oklch(48% 0.19 262);
+    --game-red: oklch(68% 0.19 25);
+    --game-yellow: oklch(86% 0.16 92);
+    display: block;
+    block-size: 100%;
+    overflow: auto;
+    container-type: size;
+    background: var(--bg-base);
+}
+
+.four-game {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    min-block-size: 100%;
+    padding: var(--space-md);
+    color: var(--text-primary);
+}
+
+/* The stage sets the rack's width from the height it has (the host is a size container). */
+.four-stage { inline-size: min(100%, calc((100cqb - 12rem) * 7 / 6)); min-inline-size: min(100%, 280px); }
+.four-players { inline-size: min(100%, 24rem); }
+
+/* Wide Tables: board in the middle, players to its side. */
+@container (min-width: 900px) {
+    .four-game.is-table {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+        .four-stage { inline-size: min(calc((100cqb - 3rem) * 7 / 6), calc(100cqi - 22rem)); }
+        .four-players { inline-size: 16rem; font-size: 1.2rem; }
+    }
+}
