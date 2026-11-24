@@ -15,12 +15,15 @@ export class GameChromeService {
     readonly scores = signal<TableauEntry[] | null>(null);
     /** True once the game has ended by its own rules, so its status (a winner) outranks the room's generic "Game over". */
     readonly ended = signal(false);
+    /** Opt-in: the room ends a timed-out round for games whose round clock means "round over" (not a per-phase timer). */
+    readonly autoEndRound = signal(false);
 
-    publish(p: { status?: string; progress?: string; scores?: TableauEntry[] | null; ended?: boolean }): void {
+    publish(p: { status?: string; progress?: string; scores?: TableauEntry[] | null; ended?: boolean; autoEndRound?: boolean }): void {
         if (p.status !== undefined) this.status.set(p.status);
         if (p.progress !== undefined) this.progress.set(p.progress);
         if (p.scores !== undefined) this.scores.set(p.scores);
         if (p.ended !== undefined) this.ended.set(p.ended);
+        if (p.autoEndRound !== undefined) this.autoEndRound.set(p.autoEndRound);
     }
 
     reset(): void {
@@ -29,6 +32,7 @@ export class GameChromeService {
         this.rules.set(null);
         this.scores.set(null);
         this.ended.set(false);
+        this.autoEndRound.set(false);
     }
 }
 

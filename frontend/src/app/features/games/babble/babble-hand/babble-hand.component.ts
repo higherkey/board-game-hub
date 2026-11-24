@@ -106,7 +106,7 @@ export class BabbleHandComponent implements OnInit, OnChanges {
       this.processGridUpdate(grid);
     }
 
-    this.chrome.publish({ status: babbleStatus(this.room), progress: babbleProgress(this.room), scores: this.room ? playersAsEntries(this.room, undefined, this.myConnectionId) : null, ended: babbleStatus(this.room) === 'Final results' });
+    this.chrome.publish({ status: babbleStatus(this.room), progress: babbleProgress(this.room), scores: this.room ? playersAsEntries(this.room, undefined, this.myConnectionId) : null, ended: babbleStatus(this.room) === 'Final results', autoEndRound: true });
   }
 
   private processGridUpdate(grid: any) {

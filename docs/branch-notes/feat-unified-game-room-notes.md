@@ -23,3 +23,4 @@ Plan: `docs/superpowers/plans/2026-11-24-unified-game-room.md`
 - Compact host settings label the rounds field only "#".
 - Server clock offset for countdowns.
 - Manual: play one real round of each game on a physical phone plus a TV.
+- Room auto-end is opt-in (Babble only) until in-development games with phase timers (Pictophone, Universal Translator) migrate.

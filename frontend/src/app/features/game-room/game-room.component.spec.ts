@@ -3,6 +3,7 @@ import { GameChromeService } from './services/game-chrome.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
+import { By } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth.service';
 import { GameDataService } from '../../services/game-data.service';
 import { SignalRService } from '../../services/signalr.service';
@@ -34,6 +35,7 @@ class HostSettingsStubComponent {
   @Output() endGame = new EventEmitter<any>();
   @Output() exitGame = new EventEmitter<any>();
   @Output() toggleReady = new EventEmitter<any>();
+  startGame = jasmine.createSpy('startGame');
 }
 
 @Component({ selector: 'app-video-chat', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
@@ -380,9 +382,11 @@ describe('GameRoomComponent', () => {
       [...el().querySelectorAll('app-game-menu button')].find(b => b.textContent!.includes(label)) as HTMLButtonElement | undefined;
 
     beforeEach(() => {
+      // A dialog that reached the browser's own confirm() would block the whole headless run.
+      spyOn(window, 'confirm').and.returnValue(false);
       mockStateService.pauseRound = jasmine.createSpy('pauseRound');
       mockStateService.resumeRound = jasmine.createSpy('resumeRound');
-      mockStateService.endRound = jasmine.createSpy('endRound');
+      mockStateService.endRound = jasmine.createSpy('endRound').and.resolveTo(true);
     });
 
     it('shows the room header in the lobby and the game bar in play', () => {
@@ -463,6 +467,7 @@ describe('GameRoomComponent', () => {
 
     it('ends a timed-out round once, on the host only, never while paused', () => {
       play({ roundNumber: 2, roundEndTime: at(-1000) });
+      component.chrome.publish({ autoEndRound: true });
       component.tick(); component.tick(); component.tick();
       expect(mockStateService.endRound).toHaveBeenCalledTimes(1);
 
@@ -472,6 +477,32 @@ describe('GameRoomComponent', () => {
       expect(mockStateService.endRound).not.toHaveBeenCalled();
 
       play({ roundNumber: 4, roundEndTime: at(-1000), isPaused: true });
+      component.tick();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+    });
+
+    it('auto-ends the same round number again in a later game', () => {
+      play({ roundNumber: 1, roundEndTime: at(-1000) });
+      component.chrome.publish({ autoEndRound: true });
+      component.tick();
+      play({ roundNumber: 1, roundEndTime: at(-5000) });
+      component.tick();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(2);
+    });
+
+    it('tries again when the end call fails', async () => {
+      mockStateService.endRound.and.resolveTo(false);
+      play({ roundNumber: 1, roundEndTime: at(-1000) });
+      component.chrome.publish({ autoEndRound: true });
+      mockStateService.endRound.calls.reset();
+      component.tick();
+      await Promise.resolve(); await Promise.resolve();
+      component.tick();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves timed-out rounds to games that have not asked the room to end them', () => {
+      play({ roundNumber: 1, roundEndTime: at(-1000) });
       component.tick();
       expect(mockStateService.endRound).not.toHaveBeenCalled();
     });
@@ -488,18 +519,35 @@ describe('GameRoomComponent', () => {
       const settings = { timerDurationSeconds: 60 };
       mockStateService.isIntermission$.next(true);
       play({ resultPhase: 'RoundResults', settings });
-      (el().querySelector('app-game-bar .bar-next') as HTMLButtonElement).click();
-      expect(mockStateService.nextRound).toHaveBeenCalledWith(settings);
+      const next = el().querySelector('app-game-bar .bar-next') as HTMLButtonElement;
+      expect(parseFloat(getComputedStyle(next).minHeight)).toBeGreaterThanOrEqual(44);
+      next.click();
+      // One source of truth: the bar runs the menu's host settings, so edits made there are not lost.
+      const hostSettings = fixture.debugElement.query(By.directive(HostSettingsStubComponent)).componentInstance;
+      expect(hostSettings.startGame).toHaveBeenCalled();
 
       play({ resultPhase: 'GameOver', settings });
-      const next = el().querySelector('app-game-bar .bar-next') as HTMLButtonElement;
-      expect(next.textContent).toContain('Play again');
-      next.click();
-      expect(mockStateService.playAgain).toHaveBeenCalledWith(settings);
+      expect(el().querySelector('app-game-bar .bar-next')!.textContent).toContain('Play again');
 
       mockStateService.isIntermission$.next(false);
       play({ resultPhase: null, settings });
       expect(el().querySelector('app-game-bar .bar-next')).toBeNull();
+    });
+
+    it('closes the game menu when a host action from it runs', async () => {
+      spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(false);
+      mockStateService.playAgain = jasmine.createSpy('playAgain');
+      play({});
+      const dialog = el().querySelector('app-game-menu dialog') as HTMLDialogElement;
+      const hostSettings = fixture.debugElement.query(By.directive(HostSettingsStubComponent)).componentInstance;
+      for (const output of ['endGame', 'exitGame', 'nextRound', 'playAgain', 'gameStart'] as const) {
+        if (!dialog.open) dialog.showModal();
+        hostSettings[output].emit(undefined);
+        expect(dialog.open).withContext(output).toBeFalse();
+        // Let the confirm that some actions open settle while the spy is still installed.
+        await new Promise(resolve => setTimeout(resolve));
+      }
+      if (dialog.open) dialog.close();
     });
 
     it('collapses the player list on a Table when the game starts', () => {

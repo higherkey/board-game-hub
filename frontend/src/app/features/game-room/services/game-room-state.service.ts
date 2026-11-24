@@ -304,11 +304,14 @@ export class GameRoomStateService {
     }
   }
 
-  async endRound() {
+  /** Resolves false when the end call failed, so a caller can try again. */
+  async endRound(): Promise<boolean> {
     try {
       await this.signalRService.endRound();
+      return true;
     } catch (err) {
       this.logger.error('Failed to end round', err);
+      return false;
     }
   }
 

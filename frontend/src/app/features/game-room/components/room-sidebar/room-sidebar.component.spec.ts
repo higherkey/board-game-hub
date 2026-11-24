@@ -75,13 +75,15 @@ describe('RoomSidebarComponent', () => {
     component.tables = [{ connectionId: "me", name: "TV", score: 0, isHost: false, isReady: true, isScreen: true }] as any;
     component.players = [];
     fixture.detectChanges();
-    let btn = fixture.nativeElement.querySelector("[aria-label=\"Use this device as a Hand\"]") as HTMLButtonElement;
-    expect(btn.textContent).toContain("Use as Hand");
+    const roleButton = (text: string) => [...fixture.nativeElement.querySelectorAll("button")].find((b: any) => b.textContent.includes(text)) as HTMLButtonElement;
+    let btn = roleButton("Use as Hand");
+    // WCAG 2.5.3: the accessible name is the visible text.
+    expect(btn.getAttribute("aria-label")).toBeNull();
 
     component.tables = [];
     component.players = [{ connectionId: "me", name: "Ann", score: 0, isHost: false, isReady: true, isScreen: false }] as any;
     fixture.detectChanges();
-    btn = fixture.nativeElement.querySelector("[aria-label=\"Use this device as a Table\"]") as HTMLButtonElement;
-    expect(btn.textContent).toContain("Use as Table");
+    btn = roleButton("Use as Table");
+    expect(btn.getAttribute("aria-label")).toBeNull();
   });
 });

@@ -67,8 +67,10 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
   readonly clock = signal<RoundClock | null>(null);
   private room: Room | null = null;
   private isHost = false;
-  /** The round the host already ended on timeout, so the end call goes out once. */
-  private autoEndedRound: number | null = null;
+  /** The round end time the host already acted on, so the end call goes out once per round (round numbers repeat across games). */
+  private autoEndedFor: string | null = null;
+  /** The host settings inside the game menu: the bar's next step runs through them so menu edits apply. */
+  @ViewChild('menuHostSettings') private menuHostSettings?: HostSettingsComponent;
 
   // Mobile views: 'game' | 'players' | 'host'
   mobileView: GameRoomTab = 'game';
@@ -372,11 +374,8 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     return this.isLegacyFinish(room) ? 'Finish game' : 'Next round';
   }
 
-  hostNext(room: Room | null, event?: MouseEvent) {
-    if (!room) return;
-    if (room.resultPhase === 'GameOver') void this.stateService.playAgain(room.settings);
-    else if (this.isLegacyFinish(room)) void this.onEndGame(event);
-    else void this.onNextRound(room.settings);
+  hostNext(event?: MouseEvent) {
+    this.menuHostSettings?.startGame(event);
   }
 
   /** Games that predate result phases finish after their last round. */
@@ -394,9 +393,12 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     const clock = roundClock(this.room, now);
     this.clock.set(clock);
     const room = this.room;
-    if (clock.state === 'ended' && this.isHost && room && this.autoEndedRound !== room.roundNumber) {
-      this.autoEndedRound = room.roundNumber;
-      void this.stateService.endRound();
+    const roundEnd = room?.roundEndTime ?? null;
+    if (clock.state === 'ended' && this.isHost && this.chrome.autoEndRound() && roundEnd && this.autoEndedFor !== roundEnd) {
+      this.autoEndedFor = roundEnd;
+      void this.stateService.endRound().then(ended => {
+        if (!ended && this.autoEndedFor === roundEnd) this.autoEndedFor = null;
+      });
     }
   }
 

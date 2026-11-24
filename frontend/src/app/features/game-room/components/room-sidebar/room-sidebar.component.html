@@ -33,7 +33,7 @@
                 </button>
                 <button *ngIf="s.connectionId === connectionId"
                     class="btn btn-sm btn-dark text-white fw-bold shadow-sm d-inline-flex align-items-center gap-1 px-2 py-1"
-                    (click)="changeRole.emit(false)" aria-label="Use this device as a Hand">
+                    (click)="changeRole.emit(false)">
                     <i class="bi bi-phone-fill text-warning" aria-hidden="true"></i>
                     <span class="x-small">Use as Hand</span>
                 </button>
@@ -92,7 +92,7 @@
                     </button>
                     <button *ngIf="p.connectionId === connectionId"
                         class="btn btn-sm btn-primary text-white fw-bold shadow-sm d-inline-flex align-items-center gap-1 px-2 py-1"
-                        (click)="changeRole.emit(true)" aria-label="Use this device as a Table">
+                        (click)="changeRole.emit(true)">
                         <i class="bi bi-display-fill text-info" aria-hidden="true"></i>
                         <span class="x-small">Use as Table</span>
                     </button>

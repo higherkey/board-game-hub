@@ -91,7 +91,7 @@ export class BabbleComponent implements OnInit, OnChanges, OnDestroy {
       this.processGridUpdate(grid);
     }
 
-    this.chrome.publish({ status: babbleStatus(this.room), progress: babbleProgress(this.room), scores: this.room ? this.entries : null, ended: babbleStatus(this.room) === 'Final results' });
+    this.chrome.publish({ status: babbleStatus(this.room), progress: babbleProgress(this.room), scores: this.room ? this.entries : null, ended: babbleStatus(this.room) === 'Final results', autoEndRound: true });
   }
 
   private processGridUpdate(grid: any) {

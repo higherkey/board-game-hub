@@ -13,7 +13,7 @@
         (menuOpen)="gameMenu.open()"
         (rulesOpen)="rulesDrawer.open()">
         @if (amHost && (stateService.isIntermission$ | async)) {
-        <button barAction type="button" class="btn btn-primary bar-next" (click)="hostNext(room, $event)">{{ hostNextLabel(room) }}</button>
+        <button barAction type="button" class="btn btn-primary bar-next" (click)="hostNext($event)">{{ hostNextLabel(room) }}</button>
         }
     </app-game-bar>
     } @else {
@@ -63,7 +63,7 @@
                 </button>
             </div>
             }
-            <app-host-settings [roomCode]="roomCode" [compactMode]="true"
+            <app-host-settings #menuHostSettings [roomCode]="roomCode" [compactMode]="true"
                 [resultPhase]="room?.resultPhase"
                 [isIntermission]="(stateService.isIntermission$ | async) || false"
                 [currentGameType]="room?.gameType || ''"
@@ -73,9 +73,9 @@
                 [meReady]="(stateService.me$ | async)?.isReady || false" [isHost]="true"
                 [isScreen]="(stateService.me$ | async)?.isScreen || false"
                 [isHostOverride]="room?.isHostOverride || false"
-                (playAgain)="stateService.playAgain($event)"
-                (gameStart)="startGame($event)"
-                (nextRound)="onNextRound($event)" (endGame)="onEndGame($event)" (exitGame)="onExitGame($event)"
+                (playAgain)="gameMenu.close(); stateService.playAgain($event)"
+                (gameStart)="gameMenu.close(); startGame($event)"
+                (nextRound)="gameMenu.close(); onNextRound($event)" (endGame)="gameMenu.close(); onEndGame($event)" (exitGame)="gameMenu.close(); onExitGame($event)"
                 (toggleReady)="toggleReady($event)">
             </app-host-settings>
         </div>
