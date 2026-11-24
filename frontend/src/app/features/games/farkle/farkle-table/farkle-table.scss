@@ -22,13 +22,12 @@
   overflow-y: auto;
 }
 
-/* Mid-size screens: the tray takes the full width, scores and guide share the row below. */
+/* Mid-size screens: tray on the left, scores above the guide on the right, so scores stay on screen. */
 @container (max-width: 1100px) {
   .farkle-table {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "stage stage" "scores guide";
-    grid-template-rows: auto;
-    align-content: start;
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 16rem);
+    grid-template-areas: "stage scores" "stage guide";
+    grid-template-rows: auto minmax(0, 1fr);
   }
 }
 
