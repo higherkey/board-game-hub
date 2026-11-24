@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { YachtComponent } from './yacht.component';
 import { Room, SignalRService } from '../../../services/signalr.service';
 import { YachtState } from './yacht.models';
+import { GameChromeService } from '../../game-room/services/game-chrome.service';
 
 describe('YachtComponent', () => {
   let fixture: ComponentFixture<YachtComponent>;
@@ -13,7 +14,7 @@ describe('YachtComponent', () => {
     transport = jasmine.createSpyObj('SignalRService', ['submitGameAction']);
     transport.submitGameAction.and.resolveTo();
     await TestBed.configureTestingModule({
-      imports: [YachtComponent], providers: [{ provide: SignalRService, useValue: transport }]
+      imports: [YachtComponent], providers: [{ provide: SignalRService, useValue: transport }, GameChromeService]
     }).compileComponents();
     fixture = TestBed.createComponent(YachtComponent);
     component = fixture.componentInstance;
@@ -113,13 +114,34 @@ describe('YachtComponent', () => {
     expect(component.busy).toBeFalse();
   });
 
-  it('renders every tied winner after completion', () => {
+  it('names every tied winner in the game bar and marks their columns', () => {
     state.phase = 'GameOver';
     state.winnerIds = ['p1', 'p2'];
     fixture.componentRef.setInput('room', { ...component.room, gameData: { ...state } });
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.victory').textContent).toContain('Isaac & Winter tie for the win!');
+    expect(TestBed.inject(GameChromeService).status()).toBe('Isaac and Winter tie');
+    expect(fixture.nativeElement.querySelectorAll('thead th.is-winner').length).toBe(2);
     expect(fixture.nativeElement.querySelector('.category-picker')).toBeNull();
+  });
+
+  it('publishes the turn, turn count, totals and rules to the room chrome', () => {
+    const chrome = TestBed.inject(GameChromeService);
+    expect(chrome.status()).toBe('Your turn');
+    expect(chrome.progress()).toBe('Turn 1 of 13');
+    expect(chrome.scores()).toEqual([
+      { id: 'p1', name: 'Isaac', score: 0, active: true, isMe: true },
+      { id: 'p2', name: 'Winter', score: 0, active: false, isMe: false }
+    ]);
+    expect(chrome.rules()).not.toBeNull();
+    fixture.componentRef.setInput('myConnectionId', 'p2');
+    fixture.detectChanges();
+    expect(chrome.status()).toBe('Isaac’s turn');
+  });
+
+  it('leaves title, turn badge and rules to the room, and docks Roll on a Hand', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    for (const sel of ['.yacht-header', '.eyebrow', 'h1', 'details.rules', '.turn-status h2', '.victory']) expect(el.querySelector(sel)).withContext(sel).toBeNull();
+    expect(el.querySelector('app-action-dock .roll-button')).not.toBeNull();
   });
 
   it('clears stale selection on turn changes and blocks actions while paused', async () => {

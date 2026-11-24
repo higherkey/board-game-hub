@@ -1,19 +1,23 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input, OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input, OnChanges, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Room, SignalRService } from '../../../services/signalr.service';
 import { YACHT_CATEGORIES, YachtState } from './yacht.models';
 import { DiceTrayComponent } from '../../../shared/components/dice-tray/dice-tray.component';
 import { TrayDie } from '../../../shared/components/dice-tray/dice-math';
+import { GameChromeService } from '../../game-room/services/game-chrome.service';
+import { ActionDockComponent } from '../shared/components/action-dock/action-dock.component';
 
 @Component({
   selector: 'app-yacht',
   standalone: true,
-  imports: [CommonModule, DiceTrayComponent],
+  imports: [CommonModule, DiceTrayComponent, ActionDockComponent],
   templateUrl: './yacht.component.html',
   styleUrl: './yacht.component.scss',
   changeDetection: ChangeDetectionStrategy.Eager
 })
-export class YachtComponent implements OnChanges {
+export class YachtComponent implements OnInit, OnChanges {
+  private readonly chrome = inject(GameChromeService);
+  @ViewChild('rules', { static: true }) private readonly rules!: TemplateRef<unknown>;
   @Input() room!: Room;
   @Input() myConnectionId = '';
   @Input() isHost = false;
@@ -50,8 +54,15 @@ export class YachtComponent implements OnChanges {
       (this.state.rollsUsed === 0 || !this.state.held.every(Boolean));
   }
   get activeName(): string { return this.state?.scorecards[this.state.activePlayerId]?.playerName ?? ''; }
-  get winnerNames(): string {
-    return this.state?.winnerIds.map(id => this.state!.scorecards[id].playerName).join(' & ') ?? '';
+  /** The game bar line: whose turn, or who won. */
+  get status(): string {
+    const game = this.state;
+    if (!game) return '';
+    if (game.phase === 'GameOver') {
+      const names = game.winnerIds.map(id => game.scorecards[id]?.playerName ?? '');
+      return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)} tie` : `${names[0] ?? 'Nobody'} wins`;
+    }
+    return game.activePlayerId === this.myConnectionId && !this.isScreen && !this.isTable ? 'Your turn' : `${this.activeName}’s turn`;
   }
   get pendingLabel(): string { return this.categories.find(c => c.key === this.pendingCategory)?.label ?? ''; }
   get pendingPoints(): number { return this.state?.availableScores[this.pendingCategory ?? ''] ?? 0; }
@@ -61,7 +72,17 @@ export class YachtComponent implements OnChanges {
     return typeof this.state?.availableScores[category] === 'number';
   }
 
+  ngOnInit(): void {
+    this.chrome.rules.set(this.rules);
+  }
+
   ngOnChanges(): void {
+    const game = this.state;
+    this.chrome.publish({
+      status: this.status,
+      progress: game && game.phase !== 'GameOver' ? `Turn ${game.turnNumber} of 13` : '',
+      scores: game ? game.playerOrder.map(id => ({ id, name: game.scorecards[id].playerName, score: game.scorecards[id].total, active: game.phase === 'Playing' && id === game.activePlayerId, isMe: id === this.myConnectionId })) : null
+    });
     if (!this.canAct || !this.isAvailableCategory(this.pendingCategory ?? '')) {
       this.pendingCategory = null;
     }
