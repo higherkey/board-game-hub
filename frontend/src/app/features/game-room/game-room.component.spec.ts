@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy, inject } from '@angular/core';
+import { GameChromeService } from './services/game-chrome.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
@@ -17,7 +18,22 @@ import { ConfirmService } from '../../shared/services/confirm.service';
 class HostSettingsStubComponent {
   @Input() roomCode: any;
   @Input() currentGameType: any;
+  @Input() compactMode: any;
+  @Input() resultPhase: any;
+  @Input() isIntermission: any;
+  @Input() players: any;
+  @Input() currentRound: any;
+  @Input() totalRounds: any;
+  @Input() meReady: any;
+  @Input() isHost: any;
+  @Input() isScreen: any;
+  @Input() isHostOverride: any;
   @Output() gameStart = new EventEmitter<any>();
+  @Output() playAgain = new EventEmitter<any>();
+  @Output() nextRound = new EventEmitter<any>();
+  @Output() endGame = new EventEmitter<any>();
+  @Output() exitGame = new EventEmitter<any>();
+  @Output() toggleReady = new EventEmitter<any>();
 }
 
 @Component({ selector: 'app-video-chat', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
@@ -344,5 +360,145 @@ describe('GameRoomComponent', () => {
     await component.goToLogin();
     expect(navSpy).toHaveBeenCalled();
   });
+
+  describe('in-game chrome', () => {
+    const at = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString();
+    const games = [
+      { id: 'Babble', name: 'Babble', timerType: 2, status: 'Testing' },
+      { id: 'Farkle', name: 'Farkle', timerType: 0, status: 'Testing' }
+    ];
+    const el = () => fixture.nativeElement as HTMLElement;
+    const play = (room: Record<string, unknown>, opts: { host?: boolean } = {}) => {
+      mockStateService.needsName = false;
+      (TestBed.inject(GameDataService).games$ as BehaviorSubject<any>).next(games);
+      mockStateService.isHost$.next(opts.host ?? true);
+      roomSubject.next({ code: 'ABCD', state: 'Playing', gameType: 'Babble', roundNumber: 1, isPaused: false, players: [], ...room });
+      mockStateService.gameStarted$.next(true);
+      fixture.detectChanges();
+    };
+    const menuButton = (label: string) =>
+      [...el().querySelectorAll('app-game-menu button')].find(b => b.textContent!.includes(label)) as HTMLButtonElement | undefined;
+
+    beforeEach(() => {
+      mockStateService.pauseRound = jasmine.createSpy('pauseRound');
+      mockStateService.resumeRound = jasmine.createSpy('resumeRound');
+      mockStateService.endRound = jasmine.createSpy('endRound');
+    });
+
+    it('shows the room header in the lobby and the game bar in play', () => {
+      expect(el().querySelector('app-room-header')).not.toBeNull();
+      expect(el().querySelector('app-game-bar')).toBeNull();
+
+      play({});
+      expect(el().querySelector('app-game-bar')).not.toBeNull();
+      expect(el().querySelector('app-room-header')).toBeNull();
+      expect(el().querySelector('app-mobile-tab-bar')).toBeNull();
+      expect(el().querySelector('.host-controls-bar')).toBeNull();
+      expect(el().querySelector('.intermission-bar')).toBeNull();
+    });
+
+    it('keeps one set of host controls, inside the game menu', () => {
+      play({});
+      expect(el().querySelectorAll('app-host-settings').length).toBe(1);
+      expect(el().querySelector('app-game-menu app-host-settings')).not.toBeNull();
+    });
+
+    it('shows what the active game publishes in the game bar', () => {
+      mockStateService.gameComponent$.next(PublishingGameStubComponent);
+      play({});
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar [role=status]')!.textContent).toContain('Your turn');
+    });
+
+    it('clears the previous game from the chrome when the game changes', () => {
+      play({});
+      component.chrome.publish({ status: 'Guesty’s turn' });
+      roomSubject.next({ code: 'ABCD', state: 'Playing', gameType: 'Farkle', roundNumber: 1, isPaused: false, players: [] });
+      expect(component.chrome.status()).toBe('');
+    });
+
+    it('lets the host pause and resume a timed round', () => {
+      play({ roundEndTime: at(60000) });
+      menuButton('Pause round')!.click();
+      expect(mockStateService.pauseRound).toHaveBeenCalled();
+
+      play({ roundEndTime: at(60000), isPaused: true });
+      component.tick();
+      fixture.detectChanges();
+      menuButton('Resume round')!.click();
+      expect(mockStateService.resumeRound).toHaveBeenCalled();
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('Paused');
+    });
+
+    it('ends a round early only after the host confirms', async () => {
+      play({ roundEndTime: at(60000) });
+      const confirm = spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(false);
+      await component.endRoundEarly();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+      confirm.and.resolveTo(true);
+      await component.endRoundEarly();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(1);
+    });
+
+    it('has no round controls for untimed games', () => {
+      play({ gameType: 'Farkle' });
+      expect(menuButton('Pause round')).toBeUndefined();
+      expect(menuButton('End round')).toBeUndefined();
+    });
+
+    it('ends a timed-out round once, on the host only, never while paused', () => {
+      play({ roundNumber: 2, roundEndTime: at(-1000) });
+      component.tick(); component.tick(); component.tick();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(1);
+
+      mockStateService.endRound.calls.reset();
+      play({ roundNumber: 3, roundEndTime: at(-1000) }, { host: false });
+      component.tick();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+
+      play({ roundNumber: 4, roundEndTime: at(-1000), isPaused: true });
+      component.tick();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+    });
+
+    it('counts down the lead-in over the game', () => {
+      play({ roundStartTime: at(2500), roundEndTime: at(62500) });
+      component.tick();
+      fixture.detectChanges();
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('3');
+    });
+
+    it('puts the host\'s next step on the game bar between rounds and after the game', () => {
+      mockStateService.playAgain = jasmine.createSpy('playAgain');
+      const settings = { timerDurationSeconds: 60 };
+      mockStateService.isIntermission$.next(true);
+      play({ resultPhase: 'RoundResults', settings });
+      (el().querySelector('app-game-bar .bar-next') as HTMLButtonElement).click();
+      expect(mockStateService.nextRound).toHaveBeenCalledWith(settings);
+
+      play({ resultPhase: 'GameOver', settings });
+      const next = el().querySelector('app-game-bar .bar-next') as HTMLButtonElement;
+      expect(next.textContent).toContain('Play again');
+      next.click();
+      expect(mockStateService.playAgain).toHaveBeenCalledWith(settings);
+
+      mockStateService.isIntermission$.next(false);
+      play({ resultPhase: null, settings });
+      expect(el().querySelector('app-game-bar .bar-next')).toBeNull();
+    });
+
+    it('collapses the player list on a Table when the game starts', () => {
+      mockStateService.isScreen = true;
+      component.isSidebarCollapsed = false;
+      play({});
+      expect(component.isSidebarCollapsed).toBeTrue();
+    });
+  });
 });
+
+@Component({ selector: 'app-publishing-game', template: '', standalone: true })
+class PublishingGameStubComponent {
+  private readonly chrome = inject(GameChromeService);
+  constructor() { this.chrome.publish({ status: 'Your turn' }); }
+}
 

@@ -288,6 +288,30 @@ export class GameRoomStateService {
     }
   }
 
+  async pauseRound() {
+    try {
+      await this.signalRService.pauseGame();
+    } catch (err) {
+      this.logger.error('Failed to pause round', err);
+    }
+  }
+
+  async resumeRound() {
+    try {
+      await this.signalRService.resumeGame();
+    } catch (err) {
+      this.logger.error('Failed to resume round', err);
+    }
+  }
+
+  async endRound() {
+    try {
+      await this.signalRService.endRound();
+    } catch (err) {
+      this.logger.error('Failed to end round', err);
+    }
+  }
+
   async exitGame(roomCode: string) {
     if (roomCode) {
       try {

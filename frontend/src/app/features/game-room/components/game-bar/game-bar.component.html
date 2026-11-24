@@ -9,6 +9,7 @@
     @if (progress) {
         <span class="game-bar-progress">{{ progress }}</span>
     }
+    <ng-content select="[barAction]"></ng-content>
     @if (clock && clock.state !== 'idle') {
         <span class="game-bar-clock" role="timer" aria-label="Time left" [class.is-urgent]="clock.urgent">{{ clock.text }}</span>
     }

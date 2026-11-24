@@ -37,16 +37,6 @@
     &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: -3px; }
 }
 
-.header-round-badge {
-    padding: 0.2rem 0.6rem;
-    border: 2px solid var(--primary);
-    border-radius: var(--radius-sm);
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--primary);
-}
-
 .header-section-left {
     flex: 1 1 0%;
     display: flex;
