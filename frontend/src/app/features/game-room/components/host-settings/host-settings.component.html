@@ -219,10 +219,12 @@
         <!-- Start Button (Full Width footer) -->
         <div class="mt-2 mt-md-4 pt-2 pt-md-3 border-top position-relative">
             <button type="button" class="btn-start shadow-pink mb-1 mb-md-2" (click)="startGame($event)"
-                [disabled]="selectedGameType === 'None'">
+                [disabled]="selectedGameType === 'None' || !!startBlocker"
+                [attr.aria-describedby]="startBlocker ? 'start-blocker' : null">
                 <i class="bi" [class.bi-play-fill]="!isIntermission" [class.bi-fast-forward-fill]="isIntermission"></i>
                 {{ startLabel }}
             </button>
+            <p *ngIf="startBlocker" id="start-blocker" class="start-blocker" role="status">{{ startBlocker }}</p>
             <button *ngIf="isGameOver || (resultPhase == null && isIntermission)" type="button" class="btn btn-outline-danger w-100 fw-bold py-2"
                 (click)="emitExitGame($event)">
                 <i class="bi bi-stop-circle-fill me-1"></i> END SESSION

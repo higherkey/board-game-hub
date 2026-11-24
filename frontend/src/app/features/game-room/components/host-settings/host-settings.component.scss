@@ -291,3 +291,9 @@
 .max-w-80px {
     max-width: 80px;
 }
+/* Why Start is disabled, right under it. */
+.start-blocker {
+    margin: 0 0 var(--space-sm);
+    font-weight: 700;
+    color: var(--danger);
+}

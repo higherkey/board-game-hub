@@ -69,4 +69,19 @@ describe('RoomSidebarComponent', () => {
       .map((el: any) => el.textContent.trim());
     expect(labels).toEqual(['User', 'Guest']);
   });
+
+  it("labels the role switch on your own row as an action", () => {
+    component.connectionId = "me";
+    component.tables = [{ connectionId: "me", name: "TV", score: 0, isHost: false, isReady: true, isScreen: true }] as any;
+    component.players = [];
+    fixture.detectChanges();
+    let btn = fixture.nativeElement.querySelector("[aria-label=\"Use this device as a Hand\"]") as HTMLButtonElement;
+    expect(btn.textContent).toContain("Use as Hand");
+
+    component.tables = [];
+    component.players = [{ connectionId: "me", name: "Ann", score: 0, isHost: false, isReady: true, isScreen: false }] as any;
+    fixture.detectChanges();
+    btn = fixture.nativeElement.querySelector("[aria-label=\"Use this device as a Table\"]") as HTMLButtonElement;
+    expect(btn.textContent).toContain("Use as Table");
+  });
 });

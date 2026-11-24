@@ -217,4 +217,41 @@ describe('HostSettingsComponent', () => {
         expect(component.toggleReady.emit).not.toHaveBeenCalled();
         expect(toast.showWarning).toHaveBeenCalledWith('Please select a game first!');
     });
+
+    describe("start gate", () => {
+        const hands = (n: number) => Array.from({ length: n }, (_, i) =>
+            ({ connectionId: "p" + i, name: "P" + i, score: 0, isHost: false, isReady: true, isScreen: false }));
+        const tv = { connectionId: "tv", name: "TV", score: 0, isHost: true, isReady: true, isScreen: true };
+        beforeEach(() => {
+            component.availableGames = [{ id: "FourInARow", name: "Four in a Row", minPlayers: 2, maxPlayers: 2, timerType: 0 }] as any;
+            component.selectedGameType = "FourInARow";
+        });
+
+        it("explains when too few players have joined, counting Hands only", () => {
+            component.players = [tv, ...hands(1)] as any;
+            expect(component.startBlocker).toBe("Four in a Row needs 2 players. 1 has joined.");
+        });
+
+        it("explains when too many players have joined", () => {
+            component.players = hands(3) as any;
+            expect(component.startBlocker).toBe("Four in a Row takes at most 2 players. 3 have joined.");
+        });
+
+        it("allows a start inside the range, and never blocks the next round", () => {
+            component.players = hands(2) as any;
+            expect(component.startBlocker).toBeNull();
+            component.players = hands(1) as any;
+            component.isIntermission = true;
+            expect(component.startBlocker).toBeNull();
+        });
+
+        it("disables Start and shows the reason beside it", () => {
+            component.players = hands(1) as any;
+            fixture.detectChanges();
+            const start = fixture.nativeElement.querySelector(".btn-start") as HTMLButtonElement;
+            expect(start.disabled).toBeTrue();
+            expect(start.getAttribute("aria-describedby")).toBe("start-blocker");
+            expect(fixture.nativeElement.querySelector("#start-blocker").textContent).toContain("needs 2 players");
+        });
+    });
 });
