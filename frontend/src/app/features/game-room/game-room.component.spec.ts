@@ -440,8 +440,11 @@ describe('GameRoomComponent', () => {
       expect(mockStateService.endRound).toHaveBeenCalledTimes(1);
     });
 
-    it('has no round controls for untimed games', () => {
-      play({ gameType: 'Farkle' });
+    it('has no clock or round controls for untimed games', () => {
+      play({ gameType: 'Farkle', roundEndTime: at(60000) });
+      component.tick();
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar [role=timer]')).toBeNull();
       expect(menuButton('Pause round')).toBeUndefined();
       expect(menuButton('End round')).toBeUndefined();
     });

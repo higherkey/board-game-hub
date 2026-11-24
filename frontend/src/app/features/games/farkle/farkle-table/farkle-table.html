@@ -1,64 +1,32 @@
-<div class="farkle-table-container" *ngIf="state">
-  <!-- Sidebar Scoreboard -->
-  <section class="scoreboard" aria-label="Scoreboard">
-    <div class="scoreboard-header">Scoreboard</div>
-    <div class="player-row" *ngFor="let p of getPlayerList(state.playerStates)"
-         [class.active]="p.playerId === state.activePlayerId"
-         [attr.aria-label]="p.playerName + ': ' + p.totalScore + ' points' + (p.playerId === state.activePlayerId ? ', current player' : '')">
-      <div class="player-name">{{ p.playerName }}</div>
-      <div class="player-score">{{ p.totalScore | number }}</div>
-      <div class="last-turn" *ngIf="p.lastTurnScore > 0">+{{ p.lastTurnScore }}</div>
-    </div>
+<!-- Farkle's Table: the dice tray is the hero, with scores and the scoring guide in reach beside it. -->
+<div class="farkle-table" *ngIf="state">
+  <section class="farkle-scores" aria-label="Scores">
+    <h2 class="farkle-label">Scores</h2>
+    <app-tableau-ring [entries]="entries" label="Scores"></app-tableau-ring>
   </section>
 
-  <!-- Main Game Area -->
-  <div class="main-area">
-    <div class="header">
-      <div class="current-turn-info">
-        <span class="active-player-name">{{ state.playerStates[state.activePlayerId]?.playerName }}'s Turn</span>
-        <span class="turn-score" *ngIf="state.currentTurnScore > 0">Current Score: {{ state.currentTurnScore }}</span>
-      </div>
-    </div>
-
-    <!-- Player Indicators (Seats around the table) -->
-    <div class="player-indicators">
-      <div *ngFor="let p of getPlayerList(state.playerStates)" 
-           class="player-seat"
-           [class.active]="p.playerId === state.activePlayerId">
-        <div class="seat-avatar">{{ p.playerName[0] }}</div>
-        <div class="seat-name">{{ p.playerName }}</div>
-      </div>
-    </div>
+  <div class="farkle-stage">
+    <p class="farkle-at-risk" *ngIf="state.currentTurnScore > 0 && state.phase !== 'GameOver'">
+      <span class="farkle-at-risk-value">{{ state.currentTurnScore | number }}</span>
+      <span>at risk this turn</span>
+    </p>
 
     <!-- The server rolls; the tray throws only when the roll id changes, so a refresh never replays a throw. -->
     <app-dice-tray class="farkle-table-tray" [dice]="trayDice(state.dice)" [rollId]="state.rollId ?? null"
       motion="full" label="Dice on the table" (settled)="landing.land(state.rollId)"></app-dice-tray>
 
-    <!-- Overlay Announcements -->
-    <div class="announcement-overlay" *ngIf="landing.phase(state) === 'Farkled'"
-         role="alert" aria-live="assertive">
-      <div class="farkle-burst">FARKLE!</div>
+    <div class="farkle-announce" *ngIf="landing.phase(state) === 'Farkled'" role="alert">
+      <span class="farkle-burst">Farkle!</span>
     </div>
-    
-    <div class="announcement-overlay" *ngIf="state.phase === 'GameOver'"
-         role="alert" aria-live="assertive">
-      <div class="winner-burst">WINNER: {{ state.playerStates[state.winningPlayerId!]?.playerName }}</div>
+    <div class="farkle-announce" *ngIf="state.phase === 'GameOver'" role="alert">
+      <span class="farkle-burst farkle-burst--win">{{ status }}</span>
     </div>
   </div>
 
-  <!-- Permanent Scoring Aid Sidebar -->
-  <div class="scoring-guide">
-    <div class="guide-header">Scoring Guide</div>
-    <div class="guide-list">
-      <div class="guide-item"><span>1s</span> <span>100 pts</span></div>
-      <div class="guide-item"><span>5s</span> <span>50 pts</span></div>
-      <div class="guide-item"><span>Three 1s</span> <span>1000 pts</span></div>
-      <div class="guide-item"><span>Three of a Kind</span> <span>Value × 100</span></div>
-      <div class="guide-item"><span>Four of a Kind</span> <span>2 × (3 of a kind)</span></div>
-      <div class="guide-item"><span>Five of a Kind</span> <span>4 × (3 of a kind)</span></div>
-      <div class="guide-item"><span>Six of a Kind</span> <span>8 × (3 of a kind)</span></div>
-      <div class="guide-item"><span>Straight (1-6)</span> <span>1500 pts</span></div>
-      <div class="guide-item"><span>Three Pairs</span> <span>1500 pts</span></div>
-    </div>
-  </div>
+  <section class="farkle-guide" aria-label="Scoring guide">
+    <h2 class="farkle-label">How it scores</h2>
+    <app-farkle-rules></app-farkle-rules>
+  </section>
 </div>
+
+<ng-template #rules><app-farkle-rules></app-farkle-rules></ng-template>

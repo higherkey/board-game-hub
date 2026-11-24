@@ -386,10 +386,15 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
 
   /** One clock tick: refresh the shared clock, and on the host end a timed-out round once. */
   tick(now = Date.now()) {
+    // Untimed games still get a round end time from the server; it means nothing to players.
+    if (!this.isTimedGame) {
+      this.clock.set(null);
+      return;
+    }
     const clock = roundClock(this.room, now);
     this.clock.set(clock);
     const room = this.room;
-    if (clock.state === 'ended' && this.isHost && room && this.isTimedGame && this.autoEndedRound !== room.roundNumber) {
+    if (clock.state === 'ended' && this.isHost && room && this.autoEndedRound !== room.roundNumber) {
       this.autoEndedRound = room.roundNumber;
       void this.stateService.endRound();
     }
