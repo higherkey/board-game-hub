@@ -1,0 +1,8 @@
+<ul class="tableau" [attr.aria-label]="label">
+    @for (entry of entries; track entry.id) {
+        <li class="tableau-row" [class.is-active]="entry.active" [attr.aria-current]="entry.active ? 'true' : null">
+            <span class="tableau-name">{{ entry.name }}@if (entry.isMe) {<span class="tableau-me"> (you)</span>}</span>
+            <span class="tableau-score">{{ entry.score }}</span>
+        </li>
+    }
+</ul>

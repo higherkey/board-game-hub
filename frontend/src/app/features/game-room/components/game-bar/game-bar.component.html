@@ -1,0 +1,20 @@
+<header class="game-bar">
+    <button type="button" class="game-bar-icon" aria-label="Game menu" aria-haspopup="dialog" (click)="menuOpen.emit()">
+        <i class="bi bi-list" aria-hidden="true"></i>
+    </button>
+    <div class="game-bar-main">
+        <span class="game-bar-name">{{ gameName }}</span>
+        <span class="game-bar-status" role="status" aria-live="polite">{{ status }}</span>
+    </div>
+    @if (progress) {
+        <span class="game-bar-progress">{{ progress }}</span>
+    }
+    @if (clock && clock.state !== 'idle') {
+        <span class="game-bar-clock" role="timer" aria-label="Time left" [class.is-urgent]="clock.urgent">{{ clock.text }}</span>
+    }
+    @if (hasRules) {
+        <button type="button" class="game-bar-icon" aria-label="How to play" (click)="rulesOpen.emit()">
+            <i class="bi bi-question-lg" aria-hidden="true"></i>
+        </button>
+    }
+</header>
