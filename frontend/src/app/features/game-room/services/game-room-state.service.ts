@@ -145,12 +145,10 @@ export class GameRoomStateService {
     }
 
     const guestName = this.authService.getGuestName() || (this.authService.currentUserValue?.displayName);
-
-    if (guestName) {
-      this.needsName = false;
-    } else {
-      this.needsName = true;
-    }
+    // Only a rejoin skips the entry screen: a new room asks again whether this device is a Table or a Hand.
+    const rejoining = this.signalRService.getActiveRooms().some(r => r.code === roomCode);
+    const autoJoin = !!guestName && rejoining;
+    this.needsName = !autoJoin;
 
     try {
       await this.signalRService.startConnection();
@@ -160,7 +158,7 @@ export class GameRoomStateService {
       return;
     }
 
-    if (guestName) {
+    if (autoJoin) {
       this.autoJoin(roomCode, guestName);
     }
   }
