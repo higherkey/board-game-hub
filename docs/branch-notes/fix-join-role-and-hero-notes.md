@@ -9,7 +9,7 @@
 - None.
 
 ## 3. Quick Wins (4b)
-- None.
+- Scope the hero e2e room card checks to the Host scene: the card now shows in both scenes, which broke strict selectors in the Cloudflare build.
 
 ## 4. Deferred Items (4c)
 - A rejoin still uses the last global role, not the role this device had in that room. Store the role per active room if this shows up.
