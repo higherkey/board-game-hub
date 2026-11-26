@@ -64,7 +64,8 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json"
             },
             "azure_dev": {
               "budgets": [
@@ -85,7 +86,8 @@
                   "with": "src/environments/environment.dev.ts"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json"
             },
             "staging": {
               "budgets": [
@@ -106,7 +108,8 @@
                   "with": "src/environments/environment.staging.ts"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json"
             },
             "development": {
               "optimization": false,
