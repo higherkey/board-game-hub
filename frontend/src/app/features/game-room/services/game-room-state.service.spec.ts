@@ -48,6 +48,7 @@ describe('GameRoomStateService', () => {
       checkIsHost: jasmine.createSpy('checkIsHost').and.returnValue(true),
       startConnection: jasmine.createSpy('startConnection'),
       clearState: jasmine.createSpy('clearState'),
+      getActiveRooms: jasmine.createSpy('getActiveRooms').and.returnValue([{ code: 'ABCD', gameType: 'Babble', lastPlayed: '' }]),
       joinRoom: jasmine.createSpy('joinRoom').and.returnValue(Promise.resolve(true)),
       createRoom: jasmine.createSpy('createRoom').and.returnValue(Promise.resolve('NEW1')),
       updateIsHostStatus: jasmine.createSpy('updateIsHostStatus'),
@@ -177,6 +178,13 @@ describe('GameRoomStateService', () => {
       expect(signalRMock.joinRoom).toHaveBeenCalledWith('ABCD', 'Tester', jasmine.any(Boolean));
       expect(service.needsName).toBeFalse();
     }));
+
+    it('asks for name and role on a new room even with a stored name', async () => {
+      signalRMock.getActiveRooms.and.returnValue([{ code: 'OLD1', gameType: 'Babble', lastPlayed: '' }]);
+      await service.initializeRoom('ABCD', false);
+      expect(signalRMock.joinRoom).not.toHaveBeenCalled();
+      expect(service.needsName).toBeTrue();
+    });
 
     it('sets needsName to true when no stored name exists', async () => {
       authMock.getGuestName.and.returnValue(null);

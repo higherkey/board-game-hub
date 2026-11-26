@@ -9,6 +9,7 @@ import {
   inject,
   signal
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { gsap } from 'gsap';
 
 export type ConceptStage = 'host' | 'join' | 'play';
@@ -28,6 +29,7 @@ interface StageMeta {
 @Component({
   selector: 'app-home-hero',
   standalone: true,
+  imports: [NgTemplateOutlet],
   templateUrl: './home-hero.component.html',
   styleUrl: './home-hero.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -272,7 +274,7 @@ export class HomeHeroComponent implements AfterViewInit, OnDestroy {
       }, '<+0.1')
       .to(q('.dc-pick:not(.dc-pick--chosen)'), { opacity: 0, scale: 0.8, duration: 0.45, stagger: 0.05 }, '>+0.4')
       .to([one('.dc-pick--chosen'), one('.dc-cursor')], { opacity: 0, duration: 0.35 }, '>+0.2')
-      .fromTo(one('.dc-roomcard'), { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(2)' }, '>')
+      .fromTo(one('.dc-scene--host .dc-roomcard'), { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(2)' }, '>')
       .fromTo(q('.dc-scene--host .dc-code-letter'),
         { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.14 }, '>-0.1')
       .fromTo(one('.dc-scene--host .dc-qr'), { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(2)' }, '<')
@@ -295,7 +297,9 @@ export class HomeHeroComponent implements AfterViewInit, OnDestroy {
       .to(one('.dc-phone--b .dc-join-btn'), { scale: 0.85, duration: 0.12, yoyo: true, repeat: 1 }, '>+0.15')
       .to(one('.dc-phone--b .dc-joined'), { opacity: 1, duration: 0.3 }, '>')
       .fromTo(one('.dc-seat--b .dc-avatar'), { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(3)' }, '<+0.1')
-      .to(one('.dc-lobby-ready'), { opacity: 1, duration: 0.3 }, '>+0.1');
+      .to(one('.dc-lobby-ready'), { opacity: 1, duration: 0.3 }, '>+0.1')
+      .to(one('.dc-scene--join .dc-room-waiting'), { opacity: 0, duration: 0.2 }, '<')
+      .fromTo(one('.dc-scene--join .dc-room-ready'), { opacity: 0 }, { opacity: 1, duration: 0.3 }, '>');
 
     // ---------- Stage 3: PLAY ----------
     const playAt = tl.duration() + 0.8;

@@ -1,17 +1,10 @@
-<section class="four-game">
-    <header>
-        <h2>Four in a Row</h2>
-        <button type="button" (click)="showRules = !showRules" [attr.aria-expanded]="showRules">{{ showRules ? 'Hide rules' : 'How to play' }}</button>
-    </header>
-    <app-four-in-a-row-rules *ngIf="showRules" (closeRules)="showRules = false" />
-    <p class="status" role="status" aria-live="polite">{{ status }}</p>
-    <div class="players" aria-label="Players">
-        <span *ngFor="let id of room?.gameData?.playerOrder; let index = index"
-            [class.active]="id === room?.gameData?.currentPlayerId">
-            <strong>{{ index === 0 ? 'Red · 1' : 'Yellow · 2' }}</strong> {{ playerName(id) }}{{ id === myConnectionId ? ' (you)' : '' }}
-        </span>
+<!-- Four in a Row: the rack is the game. A Table shows it as large as the screen allows, with who is who beside it. -->
+<section class="four-game" [class.is-table]="isScreen">
+    <div class="four-stage">
+        <app-four-in-a-row-board *ngIf="isScreen" [room]="room" />
+        <app-four-in-a-row-player *ngIf="!isScreen" [room]="room" [myConnectionId]="myConnectionId" (columnDrop)="drop($event)" />
     </div>
-    <app-four-in-a-row-board *ngIf="isScreen" [room]="room" />
-    <app-four-in-a-row-player *ngIf="!isScreen" [room]="room" [myConnectionId]="myConnectionId" (columnDrop)="drop($event)" />
-    <p class="end-hint" *ngIf="room?.gameData?.phase === 'GameOver'">Use the room controls to play again or return to the lobby.</p>
+    <app-tableau-ring class="four-players" [entries]="entries" label="Players"></app-tableau-ring>
 </section>
+
+<ng-template #rules><app-four-in-a-row-rules /></ng-template>

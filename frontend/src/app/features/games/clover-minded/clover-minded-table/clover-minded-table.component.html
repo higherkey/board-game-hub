@@ -1,17 +1,4 @@
 <div class="table-root">
-    <div class="table-header">
-        <div class="title">
-            <span class="emoji">🍀</span>
-            <span class="name">Clover-Minded</span>
-        </div>
-
-        <div class="status">
-            <span class="pill" *ngIf="state as s">
-                {{ phaseLabel(s.phase) }}
-            </span>
-        </div>
-    </div>
-
     <div class="table-body" *ngIf="state as s; else waiting">
         <div class="top-row">
             <div class="spectator-box" *ngIf="s.currentSpectatorId && s.phase !== phases.ClueWriting">
@@ -38,7 +25,8 @@
             </div>
         </div>
 
-        <div class="grid">
+        <!-- Center Cards only matter while a clover is being solved; otherwise the board gets the room. -->
+        <div class="grid" [class.is-solving]="stateInResolution">
             <div class="clover-board-container">
                 <!-- 4 Outer Edge Clue Zones -->
                 <div class="outer-clue-badge clue-top">
@@ -108,7 +96,7 @@
             </div>
 
             <!-- Pool -->
-            <div class="pool-wrap">
+            <div class="pool-wrap" *ngIf="stateInResolution">
                 <div class="pool-title">Center Cards</div>
                 <div class="pool-cards">
                     <div class="pool-card"
@@ -172,3 +160,5 @@
         </div>
     </ng-template>
 </div>
+
+<ng-template #rules><app-clover-rules></app-clover-rules></ng-template>

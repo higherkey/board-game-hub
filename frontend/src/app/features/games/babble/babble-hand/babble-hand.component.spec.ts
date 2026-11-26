@@ -4,6 +4,7 @@ import { SignalRService } from '../../../../services/signalr.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { createMockRoom } from '../../../../shared/testing/test-helpers';
+import { GameChromeService } from '../../../game-room/services/game-chrome.service';
 
 describe('BabbleHandComponent', () => {
   let component: BabbleHandComponent;
@@ -23,7 +24,8 @@ describe('BabbleHandComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BabbleHandComponent, FormsModule, CommonModule],
       providers: [
-        { provide: SignalRService, useValue: mockSignalRService }
+        { provide: SignalRService, useValue: mockSignalRService },
+        GameChromeService
       ]
     }).compileComponents();
 
@@ -54,20 +56,17 @@ describe('BabbleHandComponent', () => {
     });
 
     it('should add letter on tile tap', () => {
-      component.isBlurred = false;
       component.addLetter('A');
       component.addLetter('B');
       expect(component.currentWord).toBe('AB');
     });
 
     it('should handle Qu when tapping Q', () => {
-      component.isBlurred = false;
       component.addLetter('Q');
       expect(component.currentWord).toBe('QU');
     });
 
     it('should backspace single letter and QU digraph', () => {
-      component.isBlurred = false;
       component.currentWord = 'ABC';
       component.backspace();
       expect(component.currentWord).toBe('AB');
@@ -86,7 +85,6 @@ describe('BabbleHandComponent', () => {
 
   describe('Word Submission', () => {
     beforeEach(() => {
-      component.isBlurred = false;
     });
 
     it('should submit valid word and clear input', () => {
@@ -116,7 +114,7 @@ describe('BabbleHandComponent', () => {
     });
 
     it('should NOT submit word when paused or blurred', () => {
-      component.isBlurred = true;
+      component.room = { ...component.room!, isPaused: true };
       component.currentWord = 'BANANA';
       component.submitWord();
 
@@ -127,8 +125,6 @@ describe('BabbleHandComponent', () => {
 
   describe('Countdown and Timer', () => {
     const setRoom = (overrides: any) => {
-      // Setup started a real timer; restart it inside the fake clock.
-      (component as any).stopTimer();
       component.room = createMockRoom({ gameType: 'Babble', state: 'Playing', roundNumber: 2, gameData: { grid: 'ABCDEFGHIJKLMNOP' }, ...overrides });
       component.ngOnChanges({
         room: { previousValue: null, currentValue: component.room, firstChange: false, isFirstChange: () => false }
@@ -163,66 +159,12 @@ describe('BabbleHandComponent', () => {
       discardPeriodicTasks();
     }));
 
-    it('should format timer as MM:SS and indicate urgency when < 10s', fakeAsync(() => {
-      (component as any).stopTimer();
-      component.countdownSeconds = 0;
-      component.isBlurred = false;
-      const targetTime = Date.now() + 8000;
-      component.room = createMockRoom({
-        gameType: 'Babble',
-        state: 'Playing',
-        roundEndTime: new Date(targetTime).toISOString()
-      });
-
-      (component as any).startTimer();
-      tick(550);
-
-      expect(component.timerText).toContain('00:0');
-      expect(component.isUrgent).toBeTrue();
-      discardPeriodicTasks();
-    }));
-
-    it('should show PAUSED on timer when room is paused', fakeAsync(() => {
-      (component as any).stopTimer();
-      component.countdownSeconds = 0;
-      component.isBlurred = false;
-      component.room = createMockRoom({
-        gameType: 'Babble',
-        state: 'Playing',
-        isPaused: true,
-        roundEndTime: new Date(Date.now() + 30000).toISOString()
-      });
-
-      (component as any).startTimer();
-      tick(550);
-
-      expect(component.timerText).toBe('PAUSED');
-      expect(component.isUrgent).toBeFalse();
-      discardPeriodicTasks();
-    }));
   });
 
-  describe('Host Toolbar on Hand', () => {
+  describe('Host word validation on Hand', () => {
     beforeEach(() => {
       component.isHost = true;
       fixture.detectChanges();
-    });
-
-    it('should call pauseGame and resumeGame', () => {
-      component.handlePause();
-      expect(mockSignalRService.pauseGame).toHaveBeenCalled();
-
-      component.handleResume();
-      expect(mockSignalRService.resumeGame).toHaveBeenCalled();
-    });
-
-    it('should call endRound and nextRound', () => {
-      component.handleEndRound();
-      expect(mockSignalRService.endRound).toHaveBeenCalled();
-      expect(component.isEnding).toBeTrue();
-
-      component.handleNextRound();
-      expect(mockSignalRService.nextRound).toHaveBeenCalled();
     });
 
     it('should send VALIDATE_WORD action when host toggles validation', () => {
@@ -275,5 +217,40 @@ describe('BabbleHandComponent', () => {
       component.showDefinition(res);
       expect(component.selectedWord).toBeNull();
     });
+  });
+
+  describe("shared chrome", () => {
+      it("publishes status, round progress, scores and rules", () => {
+          component.room = createMockRoom({ gameType: "Babble", state: "Playing", roundNumber: 2, totalRounds: 5, players: [{ connectionId: "conn1", name: "Ann", score: 4, isHost: false, isReady: true, isScreen: false }], gameData: { grid: "ABCDEFGHIJKLMNOP" } });
+          fixture.componentRef.setInput("room", component.room);
+          fixture.detectChanges();
+          const chrome = TestBed.inject(GameChromeService);
+          expect(chrome.status()).toBe("Find words");
+          expect(chrome.progress()).toBe("Round 2 of 5");
+          expect(chrome.scores()).toEqual([{ id: "conn1", name: "Ann", score: 4, active: false, isMe: true }]);
+          expect(chrome.rules()).not.toBeNull();
+          expect(chrome.autoEndRound()).toBeTrue();
+      });
+
+      it("leaves title, clock, countdown and host controls to the room", () => {
+          component.isHost = true;
+          fixture.detectChanges();
+          const el: HTMLElement = fixture.nativeElement;
+          for (const sel of [".host-toolbar",".hand-header",".timer-card",".countdown-overlay",".game-name",".round-pill"]) expect(el.querySelector(sel)).withContext(sel).toBeNull();
+      });
+
+      it("never ends the round itself when the clock runs out", fakeAsync(() => {
+          component.isHost = true;
+          component.room = createMockRoom({ gameType: "Babble", state: "Playing", roundEndTime: new Date(Date.now() - 1000).toISOString(), gameData: { grid: "ABCDEFGHIJKLMNOP" } });
+          fixture.componentRef.setInput("room", component.room);
+          fixture.detectChanges();
+          tick(2000);
+          expect(mockSignalRService.endRound).not.toHaveBeenCalled();
+          discardPeriodicTasks();
+      }));
+  });
+
+  it("docks the word entry in thumb reach", () => {
+    expect(fixture.nativeElement.querySelector("app-action-dock form")).not.toBeNull();
   });
 });

@@ -53,7 +53,7 @@ Migrations are managed **out-of-band** from the API startup process.
 On every push to `main`, `staging`, or `dev`, the backend deployment workflow (`.github/workflows/deploy-backend-render.yml`) does the following **before** triggering Render deployment:
 
 1. Generates a self-contained **EF Core Migration Bundle** (`efbundle`) from all migrations in source.
-2. Runs the bundle against the branch's database: Supabase for `main` and `staging` (`SUPABASE_CONNECTION_STRING_PROD` / `_STAGING`), Neon for `dev` (`NEON_CONNECTION_STRING_DEV`).
+2. Runs the bundle against the branch's database: Neon for every tier (`NEON_CONNECTION_STRING_PROD`, `_STAGING` and `_DEV`).
 3. Updates only Render's database connection variable to use that same target, then deploys the tested commit.
 4. Waits for Render to become live and verifies both `/health` and the database-backed `/api/games` route.
 

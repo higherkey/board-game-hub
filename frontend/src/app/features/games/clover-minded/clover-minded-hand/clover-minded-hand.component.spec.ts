@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CloverMindedHandComponent } from './clover-minded-hand.component';
 import { SignalRService } from '../../../../services/signalr.service';
+import { GameChromeService } from '../../../game-room/services/game-chrome.service';
 
 describe('CloverMindedHandComponent', () => {
     let component: CloverMindedHandComponent;
@@ -16,7 +17,8 @@ describe('CloverMindedHandComponent', () => {
         await TestBed.configureTestingModule({
             imports: [CloverMindedHandComponent],
             providers: [
-                { provide: SignalRService, useValue: mockSignalRService }
+                { provide: SignalRService, useValue: mockSignalRService },
+                GameChromeService
             ]
         }).compileComponents();
 
@@ -97,5 +99,19 @@ describe('CloverMindedHandComponent', () => {
         expect(component.selectedCardId).toBe('c1');
         component.selectPoolCard('c1');
         expect(component.selectedCardId).toBeNull();
+    });
+
+    it("publishes its status, progress and rules, and has no title row or phase pill of its own", () => {
+        fixture.componentRef.setInput("room", { ...component.room });
+        fixture.detectChanges();
+        const chrome = TestBed.inject(GameChromeService);
+        expect(chrome.status()).toBe("Write your four clues");
+        expect(chrome.rules()).not.toBeNull();
+        const el: HTMLElement = fixture.nativeElement;
+        for (const sel of [".table-header", ".hand-header", ".pill", ".phase-pill", ".emoji"]) expect(el.querySelector(sel)).withContext(sel).toBeNull();
+    });
+
+    it("keeps the clue submit button in thumb reach", () => {
+        expect(fixture.nativeElement.querySelector("app-action-dock .primary-btn")).not.toBeNull();
     });
 });

@@ -1,18 +1,24 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, OnChanges, TemplateRef, ViewChild, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DiceTrayComponent } from '../../../../shared/components/dice-tray/dice-tray.component';
 import { FarkleLanding, farkleTrayDice } from '../farkle-dice';
 import { Room } from '../../../../services/signalr.service';
+import { GameChromeService, TableauEntry } from '../../../game-room/services/game-chrome.service';
+import { TableauRingComponent } from '../../shared/components/tableau-ring/tableau-ring.component';
+import { FarkleRulesComponent } from '../farkle-rules/farkle-rules.component';
+import { farkleEntries, farkleStatus } from '../farkle-chrome';
 
 @Component({
   selector: 'app-farkle-table',
   standalone: true,
-  imports: [CommonModule, DiceTrayComponent],
+  imports: [CommonModule, DiceTrayComponent, TableauRingComponent, FarkleRulesComponent],
   templateUrl: './farkle-table.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './farkle-table.scss'
 })
-export class FarkleTableComponent {
+export class FarkleTableComponent implements OnInit, OnChanges {
+  private readonly chrome = inject(GameChromeService);
+  @ViewChild('rules', { static: true }) private readonly rules!: TemplateRef<unknown>;
   protected readonly trayDice = farkleTrayDice();
   protected readonly landing = new FarkleLanding();
   /** Platform-standard inputs — passed in via GameRoomComponent's gameInputs. */
@@ -27,12 +33,28 @@ export class FarkleTableComponent {
     return (this.room?.gameData as FarkleTableState) ?? null;
   }
 
-  constructor() {}
-
-  getPlayerList(playerStates: Record<string, FarklePlayerState>): FarklePlayerState[] {
-    if (!playerStates) return [];
-    return Object.values(playerStates).sort((a, b) => b.totalScore - a.totalScore);
+  get status(): string {
+    return farkleStatus(this.state, this.myConnectionId);
   }
+
+  get entries(): TableauEntry[] {
+    return farkleEntries(this.state, this.myConnectionId);
+  }
+
+  ngOnInit(): void {
+    this.chrome.rules.set(this.rules);
+  }
+
+  ngOnChanges(): void {
+    const state = this.state;
+    this.chrome.publish({
+      status: this.status,
+      progress: state && state.phase !== 'GameOver' && state.currentTurnScore > 0 ? `Turn score ${state.currentTurnScore}` : '',
+      scores: this.entries,
+      ended: state?.phase === 'GameOver'
+    });
+  }
+
 
 }
 

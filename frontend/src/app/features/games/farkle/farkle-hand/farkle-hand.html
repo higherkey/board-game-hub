@@ -1,82 +1,38 @@
-<div class="farkle-hand-container" *ngIf="state">
-  <!-- Status Bar -->
-  <output class="status-bar" [class.active]="myConnectionId === state.activePlayerId"
-       aria-label="Current turn status">
-    <div class="player-info">
-      <span class="label">Current Player:</span>
-      <span class="value">{{ state.playerStates[state.activePlayerId]?.playerName || 'Unknown' }}</span>
-    </div>
-    <div class="score-info">
-      <span class="label">Turn Score:</span>
-      <span class="value">{{ state.currentTurnScore }}</span>
-    </div>
-    <button class="rules-btn" (click)="toggleScoringAid()" aria-label="View scoring guide">?</button>
-  </output>
-
-  <!-- Scoring Aid Overlay -->
-  <dialog class="scoring-aid-overlay" [open]="showScoringAid" (click)="toggleScoringAid()" (keydown.escape)="toggleScoringAid()"
-       aria-label="Scoring guide">
-    <div class="scoring-aid-content" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
-      <h3>Scoring Guide</h3>
-      <div class="rules-scroll-container">
-        <ul>
-          <li><span>Single 1</span> <span>100 pts</span></li>
-          <li><span>Single 5</span> <span>50 pts</span></li>
-          <li><span>Three 1s</span> <span>300 pts</span></li>
-          <li><span>Three of a Kind (2-6)</span> <span>Value &times; 100</span></li>
-          <li><span>Four of any number</span> <span>1000 pts</span></li>
-          <li><span>Five of any number</span> <span>2000 pts</span></li>
-          <li><span>Six of any number</span> <span>3000 pts</span></li>
-          <li><span>Straight (1-6)</span> <span>1500 pts</span></li>
-          <li><span>Three Pairs</span> <span>1500 pts</span></li>
-          <li><span>Four with a Pair</span> <span>1500 pts</span></li>
-          <li><span>Two Triplets</span> <span>2500 pts</span></li>
-        </ul>
-        <p class="small text-muted mt-2 mb-0"><em>Note: First score entered on Score Pad requires 500+ pts.</em></p>
-      </div>
-      <button class="close-btn" (click)="toggleScoringAid()">Got it</button>
-    </div>
-  </dialog>
-
+<!-- Farkle's Hand: my dice up top, the turn's tension in the middle, Roll and Bank in thumb reach. -->
+<div class="farkle-hand" *ngIf="state">
   <div class="dice-tray-area">
     <app-dice-tray [dice]="trayDice(state.dice)" [rollId]="state.rollId ?? null" motion="short" [aspect]="4 / 3"
       [selectable]="myConnectionId === state.activePlayerId" (dieToggle)="toggleDie($event)"
       (settled)="landing.land(state.rollId)" label="Your dice. Tap one to keep it."></app-dice-tray>
   </div>
 
-  <!-- Controls -->
-  <div class="controls" *ngIf="myConnectionId === state.activePlayerId">
-    <!-- aria-live announces phase changes to screen readers -->
-    <div aria-live="assertive" aria-atomic="true" class="sr-only">
-      <ng-container [ngSwitch]="landing.phase(state)">
-        <span *ngSwitchCase="'Farkled'">Farkle! Your turn is over.</span>
-        <span *ngSwitchCase="'Rolling'">Dice are rolling.</span>
-        <span *ngSwitchCase="'Banked'">Points banked.</span>
-      </ng-container>
-    </div>
+  <section class="farkle-hand-scores" aria-label="Scores">
+    <app-tableau-ring [entries]="entries"></app-tableau-ring>
+  </section>
+
+  <!-- aria-live announces phase changes to screen readers -->
+  <div aria-live="assertive" aria-atomic="true" class="sr-only">
     <ng-container [ngSwitch]="landing.phase(state)">
-      <div *ngSwitchCase="'Picking'" class="button-group">
-        <button class="btn roll" (click)="roll()">
-          {{ getRollCount() > 0 ? 'Roll ' + getRollCount() + ' Dice' : 'Roll Again' }}
-        </button>
-        <button class="btn bank" [disabled]="state.currentTurnScore === 0" (click)="bank()">Stop & Bank</button>
-      </div>
-      
-      <div *ngSwitchCase="'Rolling'" class="phase-msg">
-        <span class="rolling-text">Dice are rolling...</span>
-      </div>
-
-      <div *ngSwitchCase="'Farkled'" class="phase-msg farkle">
-        <span class="farkle-text">FARKLE!</span>
-      </div>
-
-      <div *ngSwitchCase="'Banked'" class="phase-msg banked">
-        <span class="banked-text">Banking points...</span>
-      </div>
+      <span *ngSwitchCase="'Farkled'">Farkle! The turn scores nothing.</span>
+      <span *ngSwitchCase="'Rolling'">Dice are rolling.</span>
+      <span *ngSwitchCase="'Banked'">Points banked.</span>
     </ng-container>
   </div>
 
-  <div class="not-my-turn" *ngIf="myConnectionId !== state.activePlayerId">
-    Waiting for {{ state.playerStates[state.activePlayerId]?.playerName }}...
-  </div>
+  <ng-container *ngIf="myConnectionId === state.activePlayerId" [ngSwitch]="landing.phase(state)">
+    <p *ngSwitchCase="'Rolling'" class="phase-msg">Rolling…</p>
+    <p *ngSwitchCase="'Farkled'" class="phase-msg farkle">Farkle!</p>
+    <p *ngSwitchCase="'Banked'" class="phase-msg banked">Banked</p>
+  </ng-container>
+
+  <app-action-dock *ngIf="myConnectionId === state.activePlayerId && landing.phase(state) === 'Picking'">
+    <button type="button" class="farkle-btn roll" (click)="roll()">
+      {{ getRollCount() > 0 ? 'Roll ' + getRollCount() + ' dice' : 'Roll all six' }}
+    </button>
+    <button type="button" class="farkle-btn bank" [disabled]="state.currentTurnScore === 0" (click)="bank()">
+      Bank {{ state.currentTurnScore | number }}
+    </button>
+  </app-action-dock>
 </div>
+
+<ng-template #rules><app-farkle-rules></app-farkle-rules></ng-template>

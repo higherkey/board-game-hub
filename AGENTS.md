@@ -91,7 +91,7 @@ Run commands from repo root unless noted.
 - Canonical terminology is in `docs/platform-glossary.md`.
 - Backend role flag is `Player.IsScreen` (`backend/BoardGameHub.Api/Models/Room.cs`).
 - Frontend role routing lives in `GameRoomComponent` + `GAME_REGISTRY`:
-  - If a game has both `hostComponent` and `playerComponent`, selection is based on `isScreen` (Table vs Hand), not simply host/non-host.
+  - If a game has both `tableComponent` and `handComponent`, selection is based on `isScreen` (Table vs Hand), not simply host/non-host.
 
 ### Persistence boundary
 - Persistent data (users, friendships, chat, game history, game definitions) is in EF Core `AppDbContext` (`backend/BoardGameHub.Api/Data/AppDbContext.cs`).

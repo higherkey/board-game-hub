@@ -17,7 +17,6 @@
 
 .game-main {
     flex: 1; display: flex; flex-direction: column; padding: 1.5rem; min-block-size: 0; min-inline-size: 0;
-    .babble-view.is-host.showing-results & { padding-block-end: 140px; }
 
     @media (max-width: 767.98px) {
         padding: 0.5rem;
@@ -41,33 +40,23 @@
     &:hover, .babble-view.resizing & { background: var(--accent); }
 }
 
-.babble-header {
-    display: flex; justify-content: space-between; align-items: center; margin-block-end: 0.25rem;
-    h2 {
-        font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 700; margin: 0; color: var(--primary);
-    }
-}
-
 .waiting-text {
     color: var(--primary); font-weight: 700; padding: 0.5rem 0.75rem;
     background: var(--bg-surface-2); border: 2px solid var(--primary); border-radius: var(--radius-sm);
     font-size: 0.9rem; .spinner-border { border-width: 0.12em; }
 }
 
-.timer-card {
-    background: var(--primary); border: 2px solid var(--primary); box-shadow: 3px 3px 0 var(--accent);
-    padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 0.75rem;
-    color: var(--bg-surface);
-    span { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bg-surface); }
-    &.urgent { animation: pulse 1s infinite alternate; background: var(--contrast-pink); border-color: var(--contrast-pink); box-shadow: 3px 3px 0 var(--primary); }
+.grid-stage {
+    flex: 1; display: flex; justify-content: center; align-items: center; min-block-size: 0; padding: 1rem;
+    /* The board sizes from the space it actually has, not the window, so it never pushes the panel off screen. */
+    container-type: inline-size;
 }
 
-.grid-stage { flex: 1; display: flex; justify-content: center; align-items: center; min-block-size: 0; padding: 1rem; }
-
 .babble-grid {
-    display: grid; gap: 2vmin; padding: 2.5vmin; background: var(--bg-surface-2);
+    --grid-w: min(94cqi, 72vh, 600px);
+    display: grid; gap: calc(var(--grid-w) * 0.03); padding: calc(var(--grid-w) * 0.04); background: var(--bg-surface-2);
     border: 2px solid var(--primary); border-radius: var(--radius-sm);
-    inline-size: min(90vw, 72vh, 600px); block-size: min(90vw, 72vh, 600px);
+    inline-size: var(--grid-w); block-size: var(--grid-w);
     aspect-ratio: 1/1; position: relative; box-shadow: 6px 6px 0 var(--primary);
 
     box-sizing: border-box;
@@ -75,9 +64,9 @@
     grid-template-columns: repeat(var(--grid-size, 4), minmax(0, 1fr));
     grid-template-rows: repeat(var(--grid-size, 4), minmax(0, 1fr));
 
-    &.size-4 { --grid-size: 4; --tile-fs: 11vmin; }
-    &.size-5 { --grid-size: 5; --tile-fs: 8.5vmin; }
-    &.size-6 { --grid-size: 6; --tile-fs: 7vmin; }
+    &.size-4 { --grid-size: 4; --tile-fs: calc(var(--grid-w) * 0.13); }
+    &.size-5 { --grid-size: 5; --tile-fs: calc(var(--grid-w) * 0.1); }
+    &.size-6 { --grid-size: 6; --tile-fs: calc(var(--grid-w) * 0.085); }
 
     /* Letters are hidden outright before play, not blurred. */
     &.blurred-board .letter-tile { background: var(--primary); color: transparent; box-shadow: none; pointer-events: none; }
@@ -86,7 +75,7 @@
         inline-size: 100%; block-size: 100%; background: var(--bg-surface); border: 2px solid var(--primary);
         border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
         font-family: 'Outfit', sans-serif;
-        font-size: clamp(2rem, var(--tile-fs), 6rem); font-weight: 700; color: var(--primary);
+        font-size: clamp(1.25rem, var(--tile-fs), 6rem); font-weight: 700; color: var(--primary);
         box-shadow: 3px 3px 0 var(--primary);
         animation-delay: calc(var(--tile-index, 0) * 0.05s);
         &[data-letter="Qu"] { font-size: clamp(1.4rem, calc(var(--tile-fs)*0.7), 4.2rem); letter-spacing: -1px; }
@@ -106,10 +95,6 @@
     &:active:not(:disabled) { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--accent); }
     &:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
-}
-
-.countdown-overlay {
-    z-index: 100;
 }
 
 .found-words-area {
@@ -177,23 +162,19 @@
     &.bg-secondary { background: var(--bg-surface-2); color: var(--text-secondary); border-color: var(--border-color); }
 }
 
-.host-controls-panel {
-    display: inline-flex;
-    align-items: center;
-
-    button, .btn {
-        min-inline-size: 44px;
-        min-block-size: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-}
-
 @media (max-width: 768px) {
-    .babble-header h2 { font-size: 2rem; }
     .babble-view { flex-direction: column; overflow-y: auto; block-size: auto; }
-    .babble-header { flex-direction: row; inline-size: 100%; }
     .game-main { padding: 1rem; flex: 0 0 auto; inline-size: 100%; }
     .game-sidebar { flex: 1; inline-size: 100%; border-inline-start: none; border-block-start: 2px solid var(--primary); padding: 0.75rem 1rem; }
 }
+
+/* Table scores while words are being found. */
+.table-scores-title {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.table-hint { margin: 0; font-weight: 600; color: var(--text-secondary); }

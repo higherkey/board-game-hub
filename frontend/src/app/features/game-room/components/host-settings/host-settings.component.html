@@ -13,31 +13,29 @@
         </div>
 
         <!-- Timer Setting -->
-        <div *ngIf="selectedGame?.timerType !== 0" class="compact-item d-flex align-items-center gap-2">
-            <i class="bi bi-clock text-secondary"></i>
-            <input type="number" [(ngModel)]="settings.timerDurationSeconds"
-                class="form-control form-control-sm text-center w-50px" title="Seconds">
+        <div *ngIf="selectedGame?.timerType !== 0" class="compact-item compact-field">
+            <label for="compact-timer" class="compact-label">Seconds</label>
+            <input id="compact-timer" type="number" min="10" [(ngModel)]="settings.timerDurationSeconds"
+                class="form-control compact-input">
         </div>
 
         <!-- Rounds Setting (Compact) -->
-        <div class="compact-item d-flex align-items-center gap-2">
-            <i class="bi bi-hash text-secondary"></i>
-            <input type="number" [(ngModel)]="settings.totalRounds" min="1" max="50"
-                class="form-control form-control-sm text-center w-50px" title="Total Rounds">
+        <div class="compact-item compact-field">
+            <label for="compact-rounds" class="compact-label">Rounds</label>
+            <input id="compact-rounds" type="number" [(ngModel)]="settings.totalRounds" min="1" max="50"
+                class="form-control compact-input">
         </div>
 
         <!-- Next round / play again: only between rounds; a round in progress has nothing to start. -->
         <div *ngIf="isIntermission" class="compact-item">
-            <button type="button" class="btn fw-bold" (click)="startGame($event)" [disabled]="selectedGameType === 'None'"
-                [ngClass]="legacyFinish ? 'btn-danger' : 'btn-primary'"
-                class="border-none"
-                [style.background]="legacyFinish ? '' : 'linear-gradient(135deg, var(--secondary) 0%, var(--accent-dark) 100%)'">
+            <button type="button" class="btn fw-bold compact-start" (click)="startGame($event)" [disabled]="selectedGameType === 'None'"
+                [ngClass]="legacyFinish ? 'btn-danger' : 'btn-primary'">
                 <i class="bi" [class.bi-fast-forward-fill]="!legacyFinish"
                     [class.bi-flag-fill]="legacyFinish"></i>
                 {{ startLabel }}
             </button>
         </div>
-        <button type="button" class="btn btn-outline-danger fw-bold" (click)="emitEndGame($event)">END GAME</button>
+        <button type="button" class="btn btn-outline-danger fw-bold compact-end" (click)="emitEndGame($event)">END GAME</button>
     </div>
 
     <!-- FULL MODE: Large 3-Column Grid -->
@@ -219,10 +217,12 @@
         <!-- Start Button (Full Width footer) -->
         <div class="mt-2 mt-md-4 pt-2 pt-md-3 border-top position-relative">
             <button type="button" class="btn-start shadow-pink mb-1 mb-md-2" (click)="startGame($event)"
-                [disabled]="selectedGameType === 'None'">
+                [disabled]="selectedGameType === 'None' || !!startBlocker"
+                [attr.aria-describedby]="startBlocker ? 'start-blocker' : null">
                 <i class="bi" [class.bi-play-fill]="!isIntermission" [class.bi-fast-forward-fill]="isIntermission"></i>
                 {{ startLabel }}
             </button>
+            <output *ngIf="startBlocker" id="start-blocker" class="start-blocker">{{ startBlocker }}</output>
             <button *ngIf="isGameOver || (resultPhase == null && isIntermission)" type="button" class="btn btn-outline-danger w-100 fw-bold py-2"
                 (click)="emitExitGame($event)">
                 <i class="bi bi-stop-circle-fill me-1"></i> END SESSION

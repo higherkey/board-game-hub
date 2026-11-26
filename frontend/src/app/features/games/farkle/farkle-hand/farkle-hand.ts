@@ -1,8 +1,13 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, OnChanges, OnInit, TemplateRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DiceTrayComponent } from '../../../../shared/components/dice-tray/dice-tray.component';
 import { FarkleLanding, farkleTrayDice } from '../farkle-dice';
 import { SignalRService, Room } from '../../../../services/signalr.service';
+import { GameChromeService } from '../../../game-room/services/game-chrome.service';
+import { TableauRingComponent } from '../../shared/components/tableau-ring/tableau-ring.component';
+import { ActionDockComponent } from '../../shared/components/action-dock/action-dock.component';
+import { FarkleRulesComponent } from '../farkle-rules/farkle-rules.component';
+import { farkleEntries, farkleStatus } from '../farkle-chrome';
 
 export enum FarklePhase {
   Rolling = 'Rolling',
@@ -41,12 +46,14 @@ interface FarkleState {
 @Component({
   selector: 'app-farkle-hand',
   standalone: true,
-  imports: [CommonModule, DiceTrayComponent],
+  imports: [CommonModule, DiceTrayComponent, TableauRingComponent, ActionDockComponent, FarkleRulesComponent],
   templateUrl: './farkle-hand.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './farkle-hand.scss'
 })
-export class FarkleHandComponent {
+export class FarkleHandComponent implements OnInit, OnChanges {
+  private readonly chrome = inject(GameChromeService);
+  @ViewChild('rules', { static: true }) private readonly rules!: TemplateRef<unknown>;
   protected readonly trayDice = farkleTrayDice();
   protected readonly landing = new FarkleLanding();
   /** Platform-standard inputs — passed in via GameRoomComponent's gameInputs. */
@@ -57,13 +64,29 @@ export class FarkleHandComponent {
   @Input() isTable = false;
   @Input() isHand = true;
 
-  showScoringAid = false;
-
   get state(): FarkleState | null {
     return this.room?.gameData as FarkleState;
   }
 
   constructor(private readonly signalRService: SignalRService) {}
+
+  get entries() {
+    return farkleEntries(this.state, this.myConnectionId);
+  }
+
+  ngOnInit(): void {
+    this.chrome.rules.set(this.rules);
+  }
+
+  ngOnChanges(): void {
+    const state = this.state;
+    this.chrome.publish({
+      status: farkleStatus(state, this.myConnectionId),
+      progress: state && state.phase !== FarklePhase.GameOver && state.currentTurnScore > 0 ? `Turn score ${state.currentTurnScore}` : '',
+      scores: this.entries,
+      ended: state?.phase === FarklePhase.GameOver
+    });
+  }
 
   roll(): void {
     this.signalRService.sendGameAction('ROLL', {});
@@ -75,10 +98,6 @@ export class FarkleHandComponent {
 
   toggleDie(index: number): void {
     this.signalRService.sendGameAction('TOGGLE_DIE', { index });
-  }
-
-  toggleScoringAid(): void {
-    this.showScoringAid = !this.showScoringAid;
   }
 
   getGroupedDice(type: 'keeping' | 'reroll'): { die: FarkleDie, index: number }[] {

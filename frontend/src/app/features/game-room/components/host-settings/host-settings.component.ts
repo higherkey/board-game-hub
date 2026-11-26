@@ -251,6 +251,17 @@ export class HostSettingsComponent implements OnChanges, OnInit {
     return playersOnly.length > 0 && playersOnly.every(p => p.isReady);
   }
 
+  /** Why a new game cannot start with the Hands in the room, or null when it can. Next rounds are never blocked. */
+  get startBlocker(): string | null {
+    const game = this.selectedGame;
+    if (this.isIntermission || !game?.minPlayers) return null;
+    const hands = this.players.filter(p => !p.isScreen).length;
+    const atLeast = game.maxPlayers === game.minPlayers ? '' : 'at least ';
+    if (hands < game.minPlayers) return `${game.name} needs ${atLeast}${game.minPlayers} ${game.minPlayers === 1 ? 'player' : 'players'}. ${hands} ${hands === 1 ? 'has' : 'have'} joined.`;
+    if (game.maxPlayers && hands > game.maxPlayers) return `${game.name} takes at most ${game.maxPlayers} players. ${hands} have joined.`;
+    return null;
+  }
+
   get isGameOver(): boolean {
     return getRoomResultPhase(this) === 'GameOver';
   }

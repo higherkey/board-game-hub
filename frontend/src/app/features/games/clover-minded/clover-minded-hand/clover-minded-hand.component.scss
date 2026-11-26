@@ -15,37 +15,6 @@
     }
 }
 
-.hand-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    flex: 0 0 auto;
-}
-
-.title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    color: var(--primary);
-}
-
-.emoji {
-    font-size: 1.25rem;
-}
-
-.phase-pill {
-    padding: 4px 10px;
-    border: 2px solid var(--primary);
-    border-radius: var(--radius-sm);
-    background: var(--bg-surface);
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 0.85rem;
-}
-
 .hand-body {
     flex: 1;
     min-block-size: 0;

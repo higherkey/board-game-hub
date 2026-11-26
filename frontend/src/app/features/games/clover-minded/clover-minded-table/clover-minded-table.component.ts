@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStrategy, TemplateRef, inject } from '@angular/core';
 import { Room, SignalRService } from '../../../../services/signalr.service';
 import {
     CloverMindedPhase,
@@ -8,13 +8,16 @@ import {
     CloverSlotState
 } from '../clover-minded.types';
 import { KeywordCard3dComponent } from '../components/keyword-card-3d/keyword-card-3d.component';
+import { GameChromeService } from '../../../game-room/services/game-chrome.service';
+import { CloverRulesComponent } from '../clover-rules/clover-rules.component';
+import { cloverProgress, cloverStatus } from '../clover-chrome';
 import { gsap } from 'gsap';
 import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-clover-minded-table',
     standalone: true,
-    imports: [CommonModule, KeywordCard3dComponent],
+    imports: [CommonModule, KeywordCard3dComponent, CloverRulesComponent],
     templateUrl: './clover-minded-table.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./clover-minded-table.component.scss']
@@ -30,6 +33,8 @@ export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy 
     @Input() isScreen = true;
     @Input() isTable = true;
 
+    private readonly chrome = inject(GameChromeService);
+    @ViewChild('rules', { static: true }) private readonly rules!: TemplateRef<unknown>;
     @ViewChild('deckStack') deckStack?: ElementRef<HTMLDivElement>;
     @ViewChild('ghostLayer') ghostLayer?: ElementRef<HTMLDivElement>;
     @ViewChild('tetherLayer') tetherLayer?: ElementRef<SVGElement>;
@@ -54,6 +59,7 @@ export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy 
     constructor(private readonly signalRService: SignalRService) { }
 
     ngOnInit(): void {
+        this.chrome.rules.set(this.rules);
         // Listen for transient drag moves
         this.signalRSubs.add(
             this.signalRService.cloverCardMoved$.subscribe(data => {
@@ -74,6 +80,7 @@ export class CloverMindedTableComponent implements OnInit, OnChanges, OnDestroy 
     }
 
     ngOnChanges(changes: SimpleChanges): void {
+        this.chrome.publish({ status: cloverStatus(this.state, this.myConnectionId, true, id => this.getPlayerName(id)), progress: cloverProgress(this.state), scores: null, ended: this.state?.phase === CloverMindedPhase.GameOver });
         if (changes['room'] && this.state) {
             const s = this.state;
             

@@ -1,20 +1,24 @@
-import { Component, Input, OnChanges, SimpleChanges, OnDestroy, ViewChild, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnDestroy, OnInit, ViewChild, TemplateRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Room, SignalRService, getRoomResultPhase } from '../../../../services/signalr.service';
+import { Room, SignalRService } from '../../../../services/signalr.service';
 import { secondsUntilPlay } from '../../../../shared/round-timing';
-import { EndRoundButtonComponent } from '../../shared/components/end-round-button/end-round-button.component';
+import { GameChromeService, playersAsEntries } from '../../../game-room/services/game-chrome.service';
+import { TableauRingComponent } from '../../shared/components/tableau-ring/tableau-ring.component';
+import { BabbleRulesComponent } from '../babble-rules/babble-rules.component';
+import { babbleProgress, babbleStatus } from '../babble-chrome';
 
 @Component({
   selector: 'app-babble',
   standalone: true,
-  imports: [CommonModule, FormsModule, EndRoundButtonComponent],
+  imports: [CommonModule, FormsModule, TableauRingComponent, BabbleRulesComponent],
   templateUrl: './babble.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './babble.component.scss'
 })
-export class BabbleComponent implements OnChanges, OnDestroy {
-  @ViewChild('hostControlsTemplate') hostControlsTemplate!: TemplateRef<any>;
+export class BabbleComponent implements OnInit, OnChanges, OnDestroy {
+  private readonly chrome = inject(GameChromeService);
+  @ViewChild('rules', { static: true }) private readonly rules!: TemplateRef<unknown>;
 
   @Input() room: Room | null = null;
   @Input() myConnectionId: string = '';
@@ -26,8 +30,15 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   sidebarWidth = 450;
   isResizing = false;
 
-  isBlurred = true;
-  countdownSeconds = 0;
+  /** Seconds left in the server lead-in; the room shows the countdown itself. */
+  get countdownSeconds(): number {
+    return secondsUntilPlay(this.room);
+  }
+
+  /** The board stays hidden while paused or during the lead-in. */
+  get isBlurred(): boolean {
+    return !this.isFinished && (this.isPaused || this.countdownSeconds > 0);
+  }
 
   get isPlaying(): boolean {
     return this.room?.state === 'Playing';
@@ -50,11 +61,6 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     return this.lastRoundResults;
   }
 
-  // Timer Logic
-  timerText: string = '--:--';
-  isUrgent: boolean = false;
-  isEnding: boolean = false;
-  private timerInterval: any;
 
   constructor(private readonly signalRService: SignalRService) { }
 
@@ -75,10 +81,6 @@ export class BabbleComponent implements OnChanges, OnDestroy {
   }
 
   private updateStateFromRoom() {
-    if (this.isFinished) {
-      this.isEnding = false;
-    }
-
     const data = this.room?.gameData || this.room?.gameState;
     if (data?.lastRoundResults) {
       this.lastRoundResults = data.lastRoundResults;
@@ -89,15 +91,7 @@ export class BabbleComponent implements OnChanges, OnDestroy {
       this.processGridUpdate(grid);
     }
 
-    this.isPlaying ? this.startTimer() : this.stopTimer();
-
-    this.syncLeadIn();
-  }
-
-  /** The board stays hidden while paused or during the server's lead-in countdown. */
-  private syncLeadIn() {
-    this.countdownSeconds = secondsUntilPlay(this.room);
-    this.isBlurred = !this.isFinished && (this.isPaused || this.countdownSeconds > 0);
+    this.chrome.publish({ status: babbleStatus(this.room), progress: babbleProgress(this.room), scores: this.room ? this.entries : null, ended: babbleStatus(this.room) === 'Final results', autoEndRound: true });
   }
 
   private processGridUpdate(grid: any) {
@@ -112,66 +106,17 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     }
   }
 
+  get entries() {
+    return this.room ? playersAsEntries(this.room, undefined, this.myConnectionId) : [];
+  }
+
+  ngOnInit() {
+    this.chrome.rules.set(this.rules);
+  }
+
   ngOnDestroy() {
-    this.stopTimer();
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
-  }
-
-  private startTimer() {
-    if (this.timerInterval) return;
-
-    this.timerInterval = setInterval(() => {
-      this.syncLeadIn();
-      if (!this.room?.roundEndTime) {
-        this.timerText = '--:--';
-        return;
-      }
-
-      // Don't show timer during countdown
-      if (this.countdownSeconds > 0) {
-        this.timerText = '--:--';
-        return;
-      }
-
-      if (this.isPaused) {
-        this.timerText = 'PAUSED';
-        this.isUrgent = false;
-        return;
-      }
-
-      const endTime = new Date(this.room.roundEndTime).getTime();
-      const now = Date.now();
-      const diff = endTime - now;
-
-      if (diff <= 0) {
-        this.handleTimerEnd();
-        return;
-      }
-
-      const seconds = Math.floor(diff / 1000);
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-
-      this.timerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-      this.isUrgent = seconds < 10;
-    }, 500);
-  }
-
-  private handleTimerEnd() {
-    this.timerText = '00:00';
-    this.isUrgent = true;
-    this.stopTimer();
-    if (this.isHost && this.isPlaying) {
-      this.handleEndRound();
-    }
-  }
-
-  private stopTimer() {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-    }
   }
 
   submitWord() {
@@ -184,36 +129,6 @@ export class BabbleComponent implements OnChanges, OnDestroy {
       this.signalRService.submitAnswers(this.foundWords);
     }
     this.currentWord = '';
-  }
-
-  handleEndRound() {
-    if (this.isEnding) return;
-    if (this.isHost && this.room) {
-      this.isEnding = true;
-      this.signalRService.endRound().catch(() => {
-        this.isEnding = false;
-      });
-    }
-  }
-
-  get isGameOver(): boolean { return getRoomResultPhase(this.room) === 'GameOver'; }
-
-  handleNextRound() {
-    if (this.isHost && this.room) {
-      void (this.isGameOver ? this.signalRService.playAgain() : this.signalRService.nextRound());
-    }
-  }
-
-  handlePause() {
-    if (this.isHost) {
-      this.signalRService.pauseGame();
-    }
-  }
-
-  handleResume() {
-    if (this.isHost) {
-      this.signalRService.resumeGame();
-    }
   }
 
   getPlayerName(connectionId: string): string {
@@ -257,14 +172,14 @@ export class BabbleComponent implements OnChanges, OnDestroy {
     document.addEventListener('mouseup', this.onMouseUp);
   }
 
-  private onMouseMove = (event: MouseEvent) => {
+  private readonly onMouseMove = (event: MouseEvent) => {
     if (!this.isResizing) return;
     const newWidth = window.innerWidth - event.clientX;
     // Bounded between 300px and 70% of screen width
     this.sidebarWidth = Math.max(300, Math.min(newWidth, window.innerWidth * 0.7));
   };
 
-  private onMouseUp = () => {
+  private readonly onMouseUp = () => {
     this.isResizing = false;
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);

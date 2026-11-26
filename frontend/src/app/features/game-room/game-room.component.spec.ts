@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy, OnChanges, inject } from '@angular/core';
+import { GameChromeService } from './services/game-chrome.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
+import { By } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth.service';
 import { GameDataService } from '../../services/game-data.service';
 import { SignalRService } from '../../services/signalr.service';
@@ -17,7 +19,23 @@ import { ConfirmService } from '../../shared/services/confirm.service';
 class HostSettingsStubComponent {
   @Input() roomCode: any;
   @Input() currentGameType: any;
+  @Input() compactMode: any;
+  @Input() resultPhase: any;
+  @Input() isIntermission: any;
+  @Input() players: any;
+  @Input() currentRound: any;
+  @Input() totalRounds: any;
+  @Input() meReady: any;
+  @Input() isHost: any;
+  @Input() isScreen: any;
+  @Input() isHostOverride: any;
   @Output() gameStart = new EventEmitter<any>();
+  @Output() playAgain = new EventEmitter<any>();
+  @Output() nextRound = new EventEmitter<any>();
+  @Output() endGame = new EventEmitter<any>();
+  @Output() exitGame = new EventEmitter<any>();
+  @Output() toggleReady = new EventEmitter<any>();
+  startGame = jasmine.createSpy('startGame');
 }
 
 @Component({ selector: 'app-video-chat', template: '', standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
@@ -344,5 +362,226 @@ describe('GameRoomComponent', () => {
     await component.goToLogin();
     expect(navSpy).toHaveBeenCalled();
   });
+
+  describe('in-game chrome', () => {
+    const at = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString();
+    const games = [
+      { id: 'Babble', name: 'Babble', timerType: 2, status: 'Testing' },
+      { id: 'Farkle', name: 'Farkle', timerType: 0, status: 'Testing' }
+    ];
+    const el = () => fixture.nativeElement as HTMLElement;
+    const play = (room: Record<string, unknown>, opts: { host?: boolean } = {}) => {
+      mockStateService.needsName = false;
+      (TestBed.inject(GameDataService).games$ as BehaviorSubject<any>).next(games);
+      mockStateService.isHost$.next(opts.host ?? true);
+      roomSubject.next({ code: 'ABCD', state: 'Playing', gameType: 'Babble', roundNumber: 1, isPaused: false, players: [], ...room });
+      mockStateService.gameStarted$.next(true);
+      fixture.detectChanges();
+    };
+    const menuButton = (label: string) =>
+      [...el().querySelectorAll('app-game-menu button')].find(b => b.textContent!.includes(label)) as HTMLButtonElement | undefined;
+
+    beforeEach(() => {
+      // A dialog that reached the browser's own confirm() would block the whole headless run.
+      spyOn(window, 'confirm').and.returnValue(false);
+      mockStateService.pauseRound = jasmine.createSpy('pauseRound');
+      mockStateService.resumeRound = jasmine.createSpy('resumeRound');
+      mockStateService.endRound = jasmine.createSpy('endRound').and.resolveTo(true);
+    });
+
+    it('shows the room header in the lobby and the game bar in play', () => {
+      expect(el().querySelector('app-room-header')).not.toBeNull();
+      expect(el().querySelector('app-game-bar')).toBeNull();
+
+      play({});
+      expect(el().querySelector('app-game-bar')).not.toBeNull();
+      expect(el().querySelector('app-room-header')).toBeNull();
+      expect(el().querySelector('app-mobile-tab-bar')).toBeNull();
+      expect(el().querySelector('.host-controls-bar')).toBeNull();
+      expect(el().querySelector('.intermission-bar')).toBeNull();
+    });
+
+    it('keeps one set of host controls, inside the game menu', () => {
+      play({});
+      expect(el().querySelectorAll('app-host-settings')).toHaveSize(1);
+      expect(el().querySelector('app-game-menu app-host-settings')).not.toBeNull();
+    });
+
+    it('shows what the active game publishes in the game bar', () => {
+      mockStateService.gameComponent$.next(PublishingGameStubComponent);
+      mockStateService.gameInputs$.next({ room: { code: 'ABCD' } });
+      play({});
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar output')!.textContent).toContain('Your turn');
+    });
+
+    it('says Game over when the host ends a game that has not ended by its own rules', () => {
+      mockStateService.isIntermission$.next(true);
+      play({ state: 'Finished', resultPhase: 'GameOver' });
+      component.chrome.publish({ status: 'Guesty’s turn' });
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar output')!.textContent).toContain('Game over');
+
+      component.chrome.publish({ status: 'Ann wins', ended: true });
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar output')!.textContent).toContain('Ann wins');
+    });
+
+    it('clears the previous game from the chrome when the game changes', () => {
+      play({});
+      component.chrome.publish({ status: 'Guesty’s turn' });
+      roomSubject.next({ code: 'ABCD', state: 'Playing', gameType: 'Farkle', roundNumber: 1, isPaused: false, players: [] });
+      expect(component.chrome.status()).toBe('');
+    });
+
+    it('lets the host pause and resume a timed round', () => {
+      play({ roundEndTime: at(60000) });
+      menuButton('Pause round')!.click();
+      expect(mockStateService.pauseRound).toHaveBeenCalled();
+
+      play({ roundEndTime: at(60000), isPaused: true });
+      component.tick();
+      fixture.detectChanges();
+      menuButton('Resume round')!.click();
+      expect(mockStateService.resumeRound).toHaveBeenCalled();
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('Paused');
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('Resume from the game menu');
+    });
+
+    it('tells players, not the host, that the host will resume', () => {
+      play({ roundEndTime: at(60000), isPaused: true }, { host: false });
+      component.tick();
+      fixture.detectChanges();
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('The host will resume the round');
+    });
+
+    it('keeps the same clock while nothing on it changes, so the page is not redrawn each tick', () => {
+      play({ roundEndTime: at(60000) });
+      const now = Date.now();
+      component.tick(now);
+      const first = component.clock();
+      component.tick(now + 100);
+      expect(component.clock()).toBe(first);
+    });
+
+    it('ends a round early only after the host confirms', async () => {
+      play({ roundEndTime: at(60000) });
+      const confirm = spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(false);
+      await component.endRoundEarly();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+      confirm.and.resolveTo(true);
+      await component.endRoundEarly();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(1);
+    });
+
+    it('has no clock or round controls for untimed games', () => {
+      play({ gameType: 'Farkle', roundEndTime: at(60000) });
+      component.tick();
+      fixture.detectChanges();
+      expect(el().querySelector('app-game-bar [role=timer]')).toBeNull();
+      expect(menuButton('Pause round')).toBeUndefined();
+      expect(menuButton('End round')).toBeUndefined();
+    });
+
+    it('ends a timed-out round once, on the host only, never while paused', () => {
+      play({ roundNumber: 2, roundEndTime: at(-1000) });
+      component.chrome.publish({ autoEndRound: true });
+      component.tick(); component.tick(); component.tick();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(1);
+
+      mockStateService.endRound.calls.reset();
+      play({ roundNumber: 3, roundEndTime: at(-1000) }, { host: false });
+      component.tick();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+
+      play({ roundNumber: 4, roundEndTime: at(-1000), isPaused: true });
+      component.tick();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+    });
+
+    it('auto-ends the same round number again in a later game', () => {
+      play({ roundNumber: 1, roundEndTime: at(-1000) });
+      component.chrome.publish({ autoEndRound: true });
+      component.tick();
+      play({ roundNumber: 1, roundEndTime: at(-5000) });
+      component.tick();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(2);
+    });
+
+    it('tries again when the end call fails', async () => {
+      mockStateService.endRound.and.resolveTo(false);
+      play({ roundNumber: 1, roundEndTime: at(-1000) });
+      component.chrome.publish({ autoEndRound: true });
+      mockStateService.endRound.calls.reset();
+      component.tick();
+      await Promise.resolve(); await Promise.resolve();
+      component.tick();
+      expect(mockStateService.endRound).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves timed-out rounds to games that have not asked the room to end them', () => {
+      play({ roundNumber: 1, roundEndTime: at(-1000) });
+      component.tick();
+      expect(mockStateService.endRound).not.toHaveBeenCalled();
+    });
+
+    it('counts down the lead-in over the game', () => {
+      play({ roundStartTime: at(2500), roundEndTime: at(62500) });
+      component.tick();
+      fixture.detectChanges();
+      expect(el().querySelector('.room-overlay')!.textContent).toContain('3');
+    });
+
+    it('puts the host\'s next step on the game bar between rounds and after the game', () => {
+      mockStateService.playAgain = jasmine.createSpy('playAgain');
+      const settings = { timerDurationSeconds: 60 };
+      mockStateService.isIntermission$.next(true);
+      play({ resultPhase: 'RoundResults', settings });
+      const next = el().querySelector('app-game-bar .bar-next') as HTMLButtonElement;
+      expect(parseFloat(getComputedStyle(next).minHeight)).toBeGreaterThanOrEqual(44);
+      next.click();
+      // One source of truth: the bar runs the menu's host settings, so edits made there are not lost.
+      const hostSettings = fixture.debugElement.query(By.directive(HostSettingsStubComponent)).componentInstance;
+      expect(hostSettings.startGame).toHaveBeenCalled();
+
+      play({ resultPhase: 'GameOver', settings });
+      expect(el().querySelector('app-game-bar .bar-next')!.textContent).toContain('Play again');
+
+      mockStateService.isIntermission$.next(false);
+      play({ resultPhase: null, settings });
+      expect(el().querySelector('app-game-bar .bar-next')).toBeNull();
+    });
+
+    it('closes the game menu when a host action from it runs', async () => {
+      spyOn(TestBed.inject(ConfirmService), 'confirm').and.resolveTo(false);
+      mockStateService.playAgain = jasmine.createSpy('playAgain');
+      play({});
+      const dialog = el().querySelector('app-game-menu dialog') as HTMLDialogElement;
+      const hostSettings = fixture.debugElement.query(By.directive(HostSettingsStubComponent)).componentInstance;
+      for (const output of ['endGame', 'exitGame', 'nextRound', 'playAgain', 'gameStart'] as const) {
+        if (!dialog.open) dialog.showModal();
+        hostSettings[output].emit(undefined);
+        expect(dialog.open).withContext(output).toBeFalse();
+        // Let the confirm that some actions open settle while the spy is still installed.
+        await new Promise(resolve => setTimeout(resolve));
+      }
+      if (dialog.open) dialog.close();
+    });
+
+    it('collapses the player list on a Table when the game starts', () => {
+      mockStateService.isScreen = true;
+      component.isSidebarCollapsed = false;
+      play({});
+      expect(component.isSidebarCollapsed).toBeTrue();
+    });
+  });
 });
+
+@Component({ selector: 'app-publishing-game', template: '', standalone: true })
+class PublishingGameStubComponent implements OnChanges {
+  private readonly chrome = inject(GameChromeService);
+  @Input() room: any;
+  // Real games publish while the room renders them, in ngOnChanges.
+  ngOnChanges() { this.chrome.publish({ status: this.room ? 'Your turn' : '' }); }
+}
 
