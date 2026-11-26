@@ -58,7 +58,16 @@ describe('HomeHeroComponent', () => {
     setReducedMotion(true); create();
     expect(fixture.nativeElement.querySelector('.dc-room-game')?.textContent).toContain('Card game');
     expect(fixture.nativeElement.querySelector('.dc-room-table')).not.toBeNull();
-    expect(fixture.nativeElement.querySelectorAll('.dc-room-seat').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.dc-scene--host .dc-room-seat')).toHaveSize(2);
+  });
+
+  it('keeps the same waiting room on the TV while players join', () => {
+    setReducedMotion(true); create();
+    const join = fixture.nativeElement.querySelector('.dc-scene--join');
+    expect(join.querySelector('.dc-room-game')?.textContent).toContain('Card game');
+    expect(join.querySelector('.dc-roomcard-code')?.textContent?.replaceAll(/s/g, '')).toBe('ABCD');
+    expect(join.querySelectorAll('.dc-room-seat .dc-avatar')).toHaveSize(2);
+    expect(Number(getComputedStyle(join.querySelector('.dc-room-ready')).opacity)).toBe(1);
   });
 
   beforeEach(async () => {
@@ -86,7 +95,7 @@ describe('HomeHeroComponent', () => {
     const el: HTMLElement = fixture.nativeElement;
     const titles = Array.from(el.querySelectorAll('.dc-caption-title')).map(t => t.textContent?.trim());
     expect(titles).toEqual(['Host', 'Join', 'Play']);
-    expect(el.querySelectorAll('.dc-qr-cell').length).toBe(component.qrCells.length * 2);
+    expect(el.querySelectorAll('.dc-qr-cell')).toHaveSize(component.qrCells.length * 3);
     expect(el.querySelectorAll('.dc-card--chosen').length).toBe(2);
   });
 

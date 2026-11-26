@@ -42,7 +42,7 @@ for (const width of [360, 768, 1024, 1440]) {
     await expect(play).toHaveAttribute('aria-current', 'step');
     await expect.poll(() => hero.locator('[data-progress="join"]').evaluate(el =>
       new DOMMatrix(getComputedStyle(el).transform).a)).toBeGreaterThanOrEqual(0.999);
-    await expect(hero.locator('.dc-room-game')).toContainText('Card game');
+    await expect(hero.locator('.dc-scene--host .dc-room-game')).toContainText('Card game');
     if (width >= 1024) {
       const lines = await hero.locator('.dc-progress').evaluateAll(elements => elements.map(el => el.getBoundingClientRect().top));
       expect(Math.max(...lines) - Math.min(...lines)).toBeLessThanOrEqual(1);
@@ -71,7 +71,7 @@ test('Home plays the polished Host sequence and deals cards from Hand to Table',
   await expect(chosen).toHaveCount(1);
   await expect(chosen.locator('i')).toHaveClass(/bi-suit-spade-fill/);
   await expect(hero.locator('.dc-scene--host .dc-cursor')).toBeVisible();
-  await expect(hero.locator('.dc-roomcard')).toHaveCSS('opacity', '1', { timeout: 12000 });
+  await expect(hero.locator('.dc-scene--host .dc-roomcard')).toHaveCSS('opacity', '1', { timeout: 12000 });
   await hero.locator('.dc-caption').filter({ hasText: 'Your phone is your hand' }).click();
   // Observe the moving card between devices, where phone overflow used to clip it.
   await expect.poll(() => hero.locator('.dc-hand--a .dc-card--chosen').evaluate(card => {
@@ -92,7 +92,7 @@ test('reduced motion presents the finished story without animation controls', as
   await expect(hero.locator('.dc-hero')).toHaveClass(/dc-static/);
   await expect(hero.locator('.dc-pause')).toHaveCount(0);
   for (const caption of await hero.locator('.dc-caption').all()) await expect(caption).toBeDisabled();
-  await expect(hero.locator('.dc-roomcard')).toHaveCSS('opacity', '1');
+  await expect(hero.locator('.dc-scene--host .dc-roomcard')).toHaveCSS('opacity', '1');
   await expect(hero.locator('.dc-slot--a .dc-placed')).toHaveCSS('opacity', '1');
   await expect(hero.locator('.join-cap-btn')).toHaveCSS('animation-name', 'none');
 });
@@ -118,7 +118,7 @@ test('changing reduced motion stops and restores the live animation', async ({ p
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(hero.locator('.dc-hero')).toHaveClass(/dc-static/);
   await expect(hero.locator('.dc-pause')).toHaveCount(0);
-  await expect(hero.locator('.dc-roomcard')).toHaveCSS('opacity', '1');
+  await expect(hero.locator('.dc-scene--host .dc-roomcard')).toHaveCSS('opacity', '1');
   await expect(hero.locator('.dc-slot--a .dc-placed')).toHaveCSS('opacity', '1');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(hero.locator('.dc-hero')).not.toHaveClass(/dc-static/);

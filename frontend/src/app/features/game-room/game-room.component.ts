@@ -262,7 +262,6 @@ export class GameRoomComponent implements OnInit, AfterViewInit {
     this.stateService.isScreen = savedRole ? savedRole === 'table' : !isMobile;
 
     const guestName = this.authService.getGuestName() || this.authService.currentUserValue?.displayName;
-    this.stateService.needsName = this.isCreating || !guestName;
     if (!this.promptPlayerName && guestName) {
       this.promptPlayerName = guestName;
     }

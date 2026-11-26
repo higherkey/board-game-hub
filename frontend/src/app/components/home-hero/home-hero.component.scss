@@ -236,9 +236,13 @@
     padding: 3cqi;
 }
 
-.dc-room-seat { color: var(--accent-light); font-size: 7cqi; text-align: center; }
+.dc-room-seat { position: relative; display: grid; place-items: center; color: var(--accent-light); font-size: 7cqi; }
+.dc-room-seat .dc-avatar { position: absolute; inset: 0; margin: auto; inline-size: 10cqi; block-size: 10cqi; font-size: 6cqi; }
 .dc-room-deck { background: var(--dc-player-b); color: var(--bg-surface); padding: 2cqi; border-radius: 1cqi; text-align: center; font-size: 6cqi; }
-.dc-room-waiting { grid-column: 1 / -1; color: var(--bg-surface); font-size: 3.5cqi; text-align: center; }
+.dc-room-waiting, .dc-room-ready { grid-column: 1 / -1; grid-row: 2; color: var(--bg-surface); font-size: 3.5cqi; text-align: center; }
+.dc-room-ready { color: var(--success); font-weight: 700; opacity: 0; }
+/* Join opens on the waiting room Host ended with. */
+.dc-scene--join .dc-roomcard { opacity: 1; }
 .dc-room-invite { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3cqi; }
 .dc-room-invite .dc-qr { inline-size: 80%; }
 
@@ -383,45 +387,8 @@
     font-size: 5cqi;
 }
 
-.dc-lobby {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10%;
-}
-
-.dc-lobby-code {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 800;
-    font-size: 11cqi;
-    color: var(--bg-surface);
-    letter-spacing: 0.06em;
-}
-
-.dc-seats {
-    display: flex;
-    gap: 14%;
-    inline-size: 60%;
-    justify-content: center;
-}
-
-.dc-seat {
-    display: grid;
-    place-items: center;
-    inline-size: 32%;
-    aspect-ratio: 1;
-    background: var(--primary);
-    border-radius: 1cqi;
-
-    &--a {
-        --dc-player: var(--dc-player-a);
-    }
-
-    &--b {
-        --dc-player: var(--dc-player-b);
-    }
-}
+.dc-seat--a { --dc-player: var(--dc-player-a); }
+.dc-seat--b { --dc-player: var(--dc-player-b); }
 
 .dc-avatar {
     display: grid;
@@ -728,6 +695,7 @@
     .dc-scene--host .dc-code-letter,
     .dc-type-letter,
     .dc-lobby-ready,
+    .dc-room-ready,
     .dc-placed,
     .dc-plus {
         opacity: 1;
@@ -740,6 +708,10 @@
 
     .dc-joined {
         opacity: 1;
+    }
+
+    .dc-scene--join .dc-room-waiting {
+        opacity: 0;
     }
 
     .dc-card--chosen {
